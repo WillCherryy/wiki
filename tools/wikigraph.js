@@ -7,7 +7,7 @@ const { DOMParser } = require('linkedom');
 const WikiClean = require('../clean.js');
 
 const API = process.env.WIKI_API || 'https://en.wikipedia.org/w/api.php';
-const UA = process.env.WIKI_UA || 'wiki.io-puzzle-builder/0.2 (set WIKI_UA to your contact URL or email)';
+const UA = process.env.WIKI_UA || 'wikilink-puzzle-builder/0.2 (set WIKI_UA to your contact URL or email)';
 const CONC = +process.env.WIKI_CONCURRENCY || 3;
 const CACHE_DIR = process.env.WIKI_CACHE || path.join(__dirname, '.cache');
 fs.mkdirSync(CACHE_DIR, { recursive: true });

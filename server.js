@@ -150,4 +150,4 @@ const server = http.createServer((req, res) => {
   }
   json(res, 404, { error: 'not found' });
 });
-server.listen(PORT, () => console.log(`wiki.io running on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`wikilink running on http://localhost:${PORT}`));

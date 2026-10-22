@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>wiki.io — the daily Wikipedia race</title>
+<title>wikilink — the daily Wikipedia race</title>
 <meta name="description" content="Race from one Wikipedia article to another using only links. A new puzzle every day.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236366f1'/%3E%3Ccircle cx='16' cy='16' r='5' fill='white'/%3E%3C/svg%3E">
 <style>
@@ -254,68 +254,176 @@ details.route summary { cursor: pointer; font-weight: 700; font-size: 13.5px; } 
 .item.on { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); } .item.lock { opacity: .55; }
 .vs { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; } .vs > div { flex: 1; padding: 11px 8px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); text-align: center; }
 .vs b { display: block; font-size: 15px; } .vs span { font-size: 12.5px; color: var(--mute); font-weight: 600; } .vs i { font-style: normal; font-weight: 800; color: var(--mute); font-size: 12px; }
+/* ===================== v2: full width, sharper ===================== */
+:root { --r: 14px; --line: #dcdfee; --shadow: 0 1px 0 rgba(21,23,42,.04), 0 8px 22px -12px rgba(21,23,42,.22);
+  --serif: 'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype', Charter, Georgia, serif;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+:root[data-theme="dark"] { --line: #2b2f4b; --shadow: 0 1px 0 rgba(255,255,255,.035) inset, 0 12px 32px -16px rgba(0,0,0,.75); }
+body { font-family: var(--sans); font-size: 15.5px; letter-spacing: -.003em; text-rendering: optimizeLegibility; }
+body::before { background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px, linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 240px); -webkit-mask-image: linear-gradient(#000, #000 30%, transparent 78%); mask-image: linear-gradient(#000, #000 30%, transparent 78%); }
+body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 100; background: linear-gradient(90deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); }
+::selection { background: var(--accent-soft); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1760px; padding: 0 clamp(16px, 3vw, 48px); }
+.top { backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 90%, transparent); }
+.top .wrap { height: 58px; }
+.logo i { border-radius: 8px; box-shadow: none; }
+.chip { border-radius: 10px; height: 36px; font-weight: 600; }
+.ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .fl { color: #f97316; }
+.iconbtn svg { width: 17px; height: 17px; }
+.btn { border-radius: 12px; padding: 13px 22px; font-weight: 650; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 8px 18px -10px var(--accent); }
+.btn.big { padding: 16px 30px; font-size: 16.5px; border-radius: 13px; }
+.card { border-radius: var(--r); }
+.eyebrow { border-radius: 6px; padding: 5px 10px; font-size: 11.5px; letter-spacing: .1em; }
+.bar { height: 8px; border-radius: 4px; } .bar > i { border-radius: 4px; }
+.modal { border-radius: 18px; } .scrim { backdrop-filter: blur(4px); }
+.tabs { border-radius: 12px; } .tabs button { border-radius: 9px; }
+/* home */
+#home { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0 clamp(24px, 3.5vw, 64px); padding: clamp(22px, 4vw, 56px) 0 48px; align-items: start; }
+#home .foot { grid-column: 1 / -1; }
+h1.hero { font-size: clamp(40px, 5.6vw, 84px); line-height: .98; letter-spacing: -.05em; margin: 18px 0 14px; }
+.sub { font-size: clamp(16px, 1.3vw, 19px); max-width: 620px; }
+.duel { gap: 14px; } .node { min-height: 168px; padding: 20px; }
+.node h3 { font: 700 clamp(24px, 2vw, 30px)/1.1 var(--serif); }
+.arrow { border-radius: 10px; width: 36px; height: 36px; }
+.stat b { font-size: 28px; }
+.side-col { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
+.node img { border-radius: 10px; }
+/* game */
+#game { display: none; padding: 20px 0 60px; gap: 22px; align-items: start; }
+#game.on { display: grid; grid-template-columns: 320px minmax(0, 1fr) 300px; }
+.rail { position: sticky; top: 78px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 94px); overflow: auto; scrollbar-width: thin; }
+.hud { position: static; margin: 0; padding: 16px; backdrop-filter: none; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); z-index: auto; }
+.hud-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.target { grid-column: 1 / -1; border-radius: 12px; padding: 12px 14px; }
+.target strong { font: 700 24px/1.12 var(--serif); }
+.metric { text-align: left; } .metric b { font-size: 34px; }
+.signal { grid-column: 1 / -1; }
+.trailM { display: none; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.tools .finder { grid-column: 1 / -1; order: -1; } .tools #giveUp { grid-column: 1 / -1; } .tools .chip { justify-content: center; } .tools .iconbtn { width: auto; }
+.mainc { min-width: 0; } .found { margin: 0 0 12px; border-radius: 12px; padding: 10px 14px; }
+.article { padding: clamp(24px, 3vw, 48px) clamp(20px, 4vw, 72px) 60px; font-family: var(--serif); font-size: 19px; }
+.article > * { max-width: 68ch; margin-left: auto; margin-right: auto; }
+.article h1 { border-bottom-width: 3px; font-family: var(--serif); }
+.routecard { padding: 16px; } .routecard h4 { margin: 0 0 12px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.rail.r .trail { flex-direction: column; align-items: stretch; gap: 6px; overflow: visible; padding: 0; }
+.rail.r .step { max-width: none; white-space: normal; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.rail.r .trail .sep { display: none; }
+.keys { display: grid; gap: 8px; font-size: 13.5px; color: var(--mute); font-weight: 600; } .keys kbd { margin-right: 8px; }
+.step { border-radius: 8px; }
+@media (max-width: 1179px) { #game.on { grid-template-columns: 300px minmax(0, 1fr); } .rail.r { display: none; } .trailM { display: flex; flex-wrap: wrap; overflow: visible; padding-top: 12px; } .trailM .sep { display: none; } .trailM .step { max-width: 100%; } }
+@media (max-width: 959px) { #home { grid-template-columns: minmax(0, 1fr); } .side-col { position: static; margin-top: 8px; } }
+@media (max-width: 759px) {
+  #game.on { display: block; padding-top: 0; }
+  .rail { display: contents; }
+  .hud { position: sticky; top: 58px; z-index: 20; margin: 0 calc(-1 * clamp(16px, 3vw, 48px)); padding: 8px 16px 10px; border-radius: 0; border-width: 0 0 1px; box-shadow: none; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); }
+  .hud-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .target { grid-column: auto; flex: 1 1 0; min-width: 0; padding: 5px 10px; } .target small { font-size: 9.5px; }
+  .target strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; font-family: var(--serif); }
+  .metric { text-align: center; min-width: 44px; } .metric b { font-size: 18px; } .metric span { font-size: 9.5px; }
+  .signal { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; } .signal .lab { margin: 0; gap: 8px; white-space: nowrap; } .signal .bar { flex: 1; height: 6px; }
+  .trailM { flex-wrap: nowrap; overflow-x: auto; padding-top: 7px; } .trailM .sep { display: inline; } .trailM .step { max-width: 190px; font-size: 11.5px; padding: 3px 8px; }
+  .tools { display: flex; flex-wrap: wrap; margin: 10px 0; gap: 6px; } .tools .finder { order: 5; flex: 1 1 100%; } .tools #giveUp { margin-left: auto; } .tools .chip { height: 34px; padding: 0 10px; } .tools .iconbtn { width: 34px; padding: 0; }
+  .article { padding: 22px 18px 40px; font-size: 17.5px; } .article > * { max-width: none; }
+  .found { margin: 8px 0; padding: 7px 12px; font-size: 12px; }
+}
+/* settings */
+.sgroup { margin: 20px 0 0; } .sl { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
+.seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; }
+.seg3 button { border: 0; background: none; padding: 10px 8px; border-radius: 9px; font-weight: 700; font-size: 13.5px; color: var(--mute); display: flex; align-items: center; justify-content: center; gap: 7px; }
+.seg3 button.on { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(0,0,0,.12); }
+.srow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-weight: 650; font-size: 14.5px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; } .stepper button { border: 0; background: var(--bg); width: 44px; height: 38px; font-weight: 800; } .stepper button:hover { background: var(--accent-soft); } .stepper span { min-width: 56px; text-align: center; font-size: 13px; color: var(--mute); font-weight: 700; }
+.sprev { margin-top: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-family: var(--serif); line-height: 1.6; }
+.slinks { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; } .slinks a { color: var(--accent-ink); font-weight: 600; }
+/* polish */
+.wrap { max-width: 2200px; }
+.top { background: var(--bg); backdrop-filter: none; }
+.how ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: s; }
+.how li { display: flex; gap: 12px; align-items: flex-start; counter-increment: s; color: var(--mute); font-size: 14.5px; line-height: 1.5; }
+.how li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.how b { color: var(--ink); }
+.tools .chip[id^="fs"] { font-weight: 800; }
+@media (max-width: 759px) { .hud { background: var(--bg); backdrop-filter: none; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <button class="logo" id="logo" aria-label="wiki.io home"><i></i><span>wiki<b>.io</b></span></button>
+  <button class="logo" id="logo" aria-label="Home"><i></i><span data-brand>wiki<b>link</b></span></button>
   <div class="spacer"></div>
-  <button class="chip hide-s" id="streakChip" title="Daily streak">🔥 <span id="streakN">0</span></button>
+  <button class="chip hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span id="streakN">0</span></button>
   <button class="chip rankchip" id="rankChip" title="Your rank"><span class="dot"></span><span id="rankName">Wanderer</span></button>
-  <button class="chip iconbtn" id="lbBtn" aria-label="Leaderboard"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
-  <button class="chip iconbtn" id="helpBtn" aria-label="How to play"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg></button>
-  <button class="chip iconbtn" id="themeBtn" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></button>
+  <button class="chip iconbtn" id="lbBtn" aria-label="Leaderboards"><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
+  <button class="chip iconbtn" id="helpBtn" aria-label="How to play"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg></button>
+  <button class="chip iconbtn" id="themeBtn" aria-label="Switch light or dark"></button>
+  <button class="chip iconbtn" id="settingsBtn" aria-label="Settings"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
 </div></header>
 
 <main class="wrap">
   <section id="home">
-    <span class="eyebrow" id="dayTag">Daily puzzle</span>
-    <h1 class="hero">Click your way<br>through <em>Wikipedia</em>.</h1>
-    <p class="sub">Get from one article to another using only the links inside. Fewest clicks wins. New puzzle every day.</p>
-    <div class="duel">
-      <div class="card node" id="fromNode"></div>
-      <div class="arrow">→</div>
-      <div class="card node to" id="toNode"></div>
+    <div class="hero-col">
+      <span class="eyebrow" id="dayTag">Daily puzzle</span>
+      <h1 class="hero">Click your way<br>through <em>Wikipedia</em>.</h1>
+      <p class="sub">Get from one article to another using only the links inside. Fewest clicks wins. New puzzle every day.</p>
+      <div class="duel">
+        <div class="card node" id="fromNode"></div>
+        <div class="arrow">→</div>
+        <div class="card node to" id="toNode"></div>
+      </div>
+      <div class="cta">
+        <button class="btn big" id="playBtn">Play today's puzzle</button>
+        <button class="btn ghost" id="practiceBtn">Random practice</button>
+        <span class="next" id="nextIn"></span>
+      </div>
+      <div class="statrow">
+        <div class="card stat"><b id="sStreak">0</b><span>Day streak</span></div>
+        <div class="card stat"><b id="sWins">0</b><span>Puzzles solved</span></div>
+        <div class="card stat"><b id="sBest">–</b><span>Best (clicks)</span></div>
+      </div>
     </div>
-    <div class="cta">
-      <button class="btn big" id="playBtn">Play today's puzzle</button>
-      <button class="btn ghost" id="practiceBtn">Random practice</button>
-      <span class="next" id="nextIn"></span>
-    </div>
-    <div class="statrow">
-      <div class="card stat"><b id="sStreak">0</b><span>Day streak</span></div>
-      <div class="card stat"><b id="sWins">0</b><span>Puzzles solved</span></div>
-      <div class="card stat"><b id="sBest">–</b><span>Best (clicks)</span></div>
-    </div>
-    <div id="hub"></div>
-    <div class="card panel">
-      <h4><span>Today's leaderboard</span><span><a id="leagueLink">＋ League</a> &nbsp;·&nbsp; <a id="lbMore">See all →</a></span></h4>
-      <div id="lbPreview"></div>
+    <div class="side-col">
+      <div id="hub"></div>
+      <div class="card panel">
+        <h4><span>Today's leaderboard</span><span><a id="leagueLink">＋ League</a> &nbsp;·&nbsp; <a id="lbMore">See all →</a></span></h4>
+        <div id="lbPreview"></div>
+      </div>
+      <div class="card panel how"><h4><span>How it works</span></h4>
+        <ol><li><span><b>Start</b> on one Wikipedia article.</span></li><li><span><b>Click links</b> inside the text to travel to another article.</span></li><li><span><b>Reach the target</b> in as few clicks as you can. The meter shows warmer or colder.</span></li></ol>
+      </div>
     </div>
     <footer class="foot"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
   </section>
 
   <section id="game">
-    <div class="hud">
-      <div class="hud-row">
-        <button class="target" id="targetBtn" title="Show target summary"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
-        <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
-        <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
-        <div class="signal"><div class="lab"><span>Signal</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
+    <aside class="rail l">
+      <div class="hud">
+        <div class="hud-row">
+          <button class="target" id="targetBtn" title="Show target summary (T)"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
+          <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
+          <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
+          <div class="signal"><div class="lab"><span>Signal</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
+        </div>
+        <div class="trail trailM" id="trailM"></div>
       </div>
-      <div class="trail" id="trail"></div>
+      <div class="tools">
+        <button class="chip" id="backBtn" title="Back (B)">← Back <small style="color:var(--mute)">+1</small></button>
+        <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">📺 Rewind <small style="color:var(--mute)">1 left</small></button>
+        <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link…  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
+        <button class="chip" id="fsDown" aria-label="Smaller text">A−</button>
+        <button class="chip" id="fsUp" aria-label="Larger text">A+</button>
+        <button class="chip" id="giveUp">Give up</button>
+      </div>
+    </aside>
+    <div class="mainc">
       <div class="found" id="found"><span>🎯 The target is linked on this page!</span><button id="jump">Show me</button></div>
+      <article class="card article" id="article"></article>
     </div>
-    <div class="tools">
-      <button class="chip" id="backBtn" title="Back (B)">← Back <small style="color:var(--mute)">+1</small></button>
-      <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">📺 Free rewind <small style="color:var(--mute)">1 left</small></button>
-      <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link…  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
-      <button class="chip iconbtn" id="fsDown" aria-label="Smaller text" style="font-size:12px">A</button>
-      <button class="chip iconbtn" id="fsUp" aria-label="Larger text" style="font-size:17px">A</button>
-      <button class="chip" id="giveUp">Give up</button>
-    </div>
-    <article class="card article" id="article"></article>
+    <aside class="rail r">
+      <div class="card routecard"><h4>Your route</h4><div class="trail" id="trail"></div></div>
+      <div class="card routecard"><h4>Shortcuts</h4><div class="keys"><span><kbd>/</kbd> Find a link</span><span><kbd>B</kbd> Back</span><span><kbd>T</kbd> Target</span><span><kbd>?</kbd> Help</span></div></div>
+    </aside>
   </section>
 </main>
 
@@ -329,6 +437,10 @@ details.route summary { cursor: pointer; font-weight: 700; font-size: 13.5px; } 
 <script src="clean.js"></script>
 <script>
 'use strict';
+const CFG = window.WIKIIO || {};
+const BRAND = { name: CFG.name || 'wikilink', domain: CFG.domain || 'wikilink.app', a: CFG.brandA || 'wiki', b: CFG.brandB || 'link' };
+document.title = `${BRAND.name} — the daily Wikipedia race`;
+document.querySelectorAll('[data-brand]').forEach(el => { el.innerHTML = `${BRAND.a}<b>${BRAND.b}</b>`; });
 /* ------------------------------------------------------------------ data */
 let POOL = CATS; // replaced by pool.json when present
 const RANKS = [
@@ -451,7 +563,7 @@ let tick = null;
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
-function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').style.display = view === 'game' ? 'block' : 'none'; window.scrollTo({ top: 0 }); }
+function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setHue(h) { document.documentElement.style.setProperty('--h', h); }
 function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Burning' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
 const sigHue = s => Math.round(235 - s * 220);
@@ -551,7 +663,7 @@ function updateHud() {
   $('#found').classList.toggle('on', s >= 1 && !G.done);
   const tr = $('#trail');
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sh:${sigHue(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
-  tr.scrollLeft = tr.scrollWidth;
+  tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
   $('#backBtn').disabled = G.steps.length < 2;
   const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || G.rewinds >= 1 || G.done; rb.querySelector('small').textContent = G.rewinds >= 1 ? 'used' : '1 left';
 }
@@ -625,7 +737,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `wiki.io ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : 'wiki.io'}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
 }
 function showResult() {
   const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
@@ -689,7 +801,7 @@ function openLeaderboard(mode = 'day', scope = 'global') {
     document.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
     $('#addLg').onclick = () => leagueModal();
     const body = $('#lbBody');
-    if (st.mode === 'me') { body.innerHTML = statsHTML(); bindMe(); return; }
+    if (st.mode === 'me') { body.innerHTML = statsHTML() + '<button class="btn ghost" id="meSet" style="width:100%;margin-top:18px">Settings &amp; data</button>'; $('#meSet').onclick = () => openSettings(); return; }
     body.innerHTML = '<div class="empty">Loading…</div>';
     const league = st.scope === 'global' ? '' : st.scope;
     try {
@@ -743,12 +855,9 @@ function statsHTML() {
   <div class="xpmeta"><span style="color:${rk.c};font-weight:700">${rk.n}</span><span>${P.xp} XP${nx ? ` · ${nx.xp - P.xp} to ${nx.n}` : ''}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div>
   <p class="ranks">${RANKS.map((r, i) => `<span style="color:${i <= ri ? r.c : 'var(--mute)'};font-weight:${i === ri ? 800 : 600}">${r.n}</span>`).join(' › ')}</p>
   <p style="margin:18px 0 0;font-size:13px;font-weight:700;color:var(--ink)">Last 14 days</p><div class="hist">${days.join('')}</div>
-  <p style="margin:20px 0 2px;font-size:13px;font-weight:700;color:var(--ink)">Achievements</p>${ach}
-  <div class="field" style="margin-top:18px">Display name<input id="meName" maxlength="20" placeholder="Shown on leaderboards" value="${esc(P.name)}"></div>
-  <div class="field">Online data<div class="namebox" style="margin:0"><button class="btn ghost" id="delOnline">Delete my online data</button></div><small style="font-weight:500;color:var(--mute)">Player ID <code>${esc(P.pid)}</code>. Removes your name, scores, routes and league memberships from the server.</small></div>
-  <div class="field">Backup code<div class="namebox" style="margin:0"><button class="btn ghost" id="bkCopy">Copy backup code</button><button class="btn ghost" id="bkRestore">Restore…</button></div><small style="font-weight:500;color:var(--mute)">No account needed. Save this code to move your progress to another device.</small></div>`;
+  <p style="margin:20px 0 2px;font-size:13px;font-weight:700;color:var(--ink)">Achievements</p>${ach}`;
 }
-function bindMe() {
+function bindSettings() {
   const i = $('#meName'); if (i) i.onchange = () => { P.name = i.value.trim().slice(0, 20); saveP(); toast('Name saved'); };
   $('#delOnline').onclick = () => ask('Delete online data?', 'This removes your name, scores, routes and leagues from the leaderboard server. Progress on this device is kept.', 'Delete', async () => {
     try { const r = await fetch(API_BASE + '/api/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid }) }); if (!r.ok) throw 0; P.leagues = []; saveP(); toast('Online data deleted'); } catch { toast('Could not reach the server — try again later'); }
@@ -759,6 +868,30 @@ function bindMe() {
     try { const o = JSON.parse(decodeURIComponent(escape(atob(v.replace(/^WIKIIO1:/, ''))))); if (!o.pid || typeof o.xp !== 'number') throw 0; localStorage.setItem(KEY, JSON.stringify(o)); location.reload(); }
     catch { toast('That backup code is not valid'); }
   };
+}
+function syncSettings() {
+  const t = P.theme || 'system';
+  document.querySelectorAll('#stTheme button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
+  const fs = $('#stFsV'); if (fs) fs.textContent = P.fs === 0 ? 'Default' : (P.fs > 0 ? '+' : '') + P.fs;
+  const pv = $('#stPrev'); if (pv) pv.style.fontSize = (18.5 + P.fs * 1.5) + 'px';
+}
+function openSettings() {
+  openModal(`<h2>Settings</h2>
+    <div class="sgroup"><div class="sl">Appearance</div>
+      <div class="seg3" id="stTheme"><button data-v="system"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>System</button><button data-v="light">${SUN}Light</button><button data-v="dark">${MOON}Dark</button></div>
+      <div class="srow"><span>Article text size</span><span class="stepper"><button id="stFsD" aria-label="Smaller">A−</button><span id="stFsV"></span><button id="stFsU" aria-label="Larger">A+</button></span></div>
+      <div class="sprev" id="stPrev">The quick brown fox jumps over the lazy dog.</div></div>
+    <div class="sgroup"><div class="sl">Profile</div><div class="field" style="margin:0"><input id="meName" maxlength="20" placeholder="Display name (shown on leaderboards)" value="${esc(P.name)}"></div></div>
+    <div class="sgroup"><div class="sl">Your data</div>
+      <div class="namebox" style="margin:0"><button class="btn ghost" id="bkCopy">Copy backup code</button><button class="btn ghost" id="bkRestore">Restore…</button></div>
+      <div class="namebox" style="margin:8px 0 0"><button class="btn ghost" id="delOnline" style="width:100%">Delete my online data</button></div>
+      <div class="s mute" style="margin-top:8px;font-size:12.5px">No account needed. Your backup code moves your progress to another device. Player ID <code>${esc(P.pid)}</code>.</div></div>
+    <div class="sgroup"><div class="sl">About</div><div class="slinks"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia (CC BY-SA 4.0)</a></div>
+      <div class="s mute" style="margin-top:8px;font-size:12.5px">${esc(BRAND.name)} is not affiliated with Wikipedia or the Wikimedia Foundation.</div></div>`);
+  document.querySelectorAll('#stTheme button').forEach(b => b.onclick = () => { P.theme = b.dataset.v; saveP(); applyTheme(); syncSettings(); });
+  $('#stFsD').onclick = () => { P.fs = Math.max(-3, P.fs - 1); saveP(); applyFs(); syncSettings(); };
+  $('#stFsU').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); syncSettings(); };
+  bindSettings(); syncSettings();
 }
 function ask(h, text, yes, cb) {
   openModal(`<h2>${h}</h2><p>${text}</p><div class="actions"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="askYes">${yes}</button></div>`);
@@ -811,7 +944,16 @@ $('#jump').onclick = () => { const g = document.querySelector('.article a.goal')
 $('#lbBtn').onclick = () => openLeaderboard('day'); $('#lbMore').onclick = () => openLeaderboard('day');
 $('#rankChip').onclick = () => openLeaderboard('me'); $('#streakChip').onclick = () => openLeaderboard('me');
 $('#helpBtn').onclick = showHelp;
-$('#themeBtn').onclick = () => { const d = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = d; P.theme = d; saveP(); };
+const SUN = '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>', MOON = '<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const t = P.theme || 'system', dark = t === 'dark' || (t === 'system' && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('#themeBtn').innerHTML = dark ? SUN : MOON; $('#themeBtn').title = dark ? 'Switch to light' : 'Switch to dark';
+}
+systemDark.addEventListener('change', () => { if (!P.theme || P.theme === 'system') applyTheme(); });
+$('#themeBtn').onclick = () => { P.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; saveP(); applyTheme(); const t = $('#stTheme'); if (t) syncSettings(); };
+$('#settingsBtn').onclick = () => openSettings();
 
 /* ----------------------------------------------------------------------- cosmetics */
 const COS = {
@@ -888,8 +1030,8 @@ async function shareCardCanvas(r) {
   const SANS = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif', SERIF = '"Source Serif 4", Georgia, serif', M = 72, stops = trailStops();
   const bg = x.createLinearGradient(0, 0, W * .55, H); bg.addColorStop(0, 'hsl(228 62% 11%)'); bg.addColorStop(.55, 'hsl(300 45% 17%)'); bg.addColorStop(1, 'hsl(8 72% 27%)'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
   const rg = x.createRadialGradient(W * .85, H * .55, 20, W * .85, H * .55, 640); rg.addColorStop(0, 'hsla(10,100%,62%,.36)'); rg.addColorStop(1, 'hsla(10,100%,62%,0)'); x.fillStyle = rg; x.fillRect(0, 0, W, H);
-  x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.font = `800 58px ${SANS}`; x.fillStyle = '#fff'; x.fillText('wiki', M, 132);
-  const bw = x.measureText('wiki').width; x.fillStyle = lerpStops(stops, 1); x.fillText('.io', M + bw, 132);
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.font = `800 58px ${SANS}`; x.fillStyle = '#fff'; x.fillText(BRAND.a, M, 132);
+  const bw = x.measureText(BRAND.a).width; x.fillStyle = lerpStops(stops, 1); x.fillText(BRAND.b, M + bw, 132);
   const tag = r.mode === 'daily' ? `Daily #${dayNum(G.day)}` : r.mode === 'pack' ? 'Companion pack' : r.mode === 'challenge' ? 'Challenge' : 'Practice';
   x.textAlign = 'right'; x.font = `700 32px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(tag, W - M, 128); x.textAlign = 'left';
   const from = r.from || r.path[0], to = r.to || r.path[r.path.length - 1];
@@ -923,7 +1065,7 @@ async function shareCardCanvas(r) {
     x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `800 48px ${SANS}`; x.fillText(v, tx + tw / 2, ty + 60); x.fillStyle = 'rgba(255,255,255,.58)'; x.font = `700 21px ${SANS}`; x.fillText(l, tx + tw / 2, ty + 94);
   });
   // footer
-  const host = (window.WIKIIO && WIKIIO.name) || 'wiki.io', cta = `Beat me → ${host}`;
+  const host = BRAND.domain, cta = `Beat me → ${host}`;
   x.textAlign = 'left'; x.font = `600 29px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.8)'; x.fillText(`${RANKS[rankOf(P.xp)].n} · ${P.xp} XP`, M, 1310);
   x.font = `800 29px ${SANS}`; const cw = x.measureText(cta).width + 52; x.beginPath(); x.roundRect(W - M - cw, 1272, cw, 56, 28); x.fillStyle = '#fff'; x.fill(); x.fillStyle = '#15172a'; x.textAlign = 'center'; x.fillText(cta, W - M - cw / 2, 1310);
   return c;
@@ -934,7 +1076,7 @@ async function openShareCard(r, back) {
     <div class="actions" style="margin-top:14px"><button class="btn" id="scShare">Share</button><button class="btn ghost" id="scSave">Save image</button></div>
     <div class="actions" style="margin-top:10px"><button class="btn ghost" id="scTxt">Copy text</button><button class="btn ghost" id="scBack">← Back</button></div>`);
   const canvas = await shareCardCanvas(r), blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-  const url = URL.createObjectURL(blob), name = `wikiio-${r.mode === 'daily' ? dayNum(G.day) : r.mode}.png`, file = new File([blob], name, { type: 'image/png' });
+  const url = URL.createObjectURL(blob), name = `${BRAND.name}-${r.mode === 'daily' ? dayNum(G.day) : r.mode}.png`, file = new File([blob], name, { type: 'image/png' });
   $('#scImg').src = url;
   const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
   $('#scSave').onclick = () => { save(); toast('Image saved'); };
@@ -965,8 +1107,8 @@ function openChallenge(r, back) {
   $('#chName').oninput = () => { P.name = $('#chName').value.trim(); saveP(); $('#chLink').value = link(); };
   $('#chCopy').onclick = async () => { try { await navigator.clipboard.writeText(link()); toast('Link copied'); } catch { $('#chLink').select(); } };
   $('#chShare').onclick = async () => {
-    const text = `Beat my ${r.clicks} click${r.clicks === 1 ? '' : 's'} on wiki.io: ${r.from || r.path[0]} → ${r.to || r.path[r.path.length - 1]}`;
-    try { if (navigator.share) await navigator.share({ title: 'wiki.io challenge', text, url: link() }); else { await navigator.clipboard.writeText(text + ' ' + link()); toast('Challenge copied'); } } catch {}
+    const text = `Beat my ${r.clicks} click${r.clicks === 1 ? '' : 's'} on ${BRAND.name}: ${r.from || r.path[0]} → ${r.to || r.path[r.path.length - 1]}`;
+    try { if (navigator.share) await navigator.share({ title: BRAND.name + ' challenge', text, url: link() }); else { await navigator.clipboard.writeText(text + ' ' + link()); toast('Challenge copied'); } } catch {}
   };
   $('#chBack').onclick = () => { closeModal(); if (back) back(); };
 }
@@ -1123,7 +1265,7 @@ function drawFrame(ctx, W, d, st) {
   const g = ctx.createLinearGradient(0, 0, W, W); g.addColorStop(0, `hsl(${h} 65% 13%)`); g.addColorStop(1, `hsl(${(h + 55) % 360} 70% 25%)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, W);
   const rg = ctx.createRadialGradient(W / 2, W * .45, 20, W / 2, W * .45, W * .6); rg.addColorStop(0, `hsla(${h},90%,60%,.28)`); rg.addColorStop(1, 'hsla(0,0%,0%,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
   const SANS = 'Inter, system-ui, sans-serif';
-  tx('wiki', 40, 70, `800 34px ${SANS}`, '#fff'); ctx.font = `800 34px ${SANS}`; tx('.io', 40 + ctx.measureText('wiki').width, 70, `800 34px ${SANS}`, `hsl(${h} 95% 70%)`);
+  tx(BRAND.a, 40, 70, `800 34px ${SANS}`, '#fff'); ctx.font = `800 34px ${SANS}`; tx(BRAND.b, 40 + ctx.measureText(BRAND.a).width, 70, `800 34px ${SANS}`, `hsl(${h} 95% 70%)`);
   tx(d.label, W - 40, 68, `600 22px ${SANS}`, 'rgba(255,255,255,.65)', 'right');
   const cx = W / 2, k = easeOut(Math.min(1, st.local / .45));
   if (st.kind === 'intro') {
@@ -1187,7 +1329,7 @@ async function exportVideo(d, S, btn) {
   await new Promise(res => { (function loop() { const t = (performance.now() - t0) / 1000; drawFrame(ctx, 720, d, stateAt(d, S, t)); btn.textContent = `Rendering ${Math.min(99, Math.round(t / S.total * 100))}%`; if (t < S.total) requestAnimationFrame(loop); else res(); })(); });
   rec.stop(); await stopped;
   const blob = new Blob(chunks, { type: mime }), a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `wikiio-${d.label.replace('#', '')}.${mime.includes('mp4') ? 'mp4' : 'webm'}`; document.body.appendChild(a); a.click(); a.remove();
+  a.href = URL.createObjectURL(blob); a.download = `${BRAND.name}-${d.label.replace('#', '')}.${mime.includes('mp4') ? 'mp4' : 'webm'}`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); btn.textContent = label; btn.disabled = false; toast('Video saved');
 }
 $('#rewindBtn').onclick = rewind;
@@ -1203,7 +1345,7 @@ function runFinder() {
 }
 $('#finder').addEventListener('input', runFinder);
 $('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { e.target.value = ''; runFinder(); e.target.blur(); } });
-const applyFs = () => { $('#article').style.fontSize = (18.5 + P.fs * 1.5) + 'px'; };
+const applyFs = () => { $('#article').style.fontSize = (19 + P.fs * 1.5) + 'px'; };
 $('#fsDown').onclick = () => { P.fs = Math.max(-3, P.fs - 1); saveP(); applyFs(); };
 $('#fsUp').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); };
 applyFs();
@@ -1212,7 +1354,7 @@ const prefetch = e => { const a = e.target.closest && e.target.closest('a[data-t
 $('#article').addEventListener('mouseover', prefetch); $('#article').addEventListener('touchstart', prefetch, { passive: true });
 document.addEventListener('keydown', e => {
   if (/INPUT|TEXTAREA/.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || $('#scrim').classList.contains('on')) return;
-  const inGame = $('#game').style.display === 'block' && G && !G.done, k = e.key.toLowerCase();
+  const inGame = $('#game').classList.contains('on') && G && !G.done, k = e.key.toLowerCase();
   if (inGame && k === '/') { e.preventDefault(); $('#finder').focus(); }
   else if (inGame && (e.key === 'Backspace' || k === 'b' || (e.altKey && e.key === 'ArrowLeft'))) { e.preventDefault(); back(); }
   else if (inGame && k === 't') showTarget();
@@ -1227,7 +1369,7 @@ setInterval(tickNext, 1000); tickNext();
 $('#leagueLink').onclick = () => leagueModal();
 handleInvite();
 
-document.documentElement.dataset.theme = P.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+applyTheme();
 applyCos();
 loadData().then(() => { renderHome(); handleChallenge(); });
 const viaLink = /^#c=/.test(location.hash) || /[?&]league=/.test(location.search);
