@@ -1,0 +1,14 @@
+{
+  "name": "wiki.io",
+  "private": true,
+  "version": "0.2.0",
+  "description": "A daily Wikipedia link race.",
+  "scripts": {
+    "start": "node server.js",
+    "pool": "node tools/build-pool.js",
+    "puzzles": "node tools/build-puzzles.js",
+    "test": "node tools/test-fake.js"
+  },
+  "dependencies": {},
+  "devDependencies": { "linkedom": "^0.18.0" }
+}

@@ -1,0 +1,42 @@
+name: Build puzzles
+# Precomputes daily puzzles (pair + par + shortest route) and companion-pack routes against real Wikipedia.
+# Runs weekly and keeps ~45 days scheduled ahead; each run only fills days that are missing.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Days to schedule ahead'
+        default: '45'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      WIKI_UA: wiki.io-puzzle-builder/0.2 (https://github.com/${{ github.repository }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: tools/.cache
+          key: wikicache-${{ github.run_id }}
+          restore-keys: wikicache-
+      - name: Article pools (first run only)
+        run: '[ -f daily-pool.json ] || node tools/build-pool.js'
+      - name: Daily puzzles
+        run: node tools/build-puzzles.js --days ${{ github.event.inputs.days || 45 }}
+      - name: Companion packs
+        run: node tools/build-packs.js
+      - name: Commit results
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for f in puzzles.json pool.json daily-pool.json packs.json; do [ -f "$f" ] && git add "$f"; done
+          git diff --cached --quiet || (git commit -m 'Update puzzles' && git push)

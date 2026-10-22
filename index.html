@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>wiki.io — the daily Wikipedia race</title>
+<meta name="description" content="Race from one Wikipedia article to another using only links. A new puzzle every day.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236366f1'/%3E%3Ccircle cx='16' cy='16' r='5' fill='white'/%3E%3C/svg%3E">
+<style>
+@property --h { syntax: '<number>'; inherits: true; initial-value: 235; }
+:root {
+  --h: 235;
+  --accent: hsl(var(--h) 85% 58%);
+  --accent-soft: hsl(var(--h) 85% 58% / .14);
+  --accent-ink: hsl(var(--h) 70% 38%);
+  --bg: #f6f7fb; --card: #ffffff; --ink: #15172a; --mute: #6b7089; --line: #e6e8f2;
+  --glow-a: hsl(var(--h) 90% 70% / .30); --glow-b: hsl(calc(var(--h) + 50) 90% 70% / .22);
+  --shadow: 0 1px 2px rgba(20,22,50,.05), 0 8px 30px rgba(20,22,50,.07);
+  --r: 18px;
+  transition: --h .9s cubic-bezier(.2,.7,.2,1);
+}
+:root[data-theme="dark"] {
+  --accent-ink: hsl(var(--h) 90% 76%);
+  --bg: #0c0d18; --card: #151729; --ink: #eceefb; --mute: #8e93b3; --line: #25283f;
+  --glow-a: hsl(var(--h) 90% 55% / .28); --glow-b: hsl(calc(var(--h) + 50) 90% 55% / .18);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 40px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink); background: var(--bg);
+  font: 16px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 12% -8%, var(--glow-a), transparent 65%),
+    radial-gradient(800px 520px at 100% 0%, var(--glow-b), transparent 60%);
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+
+/* top bar */
+.top { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px) saturate(1.4); background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 10px; height: 60px; }
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 21px; letter-spacing: -.03em; border: 0; background: none; padding: 0; }
+.logo i { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; box-shadow: 0 4px 14px var(--accent-soft); transition: background .9s; }
+.logo i::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.logo b { color: var(--accent); font-weight: 800; transition: color .9s; }
+.spacer { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 13.5px; }
+.chip:hover { border-color: var(--accent); }
+.iconbtn { width: 36px; padding: 0; justify-content: center; }
+.iconbtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rankchip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--accent)); }
+@media (max-width: 560px) { .hide-s { display: none; } }
+
+/* cards */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
+.btn { border: 0; border-radius: 14px; padding: 14px 22px; font-weight: 700; background: var(--accent); color: #fff; box-shadow: 0 8px 22px var(--accent-soft); transition: transform .12s, filter .2s, background .9s; }
+.btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.99); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+.btn.ghost:hover { border-color: var(--accent); }
+.btn.big { padding: 17px 34px; font-size: 17px; border-radius: 16px; }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* home */
+#home { padding: 34px 0 70px; }
+.eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-soft); padding: 6px 12px; border-radius: 999px; }
+h1.hero { font-size: clamp(34px, 6.4vw, 58px); line-height: 1.03; letter-spacing: -.045em; margin: 16px 0 10px; font-weight: 800; }
+h1.hero em { font-style: normal; background: linear-gradient(100deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sub { color: var(--mute); font-size: 17px; max-width: 560px; margin: 0 0 26px; }
+.duel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; margin-bottom: 18px; }
+.node { padding: 18px; display: flex; flex-direction: column; gap: 6px; min-height: 150px; position: relative; overflow: hidden; }
+.node small { font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--mute); }
+.node h3 { font: 700 24px/1.15 'Source Serif 4', Georgia, serif; margin: 0; letter-spacing: -.01em; }
+.node p { margin: 0; color: var(--mute); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.node.to { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.node.to::after { content: ""; position: absolute; right: -40px; top: -40px; width: 120px; height: 120px; border-radius: 50%; background: var(--accent-soft); }
+.node img { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; object-fit: cover; border-radius: 12px; opacity: .95; }
+.arrow { align-self: center; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 800; transition: background .9s; }
+.skel { background: linear-gradient(90deg, var(--line), transparent, var(--line)); background-size: 200% 100%; animation: sh 1.2s infinite; border-radius: 8px; height: 14px; }
+@keyframes sh { to { background-position: -200% 0; } }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 30px; }
+.statrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.stat { padding: 16px 18px; }
+.stat b { display: block; font-size: 26px; letter-spacing: -.03em; line-height: 1.1; }
+.stat span { font-size: 12.5px; color: var(--mute); font-weight: 600; }
+.panel { padding: 20px; }
+.panel h4 { margin: 0 0 12px; font-size: 14px; letter-spacing: .02em; display: flex; justify-content: space-between; align-items: center; }
+.panel h4 a { font-weight: 600; font-size: 13px; color: var(--accent-ink); cursor: pointer; }
+.row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.row:first-of-type { border-top: 0; }
+.row .pos { width: 26px; font-weight: 800; color: var(--mute); }
+.row .pos.p1 { color: #e9a400; } .row .pos.p2 { color: #8a94a6; } .row .pos.p3 { color: #b4693b; }
+.row .nm { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .me { color: var(--accent-ink); }
+.row .val { color: var(--mute); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.empty { color: var(--mute); font-size: 14px; padding: 6px 0; }
+
+/* game */
+#game { display: none; padding-bottom: 90px; }
+.hud { position: sticky; top: 60px; z-index: 20; margin: 0 -16px; padding: 10px 16px 12px; backdrop-filter: blur(14px) saturate(1.3); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--line); }
+.hud-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.target { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); text-align: left; transition: background .9s, border-color .9s; }
+.target small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-ink); }
+.target strong { display: block; font: 700 17px/1.15 'Source Serif 4', Georgia, serif; }
+.metric { text-align: center; min-width: 58px; }
+.metric b { display: block; font-size: 22px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.metric span { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.signal { flex: 1 1 130px; min-width: 120px; }
+.signal .lab { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 5px; }
+.signal .lab b { color: var(--accent-ink); }
+.bar { height: 9px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, hsl(235 85% 60%), hsl(var(--h) 90% 58%)); transition: width .8s cubic-bezier(.2,.7,.2,1); }
+.trail { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 0; scrollbar-width: none; align-items: center; }
+.trail::-webkit-scrollbar { display: none; }
+.step { flex: none; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid hsl(var(--sh) 85% 58%); white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; animation: pop .35s cubic-bezier(.2,1.4,.4,1); }
+.trail .sep { color: var(--mute); flex: none; font-size: 12px; }
+@keyframes pop { from { transform: scale(.7); opacity: 0; } }
+.found { display: none; margin-top: 8px; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 10px; background: linear-gradient(90deg, #ff8a3d, #ff4d6d); color: #fff; animation: pop .4s; }
+.found.on { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.found button { border: 0; background: rgba(255,255,255,.25); color: #fff; border-radius: 8px; padding: 3px 10px; font-weight: 700; font-size: 12.5px; }
+.tools { display: flex; gap: 8px; margin: 14px 0 12px; flex-wrap: wrap; }
+.article { margin-top: 0; padding: 30px clamp(18px, 5vw, 48px) 40px; font-family: 'Source Serif 4', Georgia, serif; font-size: 18.5px; line-height: 1.7; transition: opacity .25s, transform .25s; }
+.article.out { opacity: 0; transform: translateY(8px); }
+.article.in { animation: slidein .45s cubic-bezier(.2,.8,.2,1); }
+@keyframes slidein { from { opacity: 0; transform: translateY(14px); } }
+.article h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: -.02em; margin: 0 0 18px; padding-bottom: 14px; border-bottom: 2px solid var(--accent); transition: border-color .9s; }
+.article h2 { font-size: 26px; margin: 1.6em 0 .4em; letter-spacing: -.01em; }
+.article h3 { font-size: 21px; margin: 1.3em 0 .3em; }
+.article h2, .article h3 { border: 0; }
+.article p { margin: 0 0 1em; }
+.article ul, .article ol { padding-left: 1.3em; margin: 0 0 1em; }
+.article a[data-t] { color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: pointer; transition: background .15s, border-color .15s; border-radius: 3px; }
+.article a[data-t]:hover { background: var(--accent-soft); border-bottom-color: var(--accent); }
+.article a.goal { background: linear-gradient(90deg, #ff8a3d33, #ff4d6d33); border-bottom-color: #ff6a4d; animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(255,106,77,.25); } }
+.article .mw-heading { margin: 0; }
+.article sup, .article .mw-editsection { display: none; }
+.article .loading { padding: 70px 0; text-align: center; color: var(--mute); font-family: Inter, sans-serif; }
+.spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); margin: 0 auto 12px; animation: sp .7s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* modals / toast */
+.scrim { position: fixed; inset: 0; z-index: 60; background: rgba(8,9,20,.55); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 16px; }
+.scrim.on { display: flex; animation: fade .2s; }
+@keyframes fade { from { opacity: 0; } }
+.modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 26px; animation: rise .3s cubic-bezier(.2,.9,.3,1.1); position: relative; }
+@keyframes rise { from { transform: translateY(18px) scale(.97); opacity: 0; } }
+.modal h2 { margin: 0 0 6px; font-size: 24px; letter-spacing: -.03em; }
+.modal .x { position: absolute; right: 14px; top: 14px; }
+.modal p { color: var(--mute); margin: 6px 0 14px; }
+.modal ol { padding-left: 20px; color: var(--mute); } .modal ol li { margin: 8px 0; } .modal ol b { color: var(--ink); }
+.tabs { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); margin: 8px 0 12px; }
+.tabs button { border: 0; background: none; padding: 7px 16px; border-radius: 9px; font-weight: 700; font-size: 13.5px; color: var(--mute); }
+.tabs button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 30px); opacity: 0; z-index: 80; background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: .3s; pointer-events: none; }
+.toast.on { transform: translate(-50%, 0); opacity: 1; }
+.win-top { text-align: center; padding: 6px 0 4px; }
+.win-top .big { font-size: 54px; font-weight: 800; letter-spacing: -.05em; line-height: 1; background: linear-gradient(100deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+.grid3 div { text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.grid3 b { display: block; font-size: 22px; letter-spacing: -.03em; } .grid3 span { font-size: 11.5px; color: var(--mute); font-weight: 600; }
+.xpbar { margin: 4px 0 4px; } .xpmeta { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: var(--mute); margin-bottom: 6px; }
+.pathline { display: flex; flex-wrap: wrap; gap: 4px 6px; justify-content: center; font-size: 13px; color: var(--mute); margin: 8px 0 16px; }
+.pathline b { color: var(--ink); }
+.namebox { display: flex; gap: 8px; margin: 12px 0; }
+.namebox input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 12px; padding: 11px 14px; font: inherit; }
+.namebox input:focus { outline: 2px solid var(--accent); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; } .actions .btn { flex: 1; }
+canvas#fx { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
+.hist { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; margin-top: 8px; }
+.hist i { aspect-ratio: 1; border-radius: 4px; background: var(--line); }
+.hist i.w { background: var(--accent); } .hist i.l { background: #ff6a4d55; }
+@media (max-width: 620px) {
+  .duel { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); margin: 0 auto; }
+  .article { font-size: 17.5px; padding-top: 22px; } .modal { padding: 20px; }
+}
+.foot { margin: 26px 0 0; font-size: 12.5px; color: var(--mute); text-align: center; line-height: 1.7; }
+.foot a { color: var(--accent-ink); }
+.next { font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+.rd { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+.scopes { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 2px; }
+.chip.sc.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.invite { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; font-weight: 600; }
+.invite button { border: 0; background: var(--card); border-radius: 8px; padding: 5px 10px; font-weight: 700; font-size: 12.5px; }
+.ach { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.ach.lock .medal { filter: grayscale(1); opacity: .5; }
+.medal { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; flex: none; background: var(--card); border: 3px solid var(--mc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc) 22%, transparent); }
+.am { flex: 1; min-width: 0; } .am b { display: block; font-size: 14.5px; } .am small { display: block; color: var(--mute); font-size: 12px; } .am .bar { height: 6px; margin: 5px 0 3px; }
+.unlock { display: flex; gap: 12px; align-items: center; padding: 10px 12px; margin: 10px 0; border-radius: 14px; background: var(--accent-soft); animation: pop .5s cubic-bezier(.2,1.4,.4,1); }
+.unlock b { display: block; font-size: 14.5px; } .unlock small { color: var(--mute); font-size: 12px; }
+.finder { flex: 1 1 200px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
+.finder:focus-within { border-color: var(--accent); } .finder svg { width: 16px; height: 16px; stroke: var(--mute); fill: none; stroke-width: 2; flex: none; }
+.finder input { flex: 1; min-width: 0; border: 0; background: none; outline: 0; color: var(--ink); font: inherit; font-size: 14px; }
+.finder span { font-size: 12px; font-weight: 700; color: var(--mute); white-space: nowrap; }
+.article a.hit { background: #ffd54a55; outline: 2px solid #ffb800; outline-offset: 1px; } .article a.hit.cur { background: #ffb80099; }
+kbd { font: 600 11.5px Inter, sans-serif; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 13px; font-weight: 700; }
+.field > input { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 12px; padding: 11px 14px; font: inherit; font-weight: 500; }
+.field input:focus { outline: 2px solid var(--accent); }
+.ranks { font-size: 12.5px; margin: 12px 0 0; line-height: 1.9; }
+@media (max-width: 560px) {
+  .top .wrap { gap: 6px; }
+  .hud { padding: 7px 16px 8px; } .hud-row { gap: 8px; flex-wrap: wrap; }
+  .target { min-width: 0; flex: 1 1 0; padding: 5px 10px; } .target small { font-size: 9.5px; }
+  .target strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
+  .metric { min-width: 44px; } .metric b { font-size: 18px; } .metric span { font-size: 9.5px; }
+  .signal { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; } .signal .lab { margin: 0; gap: 8px; white-space: nowrap; } .signal .bar { flex: 1; height: 6px; }
+  .trail { padding-top: 7px; } .step { font-size: 11.5px; padding: 3px 8px; }
+  .found { margin-top: 6px; padding: 5px 10px; font-size: 12px; }
+  .tools { margin: 10px 0; gap: 6px; } .tools .chip { height: 34px; padding: 0 10px; }
+  .finder { order: 5; flex: 1 1 100%; } #giveUp { margin-left: auto; }
+}
+@media (pointer: coarse) { .article { line-height: 1.85; } .article a[data-t] { padding: 2px 1px; } }
+.attr { font: 12.5px/1.5 Inter, sans-serif; color: var(--mute); margin: 28px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.attr a { color: var(--accent-ink); }
+.stars { text-align: center; font-size: 22px; margin: 2px 0 6px; letter-spacing: 3px; } .stars small { display: block; font-size: 12.5px; letter-spacing: 0; color: var(--mute); font-weight: 600; }
+details.route { margin: 0 0 4px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--bg); }
+details.route summary { cursor: pointer; font-weight: 700; font-size: 13.5px; } details.route .pathline { margin: 10px 0 2px; }
+.adbox { display: flex; align-items: center; gap: 12px; margin: 18px 0; } .adbox .bar { flex: 1; height: 10px; } .adbox .bar i { transition: width 1s linear; }
+/* utilities */
+.serif { font-family: 'Source Serif 4', Georgia, serif; } .b { font-weight: 700; } .s { font-size: 12.5px; } .mute { color: var(--mute); }
+.pill { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); }
+/* skins */
+:root[data-skin="paper"]:not([data-theme="dark"]) { --bg: #f7f1e3; --card: #fffaf0; --line: #eadfc8; --ink: #2a2118; --mute: #7c6f5c; }
+:root[data-skin="midnight"][data-theme="dark"] { --bg: #05060f; --card: #0d1024; --line: #1c2040; }
+:root[data-skin="aurora"] { --glow-a: hsl(175 90% 55% / .3); --glow-b: hsl(300 90% 65% / .24); }
+/* hub, packs, locker, challenge */
+.hubchal { padding: 18px; margin-bottom: 12px; background: linear-gradient(135deg, hsl(235 85% 58%), hsl(285 80% 58%)); color: #fff; border: 0; }
+.hc-t { font: 700 20px/1.2 'Source Serif 4', Georgia, serif; } .hc-s { opacity: .88; font-size: 13.5px; margin-top: 4px; }
+.hcb { background: #fff; color: #3a2bd6; box-shadow: none; }
+.hubrow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.hubtile { padding: 16px 18px; text-align: left; display: flex; flex-direction: column; gap: 2px; cursor: pointer; border: 1px solid var(--line); }
+.hubtile span { font-size: 24px; } .hubtile b { font-size: 15.5px; } .hubtile small { color: var(--mute); font-weight: 600; font-size: 12.5px; }
+.hubtile:hover { border-color: var(--accent); }
+.packcard { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; margin: 10px 0 0; cursor: pointer; text-align: left; border: 0; background: linear-gradient(160deg, hsl(var(--ph) 90% 94%), hsl(var(--ph) 90% 88%)); color: #15172a; }
+:root[data-theme="dark"] .packcard { background: linear-gradient(160deg, hsl(var(--ph) 40% 20%), hsl(var(--ph) 45% 14%)); color: #eceefb; }
+.packcard .pe { font-size: 30px; } .packcard b { display: block; font-size: 16px; } .packcard small { display: block; opacity: .7; font-weight: 600; font-size: 12.5px; }
+.packhead { margin: 12px 0; padding: 16px 18px; border-radius: 18px; background: linear-gradient(160deg, hsl(var(--ph) 90% 94%), hsl(var(--ph) 90% 86%)); color: #15172a; }
+:root[data-theme="dark"] .packhead { background: linear-gradient(160deg, hsl(var(--ph) 40% 22%), hsl(var(--ph) 45% 14%)); color: #eceefb; }
+.packhead h2 { margin: 8px 0 2px; } .packhead .mute { color: inherit; opacity: .7; }
+.pkgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile.pk { text-align: left; cursor: pointer; font: inherit; color: inherit; min-height: 112px; padding: 13px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); position: relative; }
+.tile.pk.next { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.tile.pk.lock { opacity: .5; cursor: default; }
+.badge { position: absolute; right: 8px; top: 8px; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); }
+.lkgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.item { aspect-ratio: 1; border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; font: inherit; font-size: 12px; font-weight: 700; text-align: center; padding: 6px; color: var(--ink); cursor: pointer; }
+.item .sw { width: 44px; height: 44px; border-radius: 14px; } .item small { font-size: 10px; color: var(--mute); font-weight: 600; line-height: 1.25; }
+.item.on { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); } .item.lock { opacity: .55; }
+.vs { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; } .vs > div { flex: 1; padding: 11px 8px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); text-align: center; }
+.vs b { display: block; font-size: 15px; } .vs span { font-size: 12.5px; color: var(--mute); font-weight: 600; } .vs i { font-style: normal; font-weight: 800; color: var(--mute); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <button class="logo" id="logo" aria-label="wiki.io home"><i></i><span>wiki<b>.io</b></span></button>
+  <div class="spacer"></div>
+  <button class="chip hide-s" id="streakChip" title="Daily streak">🔥 <span id="streakN">0</span></button>
+  <button class="chip rankchip" id="rankChip" title="Your rank"><span class="dot"></span><span id="rankName">Wanderer</span></button>
+  <button class="chip iconbtn" id="lbBtn" aria-label="Leaderboard"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
+  <button class="chip iconbtn" id="helpBtn" aria-label="How to play"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg></button>
+  <button class="chip iconbtn" id="themeBtn" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></button>
+</div></header>
+
+<main class="wrap">
+  <section id="home">
+    <span class="eyebrow" id="dayTag">Daily puzzle</span>
+    <h1 class="hero">Click your way<br>through <em>Wikipedia</em>.</h1>
+    <p class="sub">Get from one article to another using only the links inside. Fewest clicks wins. New puzzle every day.</p>
+    <div class="duel">
+      <div class="card node" id="fromNode"></div>
+      <div class="arrow">→</div>
+      <div class="card node to" id="toNode"></div>
+    </div>
+    <div class="cta">
+      <button class="btn big" id="playBtn">Play today's puzzle</button>
+      <button class="btn ghost" id="practiceBtn">Random practice</button>
+      <span class="next" id="nextIn"></span>
+    </div>
+    <div class="statrow">
+      <div class="card stat"><b id="sStreak">0</b><span>Day streak</span></div>
+      <div class="card stat"><b id="sWins">0</b><span>Puzzles solved</span></div>
+      <div class="card stat"><b id="sBest">–</b><span>Best (clicks)</span></div>
+    </div>
+    <div id="hub"></div>
+    <div class="card panel">
+      <h4><span>Today's leaderboard</span><span><a id="leagueLink">＋ League</a> &nbsp;·&nbsp; <a id="lbMore">See all →</a></span></h4>
+      <div id="lbPreview"></div>
+    </div>
+    <footer class="foot"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
+  </section>
+
+  <section id="game">
+    <div class="hud">
+      <div class="hud-row">
+        <button class="target" id="targetBtn" title="Show target summary"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
+        <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
+        <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
+        <div class="signal"><div class="lab"><span>Signal</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
+      </div>
+      <div class="trail" id="trail"></div>
+      <div class="found" id="found"><span>🎯 The target is linked on this page!</span><button id="jump">Show me</button></div>
+    </div>
+    <div class="tools">
+      <button class="chip" id="backBtn" title="Back (B)">← Back <small style="color:var(--mute)">+1</small></button>
+      <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">📺 Free rewind <small style="color:var(--mute)">1 left</small></button>
+      <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link…  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
+      <button class="chip iconbtn" id="fsDown" aria-label="Smaller text" style="font-size:12px">A</button>
+      <button class="chip iconbtn" id="fsUp" aria-label="Larger text" style="font-size:17px">A</button>
+      <button class="chip" id="giveUp">Give up</button>
+    </div>
+    <article class="card article" id="article"></article>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"><div class="card modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<canvas id="fx"></canvas>
+
+<script src="config.js"></script>
+<script src="cats.js"></script>
+<script src="packs.js"></script>
+<script src="clean.js"></script>
+<script>
+'use strict';
+/* ------------------------------------------------------------------ data */
+let POOL = CATS; // replaced by pool.json when present
+const RANKS = [
+  {n:'Wanderer', xp:0, c:'#8a94a6'}, {n:'Reader', xp:100, c:'#3aa7ff'}, {n:'Scholar', xp:300, c:'#22c5a1'},
+  {n:'Navigator', xp:650, c:'#8b5cf6'}, {n:'Cartographer', xp:1100, c:'#f59e0b'}, {n:'Archivist', xp:1800, c:'#ef6a4d'},
+  {n:'Sage', xp:2800, c:'#ec4899'}, {n:'Oracle', xp:4200, c:'#f43f5e'}
+];
+const STOP = new Set('about above after again against also among another because been before being between both could does during each from have having here into just more most much only other over same should since some such than that their them then there these they this those through under until very were what when where which while will with within without would your'.split(' '));
+
+/* --------------------------------------------------------------- helpers */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = t => String(t).replace(/_/g, ' ').trim().toLowerCase();
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function hash(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; } return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return (h ^= h >>> 16) >>> 0; }; }
+function rng(seed) { let a = hash(seed)(); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const dayKey = (d = new Date()) => d.toLocaleDateString('en-CA');
+const dayNum = k => { const [y, m, d] = k.split('-').map(Number); return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 864e5) + 1; };
+const yesterday = k => { const [y, m, d] = k.split('-').map(Number); return dayKey(new Date(y, m - 1, d - 1)); };
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* --------------------------------------------------------------- storage */
+const KEY = 'wikiio:v1', CUR = 'wikiio:cur';
+function loadP() {
+  let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+  return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
+}
+let P = loadP();
+const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
+const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
+
+const TIERS = [{ n: 'Bronze', c: '#c8793c' }, { n: 'Silver', c: '#9aa6b8' }, { n: 'Gold', c: '#f2b01e' }, { n: 'Diamond', c: '#4cc9f0' }];
+const ACH = [
+  { id: 'streak', icon: '🔥', name: 'On Fire', desc: 'Longest daily streak', goals: [3, 7, 30, 100], val: () => P.maxStreak },
+  { id: 'solver', icon: '🧭', name: 'Navigator', desc: 'Puzzles solved', goals: [1, 10, 50, 250], val: () => P.won },
+  { id: 'lean', icon: '🎯', name: 'Sharpshooter', desc: 'Solves in 3 clicks or fewer', goals: [1, 5, 25, 100], val: () => P.lowWins },
+  { id: 'fast', icon: '⚡', name: 'Speedrunner', desc: 'Solves in under 60 seconds', goals: [1, 5, 20, 75], val: () => P.fastWins },
+  { id: 'par', icon: '⛳', name: 'Par Master', desc: 'Solves at or under par', goals: [1, 10, 30, 100], val: () => P.parWins },
+  { id: 'surf', icon: '🌊', name: 'Link Surfer', desc: 'Total clicks made', goals: [50, 250, 1000, 5000], val: () => P.clicksTotal },
+  { id: 'regular', icon: '📅', name: 'Regular', desc: 'Daily puzzles played', goals: [7, 30, 100, 365], val: () => Object.keys(P.days).length }
+];
+function checkAch() {
+  const out = [];
+  ACH.forEach(a => { const v = a.val(); let t = -1; a.goals.forEach((g, i) => { if (v >= g) t = i; }); const had = P.ach[a.id] ?? -1; if (t > had) { P.ach[a.id] = t; out.push({ a, tier: t }); } });
+  if (out.length) saveP(); return out;
+}
+
+/* --------------------------------------------------------------- wikipedia */
+const API = 'https://en.wikipedia.org/w/api.php';
+const pages = new Map(), sums = new Map();
+async function getSummary(title) {
+  if (sums.has(title)) return sums.get(title);
+  const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, '_'))}?redirect=true`);
+  if (!r.ok) throw new Error('summary');
+  const j = await r.json();
+  const s = { title: j.title, desc: j.description || '', extract: j.extract || '', thumb: j.thumbnail && j.thumbnail.source };
+  sums.set(title, s); return s;
+}
+const inflight = new Map();
+function getPage(title) {
+  const k = norm(title); if (pages.has(k)) return Promise.resolve(pages.get(k));
+  if (!inflight.has(k)) inflight.set(k, loadPage(title).finally(() => inflight.delete(k)));
+  return inflight.get(k);
+}
+async function loadPage(title) {
+  const k = norm(title);
+  const url = `${API}?action=parse&format=json&formatversion=2&origin=*&redirects=1&prop=text&disableeditsection=1&disablelimitreport=1&disabletoc=1&page=${encodeURIComponent(title)}`;
+  const r = await fetch(url); if (!r.ok) throw new Error('net');
+  const j = await r.json(); if (j.error) throw new Error(j.error.info || 'missing');
+  const doc = new DOMParser().parseFromString(j.parse.text, 'text/html');
+  const root = doc.querySelector('.mw-parser-output') || doc.body;
+  WikiClean.clean(root);
+  const text = root.textContent.toLowerCase();
+  const out = { title: j.parse.title, html: root.innerHTML, tokens: new Set(text.match(/[a-z]{4,}/g) || []),
+    links: new Set([...root.querySelectorAll('a[data-t]')].map(a => norm(a.dataset.t))) };
+  pages.set(k, out); pages.set(norm(out.title), out); return out;
+}
+
+/* ------------------------------------------------------------------ puzzle */
+let PACKDATA = null; // verified pack puzzles (tools/build-packs.js)
+let PUZZLES = null; // precomputed daily schedule (tools/build-puzzles.js): { 'YYYY-MM-DD': {from, to, par, route, cats} }
+async function loadData() {
+  const get = async u => { try { const r = await fetch(u + '?d=' + dayKey()); return r.ok ? await r.json() : null; } catch { return null; } };
+  const [pz, pool, pk] = await Promise.all([get('puzzles.json'), get('pool.json'), get('packs.json')]);
+  if (pz && pz.days) PUZZLES = pz.days;
+  if (pk && pk.packs) PACKDATA = pk.packs;
+  if (pool && Object.keys(pool).length > 3) POOL = pool;
+}
+const diffOf = par => par <= 2 ? 'Easy' : par === 3 ? 'Medium' : par === 4 ? 'Hard' : 'Expert';
+async function getDaily(day) {
+  const e = PUZZLES && PUZZLES[day];
+  if (e) return { from: e.from, to: e.to, ka: (e.cats || [])[0] || '', kb: (e.cats || [])[1] || '', par: e.par, route: e.route };
+  const [from, to, ka, kb] = await resolvePair('wiki.io/' + day);
+  return { from, to, ka, kb, par: null, route: null };
+}
+function pickPair(seed) {
+  const keys = Object.keys(POOL), r = rng(seed), ka = keys[Math.floor(r() * keys.length)]; let kb;
+  do kb = keys[Math.floor(r() * keys.length)]; while (kb === ka);
+  const A = POOL[ka], B = POOL[kb];
+  return [A[Math.floor(r() * A.length)], B[Math.floor(r() * B.length)], ka, kb];
+}
+const pairCache = new Map();
+// Deterministically walks to the next candidate if a title has gone missing, so everyone still gets the same puzzle.
+async function resolvePair(seed) {
+  if (pairCache.has(seed)) return pairCache.get(seed);
+  let first;
+  for (let i = 0; i < 6; i++) {
+    const p = pickPair(i ? seed + '#' + i : seed); first = first || p;
+    try { await Promise.all([getSummary(p[0]), getSummary(p[1])]); pairCache.set(seed, p); return p; } catch { if (!navigator.onLine) break; }
+  }
+  return first;
+}
+const todaySeed = () => 'wiki.io/' + dayKey();
+
+/* ------------------------------------------------------------------- state */
+let G = null; // {mode, day, from, to, path[], steps[{title,sig}], base, t0, done, keywords:Set, toTitle}
+let tick = null;
+
+const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
+function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, moves: G.moves || 0, base: elapsed() })); } catch {} }
+
+function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').style.display = view === 'game' ? 'block' : 'none'; window.scrollTo({ top: 0 }); }
+function setHue(h) { document.documentElement.style.setProperty('--h', h); }
+function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Burning' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
+const sigHue = s => Math.round(235 - s * 220);
+const SQ = ['⬜', '🟦', '🟩', '🟨', '🟧', '🟥'];
+const sigSquare = s => SQ[Math.min(5, Math.floor(s * 5.99))];
+
+/* ------------------------------------------------------------------- render */
+function renderHeader() {
+  const ri = rankOf(P.xp), r = RANKS[ri];
+  $('#rankName').textContent = r.n; $('#rankChip').style.setProperty('--rc', r.c);
+  $('#streakN').textContent = P.streak;
+  $('#sStreak').textContent = P.streak; $('#sWins').textContent = P.won; $('#sBest').textContent = P.best || '–';
+}
+function nodeHTML(label, s) {
+  if (!s) return `<small>${label}</small><div class="skel" style="width:70%;height:24px"></div><div class="skel"></div><div class="skel" style="width:80%"></div>`;
+  return `<small>${label}</small><h3>${esc(s.title)}</h3><p>${esc(s.desc || s.extract)}</p>${s.thumb ? `<img src="${esc(s.thumb)}" alt="" loading="lazy">` : ''}`;
+}
+async function renderHome() {
+  const day = dayKey();
+  $('#dayTag').textContent = `Daily puzzle · #${dayNum(day)}`;
+  $('#fromNode').innerHTML = nodeHTML('Start'); $('#toNode').innerHTML = nodeHTML('Target');
+  const done = P.days[day];
+  const cur = readCur();
+  $('#playBtn').textContent = done ? `Solved in ${done.clicks} · view result` : cur && cur.mode === 'daily' && cur.day === day ? 'Resume today\'s puzzle' : 'Play today\'s puzzle';
+  renderHeader(); renderHub(); renderPreview();
+  let d = { from: '', to: '', ka: '', kb: '' };
+  try { d = await getDaily(day); } catch { const [a, b, ka, kb] = pickPair(todaySeed()); d = { from: a, to: b, ka, kb }; }
+  if (d.par) $('#dayTag').textContent = `Daily puzzle · #${dayNum(day)} · Par ${d.par} · ${diffOf(d.par)}`;
+  const lab = (x, k) => k ? `${x} · ${k}` : x;
+  try {
+    const [sa, sb] = await Promise.all([getSummary(d.from), getSummary(d.to)]);
+    $('#fromNode').innerHTML = nodeHTML(lab('Start', d.ka), sa); $('#toNode').innerHTML = nodeHTML(lab('Target', d.kb), sb);
+  } catch { $('#fromNode').innerHTML = nodeHTML(lab('Start', d.ka), { title: d.from, desc: '' }); $('#toNode').innerHTML = nodeHTML(lab('Target', d.kb), { title: d.to, desc: '' }); }
+}
+function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch { return null; } }
+
+/* ------------------------------------------------------------------ gameplay */
+async function startGame(mode, resume, extra) {
+  const day = dayKey();
+  show('game'); setHue(235);
+  $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Setting up your puzzle…</div>`;
+  let from, to, meta = { par: null, route: null };
+  if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
+  else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
+  else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
+  else { resume = null; [from, to] = await resolvePair('p' + Math.random()); }
+  G = { mode, day, from, to, extra, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
+  if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, moves: resume.moves || 0, base: resume.base });
+  $('#reachLab').textContent = mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
+  show('game'); setHue(235);
+  $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
+  $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Loading ${esc(G.from)}…</div>`;
+  try {
+    const s = await getSummary(G.to); G.toTitle = s.title; $('#tName').textContent = s.title;
+    G.keywords = new Set([...(s.title + ' ' + s.extract).toLowerCase().match(/[a-z]{4,}/g) || []].filter(w => !STOP.has(w)).slice(0, 80));
+    G.summary = s;
+  } catch { G.keywords = new Set(norm(G.to).match(/[a-z]{4,}/g) || []); }
+  const target = resume ? resume.path[resume.path.length - 1] : G.from;
+  G.t0 = Date.now();
+  clearInterval(tick); tick = setInterval(() => { $('#mTime').textContent = fmt(elapsed()); }, 500);
+  await go(target, true, resume);
+}
+function signalFor(page) {
+  if (page.links.has(norm(G.toTitle)) || page.links.has(norm(G.to))) return 1;
+  let hit = 0; G.keywords.forEach(k => { if (page.tokens.has(k)) hit++; });
+  return Math.min(.95, Math.pow(hit / Math.max(10, G.keywords.size * .7), .8));
+}
+async function go(title, initial, resume, kind = 'go') {
+  const art = $('#article');
+  if (!initial) { art.classList.add('out'); await sleep(180); }
+  let page;
+  try { page = await getPage(title); }
+  catch (e) { art.classList.remove('out'); toast('Could not load that article — check your connection'); if (initial) art.innerHTML = '<div class="loading">Failed to load. <button class="btn ghost" onclick="location.reload()">Retry</button></div>'; return; }
+  if (!initial || !resume) G.path.push(page.title);
+  if (!initial) G.moves = (G.moves || 0) + 1;
+  const sig = signalFor(page), win = norm(page.title) === norm(G.toTitle);
+  if (!resume || !initial) G.steps.push({ title: page.title, sig });
+  else if (!G.steps.length) G.steps.push({ title: page.title, sig });
+  if (!(resume && initial && G.timeline.length)) G.timeline.push({ t: Math.round(elapsed() * 10) / 10, title: page.title, sig: win ? 1 : sig, k: initial ? 'start' : kind });
+  G.cur = page; G.sig = win ? 1 : sig;
+  const wp = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(page.title.replace(/ /g, '_'));
+  art.innerHTML = `<h1>${esc(page.title)}</h1>${page.html}<p class="attr">Text from <a href="${wp}" target="_blank" rel="noopener">Wikipedia</a>, available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p>`;
+  art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
+  art.querySelectorAll('a[data-t]').forEach(a => { const n = norm(a.dataset.t); if (n === norm(G.toTitle) || n === norm(G.to)) a.classList.add('goal'); });
+  $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1;
+  window.scrollTo({ top: 0, behavior: initial ? 'auto' : 'smooth' });
+  updateHud();
+  persistCur();
+  if (win) finish(true);
+}
+const clicks = () => G.moves || 0;
+function updateHud() {
+  const s = G.sig;
+  setHue(sigHue(s));
+  $('#mClicks').textContent = clicks();
+  $('#sigBar').style.width = Math.round(s * 100) + '%'; $('#sigLab').textContent = sigLabel(s);
+  $('#found').classList.toggle('on', s >= 1 && !G.done);
+  const tr = $('#trail');
+  tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sh:${sigHue(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
+  tr.scrollLeft = tr.scrollWidth;
+  $('#backBtn').disabled = G.steps.length < 2;
+  const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || G.rewinds >= 1 || G.done; rb.querySelector('small').textContent = G.rewinds >= 1 ? 'used' : '1 left';
+}
+async function back() {
+  if (G.done || G.path.length < 2) return;
+  G.path.pop(); G.steps.pop(); // leave the current page
+  const title = G.path.pop(); G.steps.pop(); // re-enter the previous one (counts as a click)
+  await go(title, false, null, 'back');
+}
+async function rewind() {
+  if (G.done || G.path.length < 2 || G.rewinds >= 1) return;
+  if (!(await Ads.rewarded())) return toast('Watch the whole video to rewind');
+  G.path.pop(); G.steps.pop(); const title = G.path.pop(); G.steps.pop();
+  await go(title, false, null, 'rewind');
+  G.moves = Math.max(0, G.moves - 2); G.rewinds++; updateHud(); persistCur(); toast('Rewound one click — free');
+}
+function finish(won) {
+  if (G.done) return; G.done = true; clearInterval(tick);
+  const secs = Math.round(elapsed()), c = clicks();
+  const ref = G.par || G.goal || 0, par = ref || 3;
+  const score = won ? Math.max(100, 1000 - 90 * Math.max(0, c - par) - Math.floor(secs / 3)) : 0;
+  const stars = !won || !ref ? 0 : c <= ref ? 3 : c === ref + 1 ? 2 : c <= ref + 2 ? 1 : 0;
+  G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode };
+  let gain = 0, streakBonus = 0;
+  P.played++; P.clicksTotal += c;
+  if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; gain = Math.round(score / 10); }
+  else gain = 5;
+  if (G.mode === 'daily') {
+    if (!P.days[G.day]) {
+      P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds };
+      if (won) { P.streak = P.lastDay === yesterday(G.day) ? P.streak + 1 : 1; P.lastDay = G.day; P.maxStreak = Math.max(P.maxStreak, P.streak); streakBonus = Math.min(50, P.streak * 5); gain += streakBonus; }
+      else if (P.lastDay !== G.day && P.lastDay !== yesterday(G.day)) P.streak = 0;
+    } else gain = 0;
+  } else if (G.mode === 'pack') {
+    const pk = (P.packs[G.extra.pack] = P.packs[G.extra.pack] || {}), prev = pk[G.extra.idx];
+    if (won && (!prev || c < prev.clicks)) pk[G.extra.idx] = { clicks: c, stars, secs };
+    if (won && !prev) P.packSolves++; else gain = 0;   // XP only for the first solve of each pack puzzle
+  } else if (G.mode === 'challenge') {
+    const ch = G.extra, win = won && (c < ch.c || (c === ch.c && secs < ch.s)), tie = won && c === ch.c && secs === ch.s;
+    G.result.chal = { ...ch, outcome: win ? 'win' : tie ? 'tie' : 'lose' };
+    if (win) P.challengeWins++;
+  } else gain = Math.round(gain / 2);
+  const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
+  saveP(); persistCur(); renderHeader();
+  if (won) { confetti(); setHue(150); }
+  setTimeout(() => showResult(), won ? 700 : 100);
+  if (won && G.mode === 'daily' && P.name) submitScore();
+}
+async function submitScore() {
+  const r = G.result;
+  try {
+    const res = await fetch(API_BASE + '/api/score', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid, name: P.name, xp: P.xp, day: G.day, clicks: r.clicks, secs: r.secs, score: r.score, path: r.path }) });
+    return res.ok;
+  } catch { return false; }
+}
+
+/* ------------------------------------------------------------------- modals */
+function openModal(html, onclose) { $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; }
+function closeModal() { $('#scrim').classList.remove('on'); const f = $('#scrim').onclose; $('#scrim').onclose = null; if (f) f(); }
+$('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim' || e.target.closest('[data-close]')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function resultHead(r) {
+  if (!r.won) return 'Better luck next time';
+  if (r.mode === 'daily') return 'Daily #' + dayNum(G.day) + ' solved';
+  if (r.mode === 'pack') return 'Pack puzzle solved';
+  if (r.mode === 'challenge') return r.chal && r.chal.outcome === 'win' ? 'Challenge won' : r.chal && r.chal.outcome === 'tie' ? 'Challenge tied' : 'Challenge lost';
+  return 'Practice solved';
+}
+function shareText() {
+  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
+  const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
+  const ref = r.par || r.goal;
+  return `wiki.io ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : 'wiki.io'}`;
+}
+function showResult() {
+  const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
+  const lo = rk.xp, hi = nx ? nx.xp : rk.xp, pct = nx ? Math.round((P.xp - lo) / (hi - lo) * 100) : 100;
+  const rankUp = ri > prevRi, daily = r.mode === 'daily', ref = r.par || r.goal, ch = r.chal;
+  const extra = r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
+  openModal(`
+    <div class="win-top">
+      <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
+      <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '—'}</div>
+    </div>
+    ${r.won && ref ? `<div class="stars">${'⭐'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
+    ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
+    <div class="pathline">${r.path.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div>
+    ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
+    <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (🔥 +${r.streakBonus})` : ''}</span></div></div>
+    <div class="xpbar"><div class="xpmeta"><span style="color:${rk.c}">${rankUp ? '⬆ Rank up! ' : ''}${rk.n}</span><span>${nx ? `${P.xp} / ${hi} XP · next: ${nx.n}` : `${P.xp} XP · max rank`}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div></div>
+    ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
+    ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${i.cat}</b><small>New cosmetic unlocked · tap to equip in the Locker</small></span></div>`).join('')}
+    ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
+    <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
+    <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>`);
+  $('#shareBtn').onclick = () => openShareCard(r, showResult);
+  if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
+  if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
+  $('#replayBtn').onclick = () => openReplay(showResult);
+  $('#againBtn') && ($('#againBtn').onclick = () => { closeModal(); startGame('practice'); });
+  $('#packBtn') && ($('#packBtn').onclick = () => { const nx2 = G.extra.idx + 1, id = G.extra.pack; if (r.won && nx2 < packsOf(id).length && P.packs[id][G.extra.idx]) { closeModal(); startGame('pack', null, { pack: id, idx: nx2 }); } else openPack(id); });
+  document.querySelectorAll('[data-lock]').forEach(el => el.onclick = () => openLocker(el.dataset.lock));
+  $('#homeBtn').onclick = () => { closeModal(); goHome(); };
+  $('#postBtn') && ($('#postBtn').onclick = async () => {
+    const v = $('#nameIn').value.trim(); if (!v) return toast('Enter a name first');
+    P.name = v; saveP(); const ok = await submitScore(); toast(ok ? 'Posted to the leaderboard' : 'Leaderboard offline — saved locally'); if (ok) { closeModal(); openLeaderboard('day'); }
+  });
+}
+const API_BASE = ((window.WIKIIO && WIKIIO.api) || '').replace(/\/$/, '');
+const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
+const rankDot = xp => { const r = RANKS[rankOf(xp || 0)]; return `<i class="rd" style="background:${r.c}" title="${r.n}"></i>`; };
+async function fetchBoard(mode, league) {
+  const r = await fetch(`${API_BASE}/api/leaderboard?mode=${mode}&day=${dayKey()}${league ? '&league=' + league : ''}`); if (!r.ok) throw 0; return r.json();
+}
+const valText = (e, mode) => mode === 'day' ? `${e.clicks} clicks · ${fmt(e.secs)}` : mode === 'streak' ? `🔥 ${e.streak} day${e.streak === 1 ? '' : 's'}` : `${e.points} pts · ${e.days}d`;
+function boardHTML(rows, mode) {
+  if (!rows.length) return '<div class="empty">No scores yet — be the first on the board.</div>';
+  return rows.map((e, i) => `<div class="row"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span>${rankDot(e.xp)}<span class="nm ${e.pid === P.pid ? 'me' : ''}">${esc(e.name)}${e.pid === P.pid ? ' (you)' : ''}</span><span class="val">${valText(e, mode)}</span></div>`).join('');
+}
+const OFFLINE = '<div class="empty">' + (/^(localhost|127\.)/.test(location.hostname) ? 'Global leaderboards need the server. Run <code>node server.js</code> to play with others.' : 'Leaderboards are offline right now. Your progress is saved on this device.') + '</div>';
+async function renderPreview() {
+  const box = $('#lbPreview');
+  try { box.innerHTML = boardHTML((await fetchBoard('day')).slice(0, 5), 'day'); }
+  catch { const d = P.days[dayKey()]; box.innerHTML = (d && d.won ? `<div class="row"><span class="pos p1">1</span>${rankDot(P.xp)}<span class="nm me">${esc(P.name || 'You')} (you)</span><span class="val">${d.clicks} clicks · ${fmt(d.secs)}</span></div>` : '') + OFFLINE; }
+}
+function openLeaderboard(mode = 'day', scope = 'global') {
+  const st = { mode, scope }; let n = 0;
+  openModal(`<h2>Leaderboards</h2><div class="scopes" id="scopes"></div><div class="tabs" id="lbTabs"></div><div id="lbBody"></div>`);
+  const draw = async () => {
+    const my = ++n;
+    $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">🌍 Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip" id="addLg">＋ League</button>`;
+    $('#lbTabs').innerHTML = [['day', 'Today'], ['week', 'Week'], ['all', 'All-time'], ['streak', 'Streaks'], ['me', 'Me']].map(([m, l]) => `<button data-m="${m}" class="${st.mode === m ? 'on' : ''}">${l}</button>`).join('');
+    document.querySelectorAll('#scopes [data-s]').forEach(b => b.onclick = () => { st.scope = b.dataset.s; draw(); });
+    document.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
+    $('#addLg').onclick = () => leagueModal();
+    const body = $('#lbBody');
+    if (st.mode === 'me') { body.innerHTML = statsHTML(); bindMe(); return; }
+    body.innerHTML = '<div class="empty">Loading…</div>';
+    const league = st.scope === 'global' ? '' : st.scope;
+    try {
+      const rows = await fetchBoard(st.mode, league); if (my !== n) return;
+      body.innerHTML = (league ? `<div class="invite"><span>Invite code <b>${league}</b></span><button id="cpInv">Copy invite link</button></div>` : '') + boardHTML(rows, st.mode);
+      if (league) $('#cpInv').onclick = async () => { const u = `${SITE_URL}?league=${league}`; try { await navigator.clipboard.writeText(u); toast('Invite link copied'); } catch { prompt('Invite link:', u); } };
+    } catch { if (my === n) body.innerHTML = OFFLINE; }
+  };
+  draw();
+}
+const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function leagueModal(inv) {
+  openModal(`<h2>${inv ? 'Join ' + esc(inv.name) : 'Leagues'}</h2>
+    <p>${inv ? `${inv.members} player${inv.members === 1 ? '' : 's'} · compete daily with friends.` : 'Private boards for friends, family or your team.'}</p>
+    <div class="field">Your display name<input id="lgName" maxlength="20" placeholder="Name" value="${esc(P.name)}"></div>
+    ${inv ? `<button class="btn" id="lgJoinInv" style="width:100%">Join league</button>` : `
+    <div class="field">Create a league<div class="namebox" style="margin:0"><input id="lgNew" maxlength="24" placeholder="League name"><button class="btn" id="lgCreate">Create</button></div></div>
+    <div class="field">…or join with a code<div class="namebox" style="margin:0"><input id="lgCode" maxlength="8" placeholder="CODE" style="text-transform:uppercase"><button class="btn ghost" id="lgJoin">Join</button></div></div>`}`);
+  if (inv) $('#lgJoinInv').onclick = () => joinLeague(inv.code, '');
+  else {
+    $('#lgCreate').onclick = () => { const nm = $('#lgNew').value.trim(); if (!nm) return toast('Give your league a name'); joinLeague(Array.from({ length: 6 }, () => LETTERS[Math.random() * 32 | 0]).join(''), nm); };
+    $('#lgJoin').onclick = () => { const c = $('#lgCode').value.trim().toUpperCase(); if (!/^[A-Z0-9]{4,8}$/.test(c)) return toast('Enter a valid league code'); joinLeague(c, ''); };
+  }
+}
+async function joinLeague(code, leagueName) {
+  const name = $('#lgName').value.trim(); if (!name) return toast('Enter your display name first');
+  P.name = name; saveP();
+  try {
+    const r = await fetch(API_BASE + '/api/league', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid, name, xp: P.xp, code, leagueName }) });
+    const j = await r.json(); if (!r.ok) return toast(j.error === 'no such league' ? 'No league with that code' : 'Could not join league');
+    if (!P.leagues.some(l => l.code === j.code)) P.leagues.push({ code: j.code, name: j.name });
+    saveP(); toast('Joined ' + j.name); openLeaderboard('day', j.code);
+  } catch { toast('Leagues need the server running'); }
+}
+async function handleInvite() {
+  const code = (new URLSearchParams(location.search).get('league') || '').toUpperCase();
+  if (!/^[A-Z0-9]{4,8}$/.test(code)) return;
+  history.replaceState(null, '', location.pathname);
+  try { const r = await fetch(API_BASE + '/api/league?code=' + code); if (!r.ok) throw 0; const L = await r.json(); leagueModal({ code, name: L.name, members: L.members }); }
+  catch { toast('That league invite is no longer valid'); }
+}
+function statsHTML() {
+  const ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1];
+  const pct = nx ? Math.round((P.xp - rk.xp) / (nx.xp - rk.xp) * 100) : 100;
+  const days = []; for (let i = 13; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const e = P.days[dayKey(d)]; days.push(`<i class="${e ? (e.won ? 'w' : 'l') : ''}" title="${dayKey(d)}"></i>`); }
+  const ach = ACH.map(a => {
+    const v = a.val(), t = P.ach[a.id] ?? -1, next = a.goals[t + 1], tier = t >= 0 ? TIERS[t] : null, pc = next ? Math.min(100, Math.round(v / next * 100)) : 100;
+    return `<div class="ach ${t < 0 ? 'lock' : ''}"><div class="medal" style="--mc:${tier ? tier.c : 'var(--line)'}">${a.icon}</div><div class="am"><b>${a.name}${tier ? ` · <span style="color:${tier.c}">${tier.n}</span>` : ''}</b><small>${a.desc}</small><div class="bar"><i style="width:${pc}%;background:${tier ? tier.c : 'var(--accent)'}"></i></div><small>${v}${next ? ` / ${next}` : ' · maxed'}</small></div></div>`;
+  }).join('');
+  return `<div class="grid3"><div><b>${P.streak}</b><span>Streak</span></div><div><b>${P.won}/${P.played}</b><span>Solved</span></div><div><b>${P.best || '–'}</b><span>Best clicks</span></div></div>
+  <div class="xpmeta"><span style="color:${rk.c};font-weight:700">${rk.n}</span><span>${P.xp} XP${nx ? ` · ${nx.xp - P.xp} to ${nx.n}` : ''}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div>
+  <p class="ranks">${RANKS.map((r, i) => `<span style="color:${i <= ri ? r.c : 'var(--mute)'};font-weight:${i === ri ? 800 : 600}">${r.n}</span>`).join(' › ')}</p>
+  <p style="margin:18px 0 0;font-size:13px;font-weight:700;color:var(--ink)">Last 14 days</p><div class="hist">${days.join('')}</div>
+  <p style="margin:20px 0 2px;font-size:13px;font-weight:700;color:var(--ink)">Achievements</p>${ach}
+  <div class="field" style="margin-top:18px">Display name<input id="meName" maxlength="20" placeholder="Shown on leaderboards" value="${esc(P.name)}"></div>
+  <div class="field">Online data<div class="namebox" style="margin:0"><button class="btn ghost" id="delOnline">Delete my online data</button></div><small style="font-weight:500;color:var(--mute)">Player ID <code>${esc(P.pid)}</code>. Removes your name, scores, routes and league memberships from the server.</small></div>
+  <div class="field">Backup code<div class="namebox" style="margin:0"><button class="btn ghost" id="bkCopy">Copy backup code</button><button class="btn ghost" id="bkRestore">Restore…</button></div><small style="font-weight:500;color:var(--mute)">No account needed. Save this code to move your progress to another device.</small></div>`;
+}
+function bindMe() {
+  const i = $('#meName'); if (i) i.onchange = () => { P.name = i.value.trim().slice(0, 20); saveP(); toast('Name saved'); };
+  $('#delOnline').onclick = () => ask('Delete online data?', 'This removes your name, scores, routes and leagues from the leaderboard server. Progress on this device is kept.', 'Delete', async () => {
+    try { const r = await fetch(API_BASE + '/api/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid }) }); if (!r.ok) throw 0; P.leagues = []; saveP(); toast('Online data deleted'); } catch { toast('Could not reach the server — try again later'); }
+  });
+  $('#bkCopy').onclick = async () => { const code = 'WIKIIO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(P)))); try { await navigator.clipboard.writeText(code); toast('Backup code copied'); } catch { prompt('Your backup code:', code); } };
+  $('#bkRestore').onclick = () => {
+    const v = (prompt('Paste your backup code:') || '').trim(); if (!v) return;
+    try { const o = JSON.parse(decodeURIComponent(escape(atob(v.replace(/^WIKIIO1:/, ''))))); if (!o.pid || typeof o.xp !== 'number') throw 0; localStorage.setItem(KEY, JSON.stringify(o)); location.reload(); }
+    catch { toast('That backup code is not valid'); }
+  };
+}
+function ask(h, text, yes, cb) {
+  openModal(`<h2>${h}</h2><p>${text}</p><div class="actions"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="askYes">${yes}</button></div>`);
+  $('#askYes').onclick = () => { closeModal(); cb(); };
+}
+function showHelp() {
+  openModal(`<h2>How to play</h2><p>Race through Wikipedia from the start article to the target.</p>
+  <ol><li><b>Click links</b> inside the article to travel. Each jump is one click.</li><li>Reach the <b>target</b> in as few clicks as possible. Time breaks ties.</li>
+  <li>The <b>Signal</b> meter shows how close you are in topic. The whole UI warms from blue to red as you get closer.</li>
+  <li>Use <b>Find a link</b> to search the article's links. <b>Back</b> costs +1 click.</li>
+  <li>Earn <b>XP</b> to climb ranks, unlock <b>achievements</b>, keep your <b>streak</b> and challenge friends in <b>leagues</b>.</li></ol>
+  <p style="font-size:13px"><kbd>/</kbd> find a link &nbsp; <kbd>B</kbd> back &nbsp; <kbd>T</kbd> target &nbsp; <kbd>Esc</kbd> close</p>
+  <button class="btn" data-close style="width:100%">Got it</button>`);
+}
+async function showTarget() {
+  if (!G) return; const s = G.summary || { title: G.to, desc: '', extract: '' };
+  openModal(`<h2>${esc(s.title)}</h2><p>${esc(s.desc)}</p><p style="color:var(--ink)">${esc(s.extract)}</p>`);
+}
+
+/* ------------------------------------------------------------------- confetti */
+function confetti() {
+  const c = $('#fx'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  const CONF = { classic: ['#6366f1', '#22c5a1', '#f59e0b', '#ef4444', '#ec4899', '#3aa7ff'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'] };
+  const cols = CONF[P.cos.confetti] || CONF.classic, sq = P.cos.confetti === 'pixel';
+  const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
+  let f = 0; (function loop() {
+    x.clearRect(0, 0, c.width, c.height);
+    ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; if (sq) x.fillRect(-5, -5, 10, 10); else x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore(); });
+    if (++f < 150) requestAnimationFrame(loop); else x.clearRect(0, 0, c.width, c.height);
+  })();
+}
+
+/* ------------------------------------------------------------------- wiring */
+function goHome() { clearInterval(tick); G = null; setHue(235); show('home'); renderHome(); }
+$('#article').addEventListener('click', e => {
+  const a = e.target.closest('a[data-t]'); if (!a) { const x = e.target.closest('a'); if (x && !x.target) e.preventDefault(); return; }
+  e.preventDefault(); if (G && !G.done) go(a.dataset.t);
+});
+$('#logo').onclick = () => { if (G && !G.done) return ask('Leave this puzzle?', 'Your progress is saved. You can resume from the home screen.', 'Leave', goHome); goHome(); };
+$('#playBtn').onclick = () => {
+  const day = dayKey();
+  const e = P.days[day]; if (e) { G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0 } }; return showResult(); }
+  const cur = readCur(); startGame('daily', cur && cur.mode === 'daily' && cur.day === day ? cur : null);
+};
+$('#practiceBtn').onclick = () => startGame('practice');
+$('#backBtn').onclick = back;
+$('#giveUp').onclick = () => { if (G && !G.done) ask('Give up?', 'You will only earn a few XP and your streak will not grow.', 'Give up', () => finish(false)); };
+$('#targetBtn').onclick = showTarget;
+$('#jump').onclick = () => { const g = document.querySelector('.article a.goal'); if (g) g.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+$('#lbBtn').onclick = () => openLeaderboard('day'); $('#lbMore').onclick = () => openLeaderboard('day');
+$('#rankChip').onclick = () => openLeaderboard('me'); $('#streakChip').onclick = () => openLeaderboard('me');
+$('#helpBtn').onclick = showHelp;
+$('#themeBtn').onclick = () => { const d = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = d; P.theme = d; saveP(); };
+
+/* ----------------------------------------------------------------------- cosmetics */
+const COS = {
+  theme: [
+    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#6366f1,#3b82f6)' },
+    { id: 'paper', name: 'Paper', sw: 'linear-gradient(135deg,#fffaf0,#eadfc8)', need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
+    { id: 'midnight', name: 'Midnight', sw: 'linear-gradient(135deg,#05060f,#312e81)', need: { t: 'rank', v: 2 }, label: 'Reach Scholar rank' },
+    { id: 'aurora', name: 'Aurora', sw: 'linear-gradient(135deg,#14b8a6,#a855f7)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' }
+  ],
+  trail: [
+    { id: 'classic', name: 'Warmth', sw: 'linear-gradient(135deg,#4f6df5,#22c55e,#facc15,#ff4d3d)' },
+    { id: 'ember', name: 'Ember', sw: 'linear-gradient(135deg,#fb923c,#ef4444)', need: { t: 'streak', v: 7 }, label: '7-day streak' },
+    { id: 'aurora', name: 'Aurora', sw: 'linear-gradient(135deg,#22d3ee,#a78bfa,#f472b6)', need: { t: 'packs', v: 5 }, label: 'Solve 5 pack puzzles' },
+    { id: 'neon', name: 'Neon', sw: 'linear-gradient(135deg,#22c55e,#06b6d4)', need: { t: 'chal', v: 3 }, label: 'Win 3 challenges' },
+    { id: 'gilded', name: 'Gilded', sw: 'linear-gradient(135deg,#fde68a,#f59e0b)', need: { t: 'rank', v: 5 }, label: 'Reach Archivist rank' },
+    { id: 'frost', name: 'Frost', sw: 'linear-gradient(135deg,#bae6fd,#38bdf8)', need: { t: 'streak', v: 30 }, label: '30-day streak' },
+    { id: 'comet', name: 'Comet', sw: 'linear-gradient(135deg,#ec4899,#8b5cf6)', need: { t: 'supporter' }, label: 'Supporter · coming soon' },
+    { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter · coming soon' }
+  ],
+  confetti: [
+    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#6366f1,#ec4899,#f59e0b)' },
+    { id: 'pixel', name: 'Pixel burst', sw: 'linear-gradient(135deg,#ff004d,#ffec27,#00e436,#29adff)', need: { t: 'par', v: 3 }, label: '3 solves at or under par' },
+    { id: 'gold', name: 'Gold rush', sw: 'linear-gradient(135deg,#fff7d6,#f59e0b)', need: { t: 'rank', v: 4 }, label: 'Reach Cartographer rank' }
+  ]
+};
+const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'] };
+const CLASSIC_STOPS = ['rgb(79,109,245)', 'rgb(34,197,94)', 'rgb(250,204,21)', 'rgb(255,77,61)'];
+const trailStops = () => TRAILS[P.cos.trail] || CLASSIC_STOPS;
+const _cc = document.createElement('canvas').getContext('2d');
+function rgbOf(css) { _cc.fillStyle = '#000'; _cc.fillStyle = css; const v = _cc.fillStyle; return v[0] === '#' ? [1, 3, 5].map(i => parseInt(v.slice(i, i + 2), 16)) : v.match(/[\d.]+/g).slice(0, 3).map(Number); }
+function lerpStops(stops, t) { const n = stops.length - 1, k = Math.min(n - 1e-9, Math.max(0, t) * n), i = Math.floor(k), f = k - i, a = rgbOf(stops[i]), b = rgbOf(stops[Math.min(n, i + 1)]); return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * f)).join(',')})`; }
+const dotCss = (sig, pos) => P.cos.trail === 'classic' ? `hsl(${sigHue(sig)} 90% 62%)` : lerpStops(trailStops(), pos);
+const allCos = () => Object.entries(COS).flatMap(([cat, arr]) => arr.map(i => ({ ...i, cat })));
+function isUnlocked(i) {
+  const n = i.need; if (!n) return true;
+  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; default: return false; }
+}
+function checkCos() {
+  const out = allCos().filter(i => isUnlocked(i) && !P.cosSeen.includes(i.cat + ':' + i.id));
+  if (out.length) { P.cosSeen.push(...out.map(i => i.cat + ':' + i.id)); saveP(); } return out;
+}
+if (!P.cosSeen.length) { P.cosSeen = allCos().filter(i => isUnlocked(i)).map(i => i.cat + ':' + i.id); saveP(); }
+const applyCos = () => { document.documentElement.dataset.skin = P.cos.theme; };
+function drawTrailPreview(cv) {
+  const x = cv.getContext('2d'), W = cv.width, H = cv.height, st = trailStops(); x.clearRect(0, 0, W, H);
+  const g = x.createLinearGradient(0, 0, W, 0); st.forEach((c, i) => g.addColorStop(i / (st.length - 1), c));
+  const pts = [[40, H - 36], [W * .3, H * .5], [W * .55, H * .62], [W - 40, 34]];
+  x.lineCap = 'round'; x.lineJoin = 'round';
+  const path = () => { x.beginPath(); x.moveTo(...pts[0]); for (let i = 1; i < pts.length; i++) { const [a, b] = pts[i - 1], [c, d] = pts[i], m = (a + c) / 2; x.bezierCurveTo(m, b, m, d, c, d); } };
+  path(); x.strokeStyle = g; x.lineWidth = 22; x.globalAlpha = .28; x.stroke(); x.globalAlpha = 1; path(); x.lineWidth = 8; x.stroke();
+  pts.forEach((pt, i) => { x.beginPath(); x.arc(pt[0], pt[1], i === pts.length - 1 ? 13 : 9, 0, 7); x.fillStyle = lerpStops(st, i / (pts.length - 1)); x.fill(); x.lineWidth = 4; x.strokeStyle = '#fff'; x.stroke(); });
+}
+function openLocker(tab = 'theme') {
+  const open = allCos().filter(isUnlocked).length, total = allCos().length;
+  openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. ${open}/${total} unlocked.</p>
+    <canvas id="lkCv" width="680" height="170" style="width:100%;border-radius:16px;background:linear-gradient(160deg,#171a33,#2a1b4a);display:block"></canvas>
+    <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div>`);
+  const draw = () => {
+    document.querySelectorAll('#lkTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    $('#lkBody').innerHTML = `<div class="lkgrid">${COS[tab].map(i => { const u = isUnlocked({ need: i.need }), on = P.cos[tab] === i.id; return `<button class="item ${on ? 'on' : ''} ${u ? '' : 'lock'}" data-id="${i.id}"><div class="sw" style="background:${i.sw}"></div>${esc(i.name)}<small>${on ? 'equipped' : u ? 'tap to equip' : '🔒 ' + esc(i.label)}</small></button>`; }).join('')}</div>`;
+    document.querySelectorAll('#lkBody .item').forEach(b => b.onclick = () => {
+      const it = COS[tab].find(i => i.id === b.dataset.id); if (!isUnlocked(it)) return toast(it.label);
+      P.cos[tab] = it.id; saveP(); applyCos(); drawTrailPreview($('#lkCv')); draw(); if (tab === 'confetti') confetti();
+    });
+  };
+  document.querySelectorAll('#lkTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
+  draw(); drawTrailPreview($('#lkCv'));
+}
+
+/* --------------------------------------------------------------------- share card */
+function fitText(x, text, maxW) { if (x.measureText(text).width <= maxW) return text; while (text.length > 1 && x.measureText(text + '…').width > maxW) text = text.slice(0, -1); return text + '…'; }
+async function shareCardCanvas(r) {
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const SANS = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif', SERIF = '"Source Serif 4", Georgia, serif', M = 72, stops = trailStops();
+  const bg = x.createLinearGradient(0, 0, W * .55, H); bg.addColorStop(0, 'hsl(228 62% 11%)'); bg.addColorStop(.55, 'hsl(300 45% 17%)'); bg.addColorStop(1, 'hsl(8 72% 27%)'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  const rg = x.createRadialGradient(W * .85, H * .55, 20, W * .85, H * .55, 640); rg.addColorStop(0, 'hsla(10,100%,62%,.36)'); rg.addColorStop(1, 'hsla(10,100%,62%,0)'); x.fillStyle = rg; x.fillRect(0, 0, W, H);
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.font = `800 58px ${SANS}`; x.fillStyle = '#fff'; x.fillText('wiki', M, 132);
+  const bw = x.measureText('wiki').width; x.fillStyle = lerpStops(stops, 1); x.fillText('.io', M + bw, 132);
+  const tag = r.mode === 'daily' ? `Daily #${dayNum(G.day)}` : r.mode === 'pack' ? 'Companion pack' : r.mode === 'challenge' ? 'Challenge' : 'Practice';
+  x.textAlign = 'right'; x.font = `700 32px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(tag, W - M, 128); x.textAlign = 'left';
+  const from = r.from || r.path[0], to = r.to || r.path[r.path.length - 1];
+  let size = 88, lf = [], lt = [];
+  for (; size >= 48; size -= 6) { x.font = `700 ${size}px ${SERIF}`; lf = wrapLines(x, from, W - 2 * M); lt = wrapLines(x, '→ ' + to, W - 2 * M); if (lf.length + lt.length <= 3) break; }
+  [...lf, ...lt].forEach((l, i) => { x.fillStyle = i >= lf.length ? lerpStops(stops, 1) : '#fff'; x.fillText(l, M, 280 + i * size * 1.12); });
+  const subY = 280 + (lf.length + lt.length - 1) * size * 1.12 + 60, ref = r.par || r.goal;
+  x.font = `600 40px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.75)';
+  x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}` : 'Gave up on this one', M, subY);
+  // route as a warmth curve
+  let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));
+  if (pts.length > 7) pts = [...pts.slice(0, 3), ...pts.slice(-4)];
+  const n = pts.length, x0 = 150, x1 = W - 150, yb = 1040, yt = 700, px = i => n === 1 ? W / 2 : x0 + i * (x1 - x0) / (n - 1), py = p => yb - p.s * (yb - yt);
+  const curve = () => { x.beginPath(); x.moveTo(px(0), py(pts[0])); for (let i = 1; i < n; i++) { const m = (px(i - 1) + px(i)) / 2; x.bezierCurveTo(m, py(pts[i - 1]), m, py(pts[i]), px(i), py(pts[i])); } };
+  const lg = x.createLinearGradient(x0, 0, x1, 0); stops.forEach((cl, i) => lg.addColorStop(i / (stops.length - 1), cl));
+  curve(); x.lineTo(px(n - 1), yb + 40); x.lineTo(px(0), yb + 40); x.closePath(); const af = x.createLinearGradient(0, yt, 0, yb + 40); af.addColorStop(0, 'rgba(255,255,255,.2)'); af.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = af; x.fill();
+  x.lineCap = 'round'; x.lineJoin = 'round'; curve(); x.strokeStyle = lg; x.lineWidth = 14; x.stroke();
+  x.font = `700 31px ${SANS}`; x.textAlign = 'center';
+  pts.forEach((p, i) => {
+    const cx = px(i), cy = py(p), last = i === n - 1 && r.won;
+    x.beginPath(); x.arc(cx, cy, last ? 28 : 19, 0, 7); x.fillStyle = dotCss(p.s, n > 1 ? i / (n - 1) : 1); x.fill(); x.lineWidth = last ? 8 : 6; x.strokeStyle = '#fff'; x.stroke();
+    const above = i % 2 === 1 || last, lw = 300; let lx = Math.min(W - M - lw / 2, Math.max(M + lw / 2, cx));
+    x.fillStyle = '#fff'; x.fillText(fitText(x, (last ? '🎯 ' : '') + p.t, lw), lx, above ? cy - (last ? 46 : 38) : cy + 62);
+  });
+  x.textAlign = 'left'; x.font = `700 24px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.5)'; x.fillText('COLD', M, 1098); x.textAlign = 'right'; x.fillText('HOT', W - M, 1098);
+  // stat tiles
+  const tw = (W - 2 * M - 40) / 3, ty = 1128, th = 112;
+  const tiles = [[fmt(r.secs), 'TIME'], [r.won && ref ? ('⭐'.repeat(r.stars) || '—') : String(r.clicks), ref ? (r.par ? 'PAR ' : 'GOAL ') + ref : 'CLICKS'], r.mode === 'daily' ? [`🔥 ${P.streak}`, 'STREAK'] : [`+${r.gain || 0}`, 'XP']];
+  tiles.forEach(([v, l], i) => {
+    const tx = M + i * (tw + 20); x.beginPath(); x.roundRect(tx, ty, tw, th, 26); x.fillStyle = 'rgba(255,255,255,.09)'; x.fill(); x.lineWidth = 2; x.strokeStyle = 'rgba(255,255,255,.14)'; x.stroke();
+    x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `800 48px ${SANS}`; x.fillText(v, tx + tw / 2, ty + 60); x.fillStyle = 'rgba(255,255,255,.58)'; x.font = `700 21px ${SANS}`; x.fillText(l, tx + tw / 2, ty + 94);
+  });
+  // footer
+  const host = (window.WIKIIO && WIKIIO.name) || 'wiki.io', cta = `Beat me → ${host}`;
+  x.textAlign = 'left'; x.font = `600 29px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.8)'; x.fillText(`${RANKS[rankOf(P.xp)].n} · ${P.xp} XP`, M, 1310);
+  x.font = `800 29px ${SANS}`; const cw = x.measureText(cta).width + 52; x.beginPath(); x.roundRect(W - M - cw, 1272, cw, 56, 28); x.fillStyle = '#fff'; x.fill(); x.fillStyle = '#15172a'; x.textAlign = 'center'; x.fillText(cta, W - M - cw / 2, 1310);
+  return c;
+}
+async function openShareCard(r, back) {
+  openModal(`<h2>Share card</h2><p style="margin-bottom:12px">Post it anywhere. Your route is the line.</p>
+    <img id="scImg" alt="Your result card" style="width:100%;border-radius:18px;display:block;background:#111;aspect-ratio:4/5">
+    <div class="actions" style="margin-top:14px"><button class="btn" id="scShare">Share</button><button class="btn ghost" id="scSave">Save image</button></div>
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="scTxt">Copy text</button><button class="btn ghost" id="scBack">← Back</button></div>`);
+  const canvas = await shareCardCanvas(r), blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+  const url = URL.createObjectURL(blob), name = `wikiio-${r.mode === 'daily' ? dayNum(G.day) : r.mode}.png`, file = new File([blob], name, { type: 'image/png' });
+  $('#scImg').src = url;
+  const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  $('#scSave').onclick = () => { save(); toast('Image saved'); };
+  $('#scShare').onclick = async () => {
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text: shareText() }); else { save(); toast('Image saved — attach it to your post'); } } catch {}
+  };
+  $('#scTxt').onclick = async () => { try { await navigator.clipboard.writeText(shareText()); toast('Text copied'); } catch { prompt('Copy your result:', shareText()); } };
+  $('#scBack').onclick = () => { closeModal(); if (back) back(); };
+}
+
+/* -------------------------------------------------------------- friend challenges */
+const b64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
+function challengeLink(r, name) { return `${SITE_URL}#c=${b64u(JSON.stringify({ v: 1, f: r.from || r.path[0], t: r.to || r.path[r.path.length - 1], n: (name || 'A friend').slice(0, 20), c: r.clicks, s: r.secs, p: r.path.slice(0, 10) }))}`; }
+function parseChallenge(code) {
+  try {
+    const o = JSON.parse(unb64u(code)), str = (v, n = 80) => typeof v === 'string' && v.length > 0 && v.length <= n;
+    if (o.v !== 1 || !str(o.f) || !str(o.t) || !Number.isInteger(o.c) || o.c < 1 || o.c > 200 || !Number.isInteger(o.s) || o.s < 1 || o.s > 86400) return null;
+    return { f: o.f, t: o.t, n: (typeof o.n === 'string' && o.n.trim() ? o.n : 'A friend').slice(0, 20), c: o.c, s: o.s, p: Array.isArray(o.p) ? o.p.filter(v => str(v)).slice(0, 10) : [] };
+  } catch { return null; }
+}
+function openChallenge(r, back) {
+  openModal(`<h2>Challenge a friend</h2><p>They get this exact puzzle with your result to beat. No sign-up needed.</p>
+    <div class="field">Your name<input id="chName" maxlength="20" value="${esc(P.name)}" placeholder="Shown to your friend"></div>
+    <div class="field">Link<div class="namebox" style="margin:0"><input id="chLink" readonly value="${esc(challengeLink(r, P.name))}"><button class="btn ghost" id="chCopy">Copy</button></div></div>
+    <div class="actions" style="margin-top:6px"><button class="btn" id="chShare">Send challenge</button><button class="btn ghost" id="chBack">Back</button></div>`);
+  const link = () => challengeLink(r, $('#chName').value.trim() || P.name);
+  $('#chName').oninput = () => { P.name = $('#chName').value.trim(); saveP(); $('#chLink').value = link(); };
+  $('#chCopy').onclick = async () => { try { await navigator.clipboard.writeText(link()); toast('Link copied'); } catch { $('#chLink').select(); } };
+  $('#chShare').onclick = async () => {
+    const text = `Beat my ${r.clicks} click${r.clicks === 1 ? '' : 's'} on wiki.io: ${r.from || r.path[0]} → ${r.to || r.path[r.path.length - 1]}`;
+    try { if (navigator.share) await navigator.share({ title: 'wiki.io challenge', text, url: link() }); else { await navigator.clipboard.writeText(text + ' ' + link()); toast('Challenge copied'); } } catch {}
+  };
+  $('#chBack').onclick = () => { closeModal(); if (back) back(); };
+}
+function handleChallenge() {
+  const m = location.hash.match(/^#c=(.+)$/); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  const ch = parseChallenge(m[1]); if (!ch) return toast('That challenge link is not valid');
+  openModal(`<div style="text-align:center"><div style="width:72px;height:72px;border-radius:24px;margin:4px auto 0;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;font-size:32px">⚔️</div>
+    <h2 style="margin-top:12px">${esc(ch.n)} challenged you</h2>
+    <div class="card" style="padding:16px;margin:14px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(ch.f)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700;color:var(--accent-ink)">${esc(ch.t)}</div>
+    <div style="margin-top:12px"><span class="pill">${ch.c} click${ch.c === 1 ? '' : 's'} or fewer · ${fmt(ch.s)} to beat</span></div></div>
+    <button class="btn" id="chAccept" style="width:100%;font-size:17px;padding:16px">Accept challenge →</button><div class="s mute" style="margin-top:10px">No account needed</div></div>`);
+  $('#chAccept').onclick = () => { closeModal(); startGame('challenge', null, ch); };
+}
+
+/* --------------------------------------------------------------- companion packs */
+const packsOf = id => PACKS.find(p => p.id === id).puzzles;
+function packPuzzle(id, idx) {
+  const base = packsOf(id)[idx], v = PACKDATA && PACKDATA[id] && PACKDATA[id][idx];
+  return v && v.par ? { from: v.from, to: v.to, par: v.par, route: v.route, goal: v.par + 1 } : { from: base.from, to: base.to, goal: base.goal };
+}
+const packStats = id => { const pk = P.packs[id] || {}, v = Object.values(pk); return { solved: v.length, stars: v.reduce((a, b) => a + (b.stars || 0), 0), total: packsOf(id).length }; };
+function openPacks() {
+  openModal(`<h2>Companion packs</h2><p>Themed puzzles with a click goal. Solve them in order.</p>${PACKS.map(p => { const st = packStats(p.id); return `<button class="card packcard" data-p="${p.id}" style="--ph:${p.hue}"><span class="pe">${p.emoji}</span><span style="flex:1;text-align:left"><b>${p.name}</b><small>${st.total} puzzles · ★ ${st.stars}/${st.total * 3}</small><div class="bar" style="height:6px;margin-top:8px"><i style="width:${st.solved / st.total * 100}%;--c:${p.hue}"></i></div></span></button>`; }).join('')}`);
+  document.querySelectorAll('.packcard').forEach(b => b.onclick = () => openPack(b.dataset.p));
+}
+function openPack(id) {
+  const p = PACKS.find(x => x.id === id), pk = P.packs[id] || {}, st = packStats(id), next = p.puzzles.findIndex((_, i) => !pk[i]);
+  openModal(`<button class="chip" id="pkBack">← Packs</button>
+    <div class="packhead" style="--ph:${p.hue}"><span class="pill">Companion pack</span><h2>${p.emoji} ${p.name}</h2><div class="s mute">${st.solved}/${st.total} solved · ★ ${st.stars}/${st.total * 3}</div></div>
+    <div class="pkgrid">${p.puzzles.map((_, i) => { const z = packPuzzle(id, i), r = pk[i], locked = next !== -1 && i > next;
+      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">Under ${z.goal}</span><div class="s mute b">#${i + 1}${locked ? ' 🔒' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} → ${esc(z.to)}</div><div class="s">${r ? '⭐'.repeat(r.stars) + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? `<span class="mute">Solve #${next + 1} to unlock</span>` : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
+  $('#pkBack').onclick = openPacks;
+  document.querySelectorAll('.pk').forEach(b => b.onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: +b.dataset.i }); });
+}
+
+/* --------------------------------------------------------------------- path map */
+async function openPathMap(r) {
+  openModal(`<h2>Path map</h2><p>How your route compares with everyone who solved today's puzzle.</p><div id="pmBody"><div class="empty">Loading…</div></div>`);
+  let d; try { const res = await fetch(`${API_BASE}/api/paths?day=${G.day}`); if (!res.ok) throw 0; d = await res.json(); } catch { $('#pmBody').innerHTML = '<div class="empty">Path maps need the leaderboard server, which is offline right now.</div>'; return; }
+  if (d.total < 3) { $('#pmBody').innerHTML = `<div class="empty">The map builds as more players finish today's puzzle (${d.total} so far). Check back later.</div>`; return; }
+  $('#pmBody').innerHTML = renderPathMap(d, r.path, r.clicks);
+}
+function renderPathMap(d, mine, clicks) {
+  const key = p => p.join('\u0001'), W = 354, total = d.total, byKey = new Map(d.nodes.map(n => [key(n.p), { ...n }]));
+  byKey.set(key([mine[0]]), { p: [mine[0]], n: total });
+  mine.forEach((_, i) => { const k = key(mine.slice(0, i + 1)); if (!byKey.has(k)) byKey.set(k, { p: mine.slice(0, i + 1), n: 0 }); });
+  const all = [...byKey.values()], kids = p => all.filter(n => n.p.length === p.length + 1 && key(n.p.slice(0, -1)) === key(p)).sort((a, b) => b.n - a.n);
+  const fav = [[mine[0]]]; for (;;) { const k = kids(fav[fav.length - 1])[0]; if (!k || !k.n) break; fav.push(k.p); }
+  const mineKeys = new Set(mine.map((_, i) => key(mine.slice(0, i + 1)))), favKeys = new Set(fav.map(key)), must = new Set([...mineKeys, ...favKeys]);
+  const root = byKey.get(key([mine[0]])), vis = new Set([key(root.p)]), levels = [[root]], maxD = Math.min(7, Math.max(...all.map(n => n.p.length)));
+  for (let dp = 2; dp <= maxD; dp++) {
+    const cand = all.filter(n => n.p.length === dp && vis.has(key(n.p.slice(0, -1)))).sort((a, b) => b.n - a.n), pick = []; let extra = 0;
+    cand.forEach(n => { if (must.has(key(n.p))) pick.push(n); else if (extra < 3) { pick.push(n); extra++; } });
+    if (!pick.length) break; pick.forEach(n => vis.add(key(n.p))); levels.push(pick);
+  }
+  const dy = Math.min(104, 400 / Math.max(1, levels.length - 1)), H = 70 + (levels.length - 1) * dy + 40, pos = new Map(), target = mine[mine.length - 1];
+  levels.forEach((lv, li) => {
+    if (li) lv.sort((a, b) => (pos.get(key(a.p.slice(0, -1))).x - pos.get(key(b.p.slice(0, -1))).x) || b.n - a.n);
+    lv.forEach((n, i) => pos.set(key(n.p), { x: Math.round(W * (i + 1) / (lv.length + 1)), y: 34 + li * dy }));
+  });
+  let edges = '', over = '', nodes = '';
+  levels.slice(1).flat().forEach(n => {
+    const a = pos.get(key(n.p.slice(0, -1))), b = pos.get(key(n.p)), dd = `M${a.x} ${a.y + 13} C${a.x} ${(a.y + b.y) / 2},${b.x} ${(a.y + b.y) / 2},${b.x} ${b.y - 13}`, w = (2 + 14 * n.n / total).toFixed(1);
+    edges += `<path d="${dd}" stroke="var(--mute)" stroke-opacity=".28" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+    if (favKeys.has(key(n.p))) over += `<path d="${dd}" stroke="#f2b01e" stroke-width="4" stroke-dasharray="2 9" fill="none" stroke-linecap="round"/>`;
+    if (mineKeys.has(key(n.p))) over += `<path d="${dd}" stroke="hsl(250 90% 60%)" stroke-width="6" fill="none" stroke-linecap="round" opacity=".95"/>`;
+  });
+  levels.flat().forEach(n => {
+    const q = pos.get(key(n.p)), t = n.p[n.p.length - 1], isT = t === target && n.p.length > 1, me = mineKeys.has(key(n.p)), lab = (isT ? '🎯 ' : '') + (t.length > 13 ? t.slice(0, 12) + '…' : t), w = Math.max(54, 14 + lab.length * 6.6);
+    const fill = isT ? '#ff6a4d' : me ? 'hsl(250 90% 60%)' : 'var(--card)', ink = isT || me ? '#fff' : 'var(--ink)', stroke = favKeys.has(key(n.p)) && !me ? '#f2b01e' : 'var(--line)';
+    nodes += `<g><rect x="${q.x - w / 2}" y="${q.y - 13}" width="${w}" height="26" rx="13" style="fill:${fill};stroke:${stroke}" stroke-width="${favKeys.has(key(n.p)) ? 2 : 1}"/><text x="${q.x}" y="${q.y + 4}" text-anchor="middle" font-size="11" font-weight="700" style="fill:${ink}">${esc(lab)}</text><text x="${q.x}" y="${q.y + 27}" text-anchor="middle" font-size="9.5" font-weight="700" style="fill:var(--mute);stroke:var(--card);stroke-width:3px;paint-order:stroke">${n.n ? Math.round(n.n / total * 100) + '%' : '<1%'}</text></g>`;
+  });
+  let div = null;
+  for (let i = 1; i < mine.length; i++) {
+    const parent = mine.slice(0, i), top = kids(parent)[0], me = byKey.get(key(mine.slice(0, i + 1))), pn = byKey.get(key(parent)).n || 1;
+    if (top && key(top.p) !== key(mine.slice(0, i + 1))) { div = { step: i, top: top.p[i], topPct: Math.round(top.n / pn * 100), mine: mine[i], minePct: Math.round(me.n / pn * 100) }; break; }
+  }
+  const head = div ? `You left the crowd at step ${div.step}` : 'You took the crowd favourite route', sub = div ? `${div.topPct}% went via <b>${esc(div.top)}</b>; you chose <b>${esc(div.mine)}</b> (${div.minePct}%).` : 'Most players went the same way you did.';
+  return `<div style="font-weight:800;font-size:21px;letter-spacing:-.03em;margin:2px 0">${head}</div><div class="mute s" style="margin-bottom:8px">${sub}</div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;font-family:inherit">${edges}${over}${nodes}</svg>
+    <div class="s b" style="display:flex;gap:16px;justify-content:center;margin:2px 0 10px"><span><i class="rd" style="background:hsl(250 90% 60%)"></i> You · ${clicks}</span><span><i class="rd" style="background:#f2b01e"></i> Crowd favourite · ${fav.length - 1}</span></div>
+    <div class="grid3"><div><b>${clicks}</b><span>Your route</span></div><div><b>${d.avg.toFixed(1)}</b><span>Crowd average</span></div><div><b>${d.best}</b><span>Best found ×${d.bestCount}</span></div></div>
+    <div class="s mute" style="text-align:center">Based on ${total} players today.</div>`;
+}
+
+/* ----------------------------------------------------------------------- hub */
+function renderHub() {
+  const day = dayKey(), e = P.days[day], open = allCos().filter(isUnlocked).length, tot = allCos().length;
+  const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), packTotal = PACKS.reduce((n, p) => n + p.puzzles.length, 0);
+  $('#hub').innerHTML = `${e && e.won ? `<div class="card hubchal"><div class="hc-t">Challenge a friend</div><div class="hc-s">"Beat my ${e.clicks} click${e.clicks === 1 ? '' : 's'}" — they get the same puzzle, no sign-up.</div><div class="actions" style="margin-top:12px"><button class="btn hcb" id="hubChal">Send challenge</button></div></div>` : ''}
+    <div class="hubrow"><button class="card hubtile" id="hubPacks"><span>🧩</span><b>Companion packs</b><small>${solved}/${packTotal} solved</small></button><button class="card hubtile" id="hubLocker"><span>✨</span><b>Locker</b><small>${open}/${tot} unlocked</small></button></div>`;
+  $('#hubPacks').onclick = openPacks; $('#hubLocker').onclick = () => openLocker();
+  if ($('#hubChal')) $('#hubChal').onclick = () => openChallenge({ won: true, clicks: e.clicks, secs: e.secs, path: e.path, from: e.from, to: e.to }, () => closeModal());
+}
+
+/* ------------------------------------------------------------ rewarded video (ads) */
+// Swap in a real rewarded-video provider by defining window.WIKIIO_ADS = { rewarded: () => Promise<boolean> }
+// before this script runs. It must resolve true only when the viewer earned the reward.
+const Ads = {
+  rewarded() {
+    if (window.WIKIIO_ADS && typeof window.WIKIIO_ADS.rewarded === 'function') return window.WIKIIO_ADS.rewarded();
+    return new Promise(resolve => {
+      let n = 5, done = false, iv = null;
+      openModal(`<h2>Sponsored video</h2><p>Placeholder for a rewarded video ad. Watch it to the end to undo your last click for free.</p>
+        <div class="adbox"><div class="bar"><i id="adBar" style="width:0"></i></div><small id="adT">${n}s</small></div>
+        <button class="btn ghost" data-close style="width:100%">Cancel</button>`, () => { clearInterval(iv); if (!done) resolve(false); });
+      iv = setInterval(() => {
+        n--; $('#adT').textContent = n + 's'; $('#adBar').style.width = (5 - n) / 5 * 100 + '%';
+        if (n <= 0) { done = true; clearInterval(iv); closeModal(); resolve(true); }
+      }, 1000);
+      requestAnimationFrame(() => { const b = $('#adBar'); if (b) b.style.width = '0'; });
+    });
+  }
+};
+
+/* ---------------------------------------------------------------- replay / video */
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+function replayData() {
+  const r = G.result; let tl = r.timeline;
+  if (!tl || !tl.length) { const step = Math.max(1, r.secs / Math.max(1, r.path.length)); tl = r.path.map((t, i) => ({ t: i * step, title: t, sig: (r.steps[i] || {}).sig ?? .3, k: i ? 'go' : 'start' })); }
+  let c = 0; const cl = tl.map(e => (c = e.k === 'go' || e.k === 'back' ? c + 1 : e.k === 'rewind' ? Math.max(0, c - 1) : c));
+  return { tl, cl, from: r.from || r.path[0], to: r.to || r.path[r.path.length - 1], won: r.won, clicks: r.clicks, secs: r.secs, par: r.par || null, label: G.mode === 'daily' ? '#' + dayNum(G.day) : 'practice' };
+}
+function buildSegs(d) {
+  const segs = [{ kind: 'intro', dur: 2 }];
+  d.tl.forEach((e, i) => { const nx = d.tl[i + 1]; segs.push({ kind: 'step', i, dur: Math.min(2.8, Math.max(1.1, nx ? nx.t - e.t : 2)) }); });
+  segs.push({ kind: 'outro', dur: 3.4 });
+  let acc = 0; segs.forEach(x => { x.t0 = acc; acc += x.dur; }); return { segs, total: acc };
+}
+function stateAt(d, S, t) {
+  t = Math.max(0, Math.min(S.total - .001, t));
+  const seg = S.segs.find(x => t < x.t0 + x.dur) || S.segs[S.segs.length - 1], local = t - seg.t0;
+  const i = seg.kind === 'intro' ? -1 : seg.kind === 'outro' ? d.tl.length - 1 : seg.i;
+  const cur = i >= 0 ? d.tl[i] : null, prev = i > 0 ? d.tl[i - 1] : null;
+  const sc = cur ? cur.sig : 0, sp = prev ? prev.sig : 0;
+  const sig = seg.kind === 'step' ? sp + (sc - sp) * easeOut(Math.min(1, local / .7)) : sc;
+  return { kind: seg.kind, local, dur: seg.dur, i, cur, prev, sig, clicks: i >= 0 ? d.cl[i] : 0, time: seg.kind === 'outro' ? d.secs : cur ? cur.t : 0, trail: d.tl.slice(0, i + 1) };
+}
+function wrapLines(ctx, text, maxW) {
+  const out = []; let line = '';
+  text.split(' ').forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
+  if (line) out.push(line); return out;
+}
+function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha) {
+  let s = size, lines;
+  for (; s >= 28; s -= 4) { ctx.font = `700 ${s}px "Source Serif 4", Georgia, serif`; lines = wrapLines(ctx, text, maxW); if (lines.length <= 3) break; }
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillStyle = color; ctx.textAlign = 'center';
+  const lh = s * 1.15, y0 = cy - (lines.length - 1) * lh / 2;
+  lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * lh)); ctx.globalAlpha = 1;
+}
+function drawFrame(ctx, W, d, st) {
+  const h = sigHue(st.sig), tx = (t, x, y, font, color, al = 'left') => { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = al; ctx.fillText(t, x, y); };
+  const g = ctx.createLinearGradient(0, 0, W, W); g.addColorStop(0, `hsl(${h} 65% 13%)`); g.addColorStop(1, `hsl(${(h + 55) % 360} 70% 25%)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, W);
+  const rg = ctx.createRadialGradient(W / 2, W * .45, 20, W / 2, W * .45, W * .6); rg.addColorStop(0, `hsla(${h},90%,60%,.28)`); rg.addColorStop(1, 'hsla(0,0%,0%,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
+  const SANS = 'Inter, system-ui, sans-serif';
+  tx('wiki', 40, 70, `800 34px ${SANS}`, '#fff'); ctx.font = `800 34px ${SANS}`; tx('.io', 40 + ctx.measureText('wiki').width, 70, `800 34px ${SANS}`, `hsl(${h} 95% 70%)`);
+  tx(d.label, W - 40, 68, `600 22px ${SANS}`, 'rgba(255,255,255,.65)', 'right');
+  const cx = W / 2, k = easeOut(Math.min(1, st.local / .45));
+  if (st.kind === 'intro') {
+    tx('REACH', cx, 250, `700 20px ${SANS}`, 'rgba(255,255,255,.6)', 'center');
+    drawTitle(ctx, d.to, cx, 340, W - 120, 72, `hsl(${h} 95% 75%)`, k);
+    tx('starting from', cx, 450, `600 22px ${SANS}`, 'rgba(255,255,255,.6)', 'center');
+    drawTitle(ctx, d.from, cx, 500, W - 160, 40, '#fff', k);
+  } else if (st.kind === 'step') {
+    const tag = st.cur.k === 'start' ? 'START' : st.cur.k === 'back' ? '↩ BACK (+1)' : st.cur.k === 'rewind' ? '⏪ FREE REWIND' : `CLICK ${st.clicks}`;
+    tx(tag, cx, 250, `700 20px ${SANS}`, 'rgba(255,255,255,.65)', 'center');
+    if (st.prev) drawTitle(ctx, st.prev.title, cx, 205 - (1 - k) * 0, W - 200, 28, '#fff', (1 - k) * .45);
+    ctx.save(); ctx.translate(cx, 350 + (1 - k) * 36); ctx.scale(.94 + .06 * k, .94 + .06 * k); drawTitle(ctx, st.cur.title, 0, 0, W - 120, 72, '#fff', k); ctx.restore();
+  } else {
+    if (d.won) { tx('🎯', cx, 300, `90px ${SANS}`, '#fff', 'center'); drawTitle(ctx, d.to, cx, 400, W - 120, 60, '#fff', k); tx(`${d.clicks} click${d.clicks === 1 ? '' : 's'} · ${fmt(d.secs)}${d.par ? ` · par ${d.par}` : ''}`, cx, 500, `700 28px ${SANS}`, `hsl(${h} 95% 78%)`, 'center'); }
+    else { tx('🏳️', cx, 300, `90px ${SANS}`, '#fff', 'center'); drawTitle(ctx, 'Gave up on ' + d.to, cx, 400, W - 120, 48, '#fff', k); }
+  }
+  // trail of visited pages
+  const tr = st.trail.slice(-9), x0 = 70, x1 = W - 70;
+  if (tr.length) {
+    const gap = tr.length > 1 ? (x1 - x0) / (tr.length - 1) : 0, y = 566, off = tr.length > 1 ? 0 : (x1 - x0) / 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 3; ctx.beginPath(); tr.forEach((e, n) => { const x = x0 + off + n * gap; n ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    tr.forEach((e, n) => { const x = x0 + off + n * gap, last = n === tr.length - 1; ctx.fillStyle = dotCss(e.sig, tr.length > 1 ? n / (tr.length - 1) : 1); ctx.beginPath(); ctx.arc(x, y, last ? 11 : 7, 0, 7); ctx.fill(); if (last) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3; ctx.stroke(); } });
+  }
+  const lab = `700 14px ${SANS}`, mute = 'rgba(255,255,255,.55)';
+  tx('CLICKS', 40, 626, lab, mute); tx(String(st.clicks), 40, 676, `800 46px ${SANS}`, '#fff');
+  tx('TIME', 190, 626, lab, mute); tx(fmt(st.time), 190, 676, `800 46px ${SANS}`, '#fff');
+  tx('SIGNAL', 380, 626, lab, mute); tx(sigLabel(st.sig).toUpperCase(), W - 40, 626, lab, `hsl(${h} 95% 75%)`, 'right');
+  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.roundRect(380, 645, W - 420, 14, 7); ctx.fill();
+  ctx.fillStyle = `hsl(${h} 90% 60%)`; ctx.beginPath(); ctx.roundRect(380, 645, Math.max(14, (W - 420) * st.sig), 14, 7); ctx.fill();
+}
+function openReplay(back) {
+  const d = replayData(), S = buildSegs(d); let t = 0, playing = true, speed = 1, last = performance.now(), raf = 0;
+  const canRec = !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream);
+  openModal(`<h2>Replay</h2><p style="margin-bottom:12px">${esc(d.from)} → ${esc(d.to)}</p>
+    <canvas id="rpc" width="720" height="720" style="width:100%;aspect-ratio:1;border-radius:16px;display:block;background:#111"></canvas>
+    <input id="rpSeek" type="range" min="0" max="1000" value="0" style="width:100%;margin:12px 0 2px;accent-color:var(--accent)" aria-label="Seek">
+    <div class="actions"><button class="btn ghost" id="rpPlay">⏸ Pause</button><button class="btn ghost" id="rpSpeed">1×</button>${canRec ? '<button class="btn ghost" id="rpSave">⬇ Save video</button>' : ''}</div>
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="rpBack">← Back</button></div>`, () => cancelAnimationFrame(raf));
+  const cv = $('#rpc'), ctx = cv.getContext('2d');
+  const paint = () => drawFrame(ctx, 720, d, stateAt(d, S, t));
+  const loop = now => {
+    if (playing) { t += (now - last) / 1000 * speed; if (t >= S.total) { t = S.total; playing = false; $('#rpPlay').textContent = '↻ Replay'; } }
+    last = now; paint(); $('#rpSeek').value = Math.round(t / S.total * 1000); raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+  $('#rpPlay').onclick = () => { if (t >= S.total) t = 0; playing = !playing; $('#rpPlay').textContent = playing ? '⏸ Pause' : '▶ Play'; last = performance.now(); };
+  $('#rpSpeed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $('#rpSpeed').textContent = speed + '×'; };
+  $('#rpSeek').oninput = e => { t = e.target.value / 1000 * S.total; playing = false; $('#rpPlay').textContent = '▶ Play'; };
+  $('#rpBack').onclick = () => { closeModal(); if (back) back(); };
+  if (canRec) $('#rpSave').onclick = () => exportVideo(d, S, $('#rpSave'));
+}
+async function exportVideo(d, S, btn) {
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m));
+  if (!mime) return toast('Video export is not supported in this browser');
+  const label = btn.textContent; btn.disabled = true;
+  const c = document.createElement('canvas'); c.width = c.height = 720; const ctx = c.getContext('2d');
+  const rec = new MediaRecorder(c.captureStream(30), { mimeType: mime, videoBitsPerSecond: 2500000 }), chunks = [];
+  rec.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
+  const stopped = new Promise(r => rec.onstop = r); rec.start(250);
+  const t0 = performance.now();
+  await new Promise(res => { (function loop() { const t = (performance.now() - t0) / 1000; drawFrame(ctx, 720, d, stateAt(d, S, t)); btn.textContent = `Rendering ${Math.min(99, Math.round(t / S.total * 100))}%`; if (t < S.total) requestAnimationFrame(loop); else res(); })(); });
+  rec.stop(); await stopped;
+  const blob = new Blob(chunks, { type: mime }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `wikiio-${d.label.replace('#', '')}.${mime.includes('mp4') ? 'mp4' : 'webm'}`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); btn.textContent = label; btn.disabled = false; toast('Video saved');
+}
+$('#rewindBtn').onclick = rewind;
+
+/* usability: link finder, text size, keyboard, hover prefetch, countdown */
+let hits = [], hi = -1;
+function stepFinder(d) { if (!hits.length) return; if (hi >= 0) hits[hi].classList.remove('cur'); hi = (hi + d + hits.length) % hits.length; hits[hi].classList.add('cur'); hits[hi].scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+function runFinder() {
+  const q = $('#finder').value.trim().toLowerCase();
+  document.querySelectorAll('#article a.hit').forEach(a => a.classList.remove('hit', 'cur')); hits = []; hi = -1;
+  if (q.length >= 2) hits = [...document.querySelectorAll('#article a[data-t]')].filter(a => a.textContent.toLowerCase().includes(q) || a.dataset.t.toLowerCase().includes(q));
+  hits.forEach(a => a.classList.add('hit')); $('#finderN').textContent = q.length >= 2 ? hits.length + ' found' : ''; stepFinder(1);
+}
+$('#finder').addEventListener('input', runFinder);
+$('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { e.target.value = ''; runFinder(); e.target.blur(); } });
+const applyFs = () => { $('#article').style.fontSize = (18.5 + P.fs * 1.5) + 'px'; };
+$('#fsDown').onclick = () => { P.fs = Math.max(-3, P.fs - 1); saveP(); applyFs(); };
+$('#fsUp').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); };
+applyFs();
+let hoverT;
+const prefetch = e => { const a = e.target.closest && e.target.closest('a[data-t]'); if (!a) return; clearTimeout(hoverT); hoverT = setTimeout(() => getPage(a.dataset.t).catch(() => {}), 90); };
+$('#article').addEventListener('mouseover', prefetch); $('#article').addEventListener('touchstart', prefetch, { passive: true });
+document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA/.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || $('#scrim').classList.contains('on')) return;
+  const inGame = $('#game').style.display === 'block' && G && !G.done, k = e.key.toLowerCase();
+  if (inGame && k === '/') { e.preventDefault(); $('#finder').focus(); }
+  else if (inGame && (e.key === 'Backspace' || k === 'b' || (e.altKey && e.key === 'ArrowLeft'))) { e.preventDefault(); back(); }
+  else if (inGame && k === 't') showTarget();
+  else if (e.key === '?') showHelp();
+});
+function tickNext() {
+  const n = new Date(), s = Math.floor((new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1) - n) / 1000), z = v => String(v).padStart(2, '0');
+  $('#nextIn').textContent = `Next puzzle in ${z(Math.floor(s / 3600))}:${z(Math.floor(s % 3600 / 60))}:${z(s % 60)}`;
+  if (s <= 1 && !G) setTimeout(renderHome, 1500);
+}
+setInterval(tickNext, 1000); tickNext();
+$('#leagueLink').onclick = () => leagueModal();
+handleInvite();
+
+document.documentElement.dataset.theme = P.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+applyCos();
+loadData().then(() => { renderHome(); handleChallenge(); });
+const viaLink = /^#c=/.test(location.hash) || /[?&]league=/.test(location.search);
+if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
+</script>
+</body>
+</html>
