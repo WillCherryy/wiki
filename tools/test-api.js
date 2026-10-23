@@ -49,6 +49,14 @@ async function scenario(call, label) {
     assert.strictEqual((await score('validpid99', 'Valid', 3, 40, false, bad)).status, 400, `${label}: rejects bad ${what}`);
   }
   assert.strictEqual((await call('POST', '/api/score', { not: 'a score' })).status, 400, `${label}: rejects junk`);
+  // puzzle reports
+  const rep = { mode: 'daily', day: today, from: 'Tour de France', to: 'India', reason: 'unsolvable', note: 'No link <b>ever</b> leads there', pid: C };
+  ok(await call('POST', '/api/report', rep), 'report');
+  for (const [what, bad] of [['reason', { reason: 'spam' }], ['mode', { mode: 'x' }], ['title', { from: '' }], ['day', { day: 'tomorrow' }]])
+    assert.strictEqual((await call('POST', '/api/report', { ...rep, ...bad })).status, 400, `${label}: report rejects bad ${what}`);
+  assert.strictEqual((await call('GET', '/api/reports', null, { authorization: 'Bearer wrong' })).status, 401, `${label}: reports need the admin key`);
+  const got = (await call('GET', '/api/reports', null, { authorization: 'Bearer adminkey' })).body;
+  assert.deepStrictEqual([got.length, got[0].reason, got[0].from_title, got[0].note.includes('<')], [1, 'unsolvable', 'Tour de France', false], `${label}: admin reads sanitised reports`);
   // delete removes scores, league membership and the player
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');
   assert.deepStrictEqual((await call('GET', `/api/leaderboard?mode=day&day=${today}`)).body.map(r => r.name), ['Bob', 'Carol'], `${label}: board after delete`);
@@ -57,20 +65,20 @@ async function scenario(call, label) {
 }
 
 async function viaWorker() {
-  const worker = (await import(path.join(__dirname, '..', 'worker', 'index.js'))).default, env = makeEnv();
-  await scenario(async (method, p, body) => {
-    const r = await worker.fetch(new Request('http://api.test' + p, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }), env);
+  const worker = (await import(path.join(__dirname, '..', 'worker', 'index.js'))).default, env = makeEnv({ ADMIN_KEY: 'adminkey' });
+  await scenario(async (method, p, body, headers = {}) => {
+    const r = await worker.fetch(new Request('http://api.test' + p, { method, headers: { 'content-type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined }), env);
     return { status: r.status, body: r.status === 204 ? null : await r.json() };
   }, 'worker');
 }
 async function viaServer() {
   const port = 3900 + Math.floor(Math.random() * 90), dir = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'wikilink-'));
   require('fs').writeFileSync(path.join(dir, 'x'), '');
-  const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: String(port), DATA_FILE: path.join(dir, 'data.json') }, stdio: 'ignore' });
+  const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: String(port), DATA_FILE: path.join(dir, 'data.json'), ADMIN_KEY: 'adminkey' }, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 700));
   try {
-    await scenario((method, p, body) => new Promise((resolve, reject) => {
-      const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: { 'content-type': 'application/json' } }, res => {
+    await scenario((method, p, body, headers = {}) => new Promise((resolve, reject) => {
+      const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: { 'content-type': 'application/json', ...headers } }, res => {
         let d = ''; res.on('data', c => d += c); res.on('end', () => resolve({ status: res.statusCode, body: d ? JSON.parse(d) : null }));
       });
       req.on('error', reject); if (body) req.write(JSON.stringify(body)); req.end();

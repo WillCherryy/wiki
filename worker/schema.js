@@ -8,5 +8,6 @@ export default [
  "CREATE TABLE IF NOT EXISTS league_members ( code TEXT NOT NULL, pid TEXT NOT NULL, PRIMARY KEY (code, pid) )",
  "CREATE INDEX IF NOT EXISTS league_members_pid ON league_members (pid)",
  "CREATE TABLE IF NOT EXISTS orders ( id TEXT NOT NULL, provider TEXT NOT NULL, pid TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (provider, id) )",
- "CREATE INDEX IF NOT EXISTS orders_pid ON orders (pid)"
+ "CREATE INDEX IF NOT EXISTS orders_pid ON orders (pid)",
+ "CREATE TABLE IF NOT EXISTS reports ( id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER NOT NULL, day TEXT, mode TEXT NOT NULL, from_title TEXT NOT NULL, to_title TEXT NOT NULL, reason TEXT NOT NULL, note TEXT NOT NULL, pid TEXT )"
 ];

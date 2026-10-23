@@ -6,7 +6,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-let db = { scores: {}, players: {}, leagues: {} };
+let db = { scores: {}, players: {}, leagues: {}, reports: [] };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA, 'utf8'))); } catch {}
 
 let pending = false;
@@ -130,6 +130,20 @@ const server = http.createServer((req, res) => {
     });
   }
   { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
+  if (url.pathname === '/api/reports' && req.method === 'GET') {
+    const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
+    if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
+    return json(res, 200, db.reports.slice(-100).reverse().map(({ pid, ...r }) => r));
+  }
+  if (url.pathname === '/api/report' && req.method === 'POST') {
+    if (limited(req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
+    return readBody(req, b => {
+      const t = x => String(x || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 80), note = String((b && b.note) || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, 200);
+      if (!b || !t(b.from) || !t(b.to) || !['unsolvable', 'offensive', 'broken', 'other'].includes(b.reason) || !['daily', 'practice', 'pack', 'challenge', 'live'].includes(b.mode) || (b.day && !DAY.test(b.day)) || (b.pid && !/^[a-z0-9]{6,16}$/.test(b.pid))) return json(res, 400, { error: 'invalid' });
+      db.reports = (db.reports || []).concat({ id: Date.now(), created_at: Date.now(), day: b.day || null, mode: b.mode, from_title: t(b.from), to_title: t(b.to), reason: b.reason, note, pid: b.pid || null }).slice(-1000);
+      save(); json(res, 200, { ok: true });
+    });
+  }
   if (url.pathname === '/api/leaderboard' && req.method === 'GET') {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
     const mode = ['day', 'week', 'all', 'streak'].includes(q.get('mode')) ? q.get('mode') : 'day';
@@ -144,7 +158,7 @@ const server = http.createServer((req, res) => {
     return readBody(req, b => {
       if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' });
       for (const k of Object.keys(db.scores)) if (db.scores[k].pid === b.pid) delete db.scores[k];
-      delete db.players[b.pid];
+      delete db.players[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid);
       for (const L of Object.values(db.leagues)) L.members = L.members.filter(m => m !== b.pid);
       save(); json(res, 200, { ok: true });
     });
@@ -192,8 +206,8 @@ const server = http.createServer((req, res) => {
       save(); json(res, 200, { ok: true });
     });
   }
-  const TYPES = { '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const TYPES = { '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {

@@ -29,6 +29,7 @@ export default {
         if (path === '/api/league') { const L = await league(env, (q.get('code') || '').toUpperCase()); return L ? reply(L) : reply({ error: 'no such league' }, 404); }
         if (path === '/api/entitlements') { const pid = q.get('pid') || ''; return PID.test(pid) ? reply({ supporter: await isSupporter(env, pid) }) : reply({ error: 'invalid' }, 400); }
         if (path === '/api/health') return reply({ ok: true });
+        if (path === '/api/reports') return await getReports(env, request, reply);
         return reply({ error: 'not found' }, 404);
       }
       if (request.method !== 'POST') return reply({ error: 'not found' }, 404);
@@ -42,6 +43,7 @@ export default {
       if (path === '/api/score') return await postScore(env, b, now(), reply);
       if (path === '/api/league') return await postLeague(env, b, now(), reply);
       if (path === '/api/delete') return await postDelete(env, b, reply);
+      if (path === '/api/report') return await postReport(env, b, now(), reply);
       return reply({ error: 'not found' }, 404);
     } catch (e) { return reply({ error: 'server error' }, 500); }
   }
@@ -117,7 +119,7 @@ async function postLeague(env, b, t, reply) {
 }
 async function postDelete(env, b, reply) {
   if (!PID.test(b.pid)) return reply({ error: 'invalid' }, 400);
-  await env.DB.batch([env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
+  await env.DB.batch([env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
   return reply({ ok: true });
 }
 
@@ -193,4 +195,20 @@ async function lobbyRoute(request, env, path, method, reply, t) {
   const res = await stub.fetch(new Request('https://lobby' + (m[2] || '/info'), request));
   if (m[2]) return res;   // websocket upgrade response passes straight through
   return res.ok ? reply(await res.json()) : reply({ error: 'no such lobby' }, 404);
+}
+
+// ---- puzzle reports ----------------------------------------------------------------------------------------------
+const REASONS = ['unsolvable', 'offensive', 'broken', 'other'], MODES = ['daily', 'practice', 'pack', 'challenge', 'live'];
+const cleanTitle = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 80);
+async function postReport(env, b, t, reply) {
+  const from = cleanTitle(b.from), to = cleanTitle(b.to), note = String(b.note || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, 200);
+  if (!from || !to || !REASONS.includes(b.reason) || !MODES.includes(b.mode) || (b.day && !DAY.test(b.day)) || (b.pid && !PID.test(b.pid))) return reply({ error: 'invalid' }, 400);
+  await env.DB.prepare('INSERT INTO reports (created_at, day, mode, from_title, to_title, reason, note, pid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(t, b.day || null, b.mode, from, to, b.reason, note, b.pid || null).run();
+  return reply({ ok: true });
+}
+async function getReports(env, request, reply) {
+  const given = (request.headers.get('authorization') || '').replace(/^Bearer /, '');
+  if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
+  if (!safeEqual(given, env.ADMIN_KEY)) return reply({ error: 'unauthorised' }, 401);
+  return reply((await env.DB.prepare('SELECT id, created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 100').all()).results);
 }

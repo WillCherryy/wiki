@@ -402,3 +402,6 @@ details.route summary { cursor: pointer; font: 600 12px var(--sans); letter-spac
   body:not(.ingame) .live-pill { bottom: 14px; }
   .toast { bottom: calc(var(--dock-h) + var(--safe) + 14px); }
 }
+.field > select, .field > textarea { border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 3px; padding: 12px 14px; font: 500 15px var(--sans); text-transform: none; letter-spacing: 0; width: 100%; resize: vertical; }
+.field > select:focus, .field > textarea:focus { outline: 2px solid var(--ink); }
+.linkbtn { border: 0; background: none; padding: 4px; color: var(--mute); font: 500 12.5px var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .linkbtn:hover { color: var(--accent-ink); }

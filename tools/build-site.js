@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
-const required = ['index.html', 'styles.css', 'config.js', 'cats.js', 'clean.js', 'packs.js', 'legal.css', 'legal.js', 'privacy.html', 'terms.html', 'overlay.html', 'overlay.css'];
+const required = ['index.html', 'styles.css', 'config.js', 'cats.js', 'clean.js', 'packs.js', 'legal.css', 'legal.js', 'privacy.html', 'terms.html', 'overlay.html', 'overlay.css', 'favicon.svg', 'og.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'manifest.webmanifest'];
 const optional = ['puzzles.json', 'pool.json', 'packs.json', 'CNAME', '_headers', '_redirects'];
 fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive: true });
 for (const f of required) fs.copyFileSync(path.join(root, f), path.join(out, f));

@@ -43,3 +43,15 @@ CREATE TABLE IF NOT EXISTS orders (
   PRIMARY KEY (provider, id)
 );
 CREATE INDEX IF NOT EXISTS orders_pid ON orders (pid);
+-- Player reports about puzzles (unsolvable, offensive, broken). Read with: wrangler d1 execute wikilink --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at INTEGER NOT NULL,
+  day TEXT,
+  mode TEXT NOT NULL,
+  from_title TEXT NOT NULL,
+  to_title TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  note TEXT NOT NULL,
+  pid TEXT
+);
