@@ -46,6 +46,7 @@
       <div class="plate-to" id="toTitle" role="heading" aria-level="2">&nbsp;</div>
       <p class="plate-cap" id="toDesc"></p>
       <div class="plate-facts" id="plateFacts"></div>
+      <div class="plate-check" id="plateCheck"></div>
       <div class="plate-act" id="heroAct"></div>
       <div class="next" id="nextIn"></div>
     </div>
@@ -201,11 +202,32 @@ async function loadData() {
   if (pool && Object.keys(pool).length > 3) POOL = pool;
 }
 const diffOf = par => par <= 2 ? 'Easy' : par === 3 ? 'Medium' : par === 4 ? 'Hard' : 'Expert';
+const overrideCache = {};
+async function dailyOverride(day) {
+  if (day in overrideCache) return overrideCache[day];
+  try { const c = JSON.parse(localStorage.getItem('warmer:ov:' + day)); if (c) return (overrideCache[day] = c); } catch {}
+  for (let i = 0; i < 2; i++) {
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 3500);
+      const r = await fetch(API_BASE + '/api/daily?day=' + day, { signal: ctl.signal }); clearTimeout(t);
+      if (r.status === 404) return (overrideCache[day] = null);
+      if (r.ok) { const o = await r.json(); overrideCache[day] = o; try { localStorage.setItem('warmer:ov:' + day, JSON.stringify(o)); } catch {} return o; }
+    } catch {}
+  }
+  return null;   // API unreachable: fall back to the schedule (not cached, so the next call tries again)
+}
 async function getDaily(day) {
-  const e = PUZZLES && PUZZLES[day];
-  if (e) return { from: e.from, to: e.to, ka: (e.cats || [])[0] || '', kb: (e.cats || [])[1] || '', par: e.par, route: e.route };
+  const o = await dailyOverride(day), e = o || (PUZZLES && PUZZLES[day]);
+  if (e) return { from: e.from, to: e.to, ka: (e.cats || [])[0] || '', kb: (e.cats || [])[1] || '', par: e.par, route: e.route, alts: e.alts || [], picked: !!o };
   const [from, to, ka, kb] = await resolvePair('wiki.io/' + day);
-  return { from, to, ka, kb, par: null, route: null };
+  return { from, to, ka, kb, par: null, route: null, alts: [] };
+}
+// pairs we have already proven solvable in four clicks or fewer: past daily puzzles and pack puzzles
+function verifiedPair() {
+  const t = dayKey(), list = [];
+  if (PUZZLES) for (const [d, e] of Object.entries(PUZZLES)) if (d < t && e.route) list.push(e);
+  if (PACKDATA) for (const p of Object.values(PACKDATA)) for (const e of p) if (e && e.route) list.push(e);
+  return list.length ? list[Math.floor(Math.random() * list.length)] : null;
 }
 function pickPair(seed) {
   const keys = Object.keys(POOL), r = rng(seed), ka = keys[Math.floor(r() * keys.length)]; let kb;
@@ -250,11 +272,12 @@ function setPlate(d, sa, sb) {
   const from = sa ? sa.title : d.from, to = sb ? sb.title : d.to, cap = x => x ? (x.desc || (x.extract || '').split(/(?<=\.)\s/)[0] || '') : '';
   $('#fromTitle').textContent = from; fitHero($('#fromTitle'), from); $('#fromDesc').textContent = cap(sa);
   $('#toTitle').textContent = to; fitHero($('#toTitle'), to); $('#toDesc').textContent = cap(sb);
+  $('#plateCheck').innerHTML = d.par ? `<span>✓</span> Checked: this puzzle can be solved in ${d.par === 4 ? '4 clicks' : 'four clicks or fewer'}` : '';
   $('#plateFacts').innerHTML = [d.par ? `Par ${d.par}` : '', d.par ? diffOf(d.par) : '', d.ka && d.kb ? `${esc(d.ka)} → ${esc(d.kb)}` : ''].filter(Boolean).map(t => `<span>${t}</span>`).join('');
 }
 function dailyCtx() {
   const day = dayKey(), e = P.days[day]; if (!e) return null;
-  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0, purist: !!e.purist } };
+  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map((x, i) => ({ sig: x, title: (e.path || [])[i] })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0, purist: !!e.purist, route: e.route || (PUZZLES && PUZZLES[day] && PUZZLES[day].route) || null, alts: e.alts || (PUZZLES && PUZZLES[day] && PUZZLES[day].alts) || [] } };
   return G.result;
 }
 function playDaily() {
@@ -301,8 +324,8 @@ async function startGame(mode, resume, extra) {
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
   else if (mode === 'live') { resume = null; from = extra.from; to = extra.to; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
-  else { resume = null; [from, to] = await resolvePair('p' + Math.random()); }
-  G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
+  else { resume = null; const v = verifiedPair(); if (v) { from = v.from; to = v.to; meta = { par: v.par, route: v.route, alts: v.alts || [] }; } else [from, to] = await resolvePair('p' + Math.random()); }
+  G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, alts: meta.alts || [], base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
   if (mode === 'live') G.base = extra.base || 0;
   if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, usedFind: !!resume.usedFind, moves: resume.moves || 0, base: resume.base });
   $('#reachLab').textContent = mode === 'live' ? 'Reach · live race' : mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
@@ -380,14 +403,14 @@ function finish(won) {
   const ref = G.par || G.goal || 0, par = ref || 3;
   const score = won ? Math.max(100, 1000 - 90 * Math.max(0, c - par) - Math.floor(secs / 3)) : 0;
   const stars = !won || !ref ? 0 : c <= ref ? 3 : c === ref + 1 ? 2 : c <= ref + 2 ? 1 : 0;
-  G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode, purist: !G.usedFind && !G.rewinds };
+  G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode, purist: !G.usedFind && !G.rewinds, alts: G.alts || [] };
   let gain = 0, streakBonus = 0;
   P.played++; P.clicksTotal += c;
   if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; if (!G.usedFind && !G.rewinds) P.puristWins++; gain = Math.round(score / 10); }
   else gain = 5;
   if (G.mode === 'daily') {
     if (!P.days[G.day]) {
-      P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, purist: !G.usedFind && !G.rewinds };
+      P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, purist: !G.usedFind && !G.rewinds, route: G.route || null, alts: G.alts || [] };
       if (won) { const shield = P.supporter && P.lastDay === yesterday(yesterday(G.day)) && P.shieldMonth !== G.day.slice(0, 7); if (shield) { P.shieldMonth = G.day.slice(0, 7); G.result.shield = true; } P.streak = P.lastDay === yesterday(G.day) || shield ? P.streak + 1 : 1; P.lastDay = G.day; P.maxStreak = Math.max(P.maxStreak, P.streak); streakBonus = Math.min(50, P.streak * 5); gain += streakBonus; }
       else if (P.lastDay !== G.day && P.lastDay !== yesterday(G.day)) P.streak = 0;
     } else gain = 0;
@@ -436,6 +459,42 @@ function shareText() {
   const ref = r.par || r.goal;
   return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
 }
+/* ----------------------------------------------------------------- result components (one visual language) */
+const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 : i / (n - 1)) * 4));
+function routeRow(titles, dots, head, extra = '') {
+  return `<div class="rtr ${extra}"><div class="rth"><span>${head[0]}</span><span>${head[1]}</span></div><div class="rtd">${titles.map((t, i) => `${i ? '<span class="rtl"></span>' : ''}<span class="rtn"><i style="width:${dots[i].d}px;height:${dots[i].d}px;background:${dots[i].c}"></i><span>${esc(t)}</span></span>`).join('')}</div></div>`;
+}
+function routesCard(r) {
+  const yours = r.path || [], sigs = (r.steps || []).map(s => s.sig);
+  const yd = yours.map((_, i) => { const sg = r.won && i === yours.length - 1 ? 1 : sigs[i] == null ? 0 : sigs[i]; return { c: tempCss(sg), d: 14 + Math.round(sg * 14) }; });
+  const known = [r.route, ...(r.alts || [])].filter(a => Array.isArray(a) && a.length > 1);
+  const shortest = known.length ? known[0].length - 1 : null, mine = yours.map(norm).join('>');
+  const hit = known.findIndex(k => k.map(norm).join('>') === mine);
+  let verdict = '';
+  if (known.length && r.won) verdict = r.clicks < shortest ? 'Shorter than our shortest known route. Nice find.' : r.clicks === shortest ? (hit >= 0 ? 'You found one of the shortest routes.' : 'Your own route, as short as the shortest.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
+  else if (known.length) verdict = 'Here is a way through.';
+  return `<section class="rcard"><h4>Routes <small>${r.won ? 'yours and the shortest' : 'the way through'}</small></h4>
+    ${r.won ? routeRow(yours, yd, ['You', `${r.clicks} click${r.clicks === 1 ? '' : 's'}`], 'you') : ''}
+    ${known.map((k, i) => routeRow(k, rampDots(k.length).map(ci => ({ c: DOT_C[ci], d: 14 + ci * 3 })), [i ? 'Another route' : 'Shortest', `${k.length - 1} click${k.length === 2 ? '' : 's'}${i === hit ? ' · yours' : ''}`], i === hit ? 'mine' : '')).join('')}
+    ${verdict ? `<p class="rtv">${verdict}</p>` : ''}
+    ${known.length ? '<p class="rtf">Every puzzle is checked: it can always be solved in four clicks or fewer.</p>' : r.mode === 'practice' || r.mode === 'daily' ? '<p class="rtf">This pair was picked automatically and has not been route-checked.</p>' : ''}</section>`;
+}
+function streakCard(r) {
+  const st = P.streak || 0, best = Math.max(P.maxStreak || 0, st), ms = [3, 7, 30, 100], next = ms.find(m => m > st), played = !!P.days[dayKey()];
+  const month = dayKey().slice(0, 7), shield = P.supporter ? (P.shieldMonth === month ? 'Streak shield used this month' : 'Streak shield ready') : '';
+  return `<section class="rcard streak"><h4>Daily streak <small>${r.mode === 'daily' ? 'updated' : played ? 'today is done' : 'not played today'}</small></h4>
+    <div class="sk"><div class="sn"><b>${st}</b><span>day${st === 1 ? '' : 's'}</span></div>
+    <div class="sm">${ms.map((m, i) => `${i ? '<span class="rtl"></span>' : ''}<span class="mk${st >= m ? ' on' : ''}"><i style="background:${st >= m ? DOT_C[Math.min(4, i + 1)] : ''}"></i><span>${m}</span></span>`).join('')}</div></div>
+    <p class="rtv">${r.shield ? 'Your streak survived a missed day. ' : ''}${next ? `${next - st} more day${next - st === 1 ? '' : 's'} to the ${next}-day badge.` : 'Every streak badge earned.'} Best: ${best}.${!played && r.mode !== 'daily' ? ' Play today’s puzzle to keep it going.' : ''}${shield ? ' ' + shield + '.' : ''}</p></section>`;
+}
+async function fillStanding(r) {
+  if (r.mode !== 'daily' || !r.won) return;
+  try {
+    const j = await (await fetch(API_BASE + '/api/paths?day=' + G.day)).json(); if (!j || !j.total || j.total < 5) return;
+    const d = $('#standing'); if (!d) return; const diff = Math.round((j.avg - r.clicks) * 10) / 10;
+    d.innerHTML = `<h4>How you stack up <small>today’s players</small></h4><div class="stand"><div><b>${j.avg.toFixed(1)}</b><span>average clicks</span></div><div><b>${j.best}</b><span>best · ${j.bestCount} player${j.bestCount === 1 ? '' : 's'}</span></div><div><b>${j.total}</b><span>posted</span></div></div><p class="rtv">${diff > 0 ? `You beat the average by ${diff} click${diff === 1 ? '' : 's'}.` : diff < 0 ? `${-diff} click${diff === -1 ? '' : 's'} over the average.` : 'Right on the average.'}</p>`; d.hidden = false;
+  } catch {}
+}
 function showResult() {
   const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
   const lo = rk.xp, hi = nx ? nx.xp : rk.xp, pct = nx ? Math.round((P.xp - lo) / (hi - lo) * 100) : 100;
@@ -449,10 +508,10 @@ function showResult() {
     ${r.won && ref ? `<div class="stars">${'★'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
     ${r.won && r.purist ? '<div class="purist"><b>◆</b> Purist run: no link search, no rewind</div>' : ''}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
-    ${routeDots(r.steps)}
-    <div class="pathline">${r.path.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div>
-    ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
+    ${routesCard(r)}
     <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (+${r.streakBonus} streak)` : ''}</span></div></div>
+    ${streakCard(r)}
+    <section class="rcard" id="standing" hidden></section>
     <div class="xpbar"><div class="xpmeta"><span style="color:${rk.c}">${rankUp ? 'Rank up · ' : ''}${rk.n}</span><span>${nx ? `${P.xp} / ${hi} XP · next: ${nx.n}` : `${P.xp} XP · max rank`}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div></div>
     ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
     ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
@@ -461,7 +520,7 @@ function showResult() {
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult);
+  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r);
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
@@ -658,7 +717,7 @@ function ask(h, text, yes, cb) {
 }
 function showHelp() {
   openModal(`<h2>How to play</h2><p>Race through Wikipedia from the start article to the target.</p>
-  <ol><li><b>Click links</b> inside the article to travel. Each jump is one click.</li><li>Reach the <b>target</b> in as few clicks as possible. Time breaks ties.</li>
+  <ol><li><b>Click links</b> inside the article to travel. Each jump is one click. Every puzzle is checked by computer: a route of <b>four clicks or fewer</b> always exists.</li><li>Reach the <b>target</b> in as few clicks as possible. Time breaks ties.</li>
   <li>The <b>Signal</b> meter shows how close you are in topic. The whole UI warms from blue to red as you get closer.</li>
   <li>Use <b>Find a link</b> to search the article's links. <b>Back</b> costs +1 click.</li>
   <li>Earn <b>XP</b> to climb ranks, unlock <b>achievements</b>, keep your <b>streak</b> and challenge friends in <b>leagues</b>.</li></ol>
@@ -782,7 +841,7 @@ function openLocker(tab = 'theme') {
 /* the five-dot motif: logo, loader, meter, route, empty states */
 const DOT_C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], DOT_R = [3.2, 4.2, 5.4, 6.8, 8.4];
 const dotsHtml = (lit = 0, k = 1.4) => `<span class="dots5" aria-hidden="true">${DOT_C.map((c, i) => `<i style="width:${DOT_R[i] * 2 * k}px;height:${DOT_R[i] * 2 * k}px;${i < lit ? 'background:' + c : ''}"></i>`).join('')}</span>`;
-const routeDots = steps => `<div class="routedots" aria-hidden="true">${steps.map((st, i) => `${i ? '<span class="rl"></span>' : ''}<i style="--sc:${tempCss(st.sig)};--d:${12 + Math.round(st.sig * 12)}px" title="${esc(st.title || '')}"></i>`).join('')}</div>`;
+const routeDots = steps => `<div class="routedots" aria-hidden="true">${steps.map((st, i) => `${i ? '<span class="rtl"></span>' : ''}<i style="--sc:${tempCss(st.sig)};--d:${12 + Math.round(st.sig * 12)}px" title="${esc(st.title || '')}"></i>`).join('')}</div>`;
 /* --------------------------------------------------------------------- share card */
 function fitText(x, text, maxW) { if (x.measureText(text).width <= maxW) return text; while (text.length > 1 && x.measureText(text + '…').width > maxW) text = text.slice(0, -1); return text + '…'; }
 async function shareCardCanvas(r) {
@@ -1039,6 +1098,10 @@ function renderLiveBoard(box) {
   $('#lbLeave').onclick = () => { Live.leave(true); closeModal(); if (!$('#game').classList.contains('on')) renderHome(); };
 }
 
+/* route checking for custom lobbies: the same solver the founder uses for the daily puzzle, loaded only when needed */
+const loadScript = src => new Promise((res, rej) => { if (document.querySelector(`script[data-lazy="${src}"]`)) return res(); const s = document.createElement('script'); s.src = src; s.dataset.lazy = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+async function checkRoute(from, to, onStep) { await loadScript('solver.js'); await loadScript('wikiclient.js'); return WikiSolver.makeSolver(WikiClient.makeGraph()).findRoute(from, to, { maxPar: 4, alts: 1, altCap: 20, onStep }); }
+
 /* host */
 async function openHost() {
   Live.screen = '';
@@ -1048,15 +1111,28 @@ async function openHost() {
     <p>Create a lobby, paste the link into chat, and let viewers race the same puzzle in their browsers. They need no account.</p>
     ${alive ? `<div class="unlock" id="hostResume" style="cursor:pointer"><span class="medal">▶</span><span><b>Resume lobby ${esc(saved.code)}</b><small>Your last lobby is still open</small></span></div>` : ''}
     <div class="tabs" id="hostSrc"><button data-s="daily" class="on">Today’s puzzle</button><button data-s="random">Random</button><button data-s="custom">Custom</button></div>
-    <div id="hostCustom" hidden><div class="field">Start article<input id="hostFrom" maxlength="80" placeholder="e.g. Tour de France"></div><div class="field">Target article<input id="hostTo" maxlength="80" placeholder="e.g. India"></div></div>
+    <div id="hostCustom" hidden><div class="field">Start article<input id="hostFrom" maxlength="80" placeholder="e.g. Tour de France"></div><div class="field">Target article<input id="hostTo" maxlength="80" placeholder="e.g. India"></div><p class="s mute" id="hostChk" style="margin:0 0 6px">We check that a route of four clicks or fewer exists. This takes a little while.</p></div>
     <div class="actions"><button class="btn" id="hostMake">Create lobby →</button></div>`);
   let src = 'daily';
   document.querySelectorAll('#hostSrc button').forEach(b => b.onclick = () => { src = b.dataset.s; document.querySelectorAll('#hostSrc button').forEach(x => x.classList.toggle('on', x === b)); $('#hostCustom').hidden = src !== 'custom'; });
   if ($('#hostResume')) $('#hostResume').onclick = () => { Live.connect(saved.code, saved.key); openHostPanel(); };
+  let chk = null;   // {key, res} for the last custom pair we checked
   $('#hostMake').onclick = async () => {
     $('#hostMake').disabled = true;
     try {
-      const pz = await hostPuzzle(src, $('#hostFrom').value, $('#hostTo').value);
+      let pz;
+      if (src === 'custom') {
+        const f = $('#hostFrom').value.trim(), t = $('#hostTo').value.trim(), k = f + '|' + t;
+        let a, b; try { [a, b] = await Promise.all([getSummary(f), getSummary(t)]); } catch { throw new Error('bad'); }
+        if (!chk || chk.key !== k) {
+          $('#hostChk').textContent = 'Checking that this can be solved…';
+          let res = null; try { res = await checkRoute(a.title, b.title, m => { $('#hostChk').textContent = m + '…'; }); } catch {}
+          chk = { key: k, res };
+          if (!res) { $('#hostChk').innerHTML = '<b>No route of four clicks or fewer was found.</b> Some players may never finish. Press again to create the lobby anyway, or pick other articles.'; $('#hostMake').textContent = 'Create anyway →'; $('#hostMake').disabled = false; return; }
+        }
+        pz = { from: a.title, to: b.title, par: chk.res ? chk.res.par : null };
+        if (chk.res) $('#hostChk').textContent = `Checked: solvable in ${chk.res.par} click${chk.res.par === 1 ? '' : 's'}.`;
+      } else pz = await hostPuzzle(src);
       const r = await fetch(API_BASE + '/api/lobby', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pz) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'failed');
       const { code, key } = await r.json(); try { localStorage.setItem('wikiio:host', JSON.stringify({ code, key })); } catch {}
@@ -1064,10 +1140,9 @@ async function openHost() {
     } catch (e) { $('#hostMake').disabled = false; toast(e.message === 'bad' ? 'Those articles could not be found' : 'Could not create the lobby — is the API set up?'); }
   };
 }
-async function hostPuzzle(src, f, t) {
+async function hostPuzzle(src) {
   if (src === 'daily') { const d = await getDaily(dayKey()); return { from: d.from, to: d.to, par: d.par || null }; }
-  if (src === 'random') { const [from, to] = await resolvePair('p' + Math.random()); return { from, to }; }
-  try { const [a, b] = await Promise.all([getSummary(f.trim()), getSummary(t.trim())]); return { from: a.title, to: b.title }; } catch { throw new Error('bad'); }
+  if (src === 'random') { const v = verifiedPair(); if (v) return { from: v.from, to: v.to, par: v.par }; const [from, to] = await resolvePair('p' + Math.random()); return { from, to }; }
 }
 function openHostPanel() { Live.screen = 'host'; openModal('<div id="hostBody"></div>', () => { if (Live.screen === 'host') Live.screen = ''; }); renderHost(); }
 function renderHost() {
@@ -1091,7 +1166,7 @@ function renderHost() {
   if ($('#hStart')) $('#hStart').onclick = () => Live.send({ t: 'start' });
   if ($('#hEnd')) $('#hEnd').onclick = () => Live.send({ t: 'end' });
   if ($('#hSame')) $('#hSame').onclick = () => Live.send({ t: 'reset' });
-  if ($('#hNew')) $('#hNew').onclick = async () => { try { const [from, to] = await resolvePair('p' + Math.random()); Live.send({ t: 'reset', puzzle: { from, to } }); } catch { toast('Could not pick a puzzle'); } };
+  if ($('#hNew')) $('#hNew').onclick = async () => { try { const v = verifiedPair(); if (v) Live.send({ t: 'reset', puzzle: { from: v.from, to: v.to, par: v.par } }); else { const [from, to] = await resolvePair('p' + Math.random()); Live.send({ t: 'reset', puzzle: { from, to } }); } } catch { toast('Could not pick a puzzle'); } };
   if ($('#hPlay')) $('#hPlay').onclick = () => ldName('#hostName', () => { Live.play = true; Live.hello(); toast('You are in the race — start it when ready'); renderHost(); });
   $('#hClose').onclick = () => ask('Close the lobby?', 'Everyone is disconnected from the race.', 'Close lobby', () => { try { localStorage.removeItem('wikiio:host'); } catch {} Live.leave(true); closeModal(); });
   if (focus && $('#' + focus) && $('#' + focus).tagName === 'INPUT') $('#' + focus).focus();

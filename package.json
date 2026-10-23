@@ -8,7 +8,7 @@
     "pool": "node tools/build-pool.js",
     "puzzles": "node tools/build-puzzles.js",
     "build:site": "node tools/build-site.js",
-    "test": "node tools/test-fake.js && node tools/test-api.js && node tools/test-worker.js && node tools/test-stats.js && node tools/test-lobby.js"
+    "test": "node tools/test-fake.js && node tools/test-solver.js && node tools/test-api.js && node tools/test-worker.js && node tools/test-stats.js && node tools/test-lobby.js"
   },
   "dependencies": {},
   "devDependencies": {

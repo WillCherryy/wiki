@@ -6,7 +6,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-let db = { scores: {}, players: {}, leagues: {}, reports: [], activity: {}, counters: {} };
+let db = { scores: {}, players: {}, leagues: {}, reports: [], activity: {}, counters: {}, overrides: {} };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA, 'utf8'))); } catch {}
 
 let pending = false;
@@ -16,6 +16,7 @@ function save() {
 }
 
 let stats = null; import('./worker/stats.js').then(m => { stats = m; });
+let puzzleCheck = null; import('./worker/puzzle.js').then(m => { puzzleCheck = m; });
 const utcDay = () => new Date().toISOString().slice(0, 10);
 const bumpC = (day, k) => { db.counters = db.counters || {}; const key = day + '|' + k; db.counters[key] = (db.counters[key] || 0) + 1; };
 const hits = new Map();
@@ -133,6 +134,27 @@ const server = http.createServer((req, res) => {
     });
   }
   { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
+  if (url.pathname === '/api/daily' && req.method === 'GET') {
+    const day = q.get('day') || ''; if (!DAY.test(day)) return json(res, 400, { error: 'invalid' });
+    const o = (db.overrides || {})[day]; return o ? json(res, 200, o) : json(res, 404, { error: 'none' });
+  }
+  if (url.pathname === '/api/admin/daily' && req.method === 'GET') {
+    const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
+    if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
+    const since = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    return json(res, 200, Object.values(db.overrides || {}).filter(o => o.day >= since).sort((a, b) => (a.day < b.day ? -1 : 1)));
+  }
+  if (url.pathname === '/api/admin/daily' && req.method === 'POST') {
+    const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
+    if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
+    return readBody(req, b => {
+      if (!b || !puzzleCheck) return json(res, 400, { error: 'invalid' });
+      db.overrides = db.overrides || {};
+      if (b.remove) { if (!DAY.test(b.day)) return json(res, 400, { error: 'bad day' }); delete db.overrides[b.day]; save(); return json(res, 200, { ok: true }); }
+      const c = puzzleCheck.checkOverride(b); if (!c.ok) return json(res, 400, { error: c.error });
+      db.overrides[c.value.day] = c.value; save(); json(res, 200, { ok: true });
+    });
+  }
   if (url.pathname === '/api/admin/stats' && req.method === 'GET') {
     const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
     if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
@@ -230,7 +252,7 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {

@@ -46,10 +46,10 @@ const label = p => p <= 2 ? 'Easy' : p === 3 ? 'Medium' : p === 4 ? 'Hard' : 'Ex
       do kb = KEYS[Math.floor(r() * KEYS.length)]; while (KEYS.length > 1 && kb === ka);
       const from = POOL[ka][Math.floor(r() * POOL[ka].length)], to = POOL[kb][Math.floor(r() * POOL[kb].length)];
       if (from === to || used.has(from) || used.has(to)) continue;
-      let res; try { res = await findRoute(from, to, { maxPar: MAXPAR, log: process.env.VERBOSE ? console.log : () => {} }); } catch (e) { console.warn('  error', from, to, e.message); continue; }
+      let res; try { res = await findRoute(from, to, { maxPar: MAXPAR, alts: 2, log: process.env.VERBOSE ? console.log : () => {} }); } catch (e) { console.warn('  error', from, to, e.message); continue; }
       if (!res) { process.stdout.write('.'); continue; }
       const dist = res.par < lo ? lo - res.par : res.par > hi ? res.par - hi : 0;
-      const cand = { from: res.route[0], to: res.route[res.route.length - 1], par: res.par, route: res.route, cats: [ka, kb], dist };
+      const cand = { from: res.route[0], to: res.route[res.route.length - 1], par: res.par, route: res.route, alts: res.alts || [], cats: [ka, kb], dist };
       if (!best || dist < best.dist) best = cand;
       if (dist === 0) break;
     }

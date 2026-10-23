@@ -8,6 +8,7 @@ const hits = new Map(); // best-effort per-isolate rate limit; add a Cloudflare 
 
 import SCHEMA from './schema.js';
 import { computeStats } from './stats.js';
+import { checkOverride } from './puzzle.js';
 export { Lobby } from './lobby.js';
 let ready;
 
@@ -32,6 +33,8 @@ export default {
         if (path === '/api/health') return reply({ ok: true });
         if (path === '/api/reports') return await getReports(env, request, reply);
         if (path === '/api/admin/stats') return await adminStats(env, request, q, now(), reply);
+        if (path === '/api/daily') return await getDaily(env, q.get('day') || '', reply);
+        if (path === '/api/admin/daily') return await listOverrides(env, request, now(), reply);
         return reply({ error: 'not found' }, 404);
       }
       if (request.method !== 'POST') return reply({ error: 'not found' }, 404);
@@ -47,6 +50,7 @@ export default {
       if (path === '/api/delete') return await postDelete(env, b, reply);
       if (path === '/api/report') return await postReport(env, b, now(), reply);
       if (path === '/api/event') return await postEvent(env, b, request, now(), reply);
+      if (path === '/api/admin/daily') return await postOverride(env, b, request, now(), reply);
       return reply({ error: 'not found' }, 404);
     } catch (e) { return reply({ error: 'server error' }, 500); }
   }
@@ -247,4 +251,28 @@ async function adminStats(env, request, q, t, reply) {
     all('SELECT created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 200')
   ]);
   return reply(computeStats({ today, days, activity, firsts: new Map(firstRows.map(r => [r.pid, r.first])), counters, scores, orders, reports }));
+}
+
+// ---- hand-picked daily puzzles -------------------------------------------------------------------------------------
+const isAdmin = (env, request) => !!env.ADMIN_KEY && safeEqual((request.headers.get('authorization') || '').replace(/^Bearer /, ''), env.ADMIN_KEY);
+const rowOut = r => ({ day: r.day, from: r.from_title, to: r.to_title, par: r.par, route: JSON.parse(r.route), alts: JSON.parse(r.alts || '[]') });
+async function getDaily(env, day, reply) {
+  if (!DAY.test(day)) return reply({ error: 'invalid' }, 400);
+  const r = await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day = ?').bind(day).first();
+  return r ? reply(rowOut(r)) : reply({ error: 'none' }, 404);
+}
+async function listOverrides(env, request, t, reply) {
+  if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
+  if (!isAdmin(env, request)) return reply({ error: 'unauthorised' }, 401);
+  const since = new Date(t - 7 * 864e5).toISOString().slice(0, 10);
+  return reply((await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day >= ? ORDER BY day').bind(since).all()).results.map(rowOut));
+}
+async function postOverride(env, b, request, t, reply) {
+  if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
+  if (!isAdmin(env, request)) return reply({ error: 'unauthorised' }, 401);
+  if (b.remove) { if (!DAY.test(b.day)) return reply({ error: 'bad day' }, 400); await env.DB.prepare('DELETE FROM daily_override WHERE day = ?').bind(b.day).run(); return reply({ ok: true }); }
+  const c = checkOverride(b); if (!c.ok) return reply({ error: c.error }, 400);
+  const v = c.value;
+  await env.DB.prepare('INSERT INTO daily_override (day, from_title, to_title, par, route, alts, created_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(day) DO UPDATE SET from_title = excluded.from_title, to_title = excluded.to_title, par = excluded.par, route = excluded.route, alts = excluded.alts, created_at = excluded.created_at').bind(v.day, v.from, v.to, v.par, JSON.stringify(v.route), JSON.stringify(v.alts), t).run();
+  return reply({ ok: true });
 }

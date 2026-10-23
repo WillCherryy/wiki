@@ -69,6 +69,17 @@ async function scenario(call, label) {
   assert.deepStrictEqual([st.puzzles[0].started, st.puzzles[0].won, st.puzzles[0].winRate], [1, 1, 100], `${label}: daily puzzle health`);
   assert.deepStrictEqual(st.countries.map(c => [c.code, c.n]).sort(), [['GB', 1], ['US', 1]], `${label}: countries are aggregate counts`);
   assert.strictEqual(st.series[st.series.length - 1].visits, 2, `${label}: visits`);
+  // hand-picked daily puzzles (admin) and the public lookup
+  const adm = { authorization: 'Bearer adminkey' }, pz = { day: shiftDay(1), from: 'Tour de France', to: 'India', route: ['Tour de France', 'France', 'British Empire', 'India'], alts: [['Tour de France', 'Cycling', 'Colonialism', 'India']] };
+  assert.strictEqual((await call('POST', '/api/admin/daily', pz)).status, 401, `${label}: setting a puzzle needs the admin key`);
+  ok(await call('POST', '/api/admin/daily', pz, adm), 'set puzzle');
+  for (const [what, bad] of [['a 5-click route', { route: ['Tour de France', 'a', 'b', 'c', 'd', 'India'] }], ['a route that misses the target', { route: ['Tour de France', 'France', 'Peru'] }], ['same start and target', { to: 'tour de france', route: ['Tour de France', 'x', 'tour de france'] }], ['bad day', { day: 'soon' }], ['a bad alternative', { alts: [['Tour de France', 'Peru']] }]])
+    assert.strictEqual((await call('POST', '/api/admin/daily', { ...pz, ...bad }, adm)).status, 400, `${label}: rejects ${what}`);
+  const pub = (await call('GET', `/api/daily?day=${pz.day}`)).body;
+  assert.deepStrictEqual([pub.from, pub.to, pub.par, pub.route.length, pub.alts.length], ['Tour de France', 'India', 3, 4, 1], `${label}: public lookup returns the pick`);
+  assert.strictEqual((await call('GET', `/api/daily?day=${shiftDay(5)}`)).status, 404, `${label}: no pick, no override`);
+  assert.strictEqual((await call('GET', '/api/admin/daily', null, adm)).body.length, 1, `${label}: admin list`);
+  ok(await call('POST', '/api/admin/daily', { day: pz.day, remove: true }, adm), 'remove pick'); assert.strictEqual((await call('GET', `/api/daily?day=${pz.day}`)).status, 404, `${label}: removed`);
   // delete removes scores, league membership and the player
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');
   assert.deepStrictEqual((await call('GET', `/api/leaderboard?mode=day&day=${today}`)).body.map(r => r.name), ['Bob', 'Carol'], `${label}: board after delete`);

@@ -74,3 +74,13 @@ CREATE TABLE IF NOT EXISTS counters (
   n INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, k)
 );
+-- Puzzles the founder picked by hand (admin page). Overrides the precomputed schedule for that day.
+CREATE TABLE IF NOT EXISTS daily_override (
+  day TEXT PRIMARY KEY,
+  from_title TEXT NOT NULL,
+  to_title TEXT NOT NULL,
+  par INTEGER NOT NULL,
+  route TEXT NOT NULL,
+  alts TEXT NOT NULL DEFAULT '[]',
+  created_at INTEGER NOT NULL
+);

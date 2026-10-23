@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Puzzles · Founder · Warmer</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="admin.css">
+<style>
+.pz-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: start; } @media (max-width: 1000px) { .pz-grid { grid-template-columns: 1fr; } }
+.sched .it { display: grid; grid-template-columns: 74px 1fr auto; gap: 14px; align-items: center; padding: 13px 0; border-top: 1px solid var(--rule-2); } .sched .it:first-of-type { border-top: 0; }
+.sched .d { font: 600 12px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); } .sched .d b { display: block; font: 400 28px/1 var(--display); letter-spacing: 0; color: var(--ink); text-transform: none; }
+.sched .p { font: 400 22px/1.15 var(--display); } .sched .p i { font-style: italic; color: var(--accent); } .sched .m { margin-top: 3px; font: 500 12.5px var(--sans); color: var(--mute); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tag { font: 600 10.5px var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 2px; border: 1px solid var(--rule); white-space: nowrap; } .tag.pick { border-color: var(--ink); color: var(--ink); } .tag.sch { border-color: #2a4f8a; color: #2a4f8a; } .tag.auto { color: var(--mute); } .tag.tom { background: var(--accent); border-color: var(--accent); color: #fff; }
+.mini { border: 1px solid var(--rule); background: none; border-radius: 4px; padding: 7px 12px; font: 600 12px var(--sans); cursor: pointer; color: var(--ink); } .mini:hover { border-color: var(--ink); }
+.pk input, .field input[type=date] { border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 3px; padding: 12px 14px; font: 500 15px var(--sans); text-transform: none; letter-spacing: 0; width: 100%; } .pk input:focus, .field input[type=date]:focus { outline: 2px solid var(--ink); }
+.field.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .pk { position: relative; } .pk input { width: 100%; }
+.sug { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; background: var(--sheet); border: 1px solid var(--ink); border-top: 0; max-height: 260px; overflow: auto; } .sug button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 14px; font: 500 15px var(--sans); cursor: pointer; text-transform: none; letter-spacing: 0; } .sug button:hover, .sug button.on { background: var(--paper); }
+.routes { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; } .rt { border: 1px solid var(--rule); background: var(--paper); padding: 14px 16px; } .rt.best { border-color: var(--ink); }
+.rt .h { display: flex; justify-content: space-between; font: 600 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin-bottom: 10px; }
+.rdots { display: flex; align-items: flex-start; flex-wrap: wrap; row-gap: 12px; } .rdots .n { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 92px; text-align: center; font: 600 12.5px/1.25 var(--sans); color: var(--ink-2); } .rdots .n i { display: block; border-radius: 50%; } .rdots .l { width: 26px; border-top: 2px dotted var(--rule); margin-top: 11px; }
+.verdict { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-left: 4px solid #2e7d4f; background: var(--paper); font: 500 15px/1.4 var(--sans); } .verdict b { font: 400 26px var(--display); display: block; } .verdict.bad { border-color: #b32b12; }
+.progress { font: 500 14px var(--sans); color: var(--ink-2); display: flex; align-items: center; gap: 12px; padding: 12px 0; } .progress .spin { margin: 0; height: 24px; }
+.plate { text-align: center; padding: 18px; border: 1px solid var(--rule-2); background: var(--paper); margin-bottom: 14px; } .plate .a { font: 400 38px/1 var(--display); } .plate .b { font: italic 400 46px/1.05 var(--display); color: var(--accent); } .plate .to { font: italic 400 18px var(--display); color: var(--mute); margin: 4px 0; }
+.hint { font: 500 13px/1.45 var(--sans); color: var(--mute); }
+</style></head>
+<body>
+<div class="gate" id="gate" hidden><div class="dots5" id="gateDots"></div><h1 style="font-size:44px;margin-top:14px">Puzzles</h1><p class="sub" style="margin-bottom:0">Enter your admin key to pick the daily puzzle.</p><input id="key" type="password" placeholder="Admin key" autocomplete="current-password"><div class="err" id="err"></div><button class="btn" id="go" style="width:100%">Open</button></div>
+<div class="fd" id="app" hidden>
+  <div class="fd-top"><div class="logo"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg><span>Warm<b>er</b></span></div><span class="fd-tag">Founder</span><nav class="fd-nav"><a href="admin.html">Dashboard</a><a class="on" href="admin-puzzles.html">Puzzles</a></nav><span class="sp"></span><button class="btn ghost" id="out" style="padding:8px 14px">Lock</button></div>
+  <h1>Pick the daily puzzle</h1><p class="sub">Every puzzle must be solvable in four clicks or fewer. This page finds the routes in your browser and only lets you save a pair that passes. A day you skip falls back to the scheduled puzzle.</p>
+  <div class="pz-grid">
+    <div class="card sched"><h3>Next 14 days</h3><p class="cs">Hand-picked beats scheduled, scheduled beats the automatic pick.</p><div id="sched"></div></div>
+    <div class="card" id="picker">
+      <h3>Pick a puzzle</h3><p class="cs">Search Wikipedia for the start and the target.</p>
+      <div class="field">Date<input type="date" id="pDate"></div>
+      <div class="field row2"><div class="pk">Start article<input id="pFrom" autocomplete="off" placeholder="e.g. Tour de France"><div class="sug" id="sugFrom" hidden></div></div><div class="pk">Target article<input id="pTo" autocomplete="off" placeholder="e.g. India"><div class="sug" id="sugTo" hidden></div></div></div>
+      <div class="actions" style="margin-top:4px"><button class="btn" id="pCheck">Check and find routes</button><button class="btn ghost" id="pSuggest">Suggest a pair</button><button class="btn ghost" id="pSwap" title="Swap start and target">⇄</button></div>
+      <div id="pOut"></div>
+    </div>
+  </div>
+</div>
+<script src="config.js"></script><script src="cats.js"></script><script src="clean.js"></script><script src="solver.js"></script><script src="wikiclient.js"></script>
+<script>
+(function () {
+  const CFG = window.WIKIIO || {}, API = (CFG.api || '').replace(/\/$/, ''), $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], R = [3.2, 4.2, 5.4, 6.8, 8.4];
+  const dots = (lit = 5) => R.map((r, i) => `<i style="display:block;border-radius:50%;width:${r * 2.4}px;height:${r * 2.4}px;background:${i < lit ? C[i] : '#d8cfbf'}"></i>`).join('');
+  $('#gateDots').innerHTML = dots(5); $('#gateDots').style.cssText = 'display:inline-flex;gap:8px;align-items:center';
+  const g = WikiClient.makeGraph(), solver = WikiSolver.makeSolver(g);
+  const utc = (n = 0) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+  const nice = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const diff = p => (p <= 2 ? 'Easy' : p === 3 ? 'Medium' : 'Hard');
+  const key = () => sessionStorage.getItem('warmer:admin');
+  const hdr = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + key() });
+  // route as a row of dots: cold at the start, hot at the target, so players recognise it from the result screen
+  const routeDots = route => `<div class="rdots">${route.map((t, i) => { const k = route.length < 2 ? 0 : i / (route.length - 1), ci = Math.round(k * 4), d = 14 + ci * 4; return `${i ? '<span class="l"></span>' : ''}<span class="n"><i style="width:${d}px;height:${d}px;background:${C[ci]}"></i>${esc(t)}</span>`; }).join('')}</div>`;
+  let picks = {}, scheduled = {}, found = null;
+
+  async function load() {
+    if (!key()) return gate();
+    let r; try { r = await fetch(API + '/api/admin/daily', { headers: hdr() }); } catch { return gate('Could not reach the server.'); }
+    if (r.status === 401) { sessionStorage.removeItem('warmer:admin'); return gate('That key was not accepted.'); }
+    if (r.status === 404) return gate('Admin is not switched on. Set the ADMIN_KEY secret first.');
+    if (!r.ok) return gate('The server returned an error (' + r.status + ').');
+    picks = Object.fromEntries((await r.json()).map(o => [o.day, o]));
+    try { const pz = await (await fetch('puzzles.json', { cache: 'no-store' })).json(); scheduled = pz.days || {}; } catch { scheduled = {}; }
+    $('#gate').hidden = true; $('#app').hidden = false; renderSched(); if (!$('#pDate').value) $('#pDate').value = utc(1);
+  }
+  function gate(msg) { $('#app').hidden = true; $('#gate').hidden = false; $('#err').textContent = msg || ''; $('#key').focus(); }
+  function renderSched() {
+    $('#sched').innerHTML = Array.from({ length: 14 }, (_, i) => utc(i)).map((d, i) => {
+      const o = picks[d], s = scheduled[d], e = o || s, label = o ? '<span class="tag pick">Hand-picked</span>' : s ? '<span class="tag sch">Scheduled</span>' : '<span class="tag auto">Automatic pick</span>';
+      const [dd, mon] = nice(d).replace(',', '').split(' ').slice(1);
+      return `<div class="it"><div class="d">${nice(d).split(' ')[0].replace(',', '')}<b>${dd}</b>${mon || ''}</div><div><div class="p">${e ? `${esc(e.from || e.from_title)} → <i>${esc(e.to || e.to_title)}</i>` : '<span style="color:var(--mute);font-style:italic">A seeded random pair, chosen on the day</span>'}</div><div class="m">${i === 1 ? '<span class="tag tom">Tomorrow</span>' : ''}${label}${e && e.par ? `<span>par ${e.par} · ${diff(e.par)}</span>` : ''}${e && e.alts && e.alts.length ? `<span>${e.alts.length + 1} routes</span>` : ''}</div></div><div>${o ? `<button class="mini" data-clear="${d}">Clear</button>` : `<button class="mini" data-pick="${d}">Pick</button>`}</div></div>`;
+    }).join('');
+    document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { $('#pDate').value = b.dataset.pick; $('#picker').scrollIntoView({ behavior: 'smooth' }); $('#pFrom').focus(); });
+    document.querySelectorAll('[data-clear]').forEach(b => b.onclick = async () => { if (!confirm('Clear the hand-picked puzzle for ' + nice(b.dataset.clear) + '?')) return; await fetch(API + '/api/admin/daily', { method: 'POST', headers: hdr(), body: JSON.stringify({ day: b.dataset.clear, remove: true }) }); delete picks[b.dataset.clear]; renderSched(); });
+  }
+  // type-ahead
+  function suggest(input, box) {
+    let t, seq = 0;
+    input.addEventListener('input', () => {
+      clearTimeout(t); found = null; const q = input.value.trim(); if (q.length < 2) { box.hidden = true; return; }
+      t = setTimeout(async () => { const n = ++seq; let list = []; try { list = await g.search(q); } catch {} if (n !== seq) return; box.innerHTML = list.map(x => `<button type="button">${esc(x)}</button>`).join(''); box.hidden = !list.length; box.querySelectorAll('button').forEach(b => b.onclick = () => { input.value = b.textContent; box.hidden = true; }); }, 250);
+    });
+    input.addEventListener('blur', () => setTimeout(() => { box.hidden = true; }, 180));
+  }
+  suggest($('#pFrom'), $('#sugFrom')); suggest($('#pTo'), $('#sugTo'));
+  $('#pSwap').onclick = () => { const a = $('#pFrom').value; $('#pFrom').value = $('#pTo').value; $('#pTo').value = a; found = null; };
+  $('#pSuggest').onclick = () => { const k = Object.keys(CATS), a = k[Math.floor(Math.random() * k.length)]; let b; do b = k[Math.floor(Math.random() * k.length)]; while (b === a); const pick = x => CATS[x][Math.floor(Math.random() * CATS[x].length)]; $('#pFrom').value = pick(a); $('#pTo').value = pick(b); found = null; $('#pOut').innerHTML = ''; };
+
+  let running = false;
+  $('#pCheck').onclick = async () => {
+    const from = $('#pFrom').value.trim(), to = $('#pTo').value.trim(), day = $('#pDate').value; found = null;
+    if (!from || !to || !day) return ($('#pOut').innerHTML = '<p class="hint">Choose a date, a start and a target.</p>');
+    if (running) return; running = true; $('#pCheck').disabled = true; const t0 = Date.now();
+    const prog = msg => { $('#pOut').innerHTML = `<div class="progress"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div><span>${esc(msg)} · ${g.stats().calls} requests · ${Math.round((Date.now() - t0) / 1000)}s</span></div>`; };
+    prog('Starting'); const tick = setInterval(() => { if (running && last) prog(last); }, 1000); let last = 'Starting';
+    try {
+      const res = await solver.findRoute(from, to, { maxPar: 4, alts: 2, altCap: 40, onStep: m => { last = m; prog(m); } });
+      if (!res) $('#pOut').innerHTML = `<div class="verdict bad"><div><b>Not solvable in four clicks</b>No route of four clicks or fewer was found from “${esc(from)}” to “${esc(to)}”, or one of the pages does not exist. Try another pair.</div></div>`;
+      else { found = { day, from: res.route[0], to: res.route[res.route.length - 1], par: res.par, route: res.route, alts: res.alts }; showFound(); }
+    } catch (e) { $('#pOut').innerHTML = `<div class="verdict bad"><div><b>Could not check</b>${esc(e.message || 'Wikipedia did not answer. Try again in a moment.')}</div></div>`; }
+    finally { clearInterval(tick); running = false; $('#pCheck').disabled = false; }
+  };
+  function showFound() {
+    const f = found, all = [f.route, ...f.alts];
+    $('#pOut').innerHTML = `<div class="plate"><div class="a">${esc(f.from)}</div><div class="to">to</div><div class="b">${esc(f.to)}</div><div class="hint" style="margin-top:8px">Par ${f.par} · ${diff(f.par)} · for ${nice(f.day)}</div></div>
+      <div class="verdict"><div><b>Solvable in ${f.par} click${f.par === 1 ? '' : 's'}</b>Every hop was checked against the links players can actually click.</div></div>
+      <div class="routes">${all.map((r, i) => `<div class="rt${i ? '' : ' best'}"><div class="h"><span>${i ? 'Another route' : 'Shortest route'}</span><span>${r.length - 1} click${r.length === 2 ? '' : 's'}</span></div>${routeDots(r)}</div>`).join('')}</div>
+      ${picks[f.day] || scheduled[f.day] ? `<p class="hint">${picks[f.day] ? 'This replaces the hand-picked puzzle already set for that day.' : 'This overrides the scheduled puzzle for that day.'}</p>` : ''}
+      <div class="actions"><button class="btn" id="pSave">Save for ${nice(f.day)}</button></div>`;
+    $('#pSave').onclick = async () => {
+      $('#pSave').disabled = true;
+      const r = await fetch(API + '/api/admin/daily', { method: 'POST', headers: hdr(), body: JSON.stringify(found) });
+      if (!r.ok) { $('#pSave').disabled = false; return alert('Could not save: ' + ((await r.json().catch(() => ({}))).error || r.status)); }
+      picks[found.day] = { day: found.day, from: found.from, to: found.to, par: found.par, route: found.route, alts: found.alts }; renderSched();
+      $('#pOut').innerHTML = `<div class="verdict"><div><b>Saved</b>${esc(found.from)} → ${esc(found.to)} is set for ${nice(found.day)}.</div></div>`; found = null; $('#pFrom').value = $('#pTo').value = '';
+    };
+  }
+  $('#go').onclick = () => { const v = $('#key').value.trim(); if (!v) return; sessionStorage.setItem('warmer:admin', v); $('#key').value = ''; load(); };
+  $('#key').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+  $('#out').onclick = () => { sessionStorage.removeItem('warmer:admin'); gate(); };
+  load();
+})();
+</script></body></html>
