@@ -1,5 +1,5 @@
 # One Cloudflare Worker serves both the site (dist/) and the API (/api/*). See worker/README.md.
-name = "wikilink"
+name = "wiki"
 main = "worker/index.js"
 compatibility_date = "2025-01-01"
 
@@ -17,8 +17,8 @@ ALLOWED_ORIGIN = "*"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "wikilink"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_name = "wiki"
+# database_id is omitted on purpose: wrangler creates the D1 database on first deploy.
 
 # Secrets (set with `wrangler secret put NAME`, never commit them):
 #   LS_SIGNING_SECRET        Lemon Squeezy webhook signing secret   (optional)

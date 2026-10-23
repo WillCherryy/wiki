@@ -6,6 +6,9 @@ const cleanPath = a => (Array.isArray(a) ? a : []).slice(0, 16).map(x => String(
 const shift = (day, n) => { const [y, m, d] = day.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
 const hits = new Map(); // best-effort per-isolate rate limit; add a Cloudflare rate-limiting rule for real protection
 
+import SCHEMA from './schema.js';
+let ready;
+
 export default {
   async fetch(request, env) {
     const now = () => (env.TEST_NOW ? Number(env.TEST_NOW) : Date.now());
@@ -15,6 +18,8 @@ export default {
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
     if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);   // everything else is the static site
     try {
+      if (!ready) ready = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { ready = null; throw e; });
+      await ready;
       if (request.method === 'GET') {
         if (path === '/api/leaderboard') return reply(await leaderboard(env, q, now()));
         if (path === '/api/paths') return reply(await pathTree(env, dayParam(q, now())));
