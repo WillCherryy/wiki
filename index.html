@@ -75,6 +75,13 @@
 </main>
 
 <div class="scrim" id="scrim"><div class="card modal" id="modal"></div></div>
+<nav class="dock" id="dock" aria-label="Game controls">
+  <button id="dBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span>Back</span></button>
+  <button id="dFind"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span>Find</span><i id="dFindN" hidden></i></button>
+  <button id="dToc"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h10M5 17h12"/></svg><span>Contents</span></button>
+  <button id="dTarget"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/></svg><span>Target</span></button>
+  <button id="dMore"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg><span>More</span></button>
+</nav>
 <button class="live-pill" id="livePill" hidden></button>
 <div class="toast" id="toast"></div>
 <canvas id="fx"></canvas>
@@ -212,7 +219,7 @@ let tick = null;
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
-function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
+function show(view) { document.body.classList.toggle('ingame', view === 'game'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
 function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Burning' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
 const SQ = ['⬜', '🟦', '🟩', '🟨', '🟧', '🟥'];
@@ -337,7 +344,7 @@ function updateHud() {
   const tr = $('#trail');
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
   tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
-  $('#backBtn').disabled = G.steps.length < 2;
+  $('#backBtn').disabled = G.steps.length < 2; if (typeof syncDock === 'function') syncDock();
   const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || (!P.supporter && G.rewinds >= 1) || G.done; rb.querySelector('small').textContent = P.supporter ? 'free' : G.rewinds >= 1 ? 'used' : 'video · 1 left';
 }
 async function back() {
@@ -1291,6 +1298,28 @@ function runFinder() {
 $('#finder').addEventListener('input', runFinder);
 $('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { e.target.value = ''; runFinder(); e.target.blur(); } });
 const applyFs = () => { $('#article').style.fontSize = (19 + P.fs * 1.5) + 'px'; };
+/* thumb dock (phones): the same actions as the side tools, within reach of one hand */
+function syncDock() {
+  $('#dBack').disabled = $('#backBtn').disabled;
+  const n = $('#finderN').textContent.trim(), f = $('#dFindN'); const m = n.match(/\d+(\s*\/\s*\d+)?/); f.hidden = !m || !$('#finder').value; f.textContent = m ? m[0].replace(/\s/g, '') : '';
+}
+$('#dBack').onclick = () => $('#backBtn').click();
+$('#dToc').onclick = () => $('#tocBtn').click();
+$('#dTarget').onclick = () => $('#targetBtn').click();
+$('#dFind').onclick = () => { const on = document.body.classList.toggle('finding'); if (on) $('#finder').focus(); else $('#finder').blur(); };
+$('#dMore').onclick = () => {
+  if (!G || G.done) return;
+  const rb = $('#rewindBtn');
+  openModal(`<h2>More</h2><div class="menu">
+    <button id="mRewind" ${rb.disabled ? 'disabled' : ''}><b>Rewind one click</b><small>${esc(rb.querySelector('small').textContent)}</small></button>
+    <button id="mFs"><b>Text size</b><small><span id="mFsD" class="szb">A−</span> <span id="mFsU" class="szb">A+</span></small></button>
+    <button id="mGive"><b>Give up</b><small>Only a few XP</small></button></div>`);
+  $('#mRewind').onclick = () => { closeModal(); rewind(); };
+  $('#mFsD').onclick = e => { e.stopPropagation(); $('#fsDown').click(); }; $('#mFsU').onclick = e => { e.stopPropagation(); $('#fsUp').click(); };
+  $('#mGive').onclick = () => { closeModal(); $('#giveUp').click(); };
+};
+new MutationObserver(syncDock).observe($('#finderN'), { childList: true, characterData: true, subtree: true });
+$('#finder').addEventListener('input', syncDock);
 $('#fsDown').onclick = () => { P.fs = Math.max(-3, P.fs - 1); saveP(); applyFs(); };
 $('#fsUp').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); };
 applyFs();
