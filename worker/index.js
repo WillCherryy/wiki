@@ -148,7 +148,7 @@ async function hmacHex(secret, data) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)));
 }
-const safeEqual = (a, b) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
+const safeEqual = (a, b) => { a = String(a).trim(); b = String(b).trim(); if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
 async function recordOrder(env, provider, id, pid, t) {
   if (!id || !PID.test(pid || '')) return false;
   await env.DB.prepare('INSERT OR IGNORE INTO orders (id, provider, pid, created_at) VALUES (?, ?, ?, ?)').bind(String(id), provider, pid, t).run(); return true;
