@@ -1,11 +1,7 @@
 name: Deploy site
+# Manual only: the site is hosted on Cloudflare, so this is just a spare route to GitHub Pages.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Build puzzles"]
-    types: [completed]
 permissions:
   contents: read
   pages: write

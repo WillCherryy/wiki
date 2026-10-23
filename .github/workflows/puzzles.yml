@@ -1,9 +1,9 @@
 name: Build puzzles
 # Precomputes daily puzzles (pair + par + shortest route) and companion-pack routes against real Wikipedia.
-# Runs weekly and keeps ~45 days scheduled ahead; each run only fills days that are missing.
+# Runs monthly and keeps ~45 days scheduled ahead; each run only fills days that are missing. Run it by hand from the Actions tab whenever you like.
 on:
   schedule:
-    - cron: '17 3 * * 1'
+    - cron: '17 3 1 * *'
   workflow_dispatch:
     inputs:
       days:
