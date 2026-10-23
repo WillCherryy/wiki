@@ -43,3 +43,29 @@ A day with nothing set uses the scheduled puzzle, then an automatic pick.
 git pull
 npx wrangler deploy
 ```
+
+## Take payments (Supporter pack, £2.99)
+1. Create a Lemon Squeezy store (it is the seller and handles VAT), then a product: one-off payment, £2.99. Use test mode first.
+2. Copy the product's checkout link and add the player id to it, then put it in `config.js`:
+```powershell
+(Get-Content config.js) -replace "checkoutUrl: ''","checkoutUrl: 'https://YOURSTORE.lemonsqueezy.com/buy/PRODUCT-ID?checkout[custom][pid]={pid}'" | Set-Content -Encoding utf8 config.js
+git add config.js; git commit -m "Turn on the Supporter pack"; git push
+```
+3. In Lemon Squeezy go to Settings, Webhooks, add `https://playwarmer.app/api/webhook/lemonsqueezy`, tick `order_created` and `order_refunded`, and choose any long random signing secret. Store the same secret in Cloudflare:
+```powershell
+npx wrangler secret put LS_SIGNING_SECRET
+```
+4. Buy it yourself in test mode, then open the site: the menu should say Supporter within a minute. Switch the store to live mode when happy.
+
+## Turn on the watch-a-video rewind (optional, needs approval)
+Without this, every player simply gets one free rewind per puzzle and nobody sees a video. To use Google AdSense for Games:
+1. Apply at adsense.google.com with `https://playwarmer.app`, add the site, and apply for the games/rewarded ads programme. Approval can take weeks and usually wants steady traffic.
+2. In AdSense turn on the consent message (Privacy and messaging) for the UK and EEA, which Google requires.
+3. Put your publisher id in `config.js` and your `ads.txt` line in the repo root (AdSense shows both):
+```powershell
+(Get-Content config.js) -replace "adsenseClient: ''","adsenseClient: 'ca-pub-0000000000000000'" | Set-Content -Encoding utf8 config.js
+Set-Content -Encoding ascii ads.txt "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+git add config.js ads.txt; git commit -m "Turn on the rewarded video"; git push
+```
+4. While testing, also set `adsenseTest: true` in `config.js` so Google shows test ads, then set it back to false.
+Nothing from Google loads until a player taps Watch video. If no ad is available, or an ad blocker is on, the rewind is simply granted.

@@ -252,8 +252,8 @@ const server = http.createServer((req, res) => {
       save(); json(res, 200, { ok: true });
     });
   }
-  const TYPES = { '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const TYPES = { '.txt': 'text/plain', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/ads.txt'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {

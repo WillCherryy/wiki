@@ -382,7 +382,7 @@ function updateHud() {
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
   tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
   $('#backBtn').disabled = G.steps.length < 2; if (typeof syncDock === 'function') syncDock();
-  const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || (!P.supporter && G.rewinds >= 1) || G.done; rb.querySelector('small').textContent = P.supporter ? 'free' : G.rewinds >= 1 ? 'used' : 'video · 1 left';
+  const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || (!P.supporter && G.rewinds >= 1) || G.done; rb.querySelector('small').textContent = P.supporter ? 'free' : G.rewinds >= 1 ? 'used' : Ads.enabled() ? 'video · 1 left' : '1 left';
 }
 async function back() {
   if (G.done || G.path.length < 2) return;
@@ -392,10 +392,15 @@ async function back() {
 }
 async function rewind() {
   if (G.done || G.path.length < 2 || (!P.supporter && G.rewinds >= 1)) return;
+  if (!P.supporter && Ads.enabled()) return ask('Rewind one click?', 'Watch a short video to undo your last click for free. Supporters rewind with no video.', 'Watch video', doRewind);
+  return doRewind();
+}
+async function doRewind() {
+  if (!G || G.done || G.path.length < 2 || (!P.supporter && G.rewinds >= 1)) return;
   if (!P.supporter && !(await Ads.rewarded())) return toast('Watch the whole video to rewind');
   G.path.pop(); G.steps.pop(); const title = G.path.pop(); G.steps.pop();
   await go(title, false, null, 'rewind');
-  G.moves = Math.max(0, G.moves - 2); G.rewinds++; updateHud(); persistCur(); toast('Rewound one click — free');
+  G.moves = Math.max(0, G.moves - 2); G.rewinds++; updateHud(); persistCur(); toast(P.supporter || !Ads.enabled() ? 'Rewound one click' : 'Rewound one click — free');
 }
 function finish(won) {
   if (G.done) return; G.done = true; clearInterval(tick);
@@ -1260,12 +1265,45 @@ function renderPathMap(d, mine, clicks) {
 /* ------------------------------------------------------------ rewarded video (ads) */
 // Swap in a real rewarded-video provider by defining window.WIKIIO_ADS = { rewarded: () => Promise<boolean> }
 // before this script runs. It must resolve true only when the viewer earned the reward.
+/* Rewarded video for the free rewind. Providers, in order: window.WIKIIO_ADS (your own), Google AdSense (config.adsenseClient),
+   a demo (config.adsDemo). With none configured there is no video and the one free rewind is simply free. */
+let adsenseLoad = null;
+function loadAdsense() {
+  return adsenseLoad || (adsenseLoad = new Promise((res, rej) => {
+    window.adsbygoogle = window.adsbygoogle || [];
+    window.adBreak = window.adConfig = o => window.adsbygoogle.push(o);
+    const s = document.createElement('script'); s.async = true; s.crossOrigin = 'anonymous';
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(CFG.adsenseClient);
+    s.dataset.adClient = CFG.adsenseClient; if (CFG.adsenseTest) s.dataset.adbreakTest = 'on';
+    s.onload = () => { window.adConfig({ preloadAdBreaks: 'on', sound: 'on', onReady: () => {} }); res(); };
+    s.onerror = () => { adsenseLoad = null; rej(new Error('blocked')); };
+    document.head.appendChild(s);
+  }));
+}
 const Ads = {
+  enabled: () => !!((window.WIKIIO_ADS && window.WIKIIO_ADS.rewarded) || CFG.adsenseClient || CFG.adsDemo),
   rewarded() {
     if (window.WIKIIO_ADS && typeof window.WIKIIO_ADS.rewarded === 'function') return window.WIKIIO_ADS.rewarded();
+    if (CFG.adsenseClient) return Ads.adsense();
+    if (CFG.adsDemo) return Ads.demo();
+    return Promise.resolve(true);
+  },
+  // true when the video was watched, or when no ad could be shown (blocked, no fill): the player is never punished for that
+  async adsense() {
+    try { await loadAdsense(); } catch { return true; }
+    return new Promise(resolve => {
+      let viewed = false, started = false;
+      const guard = setTimeout(() => { if (!started) resolve(true); }, 8000);
+      window.adBreak({ type: 'reward', name: 'rewind',
+        beforeReward: show => { started = true; clearTimeout(guard); show(); },
+        adViewed: () => { viewed = true; }, adDismissed: () => {},
+        adBreakDone: () => { clearTimeout(guard); resolve(viewed || !started); } });
+    });
+  },
+  demo() {
     return new Promise(resolve => {
       let n = 5, done = false, iv = null;
-      openModal(`<h2>Sponsored video</h2><p>Placeholder for a rewarded video ad. Watch it to the end to undo your last click for free.</p>
+      openModal(`<h2>Sponsored video</h2><p>Demo of the rewarded video. Watch it to the end to undo your last click for free.</p>
         <div class="adbox"><div class="bar"><i id="adBar" style="width:0"></i></div><small id="adT">${n}s</small></div>
         <button class="btn ghost" data-close style="width:100%">Cancel</button>`, () => { clearInterval(iv); if (!done) resolve(false); });
       iv = setInterval(() => {
@@ -1305,12 +1343,13 @@ function wrapLines(ctx, text, maxW) {
   text.split(' ').forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
   if (line) out.push(line); return out;
 }
-function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha, tpl) {
+function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha, tpl, boxH) {
+  // shrinks until the title fits in at most two lines and, when boxH is given, inside that height centred on cy
   let s = size, lines; tpl = tpl || '700 {s}px "EB Garamond", Georgia, serif';
-  for (; s >= 28; s -= 4) { ctx.font = tpl.replace('{s}', s); lines = wrapLines(ctx, text, maxW); if (lines.length <= 3) break; }
-  ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillStyle = color; ctx.textAlign = 'center';
-  const lh = s * (tpl.includes('Instrument') ? .98 : 1.15), y0 = cy - (lines.length - 1) * lh / 2;
-  lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * lh)); ctx.globalAlpha = 1;
+  for (; s >= 26; s -= 3) { ctx.font = tpl.replace('{s}', s); lines = wrapLines(ctx, text, maxW); if (lines.length <= 2 && (!boxH || lines.length * s * 1.15 <= boxH)) break; }
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lh = s * 1.15, y0 = cy - (lines.length - 1) * lh / 2;
+  lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * lh + s * .04)); ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic';
 }
 function drawFrame(ctx, W, d, st) {
   const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"EB Garamond", Georgia, serif', PAPER = '#f3eee4', tc = tempCss(st.sig);
@@ -1320,26 +1359,27 @@ function drawFrame(ctx, W, d, st) {
   const rg = ctx.createRadialGradient(W / 2, W * .46, 10, W / 2, W * .46, W * .66); rg.addColorStop(0, al(tc, .34)); rg.addColorStop(1, al(tc, 0)); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
   ctx.fillStyle = tc; ctx.fillRect(0, 0, W, 8);
   ctx.strokeStyle = 'rgba(243,238,228,.22)'; ctx.lineWidth = 1.5; ctx.strokeRect(24, 24, W - 48, W - 48);
-  ctx.textAlign = 'left'; ctx.font = `400 46px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(BRAND.a, 52, 92); const bw = ctx.measureText(BRAND.a).width;
-  ctx.font = `italic 400 46px ${DISP}`; ctx.fillStyle = '#ff6a45'; ctx.fillText(BRAND.b, 52 + bw, 92);
+  [[9, 47, 3.2], [21, 42, 4.2], [33, 34, 5.4], [44, 24, 6.8], [54, 12, 8.4]].forEach(([dx, dy, dr], i) => { ctx.fillStyle = i === 4 ? '#ff6a45' : DOT_C[i]; ctx.beginPath(); ctx.arc(52 + (dx - 4) * .9, 52 + (dy - 2) * .9, dr * .9, 0, 7); ctx.fill(); });
+  ctx.textAlign = 'left'; ctx.font = `400 46px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(BRAND.a, 118, 92); const bw = ctx.measureText(BRAND.a).width;
+  ctx.font = `italic 400 46px ${DISP}`; ctx.fillStyle = '#ff6a45'; ctx.fillText(BRAND.b, 118 + bw, 92);
   cap(d.label, W - 52, 86, 17, 'rgba(243,238,228,.6)', 'right', 3);
   const cx = W / 2, k = easeOut(Math.min(1, st.local / .45));
   if (st.kind === 'intro') {
     cap('Reach', cx, 250, 18, 'rgba(243,238,228,.6)', 'center', 4);
-    drawTitle(ctx, d.to, cx, 340, W - 120, 118, tc, k, `italic 400 {s}px ${DISP}`);
-    cap('starting from', cx, 450, 16, 'rgba(243,238,228,.55)', 'center', 4);
-    drawTitle(ctx, d.from, cx, 505, W - 160, 56, PAPER, k, `400 {s}px ${DISP}`);
+    drawTitle(ctx, d.to, cx, 345, W - 120, 118, tc, k, `italic 400 {s}px ${DISP}`, 150);
+    cap('starting from', cx, 452, 16, 'rgba(243,238,228,.55)', 'center', 4);
+    drawTitle(ctx, d.from, cx, 505, W - 160, 56, PAPER, k, `400 {s}px ${DISP}`, 60);
   } else if (st.kind === 'step') {
     const tag = st.cur.k === 'start' ? 'Start' : st.cur.k === 'back' ? 'Back · +1 click' : st.cur.k === 'rewind' ? 'Free rewind' : `Click ${st.clicks}`;
     cap(tag, cx, 246, 18, 'rgba(243,238,228,.62)', 'center', 4);
-    if (st.prev) drawTitle(ctx, st.prev.title, cx, 200, W - 200, 32, PAPER, (1 - k) * .4, `italic 400 {s}px ${DISP}`);
-    ctx.save(); ctx.translate(cx, 352 + (1 - k) * 34); ctx.scale(.95 + .05 * k, .95 + .05 * k); drawTitle(ctx, st.cur.title, 0, 0, W - 120, 112, PAPER, k, `400 {s}px ${DISP}`); ctx.restore();
+    if (st.prev) drawTitle(ctx, st.prev.title, cx, 196, W - 200, 32, PAPER, (1 - k) * .4, `italic 400 {s}px ${DISP}`, 40);
+    ctx.save(); ctx.translate(cx, 400 + (1 - k) * 34); ctx.scale(.95 + .05 * k, .95 + .05 * k); drawTitle(ctx, st.cur.title, 0, 0, W - 120, 112, PAPER, k, `400 {s}px ${DISP}`, 230); ctx.restore();
   } else if (d.won) {
     cap('Solved', cx, 262, 20, 'rgba(243,238,228,.62)', 'center', 6);
-    drawTitle(ctx, d.to, cx, 372, W - 120, 108, tc, k, `italic 400 {s}px ${DISP}`);
+    drawTitle(ctx, d.to, cx, 380, W - 120, 108, tc, k, `italic 400 {s}px ${DISP}`, 170);
     ctx.textAlign = 'center'; ctx.font = `italic 400 30px ${SERIF}`; ctx.fillStyle = PAPER;
     ctx.fillText(`${d.clicks} click${d.clicks === 1 ? '' : 's'} · ${fmt(d.secs)}${d.par ? ` · par ${d.par}` : ''}`, cx, 500);
-  } else { cap('Gave up', cx, 262, 20, 'rgba(243,238,228,.62)', 'center', 6); drawTitle(ctx, d.to, cx, 372, W - 120, 96, PAPER, k, `italic 400 {s}px ${DISP}`); }
+  } else { cap('Gave up', cx, 262, 20, 'rgba(243,238,228,.62)', 'center', 6); drawTitle(ctx, d.to, cx, 380, W - 120, 96, PAPER, k, `italic 400 {s}px ${DISP}`, 170); }
   const tr = st.trail.slice(-9), x0 = 78, x1 = W - 78;
   if (tr.length) {
     const gap = tr.length > 1 ? (x1 - x0) / (tr.length - 1) : 0, y = 566, off = tr.length > 1 ? 0 : (x1 - x0) / 2;
@@ -1350,8 +1390,7 @@ function drawFrame(ctx, W, d, st) {
   cap('Clicks', 52, 624, 15, lab, 'left', 3); ctx.textAlign = 'left'; ctx.font = `400 68px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(String(st.clicks), 52, 684);
   cap('Time', 206, 624, 15, lab, 'left', 3); ctx.textAlign = 'left'; ctx.font = `400 68px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(fmt(st.time), 206, 684);
   cap('Temperature', 400, 624, 15, lab, 'left', 3); ctx.textAlign = 'right'; ctx.font = `italic 400 30px ${DISP}`; ctx.fillStyle = tc; ctx.fillText(sigLabel(st.sig), W - 52, 626);
-  ctx.fillStyle = 'rgba(243,238,228,.14)'; ctx.fillRect(400, 648, W - 452, 14);
-  const g = ctx.createLinearGradient(400, 0, W - 52, 0); CLASSIC_STOPS.forEach((cl, i) => g.addColorStop(i / (CLASSIC_STOPS.length - 1), cl)); ctx.fillStyle = g; ctx.fillRect(400, 648, Math.max(14, (W - 452) * st.sig), 14);
+  { const lit = st.sig >= 1 ? 5 : 1 + Math.floor(st.sig * 4.99), gap = (W - 452) / 4; DOT_C.forEach((col, i) => { const r = 5 + i * 1.8; ctx.fillStyle = i < lit ? col : 'rgba(243,238,228,.16)'; ctx.beginPath(); ctx.arc(400 + r + i * (gap - 2.2), 656, r, 0, 7); ctx.fill(); }); }
 }
 function openReplay(back) {
   const d = replayData(), S = buildSegs(d); let t = 0, playing = true, speed = 1, last = performance.now(), raf = 0;
