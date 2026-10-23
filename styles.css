@@ -1,4 +1,4 @@
-/* wikilink — editorial "plate" design system
+/* Warmer — editorial "plate" design system
    Type: Instrument Serif (display), Newsreader (reading), Instrument Sans (interface). All self-hosted (SIL OFL).
    Colour: warm paper + ink, one brand accent (vermilion), and a "temperature" ramp (cold blue → hot vermilion)
    that the game drives live as you get warmer. */
@@ -60,9 +60,7 @@ a { color: inherit; }
 .top .wrap { display: flex; align-items: center; gap: 8px; height: 62px; }
 .logo { display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 0; }
 .logo .mark { display: grid; place-items: center; }
-.logo .mark svg { width: 34px; height: 20px; fill: var(--ink); stroke: var(--ink); stroke-width: 1.6; }
-.logo .mark svg path { fill: none; stroke-dasharray: 2 3; stroke-linecap: round; }
-.logo .mark svg .hot { fill: var(--accent); stroke: none; }
+.logo .mark svg { width: 34px; height: 28px; }
 .logo .word { font: 400 31px/1 var(--display); letter-spacing: -.01em; }
 .logo .word b { font-weight: 400; font-style: italic; color: var(--accent); }
 .status { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; background: none; font: 600 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }

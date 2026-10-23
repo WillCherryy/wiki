@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
-      WIKI_UA: wikilink-puzzle-builder/0.2 (https://github.com/${{ github.repository }})
+      WIKI_UA: warmer-puzzle-builder/0.2 (https://github.com/${{ github.repository }})
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

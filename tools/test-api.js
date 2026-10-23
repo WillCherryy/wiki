@@ -72,7 +72,7 @@ async function viaWorker() {
   }, 'worker');
 }
 async function viaServer() {
-  const port = 3900 + Math.floor(Math.random() * 90), dir = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'wikilink-'));
+  const port = 3900 + Math.floor(Math.random() * 90), dir = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'warmer-'));
   require('fs').writeFileSync(path.join(dir, 'x'), '');
   const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: String(port), DATA_FILE: path.join(dir, 'data.json'), ADMIN_KEY: 'adminkey' }, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 700));

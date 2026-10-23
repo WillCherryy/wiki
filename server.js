@@ -235,4 +235,4 @@ server.on('upgrade', (req, socket) => {
   socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + crypto.createHash('sha1').update(k + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64') + '\r\n\r\n');
   wsAttach(socket, l);
 });
-server.listen(PORT, () => console.log(`wikilink running on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Warmer running on http://localhost:${PORT}`));

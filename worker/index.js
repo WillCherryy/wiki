@@ -1,4 +1,4 @@
-// wikilink API for Cloudflare Workers + D1.
+// Warmer API for Cloudflare Workers + D1.
 // Same contract as the local dev server (server.js); tools/test-api.js runs one test against both.
 const DAY = /^\d{4}-\d{2}-\d{2}$/, PID = /^[a-z0-9]{6,16}$/, CODE = /^[A-Z0-9]{4,8}$/;
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20);

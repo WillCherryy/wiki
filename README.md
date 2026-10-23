@@ -1,4 +1,4 @@
-# wikilink
+# Warmer
 
 A daily Wikipedia link race with par, replays, friend challenges, companion packs, cosmetics and leagues.
 No accounts: progress lives on the player's device (with a backup code).
@@ -32,7 +32,7 @@ Cloudflare Pages for the static site, a Worker for the API, Durable Objects for 
 
 ## Content pipeline (local, optional)
     npm install
-    export WIKI_UA="wikilink/1.0 (you@example.com)"
+    export WIKI_UA="warmer/1.0 (you@example.com)"
     node tools/build-pool.js        # pool.json (~10k) + daily-pool.json (~1k) from Vital Articles
     node tools/build-puzzles.js     # puzzles.json (resumable)
     node tools/build-packs.js       # packs.json

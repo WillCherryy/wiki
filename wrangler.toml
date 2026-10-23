@@ -21,13 +21,13 @@ tag = "v1"
 new_sqlite_classes = ["Lobby"]
 
 [vars]
-# Origin allowed to call the API from a browser. Use your site, e.g. "https://wikilink.app". "*" is fine for testing.
+# Origin allowed to call the API from a browser. Use your site, e.g. "https://warmer.site". "*" is fine for testing.
 ALLOWED_ORIGIN = "*"
 
 # D1 (leaderboards, streaks, supporter packs). Create a D1 database, then uncomment and paste its ID:
 # [[d1_databases]]
 # binding = "DB"
-# database_name = "wikilink"
+# database_name = "warmer"
 # database_id = "PASTE-DATABASE-ID-HERE"
 
 # Secrets (set with `wrangler secret put NAME`, never commit them):

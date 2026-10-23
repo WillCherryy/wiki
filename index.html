@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>wikilink — the daily Wikipedia race</title>
+<title>Warmer — the daily Wikipedia race</title>
 <meta name="description" content="Race from one Wikipedia article to another using only links. A new puzzle every day.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#16130f">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="wikilink">
-<meta property="og:title" content="wikilink — the daily Wikipedia race">
+<meta property="og:site_name" content="Warmer">
+<meta property="og:title" content="Warmer — the daily Wikipedia race">
 <meta property="og:description" content="Get from one Wikipedia article to another using only links. Warmer, colder, a new puzzle every day. No account needed.">
-<meta property="og:url" content="https://wikilink.app/">
-<meta property="og:image" content="https://wikilink.app/og.png">
+<meta property="og:url" content="https://warmer.site/">
+<meta property="og:image" content="https://warmer.site/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -25,8 +25,8 @@
 <body>
 <header class="top"><div class="wrap">
   <button class="logo" id="logo" aria-label="Home">
-    <span class="mark" aria-hidden="true"><svg viewBox="0 0 34 20"><circle cx="4" cy="13" r="3.2"/><path d="M8 12C13 0 21 1 26 8"/><circle class="hot" cx="30" cy="9" r="3.6"/></svg></span>
-    <span class="word" data-brand>wiki<b>link</b></span>
+    <span class="mark" aria-hidden="true"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg></span>
+    <span class="word" data-brand>Warm<b>er</b></span>
   </button>
   <div class="spacer"></div>
   <button class="status hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span><b id="streakN">0</b> streak</span></button>
@@ -107,7 +107,7 @@
 <script>
 'use strict';
 const CFG = window.WIKIIO || {};
-const BRAND = { name: CFG.name || 'wikilink', domain: CFG.domain || 'wikilink.app', a: CFG.brandA || 'wiki', b: CFG.brandB || 'link' };
+const BRAND = { name: CFG.name || 'Warmer', domain: CFG.domain || 'warmer.site', a: CFG.brandA || 'Warm', b: CFG.brandB || 'er' };
 document.title = `${BRAND.name} — the daily Wikipedia race`;
 document.querySelectorAll('[data-brand]').forEach(el => { el.innerHTML = `${BRAND.a}<b>${BRAND.b}</b>`; });
 /* ------------------------------------------------------------------ data */
@@ -607,7 +607,7 @@ function openMenu() {
     ['Random practice', 'No pressure, half XP', () => { closeModal(); startGame('practice'); }],
     ...(solved ? [['Challenge a friend', `Beat your ${e.clicks}`, () => openChallenge(dailyCtx(), () => closeModal())]] : []),
     ['Settings', 'Theme, text size, data', () => openSettings()],
-    [P.supporter ? 'Supporter' : 'Support wikilink', P.supporter ? 'Thank you ◆' : `${CFG.price || '£2.99'} · one-off`, openSupport],
+    [P.supporter ? 'Supporter' : 'Support Warmer', P.supporter ? 'Thank you ◆' : `${CFG.price || '£2.99'} · one-off`, openSupport],
     ['Report a problem', 'Unsolvable or inappropriate puzzle', () => openReport(openMenu)],
     ['How to play', '', showHelp]
   ];
@@ -627,8 +627,8 @@ async function refreshEntitlement(announce) {
 function openSupport() {
   const perks = [['Exclusive cosmetics', 'Comet and Ink trails, the Noir theme and Candy confetti'], ['Free, unlimited rewinds', 'No video to watch, as many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
   const live = !!(CFG.checkoutUrl);
-  if (P.supporter) { openModal(`<h2>Thank you ◆</h2><p>You are a wikilink supporter. Your pack is tied to this Player ID, so it moves with your backup code.</p><div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>`); return; }
-  openModal(`<h2>Support wikilink</h2><p>One payment, no subscription, no account. It keeps the daily puzzle free.</p>
+  if (P.supporter) { openModal(`<h2>Thank you ◆</h2><p>You are a Warmer supporter. Your pack is tied to this Player ID, so it moves with your backup code.</p><div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>`); return; }
+  openModal(`<h2>Support Warmer</h2><p>One payment, no subscription, no account. It keeps the daily puzzle free.</p>
     <div class="supp-price"><b>${esc(CFG.price || '£2.99')}</b><span>one-off, tax included at checkout</span></div>
     <div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>
     <label class="supp-consent"><input type="checkbox" id="suConsent"><span>I want the Supporter pack supplied immediately, and I understand I lose my 14-day right to cancel once it starts.</span></label>
@@ -778,11 +778,9 @@ async function shareCardCanvas(r) {
   x.fillStyle = PAPER; x.fillRect(0, 0, W, H);
   x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(36, 36, W - 72, H - 72); x.strokeStyle = RULE; x.lineWidth = 1.5; x.strokeRect(50, 50, W - 100, H - 100);
   // masthead: route mark + wordmark
-  x.fillStyle = INK; x.beginPath(); x.arc(M + 8, 156, 8, 0, 7); x.fill();
-  x.strokeStyle = INK; x.lineWidth = 4; x.lineCap = 'round'; x.setLineDash([1, 10]); x.beginPath(); x.moveTo(M + 22, 150); x.bezierCurveTo(M + 50, 96, M + 100, 96, M + 124, 134); x.stroke(); x.setLineDash([]);
-  x.fillStyle = ACC; x.beginPath(); x.arc(M + 138, 138, 10, 0, 7); x.fill();
-  x.textAlign = 'left'; x.font = `400 76px ${DISP}`; x.fillStyle = INK; x.fillText(BRAND.a, M + 170, 170); const bw = x.measureText(BRAND.a).width;
-  x.font = `italic 400 76px ${DISP}`; x.fillStyle = ACC; x.fillText(BRAND.b, M + 170 + bw, 170);
+  [[9, 47, 3.2, '#2a4f8a'], [21, 42, 4.2, '#5c8cbe'], [33, 34, 5.4, '#d6be8c'], [44, 24, 6.8, '#f08c50'], [54, 12, 8.4, '#d63a1f']].forEach(([dx, dy, dr, col]) => { x.fillStyle = col; x.beginPath(); x.arc(M - 8 + dx * 2.1, 92 + dy * 2.1, dr * 2.1, 0, 7); x.fill(); });
+  x.textAlign = 'left'; x.font = `400 76px ${DISP}`; x.fillStyle = INK; x.fillText(BRAND.a, M + 150, 170); const bw = x.measureText(BRAND.a).width;
+  x.font = `italic 400 76px ${DISP}`; x.fillStyle = ACC; x.fillText(BRAND.b, M + 150 + bw, 170);
   const tag = r.mode === 'daily' ? `Plate No. ${dayNum(G.day)}` : r.mode === 'pack' ? 'Companion pack' : r.mode === 'challenge' ? 'Challenge' : 'Practice';
   caps(tag, W - M, 160, 24, MUTE, 'right', 3);
   x.fillStyle = INK; x.fillRect(M, 204, W - 2 * M, 3);

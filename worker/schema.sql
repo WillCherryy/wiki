@@ -1,5 +1,5 @@
--- wikilink API schema (Cloudflare D1 / SQLite). Apply with:
---   wrangler d1 execute wikilink --remote --file=worker/schema.sql
+-- Warmer API schema (Cloudflare D1 / SQLite). Apply with:
+--   wrangler d1 execute warmer --remote --file=worker/schema.sql
 CREATE TABLE IF NOT EXISTS players (
   pid TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS orders (
   PRIMARY KEY (provider, id)
 );
 CREATE INDEX IF NOT EXISTS orders_pid ON orders (pid);
--- Player reports about puzzles (unsolvable, offensive, broken). Read with: wrangler d1 execute wikilink --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"
+-- Player reports about puzzles (unsolvable, offensive, broken). Read with: wrangler d1 execute warmer --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"
 CREATE TABLE IF NOT EXISTS reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at INTEGER NOT NULL,

@@ -1,39 +1,56 @@
 #!/usr/bin/env node
 'use strict';
-// Regenerates the icons and the social preview image. Needs Playwright with Chromium (not a project dependency):
+// Renders the PNG half of the brand kit (icons, avatar, banner, social preview, overview sheet) from brand/*.svg.
+// First run `python3 tools/make-logos.py`. Needs Playwright with Chromium (not a project dependency):
 //   npm i --no-save playwright && node tools/make-brand.js
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), os = require('os'), path = require('path');
 let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
-const root = path.join(__dirname, '..'), font = f => 'file://' + path.join(root, 'fonts', f);
-const INK = '#16130f', PAPER = '#f3eee4', ACCENT = '#d63a1f';
-
-const markSolid = (scale, rx) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${rx}" fill="${INK}"/>
-<g transform="translate(${32 - 17 * scale} ${32 - 10 * scale}) scale(${scale})"><circle cx="4" cy="13" r="3.2" fill="${PAPER}"/><path d="M8 12C13 0 21 1 26 8" fill="none" stroke="${PAPER}" stroke-width="2.4" stroke-linecap="round"/><circle cx="30" cy="9" r="3.6" fill="${ACCENT}"/></g></svg>`;
+const root = path.join(__dirname, '..'), brand = path.join(root, 'brand'), font = f => 'file://' + path.join(root, 'fonts', f);
+const svg = f => fs.readFileSync(path.join(brand, f), 'utf8').replace(/ width="[\d.]+" height="[\d.]+"/, ' width="100%" height="100%"');
+const INK = '#16130f', PAPER = '#f3eee4', ACCENT = '#d63a1f', RAMP = 'linear-gradient(90deg,#2a4f8a,#5c8cbe,#d6be8c,#f08c50,#d63a1f)';
+const FONTS = `@font-face{font-family:S;src:url(${font('instrument-serif-latin-400-normal.woff2')})}@font-face{font-family:S;font-style:italic;src:url(${font('instrument-serif-latin-400-italic.woff2')})}@font-face{font-family:U;font-weight:500;src:url(${font('instrument-sans-latin-500-normal.woff2')})}@font-face{font-family:U;font-weight:600;src:url(${font('instrument-sans-latin-600-normal.woff2')})}`;
 
 (async () => {
-  fs.writeFileSync(path.join(root, 'favicon.svg'), markSolid(1.45, 14));
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
-  const shot = async (html, w, h, file) => { const tmp = path.join(require('os').tmpdir(), 'wikilink-brand.html'); fs.writeFileSync(tmp, html); const p = await b.newPage({ viewport: { width: w, height: h } }); await p.goto('file://' + tmp); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(300); await p.screenshot({ path: path.join(root, file) }); await p.close(); };
-  const out = [[192, 'icon-192.png', markSolid(1.45, 0)], [512, 'icon-512.png', markSolid(1.45, 0)], [180, 'apple-touch-icon.png', markSolid(1.45, 0)], [512, 'icon-maskable-512.png', markSolid(1.05, 0)]];
-  for (const [s, f, svg] of out) { const p = await b.newPage({ viewport: { width: s, height: s } }); await p.setContent(`<body style="margin:0">${svg.replace('<svg ', `<svg width="${s}" height="${s}" style="display:block" `)}</body>`); await p.screenshot({ path: path.join(root, f) }); await p.close(); }
-
-  const og = `<style>
-@font-face{font-family:S;src:url(${font('instrument-serif-latin-400-normal.woff2')})}@font-face{font-family:S;font-style:italic;src:url(${font('instrument-serif-latin-400-italic.woff2')})}
-@font-face{font-family:U;font-weight:600;src:url(${font('instrument-sans-latin-600-normal.woff2')})}
-*{box-sizing:border-box}body{margin:0;width:1200px;height:630px;background:${PAPER};color:${INK};font-family:U;position:relative;overflow:hidden}
-.top{position:absolute;left:0;right:0;top:0;height:10px;background:linear-gradient(90deg,#2a4f8a,#5c8cbe,#d6be8c,#f08c50,${ACCENT})}
-.frame{position:absolute;inset:44px;border:1px solid #d8cfbf}
-.word{position:absolute;left:96px;top:96px;font:400 150px/1 S;letter-spacing:-1px}.word i{color:${ACCENT}}
-.tag{position:absolute;left:100px;top:262px;font:600 26px U;letter-spacing:.2em;text-transform:uppercase;color:#4b453b}
-.route{position:absolute;left:100px;right:100px;top:380px;display:flex;align-items:center}
-.n{width:26px;height:26px;border-radius:50%;flex:none}.ln{height:3px;flex:1;margin:0 -2px}
-.lab{position:absolute;top:424px;font:400 44px/1.1 S}.sub{position:absolute;left:100px;bottom:92px;font:600 24px U;color:#7a7265;letter-spacing:.04em}
-</style><body><div class="top"></div><div class="frame"></div>
-<div class="word">wiki<i>link</i></div><div class="tag">The daily Wikipedia race</div>
-<div class="route"><div class="n" style="background:#2a4f8a"></div><div class="ln" style="background:linear-gradient(90deg,#2a4f8a,#5c8cbe)"></div><div class="n" style="background:#5c8cbe"></div><div class="ln" style="background:linear-gradient(90deg,#5c8cbe,#d6be8c)"></div><div class="n" style="background:#d6be8c"></div><div class="ln" style="background:linear-gradient(90deg,#d6be8c,#f08c50)"></div><div class="n" style="background:#f08c50"></div><div class="ln" style="background:linear-gradient(90deg,#f08c50,${ACCENT})"></div><div class="n" style="background:${ACCENT};width:34px;height:34px"></div></div>
-<div class="lab" style="left:100px">Start</div><div class="lab" style="right:100px">Target</div>
-<div class="sub">Click only links. Get warmer. No account needed.</div></body>`;
-  await shot(og, 1200, 630, 'og.png');
-  await b.close();
-  console.log('brand assets written');
+  const shot = async (html, w, h, file, scale = 1, full = false) => {
+    const tmp = path.join(os.tmpdir(), 'warmer-brand.html'); fs.writeFileSync(tmp, `<style>${FONTS}*{box-sizing:border-box}body{margin:0}</style>${html}`);
+    const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: scale }); await p.goto('file://' + tmp); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(250);
+    await p.screenshot({ path: path.join(file.includes('/') ? '' : root, file), fullPage: full }); await p.close();
+  };
+  const sq = (s, name, svgText) => shot(`<div style="width:${s}px;height:${s}px">${svgText}</div>`, s, s, name);
+  // app icons: full-bleed (platforms round the corners); maskable keeps the mark inside the central safe zone
+  const flat = f => svg(f).replace(/rx="14"/, 'rx="0"');
+  for (const [s, f] of [[192, 'icon-192.png'], [512, 'icon-512.png'], [180, 'apple-touch-icon.png'], [1024, 'brand/app-icon-1024.png']]) await sq(s, path.join(f.startsWith('brand') ? brand : root, path.basename(f)), flat('app-icon.svg'));
+  const mk = fs.readFileSync(path.join(root, 'tools', '.maskable.svg'), 'utf8');
+  await sq(512, path.join(root, 'icon-maskable-512.png'), mk);
+  // avatar: mark centred with generous room for a circular crop
+  await shot(`<div style="width:800px;height:800px;background:${INK};display:grid;place-items:center"><div style="width:420px;height:350px">${svg('mark-on-dark.svg')}</div></div>`, 800, 800, path.join(brand, 'avatar-800.png'));
+  // banner (X / Twitch / YouTube header)
+  await shot(`<div style="width:1500px;height:500px;background:${PAPER};position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:10px;background:${RAMP}"></div>
+    <div style="position:absolute;left:150px;top:120px;width:760px;height:190px">${svg('logo-horizontal.svg')}</div>
+    <div style="position:absolute;left:176px;top:340px;font:600 22px U;letter-spacing:.22em;text-transform:uppercase;color:#4b453b">The daily Wikipedia race</div>
+    <div style="position:absolute;right:120px;top:90px;width:430px;height:330px;opacity:.95">${svg('mark.svg')}</div></div>`, 1500, 500, path.join(brand, 'banner-1500x500.png'));
+  // social preview
+  await shot(`<div style="width:1200px;height:630px;background:${PAPER};position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:10px;background:${RAMP}"></div><div style="position:absolute;inset:44px;border:1px solid #d8cfbf"></div>
+    <div style="position:absolute;left:96px;top:110px;width:760px;height:230px">${svg('logo-horizontal.svg')}</div>
+    <div style="position:absolute;left:104px;top:372px;font:600 26px U;letter-spacing:.2em;text-transform:uppercase;color:#4b453b">The daily Wikipedia race</div>
+    <div style="position:absolute;left:104px;bottom:84px;font:500 25px U;color:#7a7265;letter-spacing:.03em">Click only links. Get warmer. No account needed.</div>
+    <div style="position:absolute;right:110px;bottom:100px;width:230px;height:190px">${svg('mark.svg')}</div></div>`, 1200, 630, path.join(root, 'og.png'));
+  // overview sheet
+  const tile = (name, inner, bg, ink, h = 200, w = '100%') => `<div style="background:${bg};border:1px solid #d8cfbf;padding:20px;display:flex;flex-direction:column;gap:12px"><div style="height:${h}px;width:${w};display:grid;place-items:center">${inner}</div><div style="font:600 11px U;letter-spacing:.16em;text-transform:uppercase;color:${ink}">${name}</div></div>`;
+  const box = (f, w, h) => `<div style="width:${w}px;height:${h}px">${svg(f)}</div>`;
+  const sw = (c, n) => `<div style="flex:1"><div style="height:64px;background:${c};border:1px solid #d8cfbf"></div><div style="font:600 11px U;margin-top:6px;color:#4b453b">${n}</div><div style="font:500 11px U;color:#7a7265">${c}</div></div>`;
+  await shot(`<div style="width:1544px;padding:44px;background:#ebe6da;color:${INK};font-family:U">
+    <div style="font:400 54px S">Warmer — logo suite</div><div style="font:500 15px U;color:#7a7265;margin:4px 0 26px">Five dots climbing the temperature ramp. The mark is the game: cold start, hot target.</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px">${tile('Primary · horizontal', box('logo-horizontal.svg', 640, 190), '#fbf8f1', '#7a7265', 210)}${tile('Stacked', box('logo-stacked.svg', 250, 200), '#fbf8f1', '#7a7265', 210)}</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px">${tile('On dark', box('logo-horizontal-on-dark.svg', 640, 190), INK, '#b8b0a0', 210)}${tile('Mark', box('mark.svg', 250, 210), '#fbf8f1', '#7a7265', 210)}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px">${tile('One colour · black', box('logo-horizontal-black.svg', 300, 96), '#fbf8f1', '#7a7265', 120)}${tile('One colour · white', box('logo-horizontal-white.svg', 300, 96), '#d63a1f', '#fff', 120)}${tile('Wordmark', box('wordmark.svg', 270, 80), '#fbf8f1', '#7a7265', 120)}${tile('Wordmark · night', box('wordmark-on-dark.svg', 270, 80), INK, '#b8b0a0', 120)}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px">
+      ${tile('App icon · dark', `<div style="width:130px;height:130px;border-radius:30px;overflow:hidden">${svg('app-icon.svg')}</div>`, '#fbf8f1', '#7a7265', 150)}
+      ${tile('App icon · light', `<div style="width:130px;height:130px;border-radius:30px;overflow:hidden;border:1px solid #d8cfbf">${svg('app-icon-light.svg')}</div>`, '#fbf8f1', '#7a7265', 150)}
+      ${tile('Avatar (circle crop)', `<div style="width:130px;height:130px;border-radius:50%;overflow:hidden;background:${INK};display:grid;place-items:center"><div style="width:76px;height:64px">${svg('mark-on-dark.svg')}</div></div>`, '#fbf8f1', '#7a7265', 150)}
+      ${tile('Favicon 16 / 32 / 48', [16, 32, 48].map(s => `<div style="width:${s}px;height:${s}px;border-radius:${s * .22}px;overflow:hidden;margin:0 6px">${svg('app-icon.svg')}</div>`).join(''), '#fbf8f1', '#7a7265', 150)}</div>
+    <div style="display:flex;gap:12px;margin-top:22px">${sw(INK, 'Ink')}${sw(PAPER, 'Paper')}${sw('#2a4f8a', 'Cold')}${sw('#5c8cbe', 'Cool')}${sw('#d6be8c', 'Sand')}${sw('#f08c50', 'Warm')}${sw(ACCENT, 'Hot · accent')}</div>
+    <div style="font:500 14px/1.5 U;color:#4b453b;margin-top:18px">Type: Instrument Serif (regular + italic for “er”). Clear space around the logo: the height of the largest dot. Minimum size: mark 16px, horizontal logo 90px wide.</div></div>`, 1544, 1300, path.join(brand, 'brand-sheet.png'), 1, true);
+  await b.close(); console.log('brand PNGs written');
 })();
