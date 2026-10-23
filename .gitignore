@@ -5,3 +5,4 @@ tools/.cache/
 mockups/*.png
 _site/
 dist/
+brand/video/*.wav
