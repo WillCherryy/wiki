@@ -57,10 +57,23 @@ async function scenario(call, label) {
   assert.strictEqual((await call('GET', '/api/reports', null, { authorization: 'Bearer wrong' })).status, 401, `${label}: reports need the admin key`);
   const got = (await call('GET', '/api/reports', null, { authorization: 'Bearer adminkey' })).body;
   assert.deepStrictEqual([got.length, got[0].reason, got[0].from_title, got[0].note.includes('<')], [1, 'unsolvable', 'Tour de France', false], `${label}: admin reads sanitised reports`);
+  // anonymous usage events and the founder stats
+  const ev = (body, headers) => call('POST', '/api/event', body, headers);
+  ok(await ev({ e: 'visit' }, { 'cf-ipcountry': 'GB' }), 'visit event'); ok(await ev({ e: 'visit' }, { 'cf-ipcountry': 'US' }), 'visit event 2');
+  ok(await ev({ e: 'start', pid: A, mode: 'daily' }), 'start A'); ok(await ev({ e: 'finish', pid: A, mode: 'daily' }), 'finish A'); ok(await ev({ e: 'share', pid: A }), 'share A'); ok(await ev({ e: 'start', pid: B, mode: 'practice' }), 'start B'); ok(await ev({ e: 'start', pid: A, mode: 'daily' }), 'repeat start is harmless');
+  for (const bad of [{ e: 'nope', pid: A }, { e: 'start', pid: 'x!' }, { e: 'start', pid: A, mode: 'x' }]) assert.strictEqual((await ev(bad)).status, 400, `${label}: event rejects ${JSON.stringify(bad)}`);
+  assert.strictEqual((await call('GET', '/api/admin/stats')).status, 401, `${label}: stats need the admin key`);
+  const st = (await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body;
+  assert.deepStrictEqual([st.kpis.playersToday, st.kpis.newToday, st.kpis.finishedToday, st.kpis.sharedToday], [2, 2, 1, 1], `${label}: stats today`);
+  assert.deepStrictEqual(st.funnel.map(f => f[1]), [2, 2, 1, 1], `${label}: funnel`);
+  assert.deepStrictEqual([st.puzzles[0].started, st.puzzles[0].won, st.puzzles[0].winRate], [1, 1, 100], `${label}: daily puzzle health`);
+  assert.deepStrictEqual(st.countries.map(c => [c.code, c.n]).sort(), [['GB', 1], ['US', 1]], `${label}: countries are aggregate counts`);
+  assert.strictEqual(st.series[st.series.length - 1].visits, 2, `${label}: visits`);
   // delete removes scores, league membership and the player
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');
   assert.deepStrictEqual((await call('GET', `/api/leaderboard?mode=day&day=${today}`)).body.map(r => r.name), ['Bob', 'Carol'], `${label}: board after delete`);
   assert.strictEqual((await call('GET', '/api/league?code=FRIEND')).body.members, 1, `${label}: league after delete`);
+  assert.strictEqual((await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body.kpis.playersToday, 1, `${label}: delete removes the player's activity`);
   assert.strictEqual((await call('OPTIONS', '/api/score')).status, 204, `${label}: CORS preflight`);
 }
 

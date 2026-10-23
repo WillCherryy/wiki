@@ -53,8 +53,8 @@ open(os.path.join(OUT, 'alt', 'ramp-wordmark.svg'), 'w').write(svg)
 w_icon = ramp_word()[0]
 cards.append(f'<div class="c"><div class="n">H · Ramp wordmark</div><div class="lk">{svg.replace(f"width=\"{W:g}\" height=\"{H:g}\"", "width=\"100%\"")}</div><div class="ic" style="display:grid;place-items:center;background:{INK};color:{PAPER};font:400 40px/1 S;white-space:nowrap">W<i style="color:#ff6a45">er</i></div><div class="d">No symbol at all: each letter warms from cold blue to hot red. Distinctive in type-led spaces and easy to animate; needs the “W” alone as the app icon.</div></div>')
 html = f'''<style>
-@font-face{{font-family:S;src:url(file://{ns["ROOT"]}/fonts/instrument-serif-latin-400-normal.woff2)}}
-@font-face{{font-family:S;font-style:italic;src:url(file://{ns["ROOT"]}/fonts/instrument-serif-latin-400-italic.woff2)}}
+@font-face{{font-family:S;src:url(file://{ns["ROOT"]}/fonts/eb-garamond-latin-400-normal.woff2)}}
+@font-face{{font-family:S;font-style:italic;src:url(file://{ns["ROOT"]}/fonts/eb-garamond-latin-400-italic.woff2)}}
 @font-face{{font-family:U;font-weight:500;src:url(file://{ns["ROOT"]}/fonts/instrument-sans-latin-500-normal.woff2)}}
 @font-face{{font-family:U;font-weight:600;src:url(file://{ns["ROOT"]}/fonts/instrument-sans-latin-600-normal.woff2)}}
 *{{box-sizing:border-box}}body{{margin:0;background:#ebe6da;font-family:U;color:{INK};padding:40px;width:1500px}}

@@ -55,3 +55,22 @@ CREATE TABLE IF NOT EXISTS reports (
   note TEXT NOT NULL,
   pid TEXT
 );
+-- Anonymous product analytics, only when the player leaves "Anonymous usage statistics" on. One row per player per day;
+-- no names, no IP addresses. Deleted with the rest of a player's data. Counters hold aggregate numbers (visits, countries, lobbies).
+CREATE TABLE IF NOT EXISTS activity (
+  day TEXT NOT NULL,
+  pid TEXT NOT NULL,
+  started INTEGER NOT NULL DEFAULT 0,
+  finished INTEGER NOT NULL DEFAULT 0,
+  daily_started INTEGER NOT NULL DEFAULT 0,
+  daily_won INTEGER NOT NULL DEFAULT 0,
+  shared INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, pid)
+);
+CREATE INDEX IF NOT EXISTS activity_pid ON activity (pid);
+CREATE TABLE IF NOT EXISTS counters (
+  day TEXT NOT NULL,
+  k TEXT NOT NULL,
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, k)
+);

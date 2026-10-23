@@ -8,8 +8,8 @@ from fontTools.pens.transformPen import TransformPen
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 OUT = os.path.join(ROOT, 'brand'); os.makedirs(OUT, exist_ok=True)
-REG = TTFont(os.path.join(ROOT, 'fonts', 'instrument-serif-latin-400-normal.woff2'))
-ITA = TTFont(os.path.join(ROOT, 'fonts', 'instrument-serif-latin-400-italic.woff2'))
+REG = TTFont(os.path.join(ROOT, 'fonts', 'eb-garamond-latin-400-normal.woff2'))
+ITA = TTFont(os.path.join(ROOT, 'fonts', 'eb-garamond-latin-400-italic.woff2'))
 
 INK, PAPER, ACCENT = '#16130f', '#f3eee4', '#d63a1f'
 RAMP = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f']
@@ -18,13 +18,17 @@ DOTS = [(9, 47, 3.2), (21, 42, 4.2), (33, 34, 5.4), (44, 24, 6.8), (54, 12, 8.4)
 MARK_BOX = (4, 2, 60, 50)                                                           # tight viewBox of the five dots
 
 
+KERN = {'Wa': -0.045}
+
+
 def text(font, s, size, x, y):
     gs, cmap, upm = font.getGlyphSet(), font.getBestCmap(), font['head'].unitsPerEm
-    k, pos, parts = size / upm, x, []
+    k, pos, parts, prev = size / upm, x, [], ''
     for ch in s:
+        pos += KERN.get(prev + ch, 0) * size   # the font's own kerning is not applied, so the pairs we use are set by hand
         g = cmap[ord(ch)]; pen = SVGPathPen(gs)
         gs[g].draw(TransformPen(pen, (k, 0, 0, -k, pos, y)))
-        parts.append(pen.getCommands()); pos += gs[g].width * k
+        parts.append(pen.getCommands()); pos += gs[g].width * k; prev = ch
     return ' '.join(parts), pos - x
 
 

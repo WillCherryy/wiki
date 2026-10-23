@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Founder · Warmer</title><link rel="stylesheet" href="styles.css">
+<style>
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); margin: 0; }
+.fd { max-width: 1480px; margin: 0 auto; padding: 0 clamp(16px, 3.4vw, 48px) 56px; }
+.fd-top { display: flex; align-items: center; gap: 18px; min-height: 72px; border-bottom: 1px solid var(--rule); margin: 0 calc(-1 * clamp(16px, 3.4vw, 48px)) 28px; padding: 0 clamp(16px, 3.4vw, 48px); flex-wrap: wrap; }
+.fd-top .logo { display: flex; align-items: center; gap: 10px; font: 400 31px/1 var(--display); letter-spacing: -.01em; } .fd-top .logo b { font-style: italic; font-weight: 400; color: var(--accent); } .fd-top .logo svg { width: 34px; height: 28px; }
+.fd-tag { font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; padding: 5px 9px; border: 1px solid var(--ink); border-radius: 2px; }
+.sp { flex: 1; } .fd-note { font: 500 12.5px var(--sans); color: var(--mute); }
+.rng { display: flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; } .rng button { border: 0; background: none; padding: 9px 16px; font: 600 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); cursor: pointer; } .rng button.on { background: var(--ink); color: var(--paper); }
+h1 { font: 400 clamp(40px, 5vw, 56px)/1 var(--display); margin: 0 0 4px; } .sub { color: var(--mute); font-size: 15px; margin: 0 0 26px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 18px; }
+.k { background: var(--sheet); border: 1px solid var(--rule); padding: 18px 20px 14px; }
+.k .l { font: 600 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.k .v { font: 400 52px/1.05 var(--display); margin: 8px 0 2px; } .k .d { font: 600 12.5px var(--sans); color: var(--ink-2); min-height: 1.3em; } .k .d.up::before { content: "▲ "; color: #2e7d4f; } .k .d.dn::before { content: "▼ "; color: #b32b12; }
+.k svg { display: block; margin-top: 8px; }
+.g2 { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; margin-bottom: 16px; } .g3 { display: grid; grid-template-columns: 1.9fr 1fr; gap: 16px; margin-bottom: 16px; } .g2b { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 1000px) { .g2, .g3, .g2b { grid-template-columns: 1fr; } }
+.card { background: var(--sheet); border: 1px solid var(--rule); padding: 22px 24px; overflow-x: auto; }
+.card h3 { font: 400 28px/1 var(--display); margin: 0 0 4px; } .card .cs { font: 500 13px var(--sans); color: var(--mute); margin: 0 0 14px; }
+.leg { display: flex; gap: 16px; font: 600 12px var(--sans); color: var(--ink-2); margin-bottom: 6px; } .leg i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.fun .r { display: grid; grid-template-columns: 150px 1fr 74px; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--rule-2); } .fun .r:first-of-type { border-top: 0; }
+.fun .n { font: 600 13px var(--sans); } .fun .b { height: 22px; background: var(--rule-2); border-radius: 0 4px 4px 0; } .fun .b i { display: block; height: 100%; border-radius: 0 4px 4px 0; } .fun .p { font: 400 24px var(--display); text-align: right; } .fun .p small { display: block; font: 500 11px var(--sans); color: var(--mute); }
+table { width: 100%; border-collapse: collapse; font: 500 14px var(--sans); } th { font: 600 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--mute); text-align: left; padding: 0 10px 10px 0; border-bottom: 1px solid var(--ink); white-space: nowrap; } td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--rule-2); } td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ret td.c { text-align: center; width: 92px; } .ret td.c span { display: block; padding: 9px 0; border-radius: 3px; font: 600 13px var(--sans); }
+.pill2 { font: 600 10.5px var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 2px; border: 1px solid var(--rule); white-space: nowrap; } .pill2.w { border-color: #b32b12; color: #b32b12; } .pill2.g { border-color: #2e7d4f; color: #2e7d4f; }
+.rep .it { padding: 12px 0; border-top: 1px solid var(--rule-2); } .rep .it:first-of-type { border-top: 0; } .rep b { font: 600 14px var(--sans); } .rep p { margin: 2px 0 0; font: 500 13px/1.4 var(--sans); color: var(--ink-2); } .rep small { color: var(--mute); font-size: 12px; }
+.none { text-align: center; padding: 26px 0 18px; color: var(--mute); } .none p { margin: 8px 0 0; font: italic 400 18px var(--serif); }
+.foot { margin-top: 22px; font: 500 13px var(--sans); color: var(--mute); display: flex; gap: 10px; align-items: center; }
+.gate { max-width: 420px; margin: 18vh auto 0; text-align: center; } .gate input { width: 100%; padding: 14px; border: 1px solid var(--rule); background: var(--sheet); border-radius: 4px; font: 500 15px var(--sans); margin: 14px 0; } .gate .err { color: #b32b12; font: 600 13px var(--sans); min-height: 1.4em; }
+.bars .r { display: grid; grid-template-columns: 110px 1fr 44px; gap: 10px; align-items: center; padding: 6px 0; } .bars .r span { font: 600 13px var(--sans); } .bars .t { height: 12px; background: var(--rule-2); border-radius: 0 3px 3px 0; } .bars .t i { display: block; height: 100%; background: #5c8cbe; border-radius: 0 3px 3px 0; }
+</style></head>
+<body>
+<div class="gate" id="gate" hidden><div class="dots5" id="gateDots"></div><h1 style="font-size:44px;margin-top:14px">Founder</h1><p class="sub" style="margin-bottom:0">Enter your admin key to see how Warmer is doing.</p><input id="key" type="password" placeholder="Admin key" autocomplete="current-password"><div class="err" id="err"></div><button class="btn" id="go" style="width:100%">Open dashboard</button></div>
+<div class="fd" id="app" hidden>
+  <div class="fd-top"><div class="logo"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg><span data-brand>Warm<b>er</b></span></div><span class="fd-tag">Founder</span><span class="sp"></span><span class="fd-note" id="stamp"></span><div class="rng" id="rng"><button data-d="7">7 days</button><button data-d="30" class="on">30 days</button><button data-d="90">90 days</button></div><button class="btn ghost" id="out" style="padding:8px 14px">Lock</button></div>
+  <h1>How is <span data-name>Warmer</span> doing?</h1><p class="sub">Anonymous, aggregate figures only. Nothing here identifies a player. Dates are UTC.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="g2"><div class="card"><h3>Daily players</h3><p class="cs">People who started a puzzle, new versus returning</p><div class="leg"><span><i style="background:#16130f"></i>Returning</span><span><i style="background:#d63a1f"></i>New</span></div><div id="line"></div></div>
+  <div class="card fun"><h3>Where players drop off</h3><p class="cs" id="funCs"></p><div id="funnel"></div></div></div>
+  <div class="g3"><div class="card"><h3>Retention by cohort</h3><p class="cs">Share of each week’s new players who came back exactly 1, 7 and 30 days later</p><div id="ret"></div></div>
+  <div class="card"><h3>Supporter pack</h3><p class="cs">Buyers per week, last 8 weeks</p><div id="rev"></div></div></div>
+  <div class="g3"><div class="card"><h3>Puzzle health</h3><p class="cs">Last 7 daily puzzles. A low win rate or several reports means the puzzle is unfair.</p><div id="pz"></div></div>
+  <div class="card rep"><h3>Reports inbox</h3><p class="cs" id="repCs"></p><div id="rep"></div></div></div>
+  <div class="g2b"><div class="card"><h3>Live races</h3><p class="cs">Streamer lobbies created, last 7 days</p><div id="lob"></div></div><div class="card"><h3>Players by country</h3><p class="cs">Aggregate counts from Cloudflare. No IP addresses are stored.</p><div id="geo" class="bars"></div></div></div>
+  <div class="foot"><span class="dots5 sm"><i style="background:#2a4f8a"></i><i style="background:#5c8cbe"></i><i style="background:#d6be8c"></i><i style="background:#f08c50"></i><i style="background:#d63a1f"></i></span>Private page. Only counts players who leave “Anonymous usage statistics” on.</div>
+</div>
+<script src="config.js"></script>
+<script>
+(function () {
+  const CFG = window.WIKIIO || {}, API = (CFG.api || '').replace(/\/$/, ''), $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const INK = '#16130f', RED = '#d63a1f', BLUE = '#2a4f8a', NET_PER_SALE = 1.9;   // rough net per £2.99 sale after VAT and fees
+  const dots = (lit = 0) => [3.2, 4.2, 5.4, 6.8, 8.4].map((r, i) => `<i style="display:block;border-radius:50%;width:${r * 2.4}px;height:${r * 2.4}px;background:${i < lit ? ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'][i] : '#d8cfbf'}"></i>`).join('');
+  $('#gateDots').innerHTML = dots(5); $('#gateDots').style.cssText = 'display:inline-flex;gap:8px;align-items:center';
+  document.querySelectorAll('[data-name]').forEach(e => { e.textContent = CFG.name || 'Warmer'; });
+  let days = 30;
+  const none = (msg, lit = 0) => `<div class="none"><span class="dots5">${dots(lit)}</span><p>${msg}</p></div>`;
+  const spark = (arr, c = '#5c8cbe') => { if (arr.length < 2) return ''; const w = 150, h = 30, mx = Math.max(...arr), mn = Math.min(...arr); return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${arr.map((v, i) => `${(i / (arr.length - 1) * w).toFixed(1)},${(h - 3 - (v - mn) / (mx - mn || 1) * (h - 6)).toFixed(1)}`).join(' ')}"/></svg>`; };
+  const fmtN = n => (n == null ? '—' : Number(n).toLocaleString('en-GB'));
+  const short = d => { const x = new Date(d + 'T00:00:00Z'); return x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); };
+  const fmtT = s => (s == null ? '—' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
+
+  function render(s) {
+    $('#stamp').textContent = 'Updated ' + new Date(s.generated).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const k = s.kpis, ser = s.series, tot = a => a.reduce((x, y) => x + y, 0);
+    const delta = k.playersLastWeek ? Math.round((k.playersToday - k.playersLastWeek) / k.playersLastWeek * 100) : null;
+    const K = [['Players today', fmtN(k.playersToday), delta == null ? '' : delta >= 0 ? 'up' : 'dn', delta == null ? 'no data a week ago' : `${delta >= 0 ? '+' : ''}${delta}% vs last week`, ser.map(r => r.players)],
+      ['New players', fmtN(k.newToday), '', 'first time today', ser.map(r => r.newPlayers)],
+      ['Games finished', fmtN(k.finishedToday), '', k.finishRate == null ? 'nobody has started yet' : `${k.finishRate}% finish what they start`, ser.map(r => r.finished)],
+      ['Came back next day', k.d1 == null ? '—' : k.d1 + '%', '', k.d1 == null ? 'needs a full cohort' : 'latest complete cohort', []],
+      ['Supporters', fmtN(k.buyers), '', `≈ £${Math.round(k.buyers * NET_PER_SALE)} net, 8 weeks`, s.buyers.map(b => b.buyers)],
+      ['Live races', fmtN(k.lobbies7d), '', 'created in 7 days', s.lobbies.map(l => l.created)]];
+    $('#kpis').innerHTML = K.map(([l, v, c, d, a]) => `<div class="k"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${c}">${d}</div>${spark(a)}</div>`).join('');
+
+    // line chart: new vs returning
+    const W = 860, H = 270, L = 44, R = 50, T = 14, B = 30, n = ser.length, ret = ser.map(r => r.returning), neu = ser.map(r => r.newPlayers);
+    const mx = Math.max(10, ...ser.map(r => r.players)), top = Math.ceil(mx / 4 / 10) * 40 || 40, x = i => L + (n < 2 ? 0 : i / (n - 1)) * (W - L - R), y = v => T + (1 - v / top) * (H - T - B);
+    const path = a => a.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    let g = ''; for (let t = 0; t <= top; t += top / 4) g += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="#e9e2d3"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end" font-size="12" fill="#7a7265" font-family="Instrument Sans">${Math.round(t)}</text>`;
+    const step = Math.max(1, Math.ceil(n / 7)); ser.forEach((r, i) => { if (i % step === 0 || i === n - 1) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="12" fill="#7a7265" font-family="Instrument Sans">${short(r.day)}</text>`; });
+    g += `<path d="${path(ret)}" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="${path(neu)}" fill="none" stroke="${RED}" stroke-width="2" stroke-linejoin="round"/>`;
+    g += `<text x="${W - R + 8}" y="${y(ret[n - 1]) + 4}" font-size="13" font-weight="600" fill="#4b453b" font-family="Instrument Sans">${ret[n - 1]}</text><text x="${W - R + 8}" y="${y(neu[n - 1]) + 4}" font-size="13" font-weight="600" fill="#4b453b" font-family="Instrument Sans">${neu[n - 1]}</text>`;
+    $('#line').innerHTML = tot(ser.map(r => r.players)) ? `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Daily players, new versus returning">${g}</svg>` : none('No plays recorded yet. The first dot lights when someone starts a puzzle.');
+
+    // funnel
+    $('#funCs').textContent = `Last ${s.days} days: sessions, then player-days`;
+    const f0 = Math.max(1, s.funnel[0][1]); $('#funnel').innerHTML = s.funnel.map(([nm, v], i) => `<div class="r"><span class="n">${nm}</span><div class="b"><i style="width:${Math.round(v / f0 * 100)}%;background:${['#2a4f8a', '#3d65a0', '#5c8cbe', '#8fb0d2', '#b9cde2'][i]}"></i></div><span class="p">${fmtN(v)}<small>${Math.round(v / f0 * 100)}%</small></span></div>`).join('');
+
+    // retention
+    const heat = v => `rgba(42,79,138,${(.08 + v / 100 * .85).toFixed(2)})`, cell = v => v == null ? '<span style="color:#7a7265">—</span>' : `<span style="background:${heat(v)};color:${v > 45 ? '#fff' : INK}">${v}%</span>`;
+    $('#ret').innerHTML = s.retention.length ? `<table class="ret"><tr><th>Week starting</th><th class="num">Players</th><th style="text-align:center">Day 1</th><th style="text-align:center">Day 7</th><th style="text-align:center">Day 30</th></tr>${s.retention.map(r => `<tr><td>${short(r.week)}</td><td class="num">${fmtN(r.players)}</td><td class="c">${cell(r.d1)}</td><td class="c">${cell(r.d7)}</td><td class="c">${cell(r.d30)}</td></tr>`).join('')}</table>` : none('Cohorts appear once players have been seen on two different days.');
+
+    // buyers per week
+    const bm = Math.max(3, ...s.buyers.map(b => b.buyers)), bw = 420, bh = 190, bl = 30, bt = 14, bb = 28, bar = 30;
+    let rv = ''; s.buyers.forEach((b, i) => { const bx = bl + 10 + i * ((bw - bl - 10) / s.buyers.length), h = b.buyers / bm * (bh - bt - bb); rv += `<path d="M${bx} ${bh - bb}v${-Math.max(h, 0) + (h > 4 ? 4 : 0)}${h > 4 ? 'a4 4 0 0 1 4 -4' : ''}h${bar - (h > 4 ? 8 : 0)}${h > 4 ? 'a4 4 0 0 1 4 4' : ''}v${Math.max(h, 0) - (h > 4 ? 4 : 0)}z" fill="${BLUE}"/><text x="${bx + bar / 2}" y="${bh - 10}" text-anchor="middle" font-size="11.5" fill="#7a7265" font-family="Instrument Sans">${short(b.week)}</text>${b.buyers ? `<text x="${bx + bar / 2}" y="${bh - bb - h - 6}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#16130f" font-family="Instrument Sans">${b.buyers}</text>` : ''}`; });
+    if (!k.buyers) $('#rev').innerHTML = none('No supporter packs sold yet.'); else $('#rev').innerHTML = `<svg viewBox="0 0 ${bw} ${bh}" width="100%"><line x1="${bl}" x2="${bw}" y1="${bh - bb}" y2="${bh - bb}" stroke="#d8cfbf"/>${rv}</svg><p class="cs" style="margin:8px 0 0">${k.buyers} buyer${k.buyers === 1 ? '' : 's'} in 8 weeks · about £${Math.round(k.buyers * NET_PER_SALE)} net (estimate at £${NET_PER_SALE.toFixed(2)} each)</p>`;
+
+    // puzzles
+    const pz = s.puzzles.filter(p => p.started || p.reports);
+    $('#pz').innerHTML = pz.length ? `<table><tr><th>Day</th><th class="num">Started</th><th class="num">Solved</th><th class="num">Win rate</th><th class="num">Avg clicks</th><th class="num">Median time</th><th></th></tr>${pz.map(p => `<tr><td>${short(p.day)}</td><td class="num">${p.started}</td><td class="num">${p.won}</td><td class="num">${p.winRate == null ? '—' : p.winRate + '%'}</td><td class="num">${p.avgClicks == null ? '—' : p.avgClicks}</td><td class="num">${fmtT(p.medianSecs)}</td><td>${p.reports >= 2 || (p.winRate != null && p.started >= 20 && p.winRate < 45) ? `<span class="pill2 w">${p.reports ? p.reports + ' report' + (p.reports === 1 ? '' : 's') : 'Hard'}</span>` : p.winRate != null && p.winRate >= 70 && p.started >= 20 ? '<span class="pill2 g">Healthy</span>' : ''}</td></tr>`).join('')}</table><p class="cs" style="margin:10px 0 0">Average clicks and time come from players who posted a score.</p>` : none('No daily puzzle plays yet.');
+
+    // reports
+    $('#repCs').textContent = s.reports.length ? `${s.reports.length} most recent` : 'Nothing reported';
+    $('#rep').innerHTML = s.reports.length ? s.reports.map(r => `<div class="it"><b>${esc(r.title)}</b><p>${esc(r.note || '(no details)')}</p><small>${esc(r.reason)} · ${esc(r.mode)} · ${new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</small></div>`).join('') : none('All quiet. Reports from the in-game button land here.', 5);
+
+    // lobbies + countries
+    const lm = Math.max(1, ...s.lobbies.map(l => l.created));
+    $('#lob').innerHTML = s.lobbies.some(l => l.created) ? `<div class="bars">${s.lobbies.map(l => `<div class="r"><span>${short(l.day)}</span><div class="t"><i style="width:${Math.round(l.created / lm * 100)}%"></i></div><span style="text-align:right">${l.created}</span></div>`).join('')}</div>` : none('No streamer lobbies yet.');
+    const cn = s.countries.slice(0, 6), ct = Math.max(1, tot(s.countries.map(c => c.n))), names = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch { return null; } })();
+    $('#geo').innerHTML = cn.length ? cn.map(c => `<div class="r"><span>${esc(names ? names.of(c.code) : c.code)}</span><div class="t"><i style="width:${Math.round(c.n / cn[0].n * 100)}%"></i></div><span style="text-align:right">${Math.round(c.n / ct * 100)}%</span></div>`).join('') : none('Countries appear once visits are recorded.');
+  }
+
+  async function load() {
+    const key = sessionStorage.getItem('warmer:admin'); if (!key) return gate();
+    let r; try { r = await fetch(`${API}/api/admin/stats?days=${days}`, { headers: { authorization: 'Bearer ' + key } }); } catch { return gate('Could not reach the server.'); }
+    if (r.status === 401) { sessionStorage.removeItem('warmer:admin'); return gate('That key was not accepted.'); }
+    if (r.status === 404) return gate('Stats are not switched on. Set the ADMIN_KEY secret first.');
+    if (!r.ok) return gate('The server returned an error (' + r.status + ').');
+    $('#gate').hidden = true; $('#app').hidden = false; render(await r.json());
+  }
+  function gate(msg) { $('#app').hidden = true; $('#gate').hidden = false; $('#err').textContent = msg || ''; $('#key').focus(); }
+  $('#go').onclick = () => { const v = $('#key').value.trim(); if (!v) return; sessionStorage.setItem('warmer:admin', v); $('#key').value = ''; load(); };
+  $('#key').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+  $('#out').onclick = () => { sessionStorage.removeItem('warmer:admin'); gate(); };
+  document.querySelectorAll('#rng button').forEach(b => b.onclick = () => { days = +b.dataset.d; document.querySelectorAll('#rng button').forEach(x => x.classList.toggle('on', x === b)); load(); });
+  load();
+})();
+</script></body></html>

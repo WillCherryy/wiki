@@ -7,6 +7,7 @@ const shift = (day, n) => { const [y, m, d] = day.split('-').map(Number); return
 const hits = new Map(); // best-effort per-isolate rate limit; add a Cloudflare rate-limiting rule for real protection
 
 import SCHEMA from './schema.js';
+import { computeStats } from './stats.js';
 export { Lobby } from './lobby.js';
 let ready;
 
@@ -30,6 +31,7 @@ export default {
         if (path === '/api/entitlements') { const pid = q.get('pid') || ''; return PID.test(pid) ? reply({ supporter: await isSupporter(env, pid) }) : reply({ error: 'invalid' }, 400); }
         if (path === '/api/health') return reply({ ok: true });
         if (path === '/api/reports') return await getReports(env, request, reply);
+        if (path === '/api/admin/stats') return await adminStats(env, request, q, now(), reply);
         return reply({ error: 'not found' }, 404);
       }
       if (request.method !== 'POST') return reply({ error: 'not found' }, 404);
@@ -44,6 +46,7 @@ export default {
       if (path === '/api/league') return await postLeague(env, b, now(), reply);
       if (path === '/api/delete') return await postDelete(env, b, reply);
       if (path === '/api/report') return await postReport(env, b, now(), reply);
+      if (path === '/api/event') return await postEvent(env, b, request, now(), reply);
       return reply({ error: 'not found' }, 404);
     } catch (e) { return reply({ error: 'server error' }, 500); }
   }
@@ -119,7 +122,7 @@ async function postLeague(env, b, t, reply) {
 }
 async function postDelete(env, b, reply) {
   if (!PID.test(b.pid)) return reply({ error: 'invalid' }, 400);
-  await env.DB.batch([env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
+  await env.DB.batch([env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
   return reply({ ok: true });
 }
 
@@ -186,6 +189,7 @@ async function lobbyRoute(request, env, path, method, reply, t) {
       const code = randomString(5, ALPHABET), key = randomString(20, 'abcdefghijklmnopqrstuvwxyz0123456789');
       const res = await env.LOBBY.get(env.LOBBY.idFromName(code)).fetch('https://lobby/init', { method: 'POST', body: JSON.stringify({ code, hostKey: key, puzzle }) });
       if (res.status === 409) continue;
+      if (res.ok && env.DB && ready) await bump(env, new Date(t).toISOString().slice(0, 10), 'lobby').run().catch(() => {});
       return res.ok ? reply({ code, key }) : reply({ error: 'invalid puzzle' }, 400);
     }
     return reply({ error: 'try again' }, 503);
@@ -211,4 +215,36 @@ async function getReports(env, request, reply) {
   if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
   if (!safeEqual(given, env.ADMIN_KEY)) return reply({ error: 'unauthorised' }, 401);
   return reply((await env.DB.prepare('SELECT id, created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 100').all()).results);
+}
+
+// ---- anonymous usage events + founder stats ----------------------------------------------------------------------
+const bump = (env, day, k) => env.DB.prepare('INSERT INTO counters (day, k, n) VALUES (?, ?, 1) ON CONFLICT(day, k) DO UPDATE SET n = n + 1').bind(day, k);
+async function postEvent(env, b, request, t, reply) {
+  const day = new Date(t).toISOString().slice(0, 10);
+  if (b.e === 'visit') {
+    const cc = String(request.headers.get('cf-ipcountry') || '').toUpperCase();
+    await env.DB.batch([bump(env, day, 'visit'), ...(/^[A-Z]{2}$/.test(cc) ? [bump(env, day, 'c:' + cc)] : [])]);   // aggregate only: no IP, no player id
+    return reply({ ok: true });
+  }
+  if (!PID.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !MODES.includes(b.mode))) return reply({ error: 'invalid' }, 400);
+  const daily = b.mode === 'daily' ? 1 : 0, f = { started: b.e === 'start' || b.e === 'finish' ? 1 : 0, finished: b.e === 'finish' ? 1 : 0, daily_started: daily && b.e !== 'share' ? 1 : 0, daily_won: daily && b.e === 'finish' ? 1 : 0, shared: b.e === 'share' ? 1 : 0 };
+  await env.DB.prepare('INSERT INTO activity (day, pid, started, finished, daily_started, daily_won, shared) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(day, pid) DO UPDATE SET started = MAX(started, excluded.started), finished = MAX(finished, excluded.finished), daily_started = MAX(daily_started, excluded.daily_started), daily_won = MAX(daily_won, excluded.daily_won), shared = MAX(shared, excluded.shared)')
+    .bind(day, b.pid, f.started, f.finished, f.daily_started, f.daily_won, f.shared).run();
+  return reply({ ok: true });
+}
+async function adminStats(env, request, q, t, reply) {
+  if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
+  if (!safeEqual((request.headers.get('authorization') || '').replace(/^Bearer /, ''), env.ADMIN_KEY)) return reply({ error: 'unauthorised' }, 401);
+  const today = new Date(t).toISOString().slice(0, 10), days = Math.max(1, Math.min(120, parseInt(q.get('days'), 10) || 30));
+  const since = new Date(Date.parse(today + 'T00:00:00Z') - (days + 40) * 864e5).toISOString().slice(0, 10);
+  const all = async (sql, ...a) => (await env.DB.prepare(sql).bind(...a).all()).results;
+  const [activity, firstRows, counters, scores, orders, reports] = await Promise.all([
+    all('SELECT day, pid, started, finished, daily_started, daily_won, shared FROM activity WHERE day >= ?', since),
+    all('SELECT pid, MIN(day) AS first FROM activity GROUP BY pid'),
+    all('SELECT day, k, n FROM counters WHERE day >= ?', since),
+    all('SELECT day, clicks, secs FROM scores WHERE day >= ?', since),
+    all('SELECT created_at FROM orders WHERE created_at >= ?', Date.parse(since + 'T00:00:00Z')),
+    all('SELECT created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 200')
+  ]);
+  return reply(computeStats({ today, days, activity, firsts: new Map(firstRows.map(r => [r.pid, r.first])), counters, scores, orders, reports }));
 }

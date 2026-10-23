@@ -17,9 +17,9 @@
 <meta property="og:image" content="https://warmer.site/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preload" href="fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/eb-garamond-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/instrument-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/newsreader-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/eb-garamond-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -50,7 +50,7 @@
       <div class="next" id="nextIn"></div>
     </div>
     <nav class="quiet" id="quiet" aria-label="More to play"></nav>
-    <footer class="foot"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
+    <footer class="foot"><span class="dots5 sm" aria-hidden="true"><i style="background:#2a4f8a"></i><i style="background:#5c8cbe"></i><i style="background:#d6be8c"></i><i style="background:#f08c50"></i><i style="background:#d63a1f"></i></span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
   </section>
 
   <section id="game">
@@ -60,7 +60,7 @@
           <button class="target" id="targetBtn" title="Show target summary (T)"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
           <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
           <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
-          <div class="signal"><div class="lab"><span>Temperature</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
+          <div class="signal"><div class="lab"><span>Temperature</span><b id="sigLab">Cold</b></div><div class="dotmeter" id="sigDots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
         <div class="trail trailM" id="trailM"></div>
       </div>
@@ -295,7 +295,7 @@ function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch
 async function startGame(mode, resume, extra) {
   const day = dayKey();
   show('game'); setTemp(0);
-  $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Setting up your puzzle…</div>`;
+  $('#article').innerHTML = `<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Setting up your puzzle…</div>`;
   let from, to, meta = { par: null, route: null };
   if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
@@ -308,14 +308,14 @@ async function startGame(mode, resume, extra) {
   $('#reachLab').textContent = mode === 'live' ? 'Reach · live race' : mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
   show('game'); setTemp(0);
   $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
-  $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Loading ${esc(G.from)}…</div>`;
+  $('#article').innerHTML = `<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Loading ${esc(G.from)}…</div>`;
   try {
     const s = await getSummary(G.to); G.toTitle = s.title; $('#tName').textContent = s.title;
     G.keywords = new Set([...(s.title + ' ' + s.extract).toLowerCase().match(/[a-z]{4,}/g) || []].filter(w => !STOP.has(w)).slice(0, 80));
     G.summary = s;
   } catch { G.keywords = new Set(norm(G.to).match(/[a-z]{4,}/g) || []); }
   const target = resume ? resume.path[resume.path.length - 1] : G.from;
-  G.t0 = Date.now();
+  G.t0 = Date.now(); Ping.start(mode);
   clearInterval(tick); tick = setInterval(() => { $('#mTime').textContent = fmt(elapsed()); }, 500);
   await go(target, true, resume);
 }
@@ -353,7 +353,7 @@ function updateHud() {
   const s = G.sig;
   setTemp(s);
   $('#mClicks').textContent = clicks();
-  const sb = $('#sigBar'); sb.style.width = Math.round(s * 100) + '%'; sb.style.backgroundSize = (100 / Math.max(s, .04)) + '% 100%'; $('#sigLab').textContent = sigLabel(s);
+  $('#sigDots').dataset.lit = s >= 1 ? 5 : 1 + Math.floor(s * 4.99); $('#sigLab').textContent = sigLabel(s);
   $('#found').classList.toggle('on', s >= 1 && !G.done);
   const tr = $('#trail');
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
@@ -406,6 +406,7 @@ function finish(won) {
   setTimeout(() => showResult(), won ? 700 : 100);
   if (won && G.mode === 'daily' && P.name) submitScore();
   if (G.mode === 'live' && won) Live.send({ t: 'finish', clicks: c });
+  if (won) Ping.finish(G.mode);
 }
 async function submitScore() {
   const r = G.result;
@@ -448,6 +449,7 @@ function showResult() {
     ${r.won && ref ? `<div class="stars">${'★'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
     ${r.won && r.purist ? '<div class="purist"><b>◆</b> Purist run: no link search, no rewind</div>' : ''}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
+    ${routeDots(r.steps)}
     <div class="pathline">${r.path.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div>
     ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
     <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (+${r.streakBonus} streak)` : ''}</span></div></div>
@@ -476,13 +478,21 @@ function showResult() {
 }
 const API_BASE = ((window.WIKIIO && WIKIIO.api) || '').replace(/\/$/, '');
 const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
+/* anonymous usage counts: one flag per player per day, no names or IPs. Players can switch it off in Settings. */
+const Ping = {
+  send(o) { if (P.stats === false) return; try { fetch(API_BASE + '/api/event', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(o), keepalive: true }).catch(() => {}); } catch {} },
+  visit() { try { if (sessionStorage.getItem('warmer:v')) return; sessionStorage.setItem('warmer:v', '1'); } catch {} this.send({ e: 'visit' }); },
+  start(mode) { this.send({ e: 'start', pid: P.pid, mode }); },
+  finish(mode) { this.send({ e: 'finish', pid: P.pid, mode }); },
+  share() { this.send({ e: 'share', pid: P.pid }); }
+};
 const rankDot = xp => { const r = RANKS[rankOf(xp || 0)]; return `<i class="rd" style="background:${r.c}" title="${r.n}"></i>`; };
 async function fetchBoard(mode, league, purist) {
   const r = await fetch(`${API_BASE}/api/leaderboard?mode=${mode}&day=${dayKey()}${league ? '&league=' + league : ''}${purist ? '&purist=1' : ''}`); if (!r.ok) throw 0; return r.json();
 }
 const valText = (e, mode) => mode === 'day' ? `${e.clicks} clicks · ${fmt(e.secs)}` : mode === 'streak' ? `${e.streak} day${e.streak === 1 ? '' : 's'}` : `${e.points} pts · ${e.days}d`;
 function boardHTML(rows, mode) {
-  if (!rows.length) return '<div class="empty">No scores yet — be the first on the board.</div>';
+  if (!rows.length) return `<div class="empty">${dotsHtml(0, 1.5)}<p>No scores yet. Be the first on the board and light the first dot.</p></div>`;
   return rows.map((e, i) => `<div class="row"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span>${rankDot(e.xp)}<span class="nm ${e.pid === P.pid ? 'me' : ''}">${esc(e.name)}${e.pid === P.pid ? ' (you)' : ''}${e.purist ? '<i class="pm" title="Purist run: no link search, no rewind">◆</i>' : ''}</span><span class="val">${valText(e, mode)}</span></div>`).join('');
 }
 const OFFLINE = '<div class="empty">' + (/^(localhost|127\.)/.test(location.hostname) ? 'Global leaderboards need the server. Run <code>node server.js</code> to play with others.' : 'Leaderboards are offline right now. Your progress is saved on this device.') + '</div>';
@@ -585,6 +595,7 @@ function openSettings() {
       <div class="sprev" id="stPrev">The quick brown fox jumps over the lazy dog.</div></div>
     <div class="sgroup"><div class="sl">Profile</div><div class="field" style="margin:0"><input id="meName" maxlength="20" placeholder="Display name (shown on leaderboards)" value="${esc(P.name)}"></div></div>
     <div class="sgroup"><div class="sl">Your data</div>
+      <label class="srow"><span>Anonymous usage statistics<small class="mute" style="display:block;font-weight:500;font-size:12.5px">Counts that help us improve the game. No name, no IP address.</small></span><input type="checkbox" id="stStats" ${P.stats === false ? '' : 'checked'}></label>
       <div class="namebox" style="margin:0"><button class="btn ghost" id="bkCopy">Copy backup code</button><button class="btn ghost" id="bkRestore">Restore…</button></div>
       <div class="namebox" style="margin:8px 0 0"><button class="btn ghost" id="delOnline" style="width:100%">Delete my online data</button></div>
       <div class="s mute" style="margin-top:8px;font-size:12.5px">No account needed. Your backup code moves your progress to another device. Player ID <code>${esc(P.pid)}</code>.</div></div>
@@ -593,6 +604,7 @@ function openSettings() {
   document.querySelectorAll('#stTheme button').forEach(b => b.onclick = () => { P.theme = b.dataset.v; saveP(); applyTheme(); syncSettings(); });
   $('#stFsD').onclick = () => { P.fs = Math.max(-3, P.fs - 1); saveP(); applyFs(); syncSettings(); };
   $('#stFsU').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); syncSettings(); };
+  $('#stStats').onchange = e => { P.stats = e.target.checked; saveP(); };
   bindSettings(); syncSettings();
 }
 function openMenu() {
@@ -767,11 +779,15 @@ function openLocker(tab = 'theme') {
   draw(); drawTrailPreview($('#lkCv'));
 }
 
+/* the five-dot motif: logo, loader, meter, route, empty states */
+const DOT_C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], DOT_R = [3.2, 4.2, 5.4, 6.8, 8.4];
+const dotsHtml = (lit = 0, k = 1.4) => `<span class="dots5" aria-hidden="true">${DOT_C.map((c, i) => `<i style="width:${DOT_R[i] * 2 * k}px;height:${DOT_R[i] * 2 * k}px;${i < lit ? 'background:' + c : ''}"></i>`).join('')}</span>`;
+const routeDots = steps => `<div class="routedots" aria-hidden="true">${steps.map((st, i) => `${i ? '<span class="rl"></span>' : ''}<i style="--sc:${tempCss(st.sig)};--d:${12 + Math.round(st.sig * 12)}px" title="${esc(st.title || '')}"></i>`).join('')}</div>`;
 /* --------------------------------------------------------------------- share card */
 function fitText(x, text, maxW) { if (x.measureText(text).width <= maxW) return text; while (text.length > 1 && x.measureText(text + '…').width > maxW) text = text.slice(0, -1); return text + '…'; }
 async function shareCardCanvas(r) {
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-  const DISP = '"Instrument Serif", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"Newsreader", Georgia, serif';
+  const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"EB Garamond", Georgia, serif';
   try { await Promise.all([document.fonts.load(`400 80px ${DISP}`), document.fonts.load(`italic 400 80px ${DISP}`), document.fonts.load(`600 24px ${SANS}`), document.fonts.load(`italic 400 30px ${SERIF}`)]); } catch {}
   const M = 84, stops = trailStops(), INK = '#16130f', INK2 = '#4b453b', PAPER = '#f3eee4', MUTE = '#7a7265', RULE = '#d8cfbf', ACC = '#d63a1f';
   const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = sp + 'px'; } catch {} x.fillText(t.toUpperCase(), px, y); try { x.letterSpacing = '0px'; } catch {} };
@@ -835,8 +851,9 @@ async function openShareCard(r, back) {
   const url = URL.createObjectURL(blob), name = `${BRAND.name}-${r.mode === 'daily' ? dayNum(G.day) : r.mode}.png`, file = new File([blob], name, { type: 'image/png' });
   $('#scImg').src = url;
   const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
-  $('#scSave').onclick = () => { save(); toast('Image saved'); };
+  $('#scSave').onclick = () => { save(); Ping.share(); toast('Image saved'); };
   $('#scShare').onclick = async () => {
+    Ping.share();
     try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text: shareText() }); else { save(); toast('Image saved — attach it to your post'); } } catch {}
   };
   $('#scTxt').onclick = async () => { try { await navigator.clipboard.writeText(shareText()); toast('Text copied'); } catch { prompt('Copy your result:', shareText()); } };
@@ -928,7 +945,7 @@ const Live = {
   now() { return Date.now() + this.off; },
   recv(m) {
     if (m.t === 's') { this.off = m.now - Date.now(); this.st = m; this.onState(); }
-    else if (m.t === 'b') { this.bd = m; this.pill(); if (this.screen === 'board') renderLiveBoard(); if (this.screen === 'host') renderHost(true); }
+    else if (m.t === 'b') { this.bd = m; this.pill(); if (this.screen === 'board') renderLiveBoard(); if (this.screen === 'host') renderHost(true); if (this.screen === 'lobby' && this.st && this.st.phase === 'open') renderLobby(); }
     else if (m.t === 'ev') { if (m.rank <= 3 && m.name !== P.name) toast(`${m.name} finished ${ordinal(m.rank)} · ${m.clicks} clicks`); }
     else if (m.t === 'kicked') { this.leave(true); closeModal(); toast('The host removed you from the lobby'); if (G && G.mode === 'live') goHome(); }
     else if (m.t === 'err' && m.error === 'full') toast('This lobby is full');
@@ -993,10 +1010,11 @@ function openLobby() {
 }
 function renderLobby() {
   const box = $('#lobbyBody'); if (!box) return; const s = Live.st, b = Live.bd, n = b ? b.n : 0; clearInterval(Live.cd);
-  if (!s) { box.innerHTML = '<div class="loading"><div class="spin"></div>Connecting…</div>'; return; }
+  if (!s) { box.innerHTML = '<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Connecting…</div>'; return; }
   if (s.phase === 'open') {
     box.innerHTML = `<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Live race · ${esc(Live.code)}</span><h2 style="margin-top:12px">Waiting for the host…</h2>
       <div class="lobby-n"><b>${n}</b><span>player${n === 1 ? '' : 's'} in the lobby</span></div>
+      <div class="pdots">${Array.from({ length: Math.min(n, 80) }, (_, i) => `<i style="background:${DOT_C[i % 5]}"></i>`).join('')}</div>
       <p class="mute">The puzzle is revealed with a 5-second countdown. Stay on this page.</p>
       <div class="chips">${(b ? b.top : []).slice(0, 12).map(p => `<span class="pill">${esc(p.n)}</span>`).join('')}</div></div>`;
   } else if (s.phase === 'countdown') {
@@ -1008,13 +1026,13 @@ function renderLobby() {
     };
     draw(); Live.cd = setInterval(draw, 200);
   } else if (s.phase === 'racing') {
-    box.innerHTML = '<div class="loading"><div class="spin"></div>Race in progress…</div>';
+    box.innerHTML = '<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Race in progress…</div>';
   } else renderLiveBoard(box);
 }
 function openLiveBoard() { Live.screen = 'board'; openModal('<div id="lbBody"></div>', () => { if (Live.screen === 'board') Live.screen = ''; }); renderLiveBoard(); }
 function renderLiveBoard(box) {
   box = box || $('#lbBody'); if (!box) return; const b = Live.bd, s = Live.st;
-  if (!b) { box.innerHTML = '<div class="loading"><div class="spin"></div>Loading…</div>'; return; }
+  if (!b) { box.innerHTML = '<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Loading…</div>'; return; }
   const rows = b.top.map((p, i) => `<div class="row"><span class="pos">${i + 1}</span><span style="flex:1;font-weight:600">${esc(p.n)}${p.n === P.name ? ' <small class="mute">you</small>' : ''}</span>${p.d ? `<span class="s mute">${p.c} clicks · ${fmt(p.s)}</span><span class="pill">Done</span>` : `<span class="heat" style="--sc:${tempCss(p.tp)}"><i style="width:${Math.round(p.tp * 100)}%"></i></span>`}</div>`).join('');
   box.innerHTML = `<h2>${s && s.phase === 'ended' ? 'Final results' : 'Live board'}</h2><p class="mute" style="margin-top:-6px">${b.fin} of ${b.n} finished${b.me ? ` · you are ${ordinal(b.me)}` : ''}</p>${rows || '<p class="mute">Nobody has joined yet.</p>'}
     <div class="actions" style="margin-top:14px"><button class="btn ghost" id="lbLeave">Leave lobby</button></div>`;
@@ -1054,7 +1072,7 @@ async function hostPuzzle(src, f, t) {
 function openHostPanel() { Live.screen = 'host'; openModal('<div id="hostBody"></div>', () => { if (Live.screen === 'host') Live.screen = ''; }); renderHost(); }
 function renderHost() {
   const box = $('#hostBody'); if (!box) return;
-  const s = Live.st, b = Live.bd; if (!s) { box.innerHTML = '<div class="loading"><div class="spin"></div>Connecting…</div>'; return; }
+  const s = Live.st, b = Live.bd; if (!s) { box.innerHTML = '<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Connecting…</div>'; return; }
   const focus = document.activeElement && document.activeElement.id, nameVal = $('#hostName') ? $('#hostName').value : P.name;
   const n = b ? b.n : 0, phase = { open: 'Open for players', countdown: 'Starting…', racing: 'Race in progress', ended: 'Race finished' }[s.phase];
   const act = s.phase === 'open' ? `<button class="btn" id="hStart">Start race · 5 s countdown</button>`
@@ -1213,14 +1231,14 @@ function wrapLines(ctx, text, maxW) {
   if (line) out.push(line); return out;
 }
 function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha, tpl) {
-  let s = size, lines; tpl = tpl || '700 {s}px "Source Serif 4", Georgia, serif';
+  let s = size, lines; tpl = tpl || '700 {s}px "EB Garamond", Georgia, serif';
   for (; s >= 28; s -= 4) { ctx.font = tpl.replace('{s}', s); lines = wrapLines(ctx, text, maxW); if (lines.length <= 3) break; }
   ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillStyle = color; ctx.textAlign = 'center';
   const lh = s * (tpl.includes('Instrument') ? .98 : 1.15), y0 = cy - (lines.length - 1) * lh / 2;
   lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * lh)); ctx.globalAlpha = 1;
 }
 function drawFrame(ctx, W, d, st) {
-  const DISP = '"Instrument Serif", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"Newsreader", Georgia, serif', PAPER = '#f3eee4', tc = tempCss(st.sig);
+  const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"EB Garamond", Georgia, serif', PAPER = '#f3eee4', tc = tempCss(st.sig);
   const al = (rgb, a) => rgb.replace('rgb(', 'rgba(').replace(')', `,${a})`);
   const cap = (t, x, y, size, color, align, sp) => { ctx.font = `600 ${size}px ${SANS}`; ctx.fillStyle = color; ctx.textAlign = align; try { ctx.letterSpacing = sp + 'px'; } catch {} ctx.fillText(t.toUpperCase(), x, y); try { ctx.letterSpacing = '0px'; } catch {} };
   ctx.fillStyle = '#14110d'; ctx.fillRect(0, 0, W, W);
@@ -1331,7 +1349,7 @@ function runFinder() {
 }
 $('#finder').addEventListener('input', runFinder);
 $('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { e.target.value = ''; runFinder(); e.target.blur(); } });
-const applyFs = () => { $('#article').style.fontSize = (19 + P.fs * 1.5) + 'px'; };
+const applyFs = () => { $('#article').style.fontSize = (21.5 + P.fs * 1.5) + 'px'; };
 /* thumb dock (phones): the same actions as the side tools, within reach of one hand */
 function syncDock() {
   $('#dBack').disabled = $('#backBtn').disabled;
@@ -1381,7 +1399,7 @@ handleInvite();
 
 applyTheme();
 applyCos();
-loadData().then(() => { renderHome(); handleChallenge(); handleLive(); refreshEntitlement(false); });
+loadData().then(() => { renderHome(); handleChallenge(); handleLive(); refreshEntitlement(false); Ping.visit(); });
 const viaLink = /^#[cl]=/.test(location.hash) || /[?&]league=/.test(location.search);
 if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
 </script>

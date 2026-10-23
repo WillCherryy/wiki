@@ -6,7 +6,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const DATA = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-let db = { scores: {}, players: {}, leagues: {}, reports: [] };
+let db = { scores: {}, players: {}, leagues: {}, reports: [], activity: {}, counters: {} };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA, 'utf8'))); } catch {}
 
 let pending = false;
@@ -15,6 +15,9 @@ function save() {
   setTimeout(() => { pending = false; fs.writeFile(DATA + '.tmp', JSON.stringify(db), err => { if (!err) fs.rename(DATA + '.tmp', DATA, () => {}); }); }, 200);
 }
 
+let stats = null; import('./worker/stats.js').then(m => { stats = m; });
+const utcDay = () => new Date().toISOString().slice(0, 10);
+const bumpC = (day, k) => { db.counters = db.counters || {}; const key = day + '|' + k; db.counters[key] = (db.counters[key] || 0) + 1; };
 const hits = new Map();
 function limited(ip) {
   const now = Date.now(), a = (hits.get(ip) || []).filter(t => now - t < 60000);
@@ -124,12 +127,32 @@ const server = http.createServer((req, res) => {
         const code = rnd(5, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'); if (lobbies.has(code)) continue;
         const key = rnd(20, 'abcdefghijklmnopqrstuvwxyz0123456789'), core = new LobbyCore({ code, hostKey: key });
         if (!b || !core.setPuzzle({ from: b.from, to: b.to, par: b.par })) return json(res, 400, { error: 'invalid puzzle' });
-        lobbies.set(code, { core }); return json(res, 200, { code, key });
+        lobbies.set(code, { core }); bumpC(utcDay(), 'lobby'); save(); return json(res, 200, { code, key });
       }
       json(res, 503, { error: 'try again' });
     });
   }
   { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
+  if (url.pathname === '/api/admin/stats' && req.method === 'GET') {
+    const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
+    if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
+    if (!stats) return json(res, 503, { error: 'starting' });
+    const days = Math.max(1, Math.min(120, parseInt(q.get('days'), 10) || 30)), act = Object.values(db.activity || {}), firsts = new Map();
+    for (const r of act) if (!firsts.has(r.pid) || r.day < firsts.get(r.pid)) firsts.set(r.pid, r.day);
+    return json(res, 200, stats.computeStats({ today: utcDay(), days, activity: act, firsts, counters: Object.entries(db.counters || {}).map(([k, n]) => { const [day, ...rest] = k.split('|'); return { day, k: rest.join('|'), n }; }), scores: Object.values(db.scores), orders: [], reports: (db.reports || []).slice().reverse() }));
+  }
+  if (url.pathname === '/api/event' && req.method === 'POST') {
+    if (limited(req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
+    return readBody(req, b => {
+      if (!b) return json(res, 400, { error: 'invalid' });
+      const day = utcDay();
+      if (b.e === 'visit') { bumpC(day, 'visit'); const cc = String(req.headers['cf-ipcountry'] || '').toUpperCase(); if (/^[A-Z]{2}$/.test(cc)) bumpC(day, 'c:' + cc); save(); return json(res, 200, { ok: true }); }
+      if (!/^[a-z0-9]{6,16}$/.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !['daily', 'practice', 'pack', 'challenge', 'live'].includes(b.mode))) return json(res, 400, { error: 'invalid' });
+      db.activity = db.activity || {}; const key = day + ':' + b.pid, r = db.activity[key] || (db.activity[key] = { day, pid: b.pid, started: 0, finished: 0, daily_started: 0, daily_won: 0, shared: 0 }), daily = b.mode === 'daily';
+      if (b.e === 'start' || b.e === 'finish') r.started = 1; if (b.e === 'finish') r.finished = 1; if (daily && b.e !== 'share') r.daily_started = 1; if (daily && b.e === 'finish') r.daily_won = 1; if (b.e === 'share') r.shared = 1;
+      save(); json(res, 200, { ok: true });
+    });
+  }
   if (url.pathname === '/api/reports' && req.method === 'GET') {
     const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
     if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
@@ -158,7 +181,7 @@ const server = http.createServer((req, res) => {
     return readBody(req, b => {
       if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' });
       for (const k of Object.keys(db.scores)) if (db.scores[k].pid === b.pid) delete db.scores[k];
-      delete db.players[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid);
+      delete db.players[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid); for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k];
       for (const L of Object.values(db.leagues)) L.members = L.members.filter(m => m !== b.pid);
       save(); json(res, 200, { ok: true });
     });
@@ -207,7 +230,7 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {

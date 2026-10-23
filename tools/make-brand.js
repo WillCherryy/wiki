@@ -8,7 +8,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromiu
 const root = path.join(__dirname, '..'), brand = path.join(root, 'brand'), font = f => 'file://' + path.join(root, 'fonts', f);
 const svg = f => fs.readFileSync(path.join(brand, f), 'utf8').replace(/ width="[\d.]+" height="[\d.]+"/, ' width="100%" height="100%"');
 const INK = '#16130f', PAPER = '#f3eee4', ACCENT = '#d63a1f', RAMP = 'linear-gradient(90deg,#2a4f8a,#5c8cbe,#d6be8c,#f08c50,#d63a1f)';
-const FONTS = `@font-face{font-family:S;src:url(${font('instrument-serif-latin-400-normal.woff2')})}@font-face{font-family:S;font-style:italic;src:url(${font('instrument-serif-latin-400-italic.woff2')})}@font-face{font-family:U;font-weight:500;src:url(${font('instrument-sans-latin-500-normal.woff2')})}@font-face{font-family:U;font-weight:600;src:url(${font('instrument-sans-latin-600-normal.woff2')})}`;
+const FONTS = `@font-face{font-family:S;src:url(${font('eb-garamond-latin-400-normal.woff2')})}@font-face{font-family:S;font-style:italic;src:url(${font('eb-garamond-latin-400-italic.woff2')})}@font-face{font-family:U;font-weight:500;src:url(${font('instrument-sans-latin-500-normal.woff2')})}@font-face{font-family:U;font-weight:600;src:url(${font('instrument-sans-latin-600-normal.woff2')})}`;
 
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
@@ -51,7 +51,7 @@ const FONTS = `@font-face{font-family:S;src:url(${font('instrument-serif-latin-4
       ${tile('Avatar (circle crop)', `<div style="width:130px;height:130px;border-radius:50%;overflow:hidden;background:${INK};display:grid;place-items:center"><div style="width:76px;height:64px">${svg('mark-on-dark.svg')}</div></div>`, '#fbf8f1', '#7a7265', 150)}
       ${tile('Favicon 16 / 32 / 48', [16, 32, 48].map(s => `<div style="width:${s}px;height:${s}px;border-radius:${s * .22}px;overflow:hidden;margin:0 6px">${svg('app-icon.svg')}</div>`).join(''), '#fbf8f1', '#7a7265', 150)}</div>
     <div style="display:flex;gap:12px;margin-top:22px">${sw(INK, 'Ink')}${sw(PAPER, 'Paper')}${sw('#2a4f8a', 'Cold')}${sw('#5c8cbe', 'Cool')}${sw('#d6be8c', 'Sand')}${sw('#f08c50', 'Warm')}${sw(ACCENT, 'Hot · accent')}</div>
-    <div style="font:500 14px/1.5 U;color:#4b453b;margin-top:18px">Type: Instrument Serif (regular + italic for “er”). Clear space around the logo: the height of the largest dot. Minimum size: mark 16px, horizontal logo 90px wide.</div></div>`, 1544, 1300, path.join(brand, 'brand-sheet.png'), 1, true);
+    <div style="font:500 14px/1.5 U;color:#4b453b;margin-top:18px">Type: EB Garamond (regular + italic for “er”). Clear space around the logo: the height of the largest dot. Minimum size: mark 16px, horizontal logo 90px wide.</div></div>`, 1544, 1300, path.join(brand, 'brand-sheet.png'), 1, true);
   const alt = path.join(brand, 'alt-sheet.html');
   if (fs.existsSync(alt)) { const p = await b.newPage({ viewport: { width: 1580, height: 900 } }); await p.goto('file://' + alt); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(250); await p.screenshot({ path: path.join(brand, 'alt-sheet.png'), fullPage: true }); await p.close(); }
   await b.close(); console.log('brand PNGs written');
