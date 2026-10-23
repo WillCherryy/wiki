@@ -17,7 +17,7 @@
   <div class="g2b"><div class="card"><h3>Live races</h3><p class="cs">Streamer lobbies created, last 7 days</p><div id="lob"></div></div><div class="card"><h3>Players by country</h3><p class="cs">Aggregate counts from Cloudflare. No IP addresses are stored.</p><div id="geo" class="bars"></div></div></div>
   <div class="foot"><span class="dots5 sm"><i style="background:#2a4f8a"></i><i style="background:#5c8cbe"></i><i style="background:#d6be8c"></i><i style="background:#f08c50"></i><i style="background:#d63a1f"></i></span>Private page. Only counts players who leave “Anonymous usage statistics” on.</div>
 </div>
-<script src="config.js"></script>
+<script src="config.js" charset="utf-8"></script>
 <script>
 (function () {
   const CFG = window.WIKIIO || {}, API = (CFG.api || '').replace(/\/$/, ''), $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

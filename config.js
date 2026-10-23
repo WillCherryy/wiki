@@ -11,7 +11,7 @@ window.WIKIIO = {
   adsenseTest: false,               // true while testing: shows Google's test ads
   analytics: '',                    // optional Cloudflare Web Analytics token (cookie-free); leave empty for none
   paymentProvider: 'stripe',        // 'stripe' (you are the seller) or 'lemonsqueezy' / 'paddle' (they are the seller of record): switches the wording of the legal pages
-  price: '£2.99',
+  price: '\u00a32.99',
   jurisdiction: 'England and Wales',
   updated: '23 October 2026'
 };

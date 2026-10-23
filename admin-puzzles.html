@@ -35,7 +35,7 @@
     </div>
   </div>
 </div>
-<script src="config.js"></script><script src="cats.js"></script><script src="clean.js"></script><script src="solver.js"></script><script src="wikiclient.js"></script>
+<script src="config.js" charset="utf-8"></script><script src="cats.js"></script><script src="clean.js"></script><script src="solver.js"></script><script src="wikiclient.js"></script>
 <script>
 (function () {
   const CFG = window.WIKIIO || {}, API = (CFG.api || '').replace(/\/$/, ''), $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
