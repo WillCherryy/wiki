@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Scorcher">
 <meta property="og:title" content="Scorcher — the daily Wikipedia link race">
-<meta property="og:description" content="Get from one Wikipedia article to another using only links. Scorcher, colder, a new puzzle every day. No account needed.">
+<meta property="og:description" content="Get from one Wikipedia article to another using only links. Hotter, colder, a new puzzle every day. No account needed.">
 <meta property="og:url" content="https://playscorcher.app/">
 <meta property="og:image" content="https://playscorcher.app/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -258,7 +258,7 @@ function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { 
 
 function show(view) { document.body.classList.toggle('ingame', view === 'game'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
-function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Burning' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
+function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Scorching' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
 const SQ = ['⬜', '🟦', '🟩', '🟨', '🟧', '🟥'];
 const sigSquare = s => SQ[Math.min(5, Math.floor(s * 5.99))];
 
@@ -379,6 +379,7 @@ function updateHud() {
   $('#mClicks').textContent = clicks();
   $('#sigDots').dataset.lit = s >= 1 ? 5 : 1 + Math.floor(s * 4.99); $('#sigLab').textContent = sigLabel(s);
   $('#found').classList.toggle('on', s >= 1 && !G.done);
+  if (s > .72 && s < 1 && !G.scorched && !G.done) { G.scorched = true; toast("You're scorching!"); }
   const tr = $('#trail');
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
   tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
@@ -724,7 +725,7 @@ function ask(h, text, yes, cb) {
 function showHelp() {
   openModal(`<h2>How to play</h2><p>Race through Wikipedia from the start article to the target.</p>
   <ol><li><b>Click links</b> inside the article to travel. Each jump is one click. Every puzzle is checked by computer: a route of <b>four clicks or fewer</b> always exists.</li><li>Reach the <b>target</b> in as few clicks as possible. Time breaks ties.</li>
-  <li>The <b>Signal</b> meter shows how close you are in topic. The whole UI warms from blue to red as you get closer.</li>
+  <li>The <b>Signal</b> meter shows how close you are in topic. The whole UI heats from blue to red as you get closer. When it says <b>Scorching</b>, you are nearly there.</li>
   <li>Use <b>Find a link</b> to search the article's links. <b>Back</b> costs +1 click.</li>
   <li>Earn <b>XP</b> to climb ranks, unlock <b>achievements</b>, keep your <b>streak</b> and challenge friends in <b>leagues</b>.</li></ol>
   <p style="font-size:13px"><kbd>/</kbd> find a link &nbsp; <kbd>B</kbd> back &nbsp; <kbd>T</kbd> target &nbsp; <kbd>Esc</kbd> close</p>

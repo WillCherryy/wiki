@@ -168,7 +168,7 @@ function render(t){
     const f1=p(u,1.55,1.8),f2=p(u,2.6,2.85),f3=p(u,3.5,3.7);
     $('#pg1').style.opacity=1-p(u,1.5,1.63,E.lin);$('#pg2').style.opacity=p(u,1.62,1.85,E.lin)*(1-p(u,2.55,2.68,E.lin));$('#pg3').style.opacity=p(u,2.67,2.9,E.lin);
     $('#clk').textContent=u<1.5?0:u<2.55?1:u<3.5?2:3;
-    const tw=u<1.5?['Cold','#2a4f8a']:u<2.55?['Warm','#d6a23c']:u<3.5?['Hot','#f08c50']:['In sight!','#d63a1f'];$('#tmp').textContent=tw[0];$('#tmp').style.color=tw[1];
+    const tw=u<1.5?['Cold','#2a4f8a']:u<2.55?['Warm','#d6a23c']:u<3.5?['Scorching','#f08c50']:['In sight!','#d63a1f'];$('#tmp').textContent=tw[0];$('#tmp').style.color=tw[1];
     // cursor path between link positions (pages share layout, so measure on visible page)
     const l1=pos($('#lk1')),l2=pos($('#lk2')),l3=pos($('#lk3'));
     const start=[700,430],ci=(A,B,k)=>[A[0]+(B[0]-A[0])*k,A[1]+(B[1]-A[1])*k];
@@ -181,7 +181,7 @@ function render(t){
   }
   if(id==='s3'){
     rise('c1l',.0,u);rise('c2l',.35,u);
-    const times=[.7,1.2,1.7,2.2,2.7],words=[['Cold','#2a4f8a'],['Cool','#5c8cbe'],['Warm','#d6a23c'],['Hot','#f08c50'],['In sight!','#d63a1f']];
+    const times=[.7,1.2,1.7,2.2,2.7],words=[['Cold','#2a4f8a'],['Cool','#5c8cbe'],['Warm','#d6a23c'],['Scorching','#f08c50'],['In sight!','#d63a1f']];
     let lit=0;times.forEach((x,i)=>{if(u>=x)lit=i+1;});
     kids('#mdots i').forEach((el,i)=>{const on=i<lit,k=p(u,times[i],times[i]+.5,E.back);el.style.background=on?C[i]:'var(--rule)';el.style.transform=`scale(${on?.7+.3*k:1})`;});
     const w=words[Math.max(0,lit-1)],wd=$('#word');wd.textContent=w[0];wd.style.color=w[1];const wk=lit?p(u,times[lit-1],times[lit-1]+.35,E.back):1;wd.style.transform=`scale(${.9+.1*wk})`;
