@@ -272,7 +272,7 @@ function setPlate(d, sa, sb) {
   const from = sa ? sa.title : d.from, to = sb ? sb.title : d.to, cap = x => x ? (x.desc || (x.extract || '').split(/(?<=\.)\s/)[0] || '') : '';
   $('#fromTitle').textContent = from; fitHero($('#fromTitle'), from); $('#fromDesc').textContent = cap(sa);
   $('#toTitle').textContent = to; fitHero($('#toTitle'), to); $('#toDesc').textContent = cap(sb);
-  $('#plateCheck').innerHTML = d.par ? `<span>✓</span> Checked: this puzzle can be solved in ${d.par === 4 ? '4 clicks' : 'four clicks or fewer'}` : '';
+  $('#plateCheck').innerHTML = d.par ? `<span>✓</span> Checked: solvable in four clicks or fewer` : '';
   $('#plateFacts').innerHTML = [d.par ? `Par ${d.par}` : '', d.par ? diffOf(d.par) : '', d.ka && d.kb ? `${esc(d.ka)} → ${esc(d.kb)}` : ''].filter(Boolean).map(t => `<span>${t}</span>`).join('');
 }
 function dailyCtx() {
