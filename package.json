@@ -7,6 +7,7 @@
     "start": "node server.js",
     "pool": "node tools/build-pool.js",
     "puzzles": "node tools/build-puzzles.js",
+    "build:site": "node tools/build-site.js",
     "test": "node tools/test-fake.js"
   },
   "dependencies": {},

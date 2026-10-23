@@ -135,7 +135,14 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
+  if (req.method === 'GET' && ft) {
+    return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {
+      if (e) return json(res, 404, {});
+      res.writeHead(200, { 'content-type': ft[2] === 'woff2' ? 'font/woff2' : 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=31536000, immutable' }); res.end(buf);
+    });
+  }
   if (req.method === 'GET' && STATIC[url.pathname]) {
     return fs.readFile(path.join(__dirname, url.pathname), (e, buf) => {
       if (e) return json(res, 404, {});

@@ -6,7 +6,7 @@ No accounts: progress lives on the player's device (with a backup code).
 ## Layout
 | Path | What |
 |---|---|
-| `index.html`, `clean.js`, `cats.js`, `packs.js` | The game (static, no build step) |
+| `index.html`, `styles.css`, `clean.js`, `cats.js`, `packs.js`, `fonts/` | The game (static; fonts are self-hosted, SIL OFL) |
 | `config.js` | **Edit first:** operator name, contact email, API base URL |
 | `privacy.html`, `terms.html` | Legal pages (read `config.js`) |
 | `server.js` | Leaderboard / league / path-map API (zero-dependency Node, JSON file storage) |
@@ -16,7 +16,13 @@ No accounts: progress lives on the player's device (with a backup code).
 ## Run locally
     node server.js            # http://localhost:3000 (PORT env var optional), serves the game and the API
 
-## Go live (GitHub Pages + API)
+## Hosting (recommended: Cloudflare)
+Cloudflare Pages for the static site, a Worker for the API, Durable Objects for live lobbies later.
+- Pages: connect this repo, build command `npm run build:site`, output directory `dist`.
+- Custom domain and HTTPS are handled in the Cloudflare dashboard.
+- The leaderboard API (`server.js`) needs a host; set its URL as `api` in `config.js`.
+
+## Go live (GitHub Pages alternative)
 1. Edit `config.js`: set `operator` and `contact` (the legal pages show a red draft banner until you do).
 2. Repo Settings → Pages → Source: **GitHub Actions**. Push to `main` and `pages.yml` deploys.
 3. Actions → **Build puzzles** → Run workflow (first run builds the article pools, schedules ~45 days of puzzles and verifies the packs).

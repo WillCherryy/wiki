@@ -5,394 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>wikilink — the daily Wikipedia race</title>
 <meta name="description" content="Race from one Wikipedia article to another using only links. A new puzzle every day.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236366f1'/%3E%3Ccircle cx='16' cy='16' r='5' fill='white'/%3E%3C/svg%3E">
-<style>
-@property --h { syntax: '<number>'; inherits: true; initial-value: 235; }
-:root {
-  --h: 235;
-  --accent: hsl(var(--h) 85% 58%);
-  --accent-soft: hsl(var(--h) 85% 58% / .14);
-  --accent-ink: hsl(var(--h) 70% 38%);
-  --bg: #f6f7fb; --card: #ffffff; --ink: #15172a; --mute: #6b7089; --line: #e6e8f2;
-  --glow-a: hsl(var(--h) 90% 70% / .30); --glow-b: hsl(calc(var(--h) + 50) 90% 70% / .22);
-  --shadow: 0 1px 2px rgba(20,22,50,.05), 0 8px 30px rgba(20,22,50,.07);
-  --r: 18px;
-  transition: --h .9s cubic-bezier(.2,.7,.2,1);
-}
-:root[data-theme="dark"] {
-  --accent-ink: hsl(var(--h) 90% 76%);
-  --bg: #0c0d18; --card: #151729; --ink: #eceefb; --mute: #8e93b3; --line: #25283f;
-  --glow-a: hsl(var(--h) 90% 55% / .28); --glow-b: hsl(calc(var(--h) + 50) 90% 55% / .18);
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 40px rgba(0,0,0,.35);
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; min-height: 100vh; color: var(--ink); background: var(--bg);
-  font: 16px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(900px 520px at 12% -8%, var(--glow-a), transparent 65%),
-    radial-gradient(800px 520px at 100% 0%, var(--glow-b), transparent 60%);
-}
-button { font: inherit; color: inherit; cursor: pointer; }
-.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
-
-/* top bar */
-.top { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px) saturate(1.4); background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid var(--line); }
-.top .wrap { display: flex; align-items: center; gap: 10px; height: 60px; }
-.logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 21px; letter-spacing: -.03em; border: 0; background: none; padding: 0; }
-.logo i { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; box-shadow: 0 4px 14px var(--accent-soft); transition: background .9s; }
-.logo i::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
-.logo b { color: var(--accent); font-weight: 800; transition: color .9s; }
-.spacer { flex: 1; }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 13.5px; }
-.chip:hover { border-color: var(--accent); }
-.iconbtn { width: 36px; padding: 0; justify-content: center; }
-.iconbtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.rankchip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--accent)); }
-@media (max-width: 560px) { .hide-s { display: none; } }
-
-/* cards */
-.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
-.btn { border: 0; border-radius: 14px; padding: 14px 22px; font-weight: 700; background: var(--accent); color: #fff; box-shadow: 0 8px 22px var(--accent-soft); transition: transform .12s, filter .2s, background .9s; }
-.btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
-.btn:active { transform: translateY(0) scale(.99); }
-.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
-.btn.ghost:hover { border-color: var(--accent); }
-.btn.big { padding: 17px 34px; font-size: 17px; border-radius: 16px; }
-.btn[disabled] { opacity: .5; pointer-events: none; }
-
-/* home */
-#home { padding: 34px 0 70px; }
-.eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-soft); padding: 6px 12px; border-radius: 999px; }
-h1.hero { font-size: clamp(34px, 6.4vw, 58px); line-height: 1.03; letter-spacing: -.045em; margin: 16px 0 10px; font-weight: 800; }
-h1.hero em { font-style: normal; background: linear-gradient(100deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.sub { color: var(--mute); font-size: 17px; max-width: 560px; margin: 0 0 26px; }
-.duel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; margin-bottom: 18px; }
-.node { padding: 18px; display: flex; flex-direction: column; gap: 6px; min-height: 150px; position: relative; overflow: hidden; }
-.node small { font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--mute); }
-.node h3 { font: 700 24px/1.15 'Source Serif 4', Georgia, serif; margin: 0; letter-spacing: -.01em; }
-.node p { margin: 0; color: var(--mute); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.node.to { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
-.node.to::after { content: ""; position: absolute; right: -40px; top: -40px; width: 120px; height: 120px; border-radius: 50%; background: var(--accent-soft); }
-.node img { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; object-fit: cover; border-radius: 12px; opacity: .95; }
-.arrow { align-self: center; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 800; transition: background .9s; }
-.skel { background: linear-gradient(90deg, var(--line), transparent, var(--line)); background-size: 200% 100%; animation: sh 1.2s infinite; border-radius: 8px; height: 14px; }
-@keyframes sh { to { background-position: -200% 0; } }
-.cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 30px; }
-.statrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
-.stat { padding: 16px 18px; }
-.stat b { display: block; font-size: 26px; letter-spacing: -.03em; line-height: 1.1; }
-.stat span { font-size: 12.5px; color: var(--mute); font-weight: 600; }
-.panel { padding: 20px; }
-.panel h4 { margin: 0 0 12px; font-size: 14px; letter-spacing: .02em; display: flex; justify-content: space-between; align-items: center; }
-.panel h4 a { font-weight: 600; font-size: 13px; color: var(--accent-ink); cursor: pointer; }
-.row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
-.row:first-of-type { border-top: 0; }
-.row .pos { width: 26px; font-weight: 800; color: var(--mute); }
-.row .pos.p1 { color: #e9a400; } .row .pos.p2 { color: #8a94a6; } .row .pos.p3 { color: #b4693b; }
-.row .nm { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .me { color: var(--accent-ink); }
-.row .val { color: var(--mute); font-variant-numeric: tabular-nums; font-size: 13.5px; }
-.empty { color: var(--mute); font-size: 14px; padding: 6px 0; }
-
-/* game */
-#game { display: none; padding-bottom: 90px; }
-.hud { position: sticky; top: 60px; z-index: 20; margin: 0 -16px; padding: 10px 16px 12px; backdrop-filter: blur(14px) saturate(1.3); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--line); }
-.hud-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.target { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); text-align: left; transition: background .9s, border-color .9s; }
-.target small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-ink); }
-.target strong { display: block; font: 700 17px/1.15 'Source Serif 4', Georgia, serif; }
-.metric { text-align: center; min-width: 58px; }
-.metric b { display: block; font-size: 22px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
-.metric span { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
-.signal { flex: 1 1 130px; min-width: 120px; }
-.signal .lab { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 5px; }
-.signal .lab b { color: var(--accent-ink); }
-.bar { height: 9px; border-radius: 99px; background: var(--line); overflow: hidden; }
-.bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, hsl(235 85% 60%), hsl(var(--h) 90% 58%)); transition: width .8s cubic-bezier(.2,.7,.2,1); }
-.trail { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 0; scrollbar-width: none; align-items: center; }
-.trail::-webkit-scrollbar { display: none; }
-.step { flex: none; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid hsl(var(--sh) 85% 58%); white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; animation: pop .35s cubic-bezier(.2,1.4,.4,1); }
-.trail .sep { color: var(--mute); flex: none; font-size: 12px; }
-@keyframes pop { from { transform: scale(.7); opacity: 0; } }
-.found { display: none; margin-top: 8px; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 10px; background: linear-gradient(90deg, #ff8a3d, #ff4d6d); color: #fff; animation: pop .4s; }
-.found.on { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.found button { border: 0; background: rgba(255,255,255,.25); color: #fff; border-radius: 8px; padding: 3px 10px; font-weight: 700; font-size: 12.5px; }
-.tools { display: flex; gap: 8px; margin: 14px 0 12px; flex-wrap: wrap; }
-.article { margin-top: 0; padding: 30px clamp(18px, 5vw, 48px) 40px; font-family: 'Source Serif 4', Georgia, serif; font-size: 18.5px; line-height: 1.7; transition: opacity .25s, transform .25s; }
-.article.out { opacity: 0; transform: translateY(8px); }
-.article.in { animation: slidein .45s cubic-bezier(.2,.8,.2,1); }
-@keyframes slidein { from { opacity: 0; transform: translateY(14px); } }
-.article h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: -.02em; margin: 0 0 18px; padding-bottom: 14px; border-bottom: 2px solid var(--accent); transition: border-color .9s; }
-.article h2 { font-size: 26px; margin: 1.6em 0 .4em; letter-spacing: -.01em; }
-.article h3 { font-size: 21px; margin: 1.3em 0 .3em; }
-.article h2, .article h3 { border: 0; }
-.article p { margin: 0 0 1em; }
-.article ul, .article ol { padding-left: 1.3em; margin: 0 0 1em; }
-.article a[data-t] { color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: pointer; transition: background .15s, border-color .15s; border-radius: 3px; }
-.article a[data-t]:hover { background: var(--accent-soft); border-bottom-color: var(--accent); }
-.article a.goal { background: linear-gradient(90deg, #ff8a3d33, #ff4d6d33); border-bottom-color: #ff6a4d; animation: pulse 1.4s infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(255,106,77,.25); } }
-.article .mw-heading { margin: 0; }
-.article sup, .article .mw-editsection { display: none; }
-.article .loading { padding: 70px 0; text-align: center; color: var(--mute); font-family: Inter, sans-serif; }
-.spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); margin: 0 auto 12px; animation: sp .7s linear infinite; }
-@keyframes sp { to { transform: rotate(360deg); } }
-
-/* modals / toast */
-.scrim { position: fixed; inset: 0; z-index: 60; background: rgba(8,9,20,.55); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 16px; }
-.scrim.on { display: flex; animation: fade .2s; }
-@keyframes fade { from { opacity: 0; } }
-.modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 26px; animation: rise .3s cubic-bezier(.2,.9,.3,1.1); position: relative; }
-@keyframes rise { from { transform: translateY(18px) scale(.97); opacity: 0; } }
-.modal h2 { margin: 0 0 6px; font-size: 24px; letter-spacing: -.03em; }
-.modal .x { position: absolute; right: 14px; top: 14px; }
-.modal p { color: var(--mute); margin: 6px 0 14px; }
-.modal ol { padding-left: 20px; color: var(--mute); } .modal ol li { margin: 8px 0; } .modal ol b { color: var(--ink); }
-.tabs { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); margin: 8px 0 12px; }
-.tabs button { border: 0; background: none; padding: 7px 16px; border-radius: 9px; font-weight: 700; font-size: 13.5px; color: var(--mute); }
-.tabs button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
-.toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 30px); opacity: 0; z-index: 80; background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: .3s; pointer-events: none; }
-.toast.on { transform: translate(-50%, 0); opacity: 1; }
-.win-top { text-align: center; padding: 6px 0 4px; }
-.win-top .big { font-size: 54px; font-weight: 800; letter-spacing: -.05em; line-height: 1; background: linear-gradient(100deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
-.grid3 div { text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
-.grid3 b { display: block; font-size: 22px; letter-spacing: -.03em; } .grid3 span { font-size: 11.5px; color: var(--mute); font-weight: 600; }
-.xpbar { margin: 4px 0 4px; } .xpmeta { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: var(--mute); margin-bottom: 6px; }
-.pathline { display: flex; flex-wrap: wrap; gap: 4px 6px; justify-content: center; font-size: 13px; color: var(--mute); margin: 8px 0 16px; }
-.pathline b { color: var(--ink); }
-.namebox { display: flex; gap: 8px; margin: 12px 0; }
-.namebox input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 12px; padding: 11px 14px; font: inherit; }
-.namebox input:focus { outline: 2px solid var(--accent); }
-.actions { display: flex; gap: 10px; flex-wrap: wrap; } .actions .btn { flex: 1; }
-canvas#fx { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
-.hist { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; margin-top: 8px; }
-.hist i { aspect-ratio: 1; border-radius: 4px; background: var(--line); }
-.hist i.w { background: var(--accent); } .hist i.l { background: #ff6a4d55; }
-@media (max-width: 620px) {
-  .duel { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); margin: 0 auto; }
-  .article { font-size: 17.5px; padding-top: 22px; } .modal { padding: 20px; }
-}
-.foot { margin: 26px 0 0; font-size: 12.5px; color: var(--mute); text-align: center; line-height: 1.7; }
-.foot a { color: var(--accent-ink); }
-.next { font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
-.rd { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
-.scopes { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 2px; }
-.chip.sc.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.invite { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; font-weight: 600; }
-.invite button { border: 0; background: var(--card); border-radius: 8px; padding: 5px 10px; font-weight: 700; font-size: 12.5px; }
-.ach { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
-.ach.lock .medal { filter: grayscale(1); opacity: .5; }
-.medal { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; flex: none; background: var(--card); border: 3px solid var(--mc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc) 22%, transparent); }
-.am { flex: 1; min-width: 0; } .am b { display: block; font-size: 14.5px; } .am small { display: block; color: var(--mute); font-size: 12px; } .am .bar { height: 6px; margin: 5px 0 3px; }
-.unlock { display: flex; gap: 12px; align-items: center; padding: 10px 12px; margin: 10px 0; border-radius: 14px; background: var(--accent-soft); animation: pop .5s cubic-bezier(.2,1.4,.4,1); }
-.unlock b { display: block; font-size: 14.5px; } .unlock small { color: var(--mute); font-size: 12px; }
-.finder { flex: 1 1 200px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
-.finder:focus-within { border-color: var(--accent); } .finder svg { width: 16px; height: 16px; stroke: var(--mute); fill: none; stroke-width: 2; flex: none; }
-.finder input { flex: 1; min-width: 0; border: 0; background: none; outline: 0; color: var(--ink); font: inherit; font-size: 14px; }
-.finder span { font-size: 12px; font-weight: 700; color: var(--mute); white-space: nowrap; }
-.article a.hit { background: #ffd54a55; outline: 2px solid #ffb800; outline-offset: 1px; } .article a.hit.cur { background: #ffb80099; }
-kbd { font: 600 11.5px Inter, sans-serif; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
-.field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 13px; font-weight: 700; }
-.field > input { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 12px; padding: 11px 14px; font: inherit; font-weight: 500; }
-.field input:focus { outline: 2px solid var(--accent); }
-.ranks { font-size: 12.5px; margin: 12px 0 0; line-height: 1.9; }
-@media (max-width: 560px) {
-  .top .wrap { gap: 6px; }
-  .hud { padding: 7px 16px 8px; } .hud-row { gap: 8px; flex-wrap: wrap; }
-  .target { min-width: 0; flex: 1 1 0; padding: 5px 10px; } .target small { font-size: 9.5px; }
-  .target strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
-  .metric { min-width: 44px; } .metric b { font-size: 18px; } .metric span { font-size: 9.5px; }
-  .signal { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; } .signal .lab { margin: 0; gap: 8px; white-space: nowrap; } .signal .bar { flex: 1; height: 6px; }
-  .trail { padding-top: 7px; } .step { font-size: 11.5px; padding: 3px 8px; }
-  .found { margin-top: 6px; padding: 5px 10px; font-size: 12px; }
-  .tools { margin: 10px 0; gap: 6px; } .tools .chip { height: 34px; padding: 0 10px; }
-  .finder { order: 5; flex: 1 1 100%; } #giveUp { margin-left: auto; }
-}
-@media (pointer: coarse) { .article { line-height: 1.85; } .article a[data-t] { padding: 2px 1px; } }
-.attr { font: 12.5px/1.5 Inter, sans-serif; color: var(--mute); margin: 28px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
-.attr a { color: var(--accent-ink); }
-.stars { text-align: center; font-size: 22px; margin: 2px 0 6px; letter-spacing: 3px; } .stars small { display: block; font-size: 12.5px; letter-spacing: 0; color: var(--mute); font-weight: 600; }
-details.route { margin: 0 0 4px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--bg); }
-details.route summary { cursor: pointer; font-weight: 700; font-size: 13.5px; } details.route .pathline { margin: 10px 0 2px; }
-.adbox { display: flex; align-items: center; gap: 12px; margin: 18px 0; } .adbox .bar { flex: 1; height: 10px; } .adbox .bar i { transition: width 1s linear; }
-/* utilities */
-.serif { font-family: 'Source Serif 4', Georgia, serif; } .b { font-weight: 700; } .s { font-size: 12.5px; } .mute { color: var(--mute); }
-.pill { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); }
-/* skins */
-:root[data-skin="paper"]:not([data-theme="dark"]) { --bg: #f7f1e3; --card: #fffaf0; --line: #eadfc8; --ink: #2a2118; --mute: #7c6f5c; }
-:root[data-skin="midnight"][data-theme="dark"] { --bg: #05060f; --card: #0d1024; --line: #1c2040; }
-:root[data-skin="aurora"] { --glow-a: hsl(175 90% 55% / .3); --glow-b: hsl(300 90% 65% / .24); }
-/* hub, packs, locker, challenge */
-.hubchal { padding: 18px; margin-bottom: 12px; background: linear-gradient(135deg, hsl(235 85% 58%), hsl(285 80% 58%)); color: #fff; border: 0; }
-.hc-t { font: 700 20px/1.2 'Source Serif 4', Georgia, serif; } .hc-s { opacity: .88; font-size: 13.5px; margin-top: 4px; }
-.hcb { background: #fff; color: #3a2bd6; box-shadow: none; }
-.hubrow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
-.hubtile { padding: 16px 18px; text-align: left; display: flex; flex-direction: column; gap: 2px; cursor: pointer; border: 1px solid var(--line); }
-.hubtile span { font-size: 24px; } .hubtile b { font-size: 15.5px; } .hubtile small { color: var(--mute); font-weight: 600; font-size: 12.5px; }
-.hubtile:hover { border-color: var(--accent); }
-.packcard { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; margin: 10px 0 0; cursor: pointer; text-align: left; border: 0; background: linear-gradient(160deg, hsl(var(--ph) 90% 94%), hsl(var(--ph) 90% 88%)); color: #15172a; }
-:root[data-theme="dark"] .packcard { background: linear-gradient(160deg, hsl(var(--ph) 40% 20%), hsl(var(--ph) 45% 14%)); color: #eceefb; }
-.packcard .pe { font-size: 30px; } .packcard b { display: block; font-size: 16px; } .packcard small { display: block; opacity: .7; font-weight: 600; font-size: 12.5px; }
-.packhead { margin: 12px 0; padding: 16px 18px; border-radius: 18px; background: linear-gradient(160deg, hsl(var(--ph) 90% 94%), hsl(var(--ph) 90% 86%)); color: #15172a; }
-:root[data-theme="dark"] .packhead { background: linear-gradient(160deg, hsl(var(--ph) 40% 22%), hsl(var(--ph) 45% 14%)); color: #eceefb; }
-.packhead h2 { margin: 8px 0 2px; } .packhead .mute { color: inherit; opacity: .7; }
-.pkgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.tile.pk { text-align: left; cursor: pointer; font: inherit; color: inherit; min-height: 112px; padding: 13px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); position: relative; }
-.tile.pk.next { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.tile.pk.lock { opacity: .5; cursor: default; }
-.badge { position: absolute; right: 8px; top: 8px; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); }
-.lkgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.item { aspect-ratio: 1; border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; font: inherit; font-size: 12px; font-weight: 700; text-align: center; padding: 6px; color: var(--ink); cursor: pointer; }
-.item .sw { width: 44px; height: 44px; border-radius: 14px; } .item small { font-size: 10px; color: var(--mute); font-weight: 600; line-height: 1.25; }
-.item.on { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); } .item.lock { opacity: .55; }
-.vs { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; } .vs > div { flex: 1; padding: 11px 8px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); text-align: center; }
-.vs b { display: block; font-size: 15px; } .vs span { font-size: 12.5px; color: var(--mute); font-weight: 600; } .vs i { font-style: normal; font-weight: 800; color: var(--mute); font-size: 12px; }
-/* ===================== v2: full width, sharper ===================== */
-:root { --r: 14px; --line: #dcdfee; --shadow: 0 1px 0 rgba(21,23,42,.04), 0 8px 22px -12px rgba(21,23,42,.22);
-  --serif: 'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype', Charter, Georgia, serif;
-  --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-:root[data-theme="dark"] { --line: #2b2f4b; --shadow: 0 1px 0 rgba(255,255,255,.035) inset, 0 12px 32px -16px rgba(0,0,0,.75); }
-body { font-family: var(--sans); font-size: 15.5px; letter-spacing: -.003em; text-rendering: optimizeLegibility; }
-body::before { background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1.5px) 0 0 / 22px 22px, linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 240px); -webkit-mask-image: linear-gradient(#000, #000 30%, transparent 78%); mask-image: linear-gradient(#000, #000 30%, transparent 78%); }
-body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 100; background: linear-gradient(90deg, var(--accent), hsl(calc(var(--h) + 60) 90% 62%)); }
-::selection { background: var(--accent-soft); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1760px; padding: 0 clamp(16px, 3vw, 48px); }
-.top { backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 90%, transparent); }
-.top .wrap { height: 58px; }
-.logo i { border-radius: 8px; box-shadow: none; }
-.chip { border-radius: 10px; height: 36px; font-weight: 600; }
-.ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .fl { color: #f97316; }
-.iconbtn svg { width: 17px; height: 17px; }
-.btn { border-radius: 12px; padding: 13px 22px; font-weight: 650; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 8px 18px -10px var(--accent); }
-.btn.big { padding: 16px 30px; font-size: 16.5px; border-radius: 13px; }
-.card { border-radius: var(--r); }
-.eyebrow { border-radius: 6px; padding: 5px 10px; font-size: 11.5px; letter-spacing: .1em; }
-.bar { height: 8px; border-radius: 4px; } .bar > i { border-radius: 4px; }
-.modal { border-radius: 18px; } .scrim { backdrop-filter: blur(4px); }
-.tabs { border-radius: 12px; } .tabs button { border-radius: 9px; }
-/* home */
-#home { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0 clamp(24px, 3.5vw, 64px); padding: clamp(22px, 4vw, 56px) 0 48px; align-items: start; }
-#home .foot { grid-column: 1 / -1; }
-h1.hero { font-size: clamp(40px, 5.6vw, 84px); line-height: .98; letter-spacing: -.05em; margin: 18px 0 14px; }
-.sub { font-size: clamp(16px, 1.3vw, 19px); max-width: 620px; }
-.duel { gap: 14px; } .node { min-height: 168px; padding: 20px; }
-.node h3 { font: 700 clamp(24px, 2vw, 30px)/1.1 var(--serif); }
-.arrow { border-radius: 10px; width: 36px; height: 36px; }
-.stat b { font-size: 28px; }
-.side-col { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
-.node img { border-radius: 10px; }
-/* game */
-#game { display: none; padding: 20px 0 60px; gap: 22px; align-items: start; }
-#game.on { display: grid; grid-template-columns: 320px minmax(0, 1fr) 300px; }
-.rail { position: sticky; top: 78px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 94px); overflow: auto; scrollbar-width: thin; }
-.hud { position: static; margin: 0; padding: 16px; backdrop-filter: none; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); z-index: auto; }
-.hud-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
-.target { grid-column: 1 / -1; border-radius: 12px; padding: 12px 14px; }
-.target strong { font: 700 24px/1.12 var(--serif); }
-.metric { text-align: left; } .metric b { font-size: 34px; }
-.signal { grid-column: 1 / -1; }
-.trailM { display: none; }
-.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
-.tools .finder { grid-column: 1 / -1; order: -1; } .tools #giveUp { grid-column: 1 / -1; } .tools .chip { justify-content: center; } .tools .iconbtn { width: auto; }
-.mainc { min-width: 0; } .found { margin: 0 0 12px; border-radius: 12px; padding: 10px 14px; }
-.article { padding: clamp(24px, 3vw, 48px) clamp(20px, 4vw, 72px) 60px; font-family: var(--serif); font-size: 19px; }
-.article > * { max-width: 68ch; margin-left: auto; margin-right: auto; }
-.article h1 { border-bottom-width: 3px; font-family: var(--serif); }
-.routecard { padding: 16px; } .routecard h4 { margin: 0 0 12px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
-.rail.r .trail { flex-direction: column; align-items: stretch; gap: 6px; overflow: visible; padding: 0; }
-.rail.r .step { max-width: none; white-space: normal; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
-.rail.r .trail .sep { display: none; }
-.keys { display: grid; gap: 8px; font-size: 13.5px; color: var(--mute); font-weight: 600; } .keys kbd { margin-right: 8px; }
-.step { border-radius: 8px; }
-@media (max-width: 1179px) { #game.on { grid-template-columns: 300px minmax(0, 1fr); } .rail.r { display: none; } .trailM { display: flex; flex-wrap: wrap; overflow: visible; padding-top: 12px; } .trailM .sep { display: none; } .trailM .step { max-width: 100%; } }
-@media (max-width: 959px) { #home { grid-template-columns: minmax(0, 1fr); } .side-col { position: static; margin-top: 8px; } }
-@media (max-width: 759px) {
-  #game.on { display: block; padding-top: 0; }
-  .rail { display: contents; }
-  .hud { position: sticky; top: 58px; z-index: 20; margin: 0 calc(-1 * clamp(16px, 3vw, 48px)); padding: 8px 16px 10px; border-radius: 0; border-width: 0 0 1px; box-shadow: none; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); }
-  .hud-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .target { grid-column: auto; flex: 1 1 0; min-width: 0; padding: 5px 10px; } .target small { font-size: 9.5px; }
-  .target strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; font-family: var(--serif); }
-  .metric { text-align: center; min-width: 44px; } .metric b { font-size: 18px; } .metric span { font-size: 9.5px; }
-  .signal { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; } .signal .lab { margin: 0; gap: 8px; white-space: nowrap; } .signal .bar { flex: 1; height: 6px; }
-  .trailM { flex-wrap: nowrap; overflow-x: auto; padding-top: 7px; } .trailM .sep { display: inline; } .trailM .step { max-width: 190px; font-size: 11.5px; padding: 3px 8px; }
-  .tools { display: flex; flex-wrap: wrap; margin: 10px 0; gap: 6px; } .tools .finder { order: 5; flex: 1 1 100%; } .tools #giveUp { margin-left: auto; } .tools .chip { height: 34px; padding: 0 10px; } .tools .iconbtn { width: 34px; padding: 0; }
-  .article { padding: 22px 18px 40px; font-size: 17.5px; } .article > * { max-width: none; }
-  .found { margin: 8px 0; padding: 7px 12px; font-size: 12px; }
-}
-/* settings */
-.sgroup { margin: 20px 0 0; } .sl { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
-.seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; }
-.seg3 button { border: 0; background: none; padding: 10px 8px; border-radius: 9px; font-weight: 700; font-size: 13.5px; color: var(--mute); display: flex; align-items: center; justify-content: center; gap: 7px; }
-.seg3 button.on { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(0,0,0,.12); }
-.srow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-weight: 650; font-size: 14.5px; }
-.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; } .stepper button { border: 0; background: var(--bg); width: 44px; height: 38px; font-weight: 800; } .stepper button:hover { background: var(--accent-soft); } .stepper span { min-width: 56px; text-align: center; font-size: 13px; color: var(--mute); font-weight: 700; }
-.sprev { margin-top: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-family: var(--serif); line-height: 1.6; }
-.slinks { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px; } .slinks a { color: var(--accent-ink); font-weight: 600; }
-/* polish */
-.wrap { max-width: 2200px; }
-.top { background: var(--bg); backdrop-filter: none; }
-.how ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: s; }
-.how li { display: flex; gap: 12px; align-items: flex-start; counter-increment: s; color: var(--mute); font-size: 14.5px; line-height: 1.5; }
-.how li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
-.how b { color: var(--ink); }
-.tools .chip[id^="fs"] { font-weight: 800; }
-@media (max-width: 759px) { .hud { background: var(--bg); backdrop-filter: none; } }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%2316130f'/%3E%3Ccircle cx='8' cy='21' r='3.2' fill='%23f3eee4'/%3E%3Cpath d='M11 19c4-10 9-8 11-8' stroke='%23f3eee4' stroke-width='2' fill='none' stroke-dasharray='1 3.4' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='10' r='3.8' fill='%23d63a1f'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/instrument-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/newsreader-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <button class="logo" id="logo" aria-label="Home"><i></i><span data-brand>wiki<b>link</b></span></button>
+  <button class="logo" id="logo" aria-label="Home">
+    <span class="mark" aria-hidden="true"><svg viewBox="0 0 34 20"><circle cx="4" cy="13" r="3.2"/><path d="M8 12C13 0 21 1 26 8"/><circle class="hot" cx="30" cy="9" r="3.6"/></svg></span>
+    <span class="word" data-brand>wiki<b>link</b></span>
+  </button>
   <div class="spacer"></div>
-  <button class="chip hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span id="streakN">0</span></button>
-  <button class="chip rankchip" id="rankChip" title="Your rank"><span class="dot"></span><span id="rankName">Wanderer</span></button>
+  <button class="status hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span><b id="streakN">0</b> streak</span></button>
+  <button class="status rankchip" id="rankChip" title="Your rank"><span class="dot"></span><span id="rankName">Wanderer</span></button>
   <button class="chip iconbtn" id="lbBtn" aria-label="Leaderboards"><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
-  <button class="chip iconbtn" id="helpBtn" aria-label="How to play"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg></button>
   <button class="chip iconbtn" id="themeBtn" aria-label="Switch light or dark"></button>
-  <button class="chip iconbtn" id="settingsBtn" aria-label="Settings"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+  <button class="chip iconbtn" id="menuBtn" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg></button>
 </div></header>
 
 <main class="wrap">
   <section id="home">
-    <div class="hero-col">
-      <span class="eyebrow" id="dayTag">Daily puzzle</span>
-      <h1 class="hero">Click your way<br>through <em>Wikipedia</em>.</h1>
-      <p class="sub">Get from one article to another using only the links inside. Fewest clicks wins. New puzzle every day.</p>
-      <div class="duel">
-        <div class="card node" id="fromNode"></div>
-        <div class="arrow">→</div>
-        <div class="card node to" id="toNode"></div>
-      </div>
-      <div class="cta">
-        <button class="btn big" id="playBtn">Play today's puzzle</button>
-        <button class="btn ghost" id="practiceBtn">Random practice</button>
-        <span class="next" id="nextIn"></span>
-      </div>
-      <div class="statrow">
-        <div class="card stat"><b id="sStreak">0</b><span>Day streak</span></div>
-        <div class="card stat"><b id="sWins">0</b><span>Puzzles solved</span></div>
-        <div class="card stat"><b id="sBest">–</b><span>Best (clicks)</span></div>
-      </div>
+    <div class="plate">
+      <div class="plate-meta"><span id="plateDate">Today</span><span id="plateNo"></span></div>
+      <h1 class="plate-from" id="fromTitle">&nbsp;</h1>
+      <p class="plate-cap" id="fromDesc"></p>
+      <div class="plate-route" aria-hidden="true"><i></i><span>to</span><i></i></div>
+      <div class="plate-to" id="toTitle" role="heading" aria-level="2">&nbsp;</div>
+      <p class="plate-cap" id="toDesc"></p>
+      <div class="plate-facts" id="plateFacts"></div>
+      <div class="plate-act" id="heroAct"></div>
+      <div class="next" id="nextIn"></div>
     </div>
-    <div class="side-col">
-      <div id="hub"></div>
-      <div class="card panel">
-        <h4><span>Today's leaderboard</span><span><a id="leagueLink">＋ League</a> &nbsp;·&nbsp; <a id="lbMore">See all →</a></span></h4>
-        <div id="lbPreview"></div>
-      </div>
-      <div class="card panel how"><h4><span>How it works</span></h4>
-        <ol><li><span><b>Start</b> on one Wikipedia article.</span></li><li><span><b>Click links</b> inside the text to travel to another article.</span></li><li><span><b>Reach the target</b> in as few clicks as you can. The meter shows warmer or colder.</span></li></ol>
-      </div>
-    </div>
+    <nav class="quiet" id="quiet" aria-label="More to play"></nav>
     <footer class="foot"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
   </section>
 
@@ -403,26 +49,25 @@ h1.hero { font-size: clamp(40px, 5.6vw, 84px); line-height: .98; letter-spacing:
           <button class="target" id="targetBtn" title="Show target summary (T)"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
           <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
           <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
-          <div class="signal"><div class="lab"><span>Signal</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
+          <div class="signal"><div class="lab"><span>Temperature</span><b id="sigLab">Cold</b></div><div class="bar"><i id="sigBar"></i></div></div>
         </div>
         <div class="trail trailM" id="trailM"></div>
       </div>
       <div class="tools">
-        <button class="chip" id="backBtn" title="Back (B)">← Back <small style="color:var(--mute)">+1</small></button>
-        <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">📺 Rewind <small style="color:var(--mute)">1 left</small></button>
-        <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link…  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
-        <button class="chip" id="fsDown" aria-label="Smaller text">A−</button>
-        <button class="chip" id="fsUp" aria-label="Larger text">A+</button>
+        <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
+        <button class="chip" id="backBtn" title="Back (B)">Back <small>+1 click</small></button>
+        <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">Rewind <small>1 left</small></button>
+        <div class="fsrow"><button class="chip" id="fsDown" aria-label="Smaller text">A−</button><button class="chip" id="fsUp" aria-label="Larger text">A+</button></div>
         <button class="chip" id="giveUp">Give up</button>
       </div>
     </aside>
     <div class="mainc">
-      <div class="found" id="found"><span>🎯 The target is linked on this page!</span><button id="jump">Show me</button></div>
+      <div class="found" id="found"><span>The target is linked on this page.</span><button id="jump">Show me</button></div>
       <article class="card article" id="article"></article>
     </div>
     <aside class="rail r">
-      <div class="card routecard"><h4>Your route</h4><div class="trail" id="trail"></div></div>
-      <div class="card routecard"><h4>Shortcuts</h4><div class="keys"><span><kbd>/</kbd> Find a link</span><span><kbd>B</kbd> Back</span><span><kbd>T</kbd> Target</span><span><kbd>?</kbd> Help</span></div></div>
+      <div class="routecard"><h4>Your route</h4><div class="trail" id="trail"></div></div>
+      <div class="routecard"><h4>Shortcuts</h4><div class="keys"><span><kbd>/</kbd> Find a link</span><span><kbd>B</kbd> Back</span><span><kbd>T</kbd> Target</span><span><kbd>?</kbd> Help</span></div></div>
     </aside>
   </section>
 </main>
@@ -564,9 +209,8 @@ const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
 function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
-function setHue(h) { document.documentElement.style.setProperty('--h', h); }
+function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
 function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Burning' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
-const sigHue = s => Math.round(235 - s * 220);
 const SQ = ['⬜', '🟦', '🟩', '🟨', '🟧', '🟥'];
 const sigSquare = s => SQ[Math.min(5, Math.floor(s * 5.99))];
 
@@ -575,35 +219,57 @@ function renderHeader() {
   const ri = rankOf(P.xp), r = RANKS[ri];
   $('#rankName').textContent = r.n; $('#rankChip').style.setProperty('--rc', r.c);
   $('#streakN').textContent = P.streak;
-  $('#sStreak').textContent = P.streak; $('#sWins').textContent = P.won; $('#sBest').textContent = P.best || '–';
 }
-function nodeHTML(label, s) {
-  if (!s) return `<small>${label}</small><div class="skel" style="width:70%;height:24px"></div><div class="skel"></div><div class="skel" style="width:80%"></div>`;
-  return `<small>${label}</small><h3>${esc(s.title)}</h3><p>${esc(s.desc || s.extract)}</p>${s.thumb ? `<img src="${esc(s.thumb)}" alt="" loading="lazy">` : ''}`;
+function fitHero(el, text) { const n = text.length; el.style.setProperty('--fit', n <= 13 ? 1 : n <= 18 ? .8 : n <= 24 ? .64 : .52); }
+function setPlate(d, sa, sb) {
+  const from = sa ? sa.title : d.from, to = sb ? sb.title : d.to, cap = x => x ? (x.desc || (x.extract || '').split(/(?<=\.)\s/)[0] || '') : '';
+  $('#fromTitle').textContent = from; fitHero($('#fromTitle'), from); $('#fromDesc').textContent = cap(sa);
+  $('#toTitle').textContent = to; fitHero($('#toTitle'), to); $('#toDesc').textContent = cap(sb);
+  $('#plateFacts').innerHTML = [d.par ? `Par ${d.par}` : '', d.par ? diffOf(d.par) : '', d.ka && d.kb ? `${esc(d.ka)} → ${esc(d.kb)}` : ''].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+}
+function dailyCtx() {
+  const day = dayKey(), e = P.days[day]; if (!e) return null;
+  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0 } };
+  return G.result;
+}
+function playDaily() {
+  const day = dayKey(); if (P.days[day]) { dailyCtx(); return showResult(); }
+  const cur = readCur(); startGame('daily', cur && cur.mode === 'daily' && cur.day === day ? cur : null);
+}
+function renderHeroAct() {
+  const day = dayKey(), e = P.days[day], cur = readCur(), box = $('#heroAct');
+  if (e) {
+    box.innerHTML = `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b><span>${e.won ? `${e.clicks} click${e.clicks === 1 ? '' : 's'} · ${fmt(e.secs)}${e.par ? ` · par ${e.par}` : ''}${e.stars ? ' · ' + '★'.repeat(e.stars) : ''}` : 'Back tomorrow'}</span></div>
+      <div class="act-row">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge a friend</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button></div>`;
+    if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
+    $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
+  } else {
+    const resume = cur && cur.mode === 'daily' && cur.day === day;
+    box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
+    $('#playBtn').onclick = playDaily;
+  }
+}
+function renderQuiet() {
+  const open = allCos().filter(isUnlocked).length, tot = allCos().length, solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + p.puzzles.length, 0);
+  $('#quiet').innerHTML = `<button class="qlink" id="qLb">Leaderboard</button><button class="qlink" id="qPacks">Packs <small>${solved}/${pt}</small></button><button class="qlink" id="qLocker">Locker <small>${open}/${tot}</small></button><button class="qlink" id="qLeague">Leagues</button><button class="qlink" id="qPractice">Practice</button>`;
+  $('#qLb').onclick = () => openLeaderboard('day'); $('#qPacks').onclick = openPacks; $('#qLocker').onclick = () => openLocker(); $('#qLeague').onclick = () => leagueModal(); $('#qPractice').onclick = () => startGame('practice');
 }
 async function renderHome() {
   const day = dayKey();
-  $('#dayTag').textContent = `Daily puzzle · #${dayNum(day)}`;
-  $('#fromNode').innerHTML = nodeHTML('Start'); $('#toNode').innerHTML = nodeHTML('Target');
-  const done = P.days[day];
-  const cur = readCur();
-  $('#playBtn').textContent = done ? `Solved in ${done.clicks} · view result` : cur && cur.mode === 'daily' && cur.day === day ? 'Resume today\'s puzzle' : 'Play today\'s puzzle';
-  renderHeader(); renderHub(); renderPreview();
+  $('#plateDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#plateNo').textContent = `Plate No. ${dayNum(day)}`;
+  renderHeader(); renderHeroAct(); renderQuiet();
   let d = { from: '', to: '', ka: '', kb: '' };
   try { d = await getDaily(day); } catch { const [a, b, ka, kb] = pickPair(todaySeed()); d = { from: a, to: b, ka, kb }; }
-  if (d.par) $('#dayTag').textContent = `Daily puzzle · #${dayNum(day)} · Par ${d.par} · ${diffOf(d.par)}`;
-  const lab = (x, k) => k ? `${x} · ${k}` : x;
-  try {
-    const [sa, sb] = await Promise.all([getSummary(d.from), getSummary(d.to)]);
-    $('#fromNode').innerHTML = nodeHTML(lab('Start', d.ka), sa); $('#toNode').innerHTML = nodeHTML(lab('Target', d.kb), sb);
-  } catch { $('#fromNode').innerHTML = nodeHTML(lab('Start', d.ka), { title: d.from, desc: '' }); $('#toNode').innerHTML = nodeHTML(lab('Target', d.kb), { title: d.to, desc: '' }); }
+  setPlate(d, null, null);
+  try { const [sa, sb] = await Promise.all([getSummary(d.from), getSummary(d.to)]); setPlate(d, sa, sb); } catch {}
 }
 function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch { return null; } }
 
 /* ------------------------------------------------------------------ gameplay */
 async function startGame(mode, resume, extra) {
   const day = dayKey();
-  show('game'); setHue(235);
+  show('game'); setTemp(0);
   $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Setting up your puzzle…</div>`;
   let from, to, meta = { par: null, route: null };
   if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
@@ -613,7 +279,7 @@ async function startGame(mode, resume, extra) {
   G = { mode, day, from, to, extra, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
   if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, moves: resume.moves || 0, base: resume.base });
   $('#reachLab').textContent = mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
-  show('game'); setHue(235);
+  show('game'); setTemp(0);
   $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
   $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Loading ${esc(G.from)}…</div>`;
   try {
@@ -657,12 +323,12 @@ async function go(title, initial, resume, kind = 'go') {
 const clicks = () => G.moves || 0;
 function updateHud() {
   const s = G.sig;
-  setHue(sigHue(s));
+  setTemp(s);
   $('#mClicks').textContent = clicks();
-  $('#sigBar').style.width = Math.round(s * 100) + '%'; $('#sigLab').textContent = sigLabel(s);
+  const sb = $('#sigBar'); sb.style.width = Math.round(s * 100) + '%'; sb.style.backgroundSize = (100 / Math.max(s, .04)) + '% 100%'; $('#sigLab').textContent = sigLabel(s);
   $('#found').classList.toggle('on', s >= 1 && !G.done);
   const tr = $('#trail');
-  tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sh:${sigHue(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
+  tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
   tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
   $('#backBtn').disabled = G.steps.length < 2;
   const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || G.rewinds >= 1 || G.done; rb.querySelector('small').textContent = G.rewinds >= 1 ? 'used' : '1 left';
@@ -708,7 +374,7 @@ function finish(won) {
   } else gain = Math.round(gain / 2);
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
-  if (won) { confetti(); setHue(150); }
+  if (won) { confetti(); setTemp(1); }
   setTimeout(() => showResult(), won ? 700 : 100);
   if (won && G.mode === 'daily' && P.name) submitScore();
 }
@@ -749,12 +415,12 @@ function showResult() {
       <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
       <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '—'}</div>
     </div>
-    ${r.won && ref ? `<div class="stars">${'⭐'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
+    ${r.won && ref ? `<div class="stars">${'★'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
     <div class="pathline">${r.path.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div>
     ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
-    <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (🔥 +${r.streakBonus})` : ''}</span></div></div>
-    <div class="xpbar"><div class="xpmeta"><span style="color:${rk.c}">${rankUp ? '⬆ Rank up! ' : ''}${rk.n}</span><span>${nx ? `${P.xp} / ${hi} XP · next: ${nx.n}` : `${P.xp} XP · max rank`}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div></div>
+    <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (+${r.streakBonus} streak)` : ''}</span></div></div>
+    <div class="xpbar"><div class="xpmeta"><span style="color:${rk.c}">${rankUp ? 'Rank up · ' : ''}${rk.n}</span><span>${nx ? `${P.xp} / ${hi} XP · next: ${nx.n}` : `${P.xp} XP · max rank`}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div></div>
     ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
     ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${i.cat}</b><small>New cosmetic unlocked · tap to equip in the Locker</small></span></div>`).join('')}
     ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
@@ -779,14 +445,14 @@ const rankDot = xp => { const r = RANKS[rankOf(xp || 0)]; return `<i class="rd" 
 async function fetchBoard(mode, league) {
   const r = await fetch(`${API_BASE}/api/leaderboard?mode=${mode}&day=${dayKey()}${league ? '&league=' + league : ''}`); if (!r.ok) throw 0; return r.json();
 }
-const valText = (e, mode) => mode === 'day' ? `${e.clicks} clicks · ${fmt(e.secs)}` : mode === 'streak' ? `🔥 ${e.streak} day${e.streak === 1 ? '' : 's'}` : `${e.points} pts · ${e.days}d`;
+const valText = (e, mode) => mode === 'day' ? `${e.clicks} clicks · ${fmt(e.secs)}` : mode === 'streak' ? `${e.streak} day${e.streak === 1 ? '' : 's'}` : `${e.points} pts · ${e.days}d`;
 function boardHTML(rows, mode) {
   if (!rows.length) return '<div class="empty">No scores yet — be the first on the board.</div>';
   return rows.map((e, i) => `<div class="row"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span>${rankDot(e.xp)}<span class="nm ${e.pid === P.pid ? 'me' : ''}">${esc(e.name)}${e.pid === P.pid ? ' (you)' : ''}</span><span class="val">${valText(e, mode)}</span></div>`).join('');
 }
 const OFFLINE = '<div class="empty">' + (/^(localhost|127\.)/.test(location.hostname) ? 'Global leaderboards need the server. Run <code>node server.js</code> to play with others.' : 'Leaderboards are offline right now. Your progress is saved on this device.') + '</div>';
 async function renderPreview() {
-  const box = $('#lbPreview');
+  const box = $('#lbPreview'); if (!box) return;
   try { box.innerHTML = boardHTML((await fetchBoard('day')).slice(0, 5), 'day'); }
   catch { const d = P.days[dayKey()]; box.innerHTML = (d && d.won ? `<div class="row"><span class="pos p1">1</span>${rankDot(P.xp)}<span class="nm me">${esc(P.name || 'You')} (you)</span><span class="val">${d.clicks} clicks · ${fmt(d.secs)}</span></div>` : '') + OFFLINE; }
 }
@@ -795,7 +461,7 @@ function openLeaderboard(mode = 'day', scope = 'global') {
   openModal(`<h2>Leaderboards</h2><div class="scopes" id="scopes"></div><div class="tabs" id="lbTabs"></div><div id="lbBody"></div>`);
   const draw = async () => {
     const my = ++n;
-    $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">🌍 Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip" id="addLg">＋ League</button>`;
+    $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip" id="addLg">＋ League</button>`;
     $('#lbTabs').innerHTML = [['day', 'Today'], ['week', 'Week'], ['all', 'All-time'], ['streak', 'Streaks'], ['me', 'Me']].map(([m, l]) => `<button data-m="${m}" class="${st.mode === m ? 'on' : ''}">${l}</button>`).join('');
     document.querySelectorAll('#scopes [data-s]').forEach(b => b.onclick = () => { st.scope = b.dataset.s; draw(); });
     document.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
@@ -893,6 +559,22 @@ function openSettings() {
   $('#stFsU').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); syncSettings(); };
   bindSettings(); syncSettings();
 }
+function openMenu() {
+  const e = P.days[dayKey()], solved = e && e.won, open = allCos().filter(isUnlocked).length, tot = allCos().length;
+  const sv = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + p.puzzles.length, 0);
+  const items = [
+    ['Leaderboards', 'Today · week · all-time', () => openLeaderboard('day')],
+    ['Companion packs', `${sv} of ${pt} solved`, openPacks],
+    ['Locker', `${open} of ${tot} unlocked`, () => openLocker()],
+    ['Leagues', 'Race your friends', () => leagueModal()],
+    ['Random practice', 'No pressure, half XP', () => { closeModal(); startGame('practice'); }],
+    ...(solved ? [['Challenge a friend', `Beat your ${e.clicks}`, () => openChallenge(dailyCtx(), () => closeModal())]] : []),
+    ['Settings', 'Theme, text size, data', () => openSettings()],
+    ['How to play', '', showHelp]
+  ];
+  openModal(`<h2>Menu</h2><div class="menu">${items.map((it, i) => `<button data-i="${i}"><b>${it[0]}</b><small>${esc(it[1])}</small></button>`).join('')}</div><div class="slinks" style="margin-top:14px"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>`);
+  document.querySelectorAll('.menu button').forEach(b => b.onclick = () => items[+b.dataset.i][2]());
+}
 function ask(h, text, yes, cb) {
   openModal(`<h2>${h}</h2><p>${text}</p><div class="actions"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="askYes">${yes}</button></div>`);
   $('#askYes').onclick = () => { closeModal(); cb(); };
@@ -914,7 +596,7 @@ async function showTarget() {
 /* ------------------------------------------------------------------- confetti */
 function confetti() {
   const c = $('#fx'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-  const CONF = { classic: ['#6366f1', '#22c5a1', '#f59e0b', '#ef4444', '#ec4899', '#3aa7ff'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'] };
+  const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'] };
   const cols = CONF[P.cos.confetti] || CONF.classic, sq = P.cos.confetti === 'pixel';
   const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
   let f = 0; (function loop() {
@@ -925,25 +607,19 @@ function confetti() {
 }
 
 /* ------------------------------------------------------------------- wiring */
-function goHome() { clearInterval(tick); G = null; setHue(235); show('home'); renderHome(); }
+function goHome() { clearInterval(tick); G = null; setTemp(0); show('home'); renderHome(); }
 $('#article').addEventListener('click', e => {
   const a = e.target.closest('a[data-t]'); if (!a) { const x = e.target.closest('a'); if (x && !x.target) e.preventDefault(); return; }
   e.preventDefault(); if (G && !G.done) go(a.dataset.t);
 });
 $('#logo').onclick = () => { if (G && !G.done) return ask('Leave this puzzle?', 'Your progress is saved. You can resume from the home screen.', 'Leave', goHome); goHome(); };
-$('#playBtn').onclick = () => {
-  const day = dayKey();
-  const e = P.days[day]; if (e) { G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0 } }; return showResult(); }
-  const cur = readCur(); startGame('daily', cur && cur.mode === 'daily' && cur.day === day ? cur : null);
-};
-$('#practiceBtn').onclick = () => startGame('practice');
+$('#menuBtn').onclick = openMenu;
 $('#backBtn').onclick = back;
 $('#giveUp').onclick = () => { if (G && !G.done) ask('Give up?', 'You will only earn a few XP and your streak will not grow.', 'Give up', () => finish(false)); };
 $('#targetBtn').onclick = showTarget;
 $('#jump').onclick = () => { const g = document.querySelector('.article a.goal'); if (g) g.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-$('#lbBtn').onclick = () => openLeaderboard('day'); $('#lbMore').onclick = () => openLeaderboard('day');
+$('#lbBtn').onclick = () => openLeaderboard('day');
 $('#rankChip').onclick = () => openLeaderboard('me'); $('#streakChip').onclick = () => openLeaderboard('me');
-$('#helpBtn').onclick = showHelp;
 const SUN = '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>', MOON = '<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
@@ -953,18 +629,18 @@ function applyTheme() {
 }
 systemDark.addEventListener('change', () => { if (!P.theme || P.theme === 'system') applyTheme(); });
 $('#themeBtn').onclick = () => { P.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; saveP(); applyTheme(); const t = $('#stTheme'); if (t) syncSettings(); };
-$('#settingsBtn').onclick = () => openSettings();
+
 
 /* ----------------------------------------------------------------------- cosmetics */
 const COS = {
   theme: [
-    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#6366f1,#3b82f6)' },
-    { id: 'paper', name: 'Paper', sw: 'linear-gradient(135deg,#fffaf0,#eadfc8)', need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
-    { id: 'midnight', name: 'Midnight', sw: 'linear-gradient(135deg,#05060f,#312e81)', need: { t: 'rank', v: 2 }, label: 'Reach Scholar rank' },
-    { id: 'aurora', name: 'Aurora', sw: 'linear-gradient(135deg,#14b8a6,#a855f7)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' }
+    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#f3eee4 50%,#d63a1f 50%)' },
+    { id: 'paper', name: 'Newsprint', sw: 'linear-gradient(135deg,#f6f5f1 50%,#cfccc4 50%)', need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
+    { id: 'midnight', name: 'Midnight', sw: 'linear-gradient(135deg,#090a11 50%,#2a2e48 50%)', need: { t: 'rank', v: 2 }, label: 'Reach Scholar rank' },
+    { id: 'aurora', name: 'Verdigris', sw: 'linear-gradient(135deg,#0f8b7e 50%,#3ed2c0 50%)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' }
   ],
   trail: [
-    { id: 'classic', name: 'Warmth', sw: 'linear-gradient(135deg,#4f6df5,#22c55e,#facc15,#ff4d3d)' },
+    { id: 'classic', name: 'Warmth', sw: 'linear-gradient(135deg,#2a4f8a,#d8c8a8,#d63a1f)' },
     { id: 'ember', name: 'Ember', sw: 'linear-gradient(135deg,#fb923c,#ef4444)', need: { t: 'streak', v: 7 }, label: '7-day streak' },
     { id: 'aurora', name: 'Aurora', sw: 'linear-gradient(135deg,#22d3ee,#a78bfa,#f472b6)', need: { t: 'packs', v: 5 }, label: 'Solve 5 pack puzzles' },
     { id: 'neon', name: 'Neon', sw: 'linear-gradient(135deg,#22c55e,#06b6d4)', need: { t: 'chal', v: 3 }, label: 'Win 3 challenges' },
@@ -974,18 +650,19 @@ const COS = {
     { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter · coming soon' }
   ],
   confetti: [
-    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#6366f1,#ec4899,#f59e0b)' },
+    { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#d63a1f,#16130f,#ee9a54)' },
     { id: 'pixel', name: 'Pixel burst', sw: 'linear-gradient(135deg,#ff004d,#ffec27,#00e436,#29adff)', need: { t: 'par', v: 3 }, label: '3 solves at or under par' },
     { id: 'gold', name: 'Gold rush', sw: 'linear-gradient(135deg,#fff7d6,#f59e0b)', need: { t: 'rank', v: 4 }, label: 'Reach Cartographer rank' }
   ]
 };
 const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'] };
-const CLASSIC_STOPS = ['rgb(79,109,245)', 'rgb(34,197,94)', 'rgb(250,204,21)', 'rgb(255,77,61)'];
+const CLASSIC_STOPS = ['rgb(42,79,138)', 'rgb(108,143,184)', 'rgb(216,200,168)', 'rgb(238,154,84)', 'rgb(214,58,31)'];
+const tempCss = sg => lerpStops(CLASSIC_STOPS, sg);
 const trailStops = () => TRAILS[P.cos.trail] || CLASSIC_STOPS;
 const _cc = document.createElement('canvas').getContext('2d');
 function rgbOf(css) { _cc.fillStyle = '#000'; _cc.fillStyle = css; const v = _cc.fillStyle; return v[0] === '#' ? [1, 3, 5].map(i => parseInt(v.slice(i, i + 2), 16)) : v.match(/[\d.]+/g).slice(0, 3).map(Number); }
 function lerpStops(stops, t) { const n = stops.length - 1, k = Math.min(n - 1e-9, Math.max(0, t) * n), i = Math.floor(k), f = k - i, a = rgbOf(stops[i]), b = rgbOf(stops[Math.min(n, i + 1)]); return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * f)).join(',')})`; }
-const dotCss = (sig, pos) => P.cos.trail === 'classic' ? `hsl(${sigHue(sig)} 90% 62%)` : lerpStops(trailStops(), pos);
+const dotCss = (sig, pos) => P.cos.trail === 'classic' ? tempCss(sig) : lerpStops(trailStops(), pos);
 const allCos = () => Object.entries(COS).flatMap(([cat, arr]) => arr.map(i => ({ ...i, cat })));
 function isUnlocked(i) {
   const n = i.need; if (!n) return true;
@@ -1009,7 +686,7 @@ function drawTrailPreview(cv) {
 function openLocker(tab = 'theme') {
   const open = allCos().filter(isUnlocked).length, total = allCos().length;
   openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. ${open}/${total} unlocked.</p>
-    <canvas id="lkCv" width="680" height="170" style="width:100%;border-radius:16px;background:linear-gradient(160deg,#171a33,#2a1b4a);display:block"></canvas>
+    <canvas id="lkCv" width="680" height="170" style="width:100%;border-radius:16px;background:#14110d;display:block"></canvas>
     <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div>`);
   const draw = () => {
     document.querySelectorAll('#lkTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
@@ -1027,47 +704,61 @@ function openLocker(tab = 'theme') {
 function fitText(x, text, maxW) { if (x.measureText(text).width <= maxW) return text; while (text.length > 1 && x.measureText(text + '…').width > maxW) text = text.slice(0, -1); return text + '…'; }
 async function shareCardCanvas(r) {
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-  const SANS = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif', SERIF = '"Source Serif 4", Georgia, serif', M = 72, stops = trailStops();
-  const bg = x.createLinearGradient(0, 0, W * .55, H); bg.addColorStop(0, 'hsl(228 62% 11%)'); bg.addColorStop(.55, 'hsl(300 45% 17%)'); bg.addColorStop(1, 'hsl(8 72% 27%)'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
-  const rg = x.createRadialGradient(W * .85, H * .55, 20, W * .85, H * .55, 640); rg.addColorStop(0, 'hsla(10,100%,62%,.36)'); rg.addColorStop(1, 'hsla(10,100%,62%,0)'); x.fillStyle = rg; x.fillRect(0, 0, W, H);
-  x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.font = `800 58px ${SANS}`; x.fillStyle = '#fff'; x.fillText(BRAND.a, M, 132);
-  const bw = x.measureText(BRAND.a).width; x.fillStyle = lerpStops(stops, 1); x.fillText(BRAND.b, M + bw, 132);
-  const tag = r.mode === 'daily' ? `Daily #${dayNum(G.day)}` : r.mode === 'pack' ? 'Companion pack' : r.mode === 'challenge' ? 'Challenge' : 'Practice';
-  x.textAlign = 'right'; x.font = `700 32px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(tag, W - M, 128); x.textAlign = 'left';
+  const DISP = '"Instrument Serif", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"Newsreader", Georgia, serif';
+  try { await Promise.all([document.fonts.load(`400 80px ${DISP}`), document.fonts.load(`italic 400 80px ${DISP}`), document.fonts.load(`600 24px ${SANS}`), document.fonts.load(`italic 400 30px ${SERIF}`)]); } catch {}
+  const M = 84, stops = trailStops(), INK = '#16130f', INK2 = '#4b453b', PAPER = '#f3eee4', MUTE = '#7a7265', RULE = '#d8cfbf', ACC = '#d63a1f';
+  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = sp + 'px'; } catch {} x.fillText(t.toUpperCase(), px, y); try { x.letterSpacing = '0px'; } catch {} };
+  x.fillStyle = PAPER; x.fillRect(0, 0, W, H);
+  x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(36, 36, W - 72, H - 72); x.strokeStyle = RULE; x.lineWidth = 1.5; x.strokeRect(50, 50, W - 100, H - 100);
+  // masthead: route mark + wordmark
+  x.fillStyle = INK; x.beginPath(); x.arc(M + 8, 156, 8, 0, 7); x.fill();
+  x.strokeStyle = INK; x.lineWidth = 4; x.lineCap = 'round'; x.setLineDash([1, 10]); x.beginPath(); x.moveTo(M + 22, 150); x.bezierCurveTo(M + 50, 96, M + 100, 96, M + 124, 134); x.stroke(); x.setLineDash([]);
+  x.fillStyle = ACC; x.beginPath(); x.arc(M + 138, 138, 10, 0, 7); x.fill();
+  x.textAlign = 'left'; x.font = `400 76px ${DISP}`; x.fillStyle = INK; x.fillText(BRAND.a, M + 170, 170); const bw = x.measureText(BRAND.a).width;
+  x.font = `italic 400 76px ${DISP}`; x.fillStyle = ACC; x.fillText(BRAND.b, M + 170 + bw, 170);
+  const tag = r.mode === 'daily' ? `Plate No. ${dayNum(G.day)}` : r.mode === 'pack' ? 'Companion pack' : r.mode === 'challenge' ? 'Challenge' : 'Practice';
+  caps(tag, W - M, 160, 24, MUTE, 'right', 3);
+  x.fillStyle = INK; x.fillRect(M, 204, W - 2 * M, 3);
+  // title: from / to
   const from = r.from || r.path[0], to = r.to || r.path[r.path.length - 1];
-  let size = 88, lf = [], lt = [];
-  for (; size >= 48; size -= 6) { x.font = `700 ${size}px ${SERIF}`; lf = wrapLines(x, from, W - 2 * M); lt = wrapLines(x, '→ ' + to, W - 2 * M); if (lf.length + lt.length <= 3) break; }
-  [...lf, ...lt].forEach((l, i) => { x.fillStyle = i >= lf.length ? lerpStops(stops, 1) : '#fff'; x.fillText(l, M, 280 + i * size * 1.12); });
-  const subY = 280 + (lf.length + lt.length - 1) * size * 1.12 + 60, ref = r.par || r.goal;
-  x.font = `600 40px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.75)';
-  x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}` : 'Gave up on this one', M, subY);
-  // route as a warmth curve
+  let size = 132, lf = [], lt = [];
+  for (; size >= 66; size -= 6) { x.font = `400 ${size}px ${DISP}`; lf = wrapLines(x, from, W - 2 * M); x.font = `italic 400 ${size}px ${DISP}`; lt = wrapLines(x, to, W - 2 * M); if (lf.length + lt.length <= 3) break; }
+  const lh = size * .96; let y = 205 + size * .95;
+  x.textAlign = 'left'; x.font = `400 ${size}px ${DISP}`; x.fillStyle = INK; lf.forEach((l, i) => x.fillText(l, M, y + i * lh)); y += (lf.length - 1) * lh + 62;
+  x.font = `italic 400 42px ${DISP}`; x.fillStyle = MUTE; x.fillText('to', M, y); const tw = x.measureText('to').width;
+  x.strokeStyle = MUTE; x.lineWidth = 3; x.setLineDash([2, 10]); x.beginPath(); x.moveTo(M + tw + 22, y - 12); x.lineTo(W - M, y - 12); x.stroke(); x.setLineDash([]);
+  y += size * .86; x.font = `italic 400 ${size}px ${DISP}`; x.fillStyle = ACC; lt.forEach((l, i) => x.fillText(l, M, y + i * lh)); y += (lt.length - 1) * lh + 58;
+  const ref = r.par || r.goal;
+  x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
+  x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}` : 'Gave up on this one', M, y);
+  // the route, drawn as a temperature curve
   let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));
   if (pts.length > 7) pts = [...pts.slice(0, 3), ...pts.slice(-4)];
-  const n = pts.length, x0 = 150, x1 = W - 150, yb = 1040, yt = 700, px = i => n === 1 ? W / 2 : x0 + i * (x1 - x0) / (n - 1), py = p => yb - p.s * (yb - yt);
+  const n = pts.length, yt = Math.max(y + 96, 700), yb = 1010, x0 = 190, x1 = W - 190, px = i => n === 1 ? W / 2 : x0 + i * (x1 - x0) / (n - 1), py = p => yb - p.s * (yb - yt);
+  x.strokeStyle = RULE; x.lineWidth = 1.5; x.setLineDash([2, 8]); [yt, (yt + yb) / 2, yb].forEach(gy => { x.beginPath(); x.moveTo(M, gy); x.lineTo(W - M, gy); x.stroke(); }); x.setLineDash([]);
+  caps('Hot', M, yt + 6, 19, MUTE, 'left', 3); caps('Cold', M, yb + 6, 19, MUTE, 'left', 3);
   const curve = () => { x.beginPath(); x.moveTo(px(0), py(pts[0])); for (let i = 1; i < n; i++) { const m = (px(i - 1) + px(i)) / 2; x.bezierCurveTo(m, py(pts[i - 1]), m, py(pts[i]), px(i), py(pts[i])); } };
   const lg = x.createLinearGradient(x0, 0, x1, 0); stops.forEach((cl, i) => lg.addColorStop(i / (stops.length - 1), cl));
-  curve(); x.lineTo(px(n - 1), yb + 40); x.lineTo(px(0), yb + 40); x.closePath(); const af = x.createLinearGradient(0, yt, 0, yb + 40); af.addColorStop(0, 'rgba(255,255,255,.2)'); af.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = af; x.fill();
-  x.lineCap = 'round'; x.lineJoin = 'round'; curve(); x.strokeStyle = lg; x.lineWidth = 14; x.stroke();
-  x.font = `700 31px ${SANS}`; x.textAlign = 'center';
+  x.lineCap = 'round'; x.lineJoin = 'round'; curve(); x.strokeStyle = lg; x.lineWidth = 13; x.stroke();
   pts.forEach((p, i) => {
     const cx = px(i), cy = py(p), last = i === n - 1 && r.won;
-    x.beginPath(); x.arc(cx, cy, last ? 28 : 19, 0, 7); x.fillStyle = dotCss(p.s, n > 1 ? i / (n - 1) : 1); x.fill(); x.lineWidth = last ? 8 : 6; x.strokeStyle = '#fff'; x.stroke();
-    const above = i % 2 === 1 || last, lw = 300; let lx = Math.min(W - M - lw / 2, Math.max(M + lw / 2, cx));
-    x.fillStyle = '#fff'; x.fillText(fitText(x, (last ? '🎯 ' : '') + p.t, lw), lx, above ? cy - (last ? 46 : 38) : cy + 62);
+    x.beginPath(); x.arc(cx, cy, last ? 22 : 15, 0, 7); x.fillStyle = dotCss(p.s, n > 1 ? i / (n - 1) : 1); x.fill(); x.lineWidth = 6; x.strokeStyle = PAPER; x.stroke();
+    if (last) { x.beginPath(); x.arc(cx, cy, 30, 0, 7); x.lineWidth = 2.5; x.strokeStyle = INK; x.stroke(); }
+    const above = i % 2 === 1 || last, lw = 300, lx = Math.min(W - M - lw / 2, Math.max(M + lw / 2, cx));
+    x.textAlign = 'center'; x.font = `italic 400 31px ${SERIF}`; x.fillStyle = INK; x.fillText(fitText(x, p.t, lw), lx, above ? cy - (last ? 44 : 34) : cy + 56);
   });
-  x.textAlign = 'left'; x.font = `700 24px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.5)'; x.fillText('COLD', M, 1098); x.textAlign = 'right'; x.fillText('HOT', W - M, 1098);
-  // stat tiles
-  const tw = (W - 2 * M - 40) / 3, ty = 1128, th = 112;
-  const tiles = [[fmt(r.secs), 'TIME'], [r.won && ref ? ('⭐'.repeat(r.stars) || '—') : String(r.clicks), ref ? (r.par ? 'PAR ' : 'GOAL ') + ref : 'CLICKS'], r.mode === 'daily' ? [`🔥 ${P.streak}`, 'STREAK'] : [`+${r.gain || 0}`, 'XP']];
-  tiles.forEach(([v, l], i) => {
-    const tx = M + i * (tw + 20); x.beginPath(); x.roundRect(tx, ty, tw, th, 26); x.fillStyle = 'rgba(255,255,255,.09)'; x.fill(); x.lineWidth = 2; x.strokeStyle = 'rgba(255,255,255,.14)'; x.stroke();
-    x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `800 48px ${SANS}`; x.fillText(v, tx + tw / 2, ty + 60); x.fillStyle = 'rgba(255,255,255,.58)'; x.font = `700 21px ${SANS}`; x.fillText(l, tx + tw / 2, ty + 94);
+  // figures band
+  const bandY = 1066, bh = 128, cw = (W - 2 * M) / 3;
+  x.fillStyle = INK; x.fillRect(M, bandY, W - 2 * M, 2.5); x.fillRect(M, bandY + bh, W - 2 * M, 2.5);
+  const cells = [[fmt(r.secs), 'Time'], [r.won && ref ? ('★'.repeat(r.stars) || '—') : String(r.clicks), ref ? (r.par ? 'Par ' : 'Goal ') + ref : 'Clicks'], r.mode === 'daily' ? [String(P.streak), 'Day streak'] : [`+${r.gain || 0}`, 'XP']];
+  cells.forEach(([v, l], i) => {
+    const cx = M + i * cw + cw / 2; if (i) { x.fillStyle = RULE; x.fillRect(M + i * cw, bandY + 18, 2, bh - 36); }
+    x.textAlign = 'center'; x.font = `400 ${v.length > 4 ? 64 : 84}px ${DISP}`; x.fillStyle = INK; x.fillText(v, cx, bandY + 80); caps(l, cx, bandY + 112, 19, MUTE, 'center', 3);
   });
   // footer
-  const host = BRAND.domain, cta = `Beat me → ${host}`;
-  x.textAlign = 'left'; x.font = `600 29px ${SANS}`; x.fillStyle = 'rgba(255,255,255,.8)'; x.fillText(`${RANKS[rankOf(P.xp)].n} · ${P.xp} XP`, M, 1310);
-  x.font = `800 29px ${SANS}`; const cw = x.measureText(cta).width + 52; x.beginPath(); x.roundRect(W - M - cw, 1272, cw, 56, 28); x.fillStyle = '#fff'; x.fill(); x.fillStyle = '#15172a'; x.textAlign = 'center'; x.fillText(cta, W - M - cw / 2, 1310);
+  const cta = `Beat me → ${BRAND.domain}`;
+  x.textAlign = 'left'; x.font = `italic 400 32px ${SERIF}`; x.fillStyle = MUTE; x.fillText(`${RANKS[rankOf(P.xp)].n} · ${P.xp} XP`, M, 1272);
+  x.font = `600 27px ${SANS}`; const cwd = x.measureText(cta).width + 56; x.fillStyle = INK; x.fillRect(W - M - cwd, 1236, cwd, 56); x.fillStyle = PAPER; x.textAlign = 'center'; x.fillText(cta, W - M - cwd / 2, 1273);
   return c;
 }
 async function openShareCard(r, back) {
@@ -1116,7 +807,7 @@ function handleChallenge() {
   const m = location.hash.match(/^#c=(.+)$/); if (!m) return;
   history.replaceState(null, '', location.pathname + location.search);
   const ch = parseChallenge(m[1]); if (!ch) return toast('That challenge link is not valid');
-  openModal(`<div style="text-align:center"><div style="width:72px;height:72px;border-radius:24px;margin:4px auto 0;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;font-size:32px">⚔️</div>
+  openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">A challenge</span>
     <h2 style="margin-top:12px">${esc(ch.n)} challenged you</h2>
     <div class="card" style="padding:16px;margin:14px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(ch.f)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700;color:var(--accent-ink)">${esc(ch.t)}</div>
     <div style="margin-top:12px"><span class="pill">${ch.c} click${ch.c === 1 ? '' : 's'} or fewer · ${fmt(ch.s)} to beat</span></div></div>
@@ -1132,15 +823,15 @@ function packPuzzle(id, idx) {
 }
 const packStats = id => { const pk = P.packs[id] || {}, v = Object.values(pk); return { solved: v.length, stars: v.reduce((a, b) => a + (b.stars || 0), 0), total: packsOf(id).length }; };
 function openPacks() {
-  openModal(`<h2>Companion packs</h2><p>Themed puzzles with a click goal. Solve them in order.</p>${PACKS.map(p => { const st = packStats(p.id); return `<button class="card packcard" data-p="${p.id}" style="--ph:${p.hue}"><span class="pe">${p.emoji}</span><span style="flex:1;text-align:left"><b>${p.name}</b><small>${st.total} puzzles · ★ ${st.stars}/${st.total * 3}</small><div class="bar" style="height:6px;margin-top:8px"><i style="width:${st.solved / st.total * 100}%;--c:${p.hue}"></i></div></span></button>`; }).join('')}`);
+  openModal(`<h2>Companion packs</h2><p>Themed puzzles with a click goal. Solve them in order.</p>${PACKS.map(p => { const st = packStats(p.id); return `<button class="card packcard" data-p="${p.id}" style="--ph:${p.hue}"><span style="flex:1;text-align:left"><b>${p.name}</b><small>${st.total} puzzles · ★ ${st.stars}/${st.total * 3}</small><div class="bar" style="height:6px;margin-top:8px"><i style="width:${st.solved / st.total * 100}%;--c:${p.hue}"></i></div></span></button>`; }).join('')}`);
   document.querySelectorAll('.packcard').forEach(b => b.onclick = () => openPack(b.dataset.p));
 }
 function openPack(id) {
   const p = PACKS.find(x => x.id === id), pk = P.packs[id] || {}, st = packStats(id), next = p.puzzles.findIndex((_, i) => !pk[i]);
   openModal(`<button class="chip" id="pkBack">← Packs</button>
-    <div class="packhead" style="--ph:${p.hue}"><span class="pill">Companion pack</span><h2>${p.emoji} ${p.name}</h2><div class="s mute">${st.solved}/${st.total} solved · ★ ${st.stars}/${st.total * 3}</div></div>
+    <div class="packhead" style="--ph:${p.hue}"><span class="pill">Companion pack</span><h2>${p.name}</h2><div class="s mute">${st.solved}/${st.total} solved · ★ ${st.stars}/${st.total * 3}</div></div>
     <div class="pkgrid">${p.puzzles.map((_, i) => { const z = packPuzzle(id, i), r = pk[i], locked = next !== -1 && i > next;
-      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">Under ${z.goal}</span><div class="s mute b">#${i + 1}${locked ? ' 🔒' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} → ${esc(z.to)}</div><div class="s">${r ? '⭐'.repeat(r.stars) + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? `<span class="mute">Solve #${next + 1} to unlock</span>` : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
+      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">Under ${z.goal}</span><div class="s mute b">#${i + 1}${locked ? ' 🔒' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} → ${esc(z.to)}</div><div class="s">${r ? '★'.repeat(r.stars) + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? `<span class="mute">Solve #${next + 1} to unlock</span>` : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
   $('#pkBack').onclick = openPacks;
   document.querySelectorAll('.pk').forEach(b => b.onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: +b.dataset.i }); });
 }
@@ -1153,6 +844,7 @@ async function openPathMap(r) {
   $('#pmBody').innerHTML = renderPathMap(d, r.path, r.clicks);
 }
 function renderPathMap(d, mine, clicks) {
+  const css = getComputedStyle(document.documentElement), ACC = css.getPropertyValue('--accent').trim(), INKC = css.getPropertyValue('--ink').trim(), PAPER = css.getPropertyValue('--paper').trim();
   const key = p => p.join('\u0001'), W = 354, total = d.total, byKey = new Map(d.nodes.map(n => [key(n.p), { ...n }]));
   byKey.set(key([mine[0]]), { p: [mine[0]], n: total });
   mine.forEach((_, i) => { const k = key(mine.slice(0, i + 1)); if (!byKey.has(k)) byKey.set(k, { p: mine.slice(0, i + 1), n: 0 }); });
@@ -1174,12 +866,12 @@ function renderPathMap(d, mine, clicks) {
   levels.slice(1).flat().forEach(n => {
     const a = pos.get(key(n.p.slice(0, -1))), b = pos.get(key(n.p)), dd = `M${a.x} ${a.y + 13} C${a.x} ${(a.y + b.y) / 2},${b.x} ${(a.y + b.y) / 2},${b.x} ${b.y - 13}`, w = (2 + 14 * n.n / total).toFixed(1);
     edges += `<path d="${dd}" stroke="var(--mute)" stroke-opacity=".28" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
-    if (favKeys.has(key(n.p))) over += `<path d="${dd}" stroke="#f2b01e" stroke-width="4" stroke-dasharray="2 9" fill="none" stroke-linecap="round"/>`;
-    if (mineKeys.has(key(n.p))) over += `<path d="${dd}" stroke="hsl(250 90% 60%)" stroke-width="6" fill="none" stroke-linecap="round" opacity=".95"/>`;
+    if (favKeys.has(key(n.p))) over += `<path d="${dd}" stroke="${INKC}" stroke-width="3" stroke-dasharray="1 8" fill="none" stroke-linecap="round"/>`;
+    if (mineKeys.has(key(n.p))) over += `<path d="${dd}" stroke="${ACC}" stroke-width="6" fill="none" stroke-linecap="round" opacity=".95"/>`;
   });
   levels.flat().forEach(n => {
-    const q = pos.get(key(n.p)), t = n.p[n.p.length - 1], isT = t === target && n.p.length > 1, me = mineKeys.has(key(n.p)), lab = (isT ? '🎯 ' : '') + (t.length > 13 ? t.slice(0, 12) + '…' : t), w = Math.max(54, 14 + lab.length * 6.6);
-    const fill = isT ? '#ff6a4d' : me ? 'hsl(250 90% 60%)' : 'var(--card)', ink = isT || me ? '#fff' : 'var(--ink)', stroke = favKeys.has(key(n.p)) && !me ? '#f2b01e' : 'var(--line)';
+    const q = pos.get(key(n.p)), t = n.p[n.p.length - 1], isT = t === target && n.p.length > 1, me = mineKeys.has(key(n.p)), lab = (t.length > 13 ? t.slice(0, 12) + '…' : t), w = Math.max(54, 14 + lab.length * 6.6);
+    const fill = isT ? INKC : me ? ACC : 'var(--card)', ink = isT ? PAPER : me ? '#fff' : 'var(--ink)', stroke = favKeys.has(key(n.p)) && !me && !isT ? INKC : 'var(--line)';
     nodes += `<g><rect x="${q.x - w / 2}" y="${q.y - 13}" width="${w}" height="26" rx="13" style="fill:${fill};stroke:${stroke}" stroke-width="${favKeys.has(key(n.p)) ? 2 : 1}"/><text x="${q.x}" y="${q.y + 4}" text-anchor="middle" font-size="11" font-weight="700" style="fill:${ink}">${esc(lab)}</text><text x="${q.x}" y="${q.y + 27}" text-anchor="middle" font-size="9.5" font-weight="700" style="fill:var(--mute);stroke:var(--card);stroke-width:3px;paint-order:stroke">${n.n ? Math.round(n.n / total * 100) + '%' : '<1%'}</text></g>`;
   });
   let div = null;
@@ -1190,21 +882,12 @@ function renderPathMap(d, mine, clicks) {
   const head = div ? `You left the crowd at step ${div.step}` : 'You took the crowd favourite route', sub = div ? `${div.topPct}% went via <b>${esc(div.top)}</b>; you chose <b>${esc(div.mine)}</b> (${div.minePct}%).` : 'Most players went the same way you did.';
   return `<div style="font-weight:800;font-size:21px;letter-spacing:-.03em;margin:2px 0">${head}</div><div class="mute s" style="margin-bottom:8px">${sub}</div>
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;font-family:inherit">${edges}${over}${nodes}</svg>
-    <div class="s b" style="display:flex;gap:16px;justify-content:center;margin:2px 0 10px"><span><i class="rd" style="background:hsl(250 90% 60%)"></i> You · ${clicks}</span><span><i class="rd" style="background:#f2b01e"></i> Crowd favourite · ${fav.length - 1}</span></div>
+    <div class="s b" style="display:flex;gap:16px;justify-content:center;margin:2px 0 10px"><span><i class="rd" style="background:${ACC}"></i> You · ${clicks}</span><span><i class="rd" style="background:${INKC}"></i> Crowd favourite · ${fav.length - 1}</span></div>
     <div class="grid3"><div><b>${clicks}</b><span>Your route</span></div><div><b>${d.avg.toFixed(1)}</b><span>Crowd average</span></div><div><b>${d.best}</b><span>Best found ×${d.bestCount}</span></div></div>
     <div class="s mute" style="text-align:center">Based on ${total} players today.</div>`;
 }
 
 /* ----------------------------------------------------------------------- hub */
-function renderHub() {
-  const day = dayKey(), e = P.days[day], open = allCos().filter(isUnlocked).length, tot = allCos().length;
-  const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), packTotal = PACKS.reduce((n, p) => n + p.puzzles.length, 0);
-  $('#hub').innerHTML = `${e && e.won ? `<div class="card hubchal"><div class="hc-t">Challenge a friend</div><div class="hc-s">"Beat my ${e.clicks} click${e.clicks === 1 ? '' : 's'}" — they get the same puzzle, no sign-up.</div><div class="actions" style="margin-top:12px"><button class="btn hcb" id="hubChal">Send challenge</button></div></div>` : ''}
-    <div class="hubrow"><button class="card hubtile" id="hubPacks"><span>🧩</span><b>Companion packs</b><small>${solved}/${packTotal} solved</small></button><button class="card hubtile" id="hubLocker"><span>✨</span><b>Locker</b><small>${open}/${tot} unlocked</small></button></div>`;
-  $('#hubPacks').onclick = openPacks; $('#hubLocker').onclick = () => openLocker();
-  if ($('#hubChal')) $('#hubChal').onclick = () => openChallenge({ won: true, clicks: e.clicks, secs: e.secs, path: e.path, from: e.from, to: e.to }, () => closeModal());
-}
-
 /* ------------------------------------------------------------ rewarded video (ads) */
 // Swap in a real rewarded-video provider by defining window.WIKIIO_ADS = { rewarded: () => Promise<boolean> }
 // before this script runs. It must resolve true only when the viewer earned the reward.
@@ -1253,48 +936,53 @@ function wrapLines(ctx, text, maxW) {
   text.split(' ').forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; });
   if (line) out.push(line); return out;
 }
-function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha) {
-  let s = size, lines;
-  for (; s >= 28; s -= 4) { ctx.font = `700 ${s}px "Source Serif 4", Georgia, serif`; lines = wrapLines(ctx, text, maxW); if (lines.length <= 3) break; }
+function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha, tpl) {
+  let s = size, lines; tpl = tpl || '700 {s}px "Source Serif 4", Georgia, serif';
+  for (; s >= 28; s -= 4) { ctx.font = tpl.replace('{s}', s); lines = wrapLines(ctx, text, maxW); if (lines.length <= 3) break; }
   ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillStyle = color; ctx.textAlign = 'center';
-  const lh = s * 1.15, y0 = cy - (lines.length - 1) * lh / 2;
+  const lh = s * (tpl.includes('Instrument') ? .98 : 1.15), y0 = cy - (lines.length - 1) * lh / 2;
   lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * lh)); ctx.globalAlpha = 1;
 }
 function drawFrame(ctx, W, d, st) {
-  const h = sigHue(st.sig), tx = (t, x, y, font, color, al = 'left') => { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = al; ctx.fillText(t, x, y); };
-  const g = ctx.createLinearGradient(0, 0, W, W); g.addColorStop(0, `hsl(${h} 65% 13%)`); g.addColorStop(1, `hsl(${(h + 55) % 360} 70% 25%)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, W);
-  const rg = ctx.createRadialGradient(W / 2, W * .45, 20, W / 2, W * .45, W * .6); rg.addColorStop(0, `hsla(${h},90%,60%,.28)`); rg.addColorStop(1, 'hsla(0,0%,0%,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
-  const SANS = 'Inter, system-ui, sans-serif';
-  tx(BRAND.a, 40, 70, `800 34px ${SANS}`, '#fff'); ctx.font = `800 34px ${SANS}`; tx(BRAND.b, 40 + ctx.measureText(BRAND.a).width, 70, `800 34px ${SANS}`, `hsl(${h} 95% 70%)`);
-  tx(d.label, W - 40, 68, `600 22px ${SANS}`, 'rgba(255,255,255,.65)', 'right');
+  const DISP = '"Instrument Serif", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"Newsreader", Georgia, serif', PAPER = '#f3eee4', tc = tempCss(st.sig);
+  const al = (rgb, a) => rgb.replace('rgb(', 'rgba(').replace(')', `,${a})`);
+  const cap = (t, x, y, size, color, align, sp) => { ctx.font = `600 ${size}px ${SANS}`; ctx.fillStyle = color; ctx.textAlign = align; try { ctx.letterSpacing = sp + 'px'; } catch {} ctx.fillText(t.toUpperCase(), x, y); try { ctx.letterSpacing = '0px'; } catch {} };
+  ctx.fillStyle = '#14110d'; ctx.fillRect(0, 0, W, W);
+  const rg = ctx.createRadialGradient(W / 2, W * .46, 10, W / 2, W * .46, W * .66); rg.addColorStop(0, al(tc, .34)); rg.addColorStop(1, al(tc, 0)); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
+  ctx.fillStyle = tc; ctx.fillRect(0, 0, W, 8);
+  ctx.strokeStyle = 'rgba(243,238,228,.22)'; ctx.lineWidth = 1.5; ctx.strokeRect(24, 24, W - 48, W - 48);
+  ctx.textAlign = 'left'; ctx.font = `400 46px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(BRAND.a, 52, 92); const bw = ctx.measureText(BRAND.a).width;
+  ctx.font = `italic 400 46px ${DISP}`; ctx.fillStyle = '#ff6a45'; ctx.fillText(BRAND.b, 52 + bw, 92);
+  cap(d.label, W - 52, 86, 17, 'rgba(243,238,228,.6)', 'right', 3);
   const cx = W / 2, k = easeOut(Math.min(1, st.local / .45));
   if (st.kind === 'intro') {
-    tx('REACH', cx, 250, `700 20px ${SANS}`, 'rgba(255,255,255,.6)', 'center');
-    drawTitle(ctx, d.to, cx, 340, W - 120, 72, `hsl(${h} 95% 75%)`, k);
-    tx('starting from', cx, 450, `600 22px ${SANS}`, 'rgba(255,255,255,.6)', 'center');
-    drawTitle(ctx, d.from, cx, 500, W - 160, 40, '#fff', k);
+    cap('Reach', cx, 250, 18, 'rgba(243,238,228,.6)', 'center', 4);
+    drawTitle(ctx, d.to, cx, 340, W - 120, 118, tc, k, `italic 400 {s}px ${DISP}`);
+    cap('starting from', cx, 450, 16, 'rgba(243,238,228,.55)', 'center', 4);
+    drawTitle(ctx, d.from, cx, 505, W - 160, 56, PAPER, k, `400 {s}px ${DISP}`);
   } else if (st.kind === 'step') {
-    const tag = st.cur.k === 'start' ? 'START' : st.cur.k === 'back' ? '↩ BACK (+1)' : st.cur.k === 'rewind' ? '⏪ FREE REWIND' : `CLICK ${st.clicks}`;
-    tx(tag, cx, 250, `700 20px ${SANS}`, 'rgba(255,255,255,.65)', 'center');
-    if (st.prev) drawTitle(ctx, st.prev.title, cx, 205 - (1 - k) * 0, W - 200, 28, '#fff', (1 - k) * .45);
-    ctx.save(); ctx.translate(cx, 350 + (1 - k) * 36); ctx.scale(.94 + .06 * k, .94 + .06 * k); drawTitle(ctx, st.cur.title, 0, 0, W - 120, 72, '#fff', k); ctx.restore();
-  } else {
-    if (d.won) { tx('🎯', cx, 300, `90px ${SANS}`, '#fff', 'center'); drawTitle(ctx, d.to, cx, 400, W - 120, 60, '#fff', k); tx(`${d.clicks} click${d.clicks === 1 ? '' : 's'} · ${fmt(d.secs)}${d.par ? ` · par ${d.par}` : ''}`, cx, 500, `700 28px ${SANS}`, `hsl(${h} 95% 78%)`, 'center'); }
-    else { tx('🏳️', cx, 300, `90px ${SANS}`, '#fff', 'center'); drawTitle(ctx, 'Gave up on ' + d.to, cx, 400, W - 120, 48, '#fff', k); }
-  }
-  // trail of visited pages
-  const tr = st.trail.slice(-9), x0 = 70, x1 = W - 70;
+    const tag = st.cur.k === 'start' ? 'Start' : st.cur.k === 'back' ? 'Back · +1 click' : st.cur.k === 'rewind' ? 'Free rewind' : `Click ${st.clicks}`;
+    cap(tag, cx, 246, 18, 'rgba(243,238,228,.62)', 'center', 4);
+    if (st.prev) drawTitle(ctx, st.prev.title, cx, 200, W - 200, 32, PAPER, (1 - k) * .4, `italic 400 {s}px ${DISP}`);
+    ctx.save(); ctx.translate(cx, 352 + (1 - k) * 34); ctx.scale(.95 + .05 * k, .95 + .05 * k); drawTitle(ctx, st.cur.title, 0, 0, W - 120, 112, PAPER, k, `400 {s}px ${DISP}`); ctx.restore();
+  } else if (d.won) {
+    cap('Solved', cx, 262, 20, 'rgba(243,238,228,.62)', 'center', 6);
+    drawTitle(ctx, d.to, cx, 372, W - 120, 108, tc, k, `italic 400 {s}px ${DISP}`);
+    ctx.textAlign = 'center'; ctx.font = `italic 400 30px ${SERIF}`; ctx.fillStyle = PAPER;
+    ctx.fillText(`${d.clicks} click${d.clicks === 1 ? '' : 's'} · ${fmt(d.secs)}${d.par ? ` · par ${d.par}` : ''}`, cx, 500);
+  } else { cap('Gave up', cx, 262, 20, 'rgba(243,238,228,.62)', 'center', 6); drawTitle(ctx, d.to, cx, 372, W - 120, 96, PAPER, k, `italic 400 {s}px ${DISP}`); }
+  const tr = st.trail.slice(-9), x0 = 78, x1 = W - 78;
   if (tr.length) {
     const gap = tr.length > 1 ? (x1 - x0) / (tr.length - 1) : 0, y = 566, off = tr.length > 1 ? 0 : (x1 - x0) / 2;
-    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 3; ctx.beginPath(); tr.forEach((e, n) => { const x = x0 + off + n * gap; n ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
-    tr.forEach((e, n) => { const x = x0 + off + n * gap, last = n === tr.length - 1; ctx.fillStyle = dotCss(e.sig, tr.length > 1 ? n / (tr.length - 1) : 1); ctx.beginPath(); ctx.arc(x, y, last ? 11 : 7, 0, 7); ctx.fill(); if (last) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3; ctx.stroke(); } });
+    ctx.strokeStyle = 'rgba(243,238,228,.3)'; ctx.lineWidth = 2.5; ctx.setLineDash([2, 8]); ctx.lineCap = 'round'; ctx.beginPath(); tr.forEach((e, n) => { const px = x0 + off + n * gap; n ? ctx.lineTo(px, y) : ctx.moveTo(px, y); }); ctx.stroke(); ctx.setLineDash([]);
+    tr.forEach((e, n) => { const px = x0 + off + n * gap, last = n === tr.length - 1; ctx.fillStyle = dotCss(e.sig, tr.length > 1 ? n / (tr.length - 1) : 1); ctx.beginPath(); ctx.arc(px, y, last ? 11 : 7, 0, 7); ctx.fill(); if (last) { ctx.strokeStyle = PAPER; ctx.lineWidth = 2.5; ctx.stroke(); } });
   }
-  const lab = `700 14px ${SANS}`, mute = 'rgba(255,255,255,.55)';
-  tx('CLICKS', 40, 626, lab, mute); tx(String(st.clicks), 40, 676, `800 46px ${SANS}`, '#fff');
-  tx('TIME', 190, 626, lab, mute); tx(fmt(st.time), 190, 676, `800 46px ${SANS}`, '#fff');
-  tx('SIGNAL', 380, 626, lab, mute); tx(sigLabel(st.sig).toUpperCase(), W - 40, 626, lab, `hsl(${h} 95% 75%)`, 'right');
-  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.roundRect(380, 645, W - 420, 14, 7); ctx.fill();
-  ctx.fillStyle = `hsl(${h} 90% 60%)`; ctx.beginPath(); ctx.roundRect(380, 645, Math.max(14, (W - 420) * st.sig), 14, 7); ctx.fill();
+  const lab = 'rgba(243,238,228,.55)';
+  cap('Clicks', 52, 624, 15, lab, 'left', 3); ctx.textAlign = 'left'; ctx.font = `400 68px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(String(st.clicks), 52, 684);
+  cap('Time', 206, 624, 15, lab, 'left', 3); ctx.textAlign = 'left'; ctx.font = `400 68px ${DISP}`; ctx.fillStyle = PAPER; ctx.fillText(fmt(st.time), 206, 684);
+  cap('Temperature', 400, 624, 15, lab, 'left', 3); ctx.textAlign = 'right'; ctx.font = `italic 400 30px ${DISP}`; ctx.fillStyle = tc; ctx.fillText(sigLabel(st.sig), W - 52, 626);
+  ctx.fillStyle = 'rgba(243,238,228,.14)'; ctx.fillRect(400, 648, W - 452, 14);
+  const g = ctx.createLinearGradient(400, 0, W - 52, 0); CLASSIC_STOPS.forEach((cl, i) => g.addColorStop(i / (CLASSIC_STOPS.length - 1), cl)); ctx.fillStyle = g; ctx.fillRect(400, 648, Math.max(14, (W - 452) * st.sig), 14);
 }
 function openReplay(back) {
   const d = replayData(), S = buildSegs(d); let t = 0, playing = true, speed = 1, last = performance.now(), raf = 0;
@@ -1366,7 +1054,6 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
-$('#leagueLink').onclick = () => leagueModal();
 handleInvite();
 
 applyTheme();
