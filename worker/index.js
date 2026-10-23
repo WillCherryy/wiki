@@ -18,6 +18,7 @@ export default {
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
     if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);   // everything else is the static site
     try {
+      if (!env.DB) return reply({ error: 'database not set up' }, 503);
       if (!ready) ready = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { ready = null; throw e; });
       await ready;
       if (request.method === 'GET') {
