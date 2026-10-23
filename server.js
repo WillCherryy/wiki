@@ -28,8 +28,9 @@ function shift(day, n) { const [y, m, d] = day.split('-').map(Number); return ne
 const cleanPath = a => (Array.isArray(a) ? a : []).slice(0, 16).map(x => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 80));
 const xpOf = pid => (db.players[pid] || {}).xp || 0;
 
-function board(mode, day, league) {
+function board(mode, day, league, purist) {
   let all = Object.values(db.scores);
+  if (purist) all = all.filter(e => e.purist);
   if (league) {
     const L = db.leagues[league]; if (!L) return [];
     const set = new Set(L.members); all = all.filter(e => set.has(e.pid));
@@ -55,7 +56,7 @@ function board(mode, day, league) {
     return Object.values(by).sort((a, b) => b.points - a.points).slice(0, 50);
   }
   return all.filter(e => e.day === day).sort((a, b) => a.clicks - b.clicks || a.secs - b.secs).slice(0, 50)
-    .map(e => ({ pid: e.pid, name: nameOf(e.pid), xp: xpOf(e.pid), clicks: e.clicks, secs: e.secs }));
+    .map(e => ({ pid: e.pid, name: nameOf(e.pid), xp: xpOf(e.pid), clicks: e.clicks, secs: e.secs, purist: !!e.purist }));
 }
 
 // Aggregated routes for the "path map": every prefix of every finisher's route, with counts.
@@ -83,7 +84,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/leaderboard' && req.method === 'GET') {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
     const mode = ['day', 'week', 'all', 'streak'].includes(q.get('mode')) ? q.get('mode') : 'day';
-    return json(res, 200, board(mode, day, (q.get('league') || '').toUpperCase()));
+    return json(res, 200, board(mode, day, (q.get('league') || '').toUpperCase(), q.get('purist') === '1'));
   }
   if (url.pathname === '/api/paths' && req.method === 'GET') {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
@@ -130,7 +131,7 @@ const server = http.createServer((req, res) => {
         Array.isArray(b.path) && b.path.length >= 2 && b.path.length <= 300;
       if (!ok) return json(res, 400, { error: 'invalid' });
       const key = `${b.day}:${b.pid}`;
-      if (!db.scores[key]) db.scores[key] = { pid: b.pid, day: b.day, clicks: b.clicks, secs: b.secs, score: Math.min(1000, b.score), path: cleanPath(b.path) }; // first result of the day stands
+      if (!db.scores[key]) db.scores[key] = { pid: b.pid, day: b.day, clicks: b.clicks, secs: b.secs, score: Math.min(1000, b.score), path: cleanPath(b.path), purist: b.purist === true }; // first result of the day stands
       save(); json(res, 200, { ok: true });
     });
   }

@@ -55,6 +55,7 @@
       </div>
       <div class="tools">
         <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
+        <button class="chip" id="tocBtn" title="Jump to a section (C)">Contents <small>sections</small></button>
         <button class="chip" id="backBtn" title="Back (B)">Back <small>+1 click</small></button>
         <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">Rewind <small>1 left</small></button>
         <div class="fsrow"><button class="chip" id="fsDown" aria-label="Smaller text">A−</button><button class="chip" id="fsUp" aria-label="Larger text">A+</button></div>
@@ -67,7 +68,8 @@
     </div>
     <aside class="rail r">
       <div class="routecard"><h4>Your route</h4><div class="trail" id="trail"></div></div>
-      <div class="routecard"><h4>Shortcuts</h4><div class="keys"><span><kbd>/</kbd> Find a link</span><span><kbd>B</kbd> Back</span><span><kbd>T</kbd> Target</span><span><kbd>?</kbd> Help</span></div></div>
+      <div class="routecard" id="tocCard"><h4>Contents</h4><nav class="toc" id="toc"></nav></div>
+      <div class="routecard"><h4>Shortcuts</h4><div class="keys"><span><kbd>/</kbd> Find a link</span><span><kbd>B</kbd> Back</span><span><kbd>C</kbd> Contents</span><span><kbd>T</kbd> Target</span><span><kbd>?</kbd> Help</span></div></div>
     </aside>
   </section>
 </main>
@@ -112,7 +114,7 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.ad
 const KEY = 'wikiio:v1', CUR = 'wikiio:cur';
 function loadP() {
   let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
-  return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
+  return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
 let P = loadP();
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
@@ -126,6 +128,7 @@ const ACH = [
   { id: 'fast', icon: '⚡', name: 'Speedrunner', desc: 'Solves in under 60 seconds', goals: [1, 5, 20, 75], val: () => P.fastWins },
   { id: 'par', icon: '⛳', name: 'Par Master', desc: 'Solves at or under par', goals: [1, 10, 30, 100], val: () => P.parWins },
   { id: 'surf', icon: '🌊', name: 'Link Surfer', desc: 'Total clicks made', goals: [50, 250, 1000, 5000], val: () => P.clicksTotal },
+  { id: 'purist', icon: '◆', name: 'Purist', desc: 'Solves without link search or rewind', goals: [1, 10, 30, 100], val: () => P.puristWins },
   { id: 'regular', icon: '📅', name: 'Regular', desc: 'Daily puzzles played', goals: [7, 30, 100, 365], val: () => Object.keys(P.days).length }
 ];
 function checkAch() {
@@ -206,7 +209,7 @@ let G = null; // {mode, day, from, to, path[], steps[{title,sig}], base, t0, don
 let tick = null;
 
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
-function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, moves: G.moves || 0, base: elapsed() })); } catch {} }
+function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
 function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
@@ -229,7 +232,7 @@ function setPlate(d, sa, sb) {
 }
 function dailyCtx() {
   const day = dayKey(), e = P.days[day]; if (!e) return null;
-  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0 } };
+  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map(x => ({ sig: x })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0, purist: !!e.purist } };
   return G.result;
 }
 function playDaily() {
@@ -239,7 +242,7 @@ function playDaily() {
 function renderHeroAct() {
   const day = dayKey(), e = P.days[day], cur = readCur(), box = $('#heroAct');
   if (e) {
-    box.innerHTML = `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b><span>${e.won ? `${e.clicks} click${e.clicks === 1 ? '' : 's'} · ${fmt(e.secs)}${e.par ? ` · par ${e.par}` : ''}${e.stars ? ' · ' + '★'.repeat(e.stars) : ''}` : 'Back tomorrow'}</span></div>
+    box.innerHTML = `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b><span>${e.won ? `${e.clicks} click${e.clicks === 1 ? '' : 's'} · ${fmt(e.secs)}${e.par ? ` · par ${e.par}` : ''}${e.stars ? ' · ' + '★'.repeat(e.stars) : ''}${e.purist ? ' · ◆ purist' : ''}` : 'Back tomorrow'}</span></div>
       <div class="act-row">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge a friend</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button></div>`;
     if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
     $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
@@ -276,8 +279,8 @@ async function startGame(mode, resume, extra) {
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
   else { resume = null; [from, to] = await resolvePair('p' + Math.random()); }
-  G = { mode, day, from, to, extra, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
-  if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, moves: resume.moves || 0, base: resume.base });
+  G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
+  if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, usedFind: !!resume.usedFind, moves: resume.moves || 0, base: resume.base });
   $('#reachLab').textContent = mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
   show('game'); setTemp(0);
   $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
@@ -314,7 +317,7 @@ async function go(title, initial, resume, kind = 'go') {
   art.innerHTML = `<h1>${esc(page.title)}</h1>${page.html}<p class="attr">Text from <a href="${wp}" target="_blank" rel="noopener">Wikipedia</a>, available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p>`;
   art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
   art.querySelectorAll('a[data-t]').forEach(a => { const n = norm(a.dataset.t); if (n === norm(G.toTitle) || n === norm(G.to)) a.classList.add('goal'); });
-  $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1;
+  $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1; buildContents();
   window.scrollTo({ top: 0, behavior: initial ? 'auto' : 'smooth' });
   updateHud();
   persistCur();
@@ -352,14 +355,14 @@ function finish(won) {
   const ref = G.par || G.goal || 0, par = ref || 3;
   const score = won ? Math.max(100, 1000 - 90 * Math.max(0, c - par) - Math.floor(secs / 3)) : 0;
   const stars = !won || !ref ? 0 : c <= ref ? 3 : c === ref + 1 ? 2 : c <= ref + 2 ? 1 : 0;
-  G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode };
+  G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode, purist: !G.usedFind && !G.rewinds };
   let gain = 0, streakBonus = 0;
   P.played++; P.clicksTotal += c;
-  if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; gain = Math.round(score / 10); }
+  if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; if (!G.usedFind && !G.rewinds) P.puristWins++; gain = Math.round(score / 10); }
   else gain = 5;
   if (G.mode === 'daily') {
     if (!P.days[G.day]) {
-      P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds };
+      P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, purist: !G.usedFind && !G.rewinds };
       if (won) { P.streak = P.lastDay === yesterday(G.day) ? P.streak + 1 : 1; P.lastDay = G.day; P.maxStreak = Math.max(P.maxStreak, P.streak); streakBonus = Math.min(50, P.streak * 5); gain += streakBonus; }
       else if (P.lastDay !== G.day && P.lastDay !== yesterday(G.day)) P.streak = 0;
     } else gain = 0;
@@ -381,7 +384,7 @@ function finish(won) {
 async function submitScore() {
   const r = G.result;
   try {
-    const res = await fetch(API_BASE + '/api/score', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid, name: P.name, xp: P.xp, day: G.day, clicks: r.clicks, secs: r.secs, score: r.score, path: r.path }) });
+    const res = await fetch(API_BASE + '/api/score', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid, name: P.name, xp: P.xp, day: G.day, clicks: r.clicks, secs: r.secs, score: r.score, path: r.path, purist: !!r.purist }) });
     return res.ok;
   } catch { return false; }
 }
@@ -403,7 +406,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
 }
 function showResult() {
   const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
@@ -416,6 +419,7 @@ function showResult() {
       <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '—'}</div>
     </div>
     ${r.won && ref ? `<div class="stars">${'★'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
+    ${r.won && r.purist ? '<div class="purist"><b>◆</b> Purist run: no link search, no rewind</div>' : ''}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
     <div class="pathline">${r.path.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div>
     ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
@@ -442,13 +446,13 @@ function showResult() {
 const API_BASE = ((window.WIKIIO && WIKIIO.api) || '').replace(/\/$/, '');
 const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
 const rankDot = xp => { const r = RANKS[rankOf(xp || 0)]; return `<i class="rd" style="background:${r.c}" title="${r.n}"></i>`; };
-async function fetchBoard(mode, league) {
-  const r = await fetch(`${API_BASE}/api/leaderboard?mode=${mode}&day=${dayKey()}${league ? '&league=' + league : ''}`); if (!r.ok) throw 0; return r.json();
+async function fetchBoard(mode, league, purist) {
+  const r = await fetch(`${API_BASE}/api/leaderboard?mode=${mode}&day=${dayKey()}${league ? '&league=' + league : ''}${purist ? '&purist=1' : ''}`); if (!r.ok) throw 0; return r.json();
 }
 const valText = (e, mode) => mode === 'day' ? `${e.clicks} clicks · ${fmt(e.secs)}` : mode === 'streak' ? `${e.streak} day${e.streak === 1 ? '' : 's'}` : `${e.points} pts · ${e.days}d`;
 function boardHTML(rows, mode) {
   if (!rows.length) return '<div class="empty">No scores yet — be the first on the board.</div>';
-  return rows.map((e, i) => `<div class="row"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span>${rankDot(e.xp)}<span class="nm ${e.pid === P.pid ? 'me' : ''}">${esc(e.name)}${e.pid === P.pid ? ' (you)' : ''}</span><span class="val">${valText(e, mode)}</span></div>`).join('');
+  return rows.map((e, i) => `<div class="row"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span>${rankDot(e.xp)}<span class="nm ${e.pid === P.pid ? 'me' : ''}">${esc(e.name)}${e.pid === P.pid ? ' (you)' : ''}${e.purist ? '<i class="pm" title="Purist run: no link search, no rewind">◆</i>' : ''}</span><span class="val">${valText(e, mode)}</span></div>`).join('');
 }
 const OFFLINE = '<div class="empty">' + (/^(localhost|127\.)/.test(location.hostname) ? 'Global leaderboards need the server. Run <code>node server.js</code> to play with others.' : 'Leaderboards are offline right now. Your progress is saved on this device.') + '</div>';
 async function renderPreview() {
@@ -461,17 +465,18 @@ function openLeaderboard(mode = 'day', scope = 'global') {
   openModal(`<h2>Leaderboards</h2><div class="scopes" id="scopes"></div><div class="tabs" id="lbTabs"></div><div id="lbBody"></div>`);
   const draw = async () => {
     const my = ++n;
-    $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip" id="addLg">＋ League</button>`;
+    $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip sc ${st.purist ? 'on' : ''}" id="puristTog" title="Only runs with no link search and no rewind">◆ Purist</button><button class="chip" id="addLg">＋ League</button>`;
     $('#lbTabs').innerHTML = [['day', 'Today'], ['week', 'Week'], ['all', 'All-time'], ['streak', 'Streaks'], ['me', 'Me']].map(([m, l]) => `<button data-m="${m}" class="${st.mode === m ? 'on' : ''}">${l}</button>`).join('');
     document.querySelectorAll('#scopes [data-s]').forEach(b => b.onclick = () => { st.scope = b.dataset.s; draw(); });
     document.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
     $('#addLg').onclick = () => leagueModal();
+    $('#puristTog').onclick = () => { st.purist = !st.purist; draw(); };
     const body = $('#lbBody');
     if (st.mode === 'me') { body.innerHTML = statsHTML() + '<button class="btn ghost" id="meSet" style="width:100%;margin-top:18px">Settings &amp; data</button>'; $('#meSet').onclick = () => openSettings(); return; }
     body.innerHTML = '<div class="empty">Loading…</div>';
     const league = st.scope === 'global' ? '' : st.scope;
     try {
-      const rows = await fetchBoard(st.mode, league); if (my !== n) return;
+      const rows = await fetchBoard(st.mode, league, st.purist); if (my !== n) return;
       body.innerHTML = (league ? `<div class="invite"><span>Invite code <b>${league}</b></span><button id="cpInv">Copy invite link</button></div>` : '') + boardHTML(rows, st.mode);
       if (league) $('#cpInv').onclick = async () => { const u = `${SITE_URL}?league=${league}`; try { await navigator.clipboard.writeText(u); toast('Invite link copied'); } catch { prompt('Invite link:', u); } };
     } catch { if (my === n) body.innerHTML = OFFLINE; }
@@ -730,7 +735,7 @@ async function shareCardCanvas(r) {
   y += size * .86; x.font = `italic 400 ${size}px ${DISP}`; x.fillStyle = ACC; lt.forEach((l, i) => x.fillText(l, M, y + i * lh)); y += (lt.length - 1) * lh + 58;
   const ref = r.par || r.goal;
   x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
-  x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}` : 'Gave up on this one', M, y);
+  x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}${r.purist ? ' · purist' : ''}` : 'Gave up on this one', M, y);
   // the route, drawn as a temperature curve
   let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));
   if (pts.length > 7) pts = [...pts.slice(0, 3), ...pts.slice(-4)];
@@ -1022,11 +1027,32 @@ async function exportVideo(d, S, btn) {
 }
 $('#rewindBtn').onclick = rewind;
 
+/* contents: jump between sections of the current article */
+let tocItems = [], tocObs = null;
+function gotoSection(id) { const el = id === 'top' ? $('#article') : document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function tocHTML() { return `<button class="toc-i top" data-id="top">Introduction</button>` + tocItems.map(it => `<button class="toc-i l${it.lvl}" data-id="${it.id}">${esc(it.t)}</button>`).join(''); }
+function buildContents() {
+  const hs = [...document.querySelectorAll('#article h2, #article h3')].filter(h => h.textContent.trim()).slice(0, 60);
+  tocItems = hs.map((h, i) => { h.id = 'sec-' + i; return { id: h.id, t: h.textContent.trim(), lvl: h.tagName === 'H2' ? 1 : 2 }; });
+  $('#toc').innerHTML = tocItems.length ? tocHTML() : '<div class="empty" style="font-size:15px">This article has no sections.</div>';
+  $('#toc').querySelectorAll('.toc-i').forEach(b => b.onclick = () => gotoSection(b.dataset.id));
+  if (tocObs) tocObs.disconnect();
+  tocObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) document.querySelectorAll('#toc .toc-i').forEach(b => b.classList.toggle('on', b.dataset.id === e.target.id)); }), { rootMargin: '-90px 0px -75% 0px' });
+  hs.forEach(h => tocObs.observe(h));
+}
+function openToc() {
+  if (!tocItems.length) return toast('This article has no sections');
+  openModal(`<h2>Contents</h2><div class="toc big">${tocHTML()}</div>`);
+  document.querySelectorAll('.toc.big .toc-i').forEach(b => b.onclick = () => { closeModal(); setTimeout(() => gotoSection(b.dataset.id), 120); });
+}
+$('#tocBtn').onclick = openToc;
+
 /* usability: link finder, text size, keyboard, hover prefetch, countdown */
 let hits = [], hi = -1;
 function stepFinder(d) { if (!hits.length) return; if (hi >= 0) hits[hi].classList.remove('cur'); hi = (hi + d + hits.length) % hits.length; hits[hi].classList.add('cur'); hits[hi].scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 function runFinder() {
   const q = $('#finder').value.trim().toLowerCase();
+  if (q.length >= 2 && G && !G.done) { G.usedFind = true; persistCur(); }
   document.querySelectorAll('#article a.hit').forEach(a => a.classList.remove('hit', 'cur')); hits = []; hi = -1;
   if (q.length >= 2) hits = [...document.querySelectorAll('#article a[data-t]')].filter(a => a.textContent.toLowerCase().includes(q) || a.dataset.t.toLowerCase().includes(q));
   hits.forEach(a => a.classList.add('hit')); $('#finderN').textContent = q.length >= 2 ? hits.length + ' found' : ''; stepFinder(1);
@@ -1046,6 +1072,7 @@ document.addEventListener('keydown', e => {
   if (inGame && k === '/') { e.preventDefault(); $('#finder').focus(); }
   else if (inGame && (e.key === 'Backspace' || k === 'b' || (e.altKey && e.key === 'ArrowLeft'))) { e.preventDefault(); back(); }
   else if (inGame && k === 't') showTarget();
+  else if (inGame && k === 'c') openToc();
   else if (e.key === '?') showHelp();
 });
 function tickNext() {

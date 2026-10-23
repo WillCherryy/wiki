@@ -4,8 +4,8 @@ window.WIKIIO = {
   domain: 'wikilink.app',           // shown on share cards and in the footer
   brandA: 'wiki', brandB: 'link',   // logo is brandA + accent-coloured brandB
   api: '',                          // base URL of the leaderboard API (e.g. 'https://api.example.com'); '' = same origin
-  operator: '',                     // legal name of the person or company running the site (REQUIRED before launch)
-  contact: '',                      // public contact email for privacy requests (REQUIRED before launch)
+  operator: 'William Cherry',                     // legal name of the person or company running the site (REQUIRED before launch)
+  contact: 'will@cherrys.me.uk',                      // public contact email for privacy requests (REQUIRED before launch)
   jurisdiction: 'England and Wales',
-  updated: '22 October 2026'
+  updated: '23 October 2026'
 };
