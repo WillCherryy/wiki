@@ -701,7 +701,7 @@ async function refreshEntitlement(announce) {
   } catch { if (announce) toast('Could not check right now. Try again shortly.'); return !!P.supporter; }
 }
 function openSupport() {
-  const perks = [['Exclusive cosmetics', 'Comet and Ink trails, the Noir theme and Candy confetti'], ['Free, unlimited rewinds', 'No video to watch, as many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
+  const perks = [['Exclusive cosmetics', 'Comet and Ink trails, the Noir theme and Candy confetti'], ['Free, unlimited rewinds', Ads.enabled() ? 'No video to watch, as many as you like' : 'As many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
   const live = !!(CFG.checkoutUrl);
   if (P.supporter) { openModal(`<h2>Thank you ◆</h2><p>You are a Warmer supporter. Your pack is tied to this Player ID, so it moves with your backup code.</p><div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>`); return; }
   openModal(`<h2>Support Warmer</h2><p>One payment, no subscription, no account. It keeps the daily puzzle free.</p>
@@ -1265,8 +1265,8 @@ function renderPathMap(d, mine, clicks) {
 /* ------------------------------------------------------------ rewarded video (ads) */
 // Swap in a real rewarded-video provider by defining window.WIKIIO_ADS = { rewarded: () => Promise<boolean> }
 // before this script runs. It must resolve true only when the viewer earned the reward.
-/* Rewarded video for the free rewind. Providers, in order: window.WIKIIO_ADS (your own), Google AdSense (config.adsenseClient),
-   a demo (config.adsDemo). With none configured there is no video and the one free rewind is simply free. */
+/* Rewarded video for the free rewind. Providers, in order: window.WIKIIO_ADS (your own) or Google AdSense (config.adsenseClient).
+   With none configured there is no video and the one free rewind is simply free. */
 let adsenseLoad = null;
 function loadAdsense() {
   return adsenseLoad || (adsenseLoad = new Promise((res, rej) => {
@@ -1281,11 +1281,10 @@ function loadAdsense() {
   }));
 }
 const Ads = {
-  enabled: () => !!((window.WIKIIO_ADS && window.WIKIIO_ADS.rewarded) || CFG.adsenseClient || CFG.adsDemo),
+  enabled: () => !!((window.WIKIIO_ADS && window.WIKIIO_ADS.rewarded) || CFG.adsenseClient),
   rewarded() {
     if (window.WIKIIO_ADS && typeof window.WIKIIO_ADS.rewarded === 'function') return window.WIKIIO_ADS.rewarded();
     if (CFG.adsenseClient) return Ads.adsense();
-    if (CFG.adsDemo) return Ads.demo();
     return Promise.resolve(true);
   },
   // true when the video was watched, or when no ad could be shown (blocked, no fill): the player is never punished for that
@@ -1298,19 +1297,6 @@ const Ads = {
         beforeReward: show => { started = true; clearTimeout(guard); show(); },
         adViewed: () => { viewed = true; }, adDismissed: () => {},
         adBreakDone: () => { clearTimeout(guard); resolve(viewed || !started); } });
-    });
-  },
-  demo() {
-    return new Promise(resolve => {
-      let n = 5, done = false, iv = null;
-      openModal(`<h2>Sponsored video</h2><p>Demo of the rewarded video. Watch it to the end to undo your last click for free.</p>
-        <div class="adbox"><div class="bar"><i id="adBar" style="width:0"></i></div><small id="adT">${n}s</small></div>
-        <button class="btn ghost" data-close style="width:100%">Cancel</button>`, () => { clearInterval(iv); if (!done) resolve(false); });
-      iv = setInterval(() => {
-        n--; $('#adT').textContent = n + 's'; $('#adBar').style.width = (5 - n) / 5 * 100 + '%';
-        if (n <= 0) { done = true; clearInterval(iv); closeModal(); resolve(true); }
-      }, 1000);
-      requestAnimationFrame(() => { const b = $('#adBar'); if (b) b.style.width = '0'; });
     });
   }
 };
