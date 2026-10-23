@@ -21,7 +21,7 @@ tag = "v1"
 new_sqlite_classes = ["Lobby"]
 
 [vars]
-# Origin allowed to call the API from a browser. Use your site, e.g. "https://warmer.site". "*" is fine for testing.
+# Origin allowed to call the API from a browser. Use your site, e.g. "https://playwarmer.app". "*" is fine for testing.
 ALLOWED_ORIGIN = "https://playwarmer.app"
 
 # D1 database for leaderboards, streaks, reports, statistics and supporter packs.

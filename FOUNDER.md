@@ -7,7 +7,7 @@ Run these from the project folder, for example `C:\Users\will\wiki-warmer`.
 cd C:\Users\will\wiki-warmer
 git pull
 npm install
-$env:WARMER_URL = "https://wiki.will-34e.workers.dev"      # becomes https://playwarmer.app once attached
+$env:WARMER_URL = "https://playwarmer.app"                       # or https://wiki.will-34e.workers.dev
 $env:WARMER_KEY = "PASTE-YOUR-ADMIN-KEY"
 $env:WIKI_UA    = "Warmer/1.0 (you@example.com)"           # Wikipedia asks scripts to say who they are
 ```
