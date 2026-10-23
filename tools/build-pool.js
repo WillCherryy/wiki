@@ -37,7 +37,8 @@ async function main() {
   const root = path.join(__dirname, '..');
   try {
     const d = await fetchList('Wikipedia:Vital articles/Level/3');
-    fs.writeFileSync(path.join(root, 'daily-pool.json'), JSON.stringify(d)); console.log('daily-pool.json', total(d), 'articles in', Object.keys(d).length, 'groups');
+    if (!total(d)) console.warn('level 3 gave no articles, not writing daily-pool.json (built-in pool will be used)');
+    else { fs.writeFileSync(path.join(root, 'daily-pool.json'), JSON.stringify(d)); console.log('daily-pool.json', total(d), 'articles in', Object.keys(d).length, 'groups'); }
   } catch (e) { console.warn('level 3 failed:', e.message); }
   const all = {};
   for (const sub of L4) {

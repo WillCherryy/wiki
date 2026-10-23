@@ -18,7 +18,11 @@ const FROM = arg('from', today);
 function loadPool() {
   const want = arg('pool', null);
   for (const f of want ? [want] : [path.join(ROOT, 'daily-pool.json'), path.join(ROOT, 'pool.json')]) {
-    try { const p = JSON.parse(fs.readFileSync(f, 'utf8')); console.log('pool:', path.basename(f)); return p; } catch {}
+    try {
+      const p = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (!Object.values(p).some(a => Array.isArray(a) && a.length)) { console.warn('pool:', path.basename(f), 'is empty, ignoring it'); continue; }
+      console.log('pool:', path.basename(f)); return p;
+    } catch {}
   }
   console.log('pool: built-in cats.js'); return require('../cats.js');
 }
