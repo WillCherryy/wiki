@@ -1,4 +1,4 @@
-# Warmer
+# Scorcher
 
 A daily Wikipedia link race with par, replays, friend challenges, companion packs, cosmetics and leagues.
 No accounts: progress lives on the player's device (with a backup code).

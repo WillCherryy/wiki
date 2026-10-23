@@ -1,4 +1,4 @@
--- Warmer API schema (Cloudflare D1 / SQLite). Apply with:
+-- Scorcher API schema (Cloudflare D1 / SQLite). Apply with:
 --   wrangler d1 execute warmer --remote --file=worker/schema.sql
 CREATE TABLE IF NOT EXISTS players (
   pid TEXT PRIMARY KEY,

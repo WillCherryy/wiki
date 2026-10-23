@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
-<title>Puzzles · Founder · Warmer</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="admin.css">
+<title>Puzzles · Founder · Scorcher</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="admin.css">
 <style>
 .pz-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: start; } @media (max-width: 1000px) { .pz-grid { grid-template-columns: 1fr; } }
 .sched .it { display: grid; grid-template-columns: 74px 1fr auto; gap: 14px; align-items: center; padding: 13px 0; border-top: 1px solid var(--rule-2); } .sched .it:first-of-type { border-top: 0; }
@@ -22,7 +22,7 @@
 <body>
 <div class="gate" id="gate" hidden><div class="dots5" id="gateDots"></div><h1 style="font-size:44px;margin-top:14px">Puzzles</h1><p class="sub" style="margin-bottom:0">Enter your admin key to pick the daily puzzle.</p><input id="key" type="password" placeholder="Admin key" autocomplete="current-password"><div class="err" id="err"></div><button class="btn" id="go" style="width:100%">Open</button></div>
 <div class="fd" id="app" hidden>
-  <div class="fd-top"><div class="logo"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg><span>Warm<b>er</b></span></div><span class="fd-tag">Founder</span><nav class="fd-nav"><a href="admin.html">Dashboard</a><a class="on" href="admin-puzzles.html">Puzzles</a></nav><span class="sp"></span><button class="btn ghost" id="out" style="padding:8px 14px">Lock</button></div>
+  <div class="fd-top"><div class="logo"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg><span>Scorch<b>er</b></span></div><span class="fd-tag">Founder</span><nav class="fd-nav"><a href="admin.html">Dashboard</a><a class="on" href="admin-puzzles.html">Puzzles</a></nav><span class="sp"></span><button class="btn ghost" id="out" style="padding:8px 14px">Lock</button></div>
   <h1>Pick the daily puzzle</h1><p class="sub">Every puzzle must be solvable in four clicks or fewer. This page finds the routes in your browser and only lets you save a pair that passes. A day you skip falls back to the scheduled puzzle.</p>
   <div class="pz-grid">
     <div class="card sched"><h3>Next 14 days</h3><p class="cs">Hand-picked beats scheduled, scheduled beats the automatic pick.</p><div id="sched"></div></div>

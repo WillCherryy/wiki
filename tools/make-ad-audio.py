@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Synthesises the soundtrack for the Warmer advert (32 s, 120 BPM, A minor) with numpy only: no samples, no licences.
+"""Synthesises the soundtrack for the Scorcher advert (32 s, 120 BPM, A minor) with numpy only: no samples, no licences.
 Beat grid matches tools/video/ad.html: scene cuts land on bar lines (every 2 s), the countdown ticks at 22.0/22.5/23.0 s and
-the streak counter climbs from 24.9 s. Output: brand/video/warmer-ad.wav"""
+the streak counter climbs from 24.9 s. Output: brand/video/scorcher-ad.wav"""
 import os, wave
 import numpy as np
 
@@ -155,7 +155,7 @@ mix = np.tanh(mix * 1.5) / np.tanh(1.5)                                  # gentl
 mix *= 0.89 / np.max(np.abs(mix))
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'brand', 'video'); os.makedirs(out, exist_ok=True)
 pcm = (mix * 32767).astype(np.int16)
-with wave.open(os.path.join(out, 'warmer-ad.wav'), 'wb') as w:
+with wave.open(os.path.join(out, 'scorcher-ad.wav'), 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
 rms = [float(np.sqrt(np.mean(mix[i * SR:(i + 1) * SR] ** 2))) for i in range(SECS)]
-print('wrote warmer-ad.wav', SECS, 's; peak', round(float(np.max(np.abs(mix))), 3)); print('rms per second:', ' '.join(f'{r:.2f}' for r in rms))
+print('wrote scorcher-ad.wav', SECS, 's; peak', round(float(np.max(np.abs(mix))), 3)); print('rms per second:', ' '.join(f'{r:.2f}' for r in rms))

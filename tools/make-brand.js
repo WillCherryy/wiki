@@ -34,14 +34,14 @@ const FONTS = `@font-face{font-family:S;src:url(${font('eb-garamond-latin-400-no
   await shot(`<div style="width:1200px;height:630px;background:${PAPER};position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:10px;background:${RAMP}"></div><div style="position:absolute;inset:44px;border:1px solid #d8cfbf"></div>
     <div style="position:absolute;left:96px;top:110px;width:760px;height:230px">${svg('logo-horizontal.svg')}</div>
     <div style="position:absolute;left:104px;top:372px;font:600 26px U;letter-spacing:.2em;text-transform:uppercase;color:#4b453b">The daily Wikipedia link race</div>
-    <div style="position:absolute;left:104px;bottom:84px;font:500 25px U;color:#7a7265;letter-spacing:.03em">Click only links. Get warmer. No account needed.</div>
+    <div style="position:absolute;left:104px;bottom:84px;font:500 25px U;color:#7a7265;letter-spacing:.03em">Click only links. Get hotter. No account needed.</div>
     <div style="position:absolute;right:110px;bottom:100px;width:230px;height:190px">${svg('mark.svg')}</div></div>`, 1200, 630, path.join(root, 'og.png'));
   // overview sheet
   const tile = (name, inner, bg, ink, h = 200, w = '100%') => `<div style="background:${bg};border:1px solid #d8cfbf;padding:20px;display:flex;flex-direction:column;gap:12px"><div style="height:${h}px;width:${w};display:grid;place-items:center">${inner}</div><div style="font:600 11px U;letter-spacing:.16em;text-transform:uppercase;color:${ink}">${name}</div></div>`;
   const box = (f, w, h) => `<div style="width:${w}px;height:${h}px">${svg(f)}</div>`;
   const sw = (c, n) => `<div style="flex:1"><div style="height:64px;background:${c};border:1px solid #d8cfbf"></div><div style="font:600 11px U;margin-top:6px;color:#4b453b">${n}</div><div style="font:500 11px U;color:#7a7265">${c}</div></div>`;
   await shot(`<div style="width:1544px;padding:44px;background:#ebe6da;color:${INK};font-family:U">
-    <div style="font:400 54px S">Warmer — logo suite</div><div style="font:500 15px U;color:#7a7265;margin:4px 0 26px">Five dots climbing the temperature ramp. The mark is the game: cold start, hot target.</div>
+    <div style="font:400 54px S">Scorcher — logo suite</div><div style="font:500 15px U;color:#7a7265;margin:4px 0 26px">Five dots climbing the temperature ramp. The mark is the game: cold start, hot target.</div>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px">${tile('Primary · horizontal', box('logo-horizontal.svg', 640, 190), '#fbf8f1', '#7a7265', 210)}${tile('Stacked', box('logo-stacked.svg', 250, 200), '#fbf8f1', '#7a7265', 210)}</div>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px">${tile('On dark', box('logo-horizontal-on-dark.svg', 640, 190), INK, '#b8b0a0', 210)}${tile('Mark', box('mark.svg', 250, 210), '#fbf8f1', '#7a7265', 210)}</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px">${tile('One colour · black', box('logo-horizontal-black.svg', 300, 96), '#fbf8f1', '#7a7265', 120)}${tile('One colour · white', box('logo-horizontal-white.svg', 300, 96), '#d63a1f', '#fff', 120)}${tile('Wordmark', box('wordmark.svg', 270, 80), '#fbf8f1', '#7a7265', 120)}${tile('Wordmark · night', box('wordmark-on-dark.svg', 270, 80), INK, '#b8b0a0', 120)}</div>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates the Warmer logo suite as outlined SVGs in brand/ (no font needed to open them).
+"""Generates the Scorcher logo suite as outlined SVGs in brand/ (no font needed to open them).
 Needs: pip install fonttools brotli.  Then run `node tools/make-brand.js` to render the PNGs."""
 import os
 from fontTools.ttLib import TTFont
@@ -37,7 +37,7 @@ def mark(colors, mono=None, scale=1.0, dx=0, dy=0):
 
 
 def wordmark(size, x, y, ink, accent):
-    d1, w1 = text(REG, 'Warm', size, x, y); d2, w2 = text(ITA, 'er', size, x + w1 - size * 0.01, y)
+    d1, w1 = text(REG, 'Scorch', size, x, y); d2, w2 = text(ITA, 'er', size, x + w1 - size * 0.01, y)
     return f'<path d="{d1}" fill="{ink}"/><path d="{d2}" fill="{accent}"/>', w1 + w2 - size * 0.01
 
 

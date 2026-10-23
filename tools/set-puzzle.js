@@ -39,7 +39,7 @@ const tomorrowUK = () => { const t = new Date().toLocaleDateString('en-CA', { ti
   const from = arg('from'), to = arg('to'), day = arg('day', tomorrowUK());
   if (!from || !to) die('Give --from and --to, for example:  node tools/set-puzzle.js --from "Tour de France" --to "India"');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) die('Use a date like 2026-10-26.');
-  if (!process.env.WIKI_UA) process.env.WIKI_UA = 'Warmer-set-puzzle/1.0 (contact: set WIKI_UA to your email)';
+  if (!process.env.WIKI_UA) process.env.WIKI_UA = 'Scorcher-set-puzzle/1.0 (contact: set WIKI_UA to your email)';
   const { findRoute } = require('./solver');
   console.log(`Checking ${from} -> ${to} (this can take a minute for four-click routes)...`);
   const res = await findRoute(from, to, { maxPar: 4, alts: 2, altCap: 40, onStep: m => console.log('  ' + m) });

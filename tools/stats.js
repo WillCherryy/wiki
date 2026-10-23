@@ -10,7 +10,7 @@ if (!/^https?:\/\//.test(URL_) || !KEY) { console.error('Set WARMER_URL and WARM
   if (r.status === 401) { console.error('The server did not accept that admin key.'); process.exit(1); }
   if (!r.ok) { console.error('The server returned ' + r.status); process.exit(1); }
   const s = await r.json(), k = s.kpis, p = (a, w = 8) => String(a == null ? '-' : a).padStart(w);
-  console.log(`\nWarmer, ${s.today} (UTC), last ${s.days} days\n`);
+  console.log(`\nScorcher, ${s.today} (UTC), last ${s.days} days\n`);
   console.log(`  Players today       ${p(k.playersToday)}   (a week ago: ${k.playersLastWeek == null ? '-' : k.playersLastWeek})`);
   console.log(`  New today           ${p(k.newToday)}`);
   console.log(`  Solved today        ${p(k.finishedToday)}   (${k.finishRate == null ? '-' : k.finishRate + '%'} of starts)`);

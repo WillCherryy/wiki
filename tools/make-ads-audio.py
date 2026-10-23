@@ -2,7 +2,7 @@
 """Soundtracks for the three Instagram adverts (general, players, streamers), synthesised with numpy only.
 The instruments come from make-ad-audio.py; each track has its own tempo, key and arrangement, and its cuts land on the
 same beat grid as tools/video/ads.html (scene lengths in beats are listed below, keep them in step).
-Output: brand/video/warmer-ad-<name>.wav"""
+Output: brand/video/scorcher-ad-<name>.wav"""
 import os, wave
 import numpy as np
 
@@ -96,7 +96,7 @@ def build(name, cfg):
     fade = np.ones(len(mix), np.float32); f0 = int(SR * 1.5); fade[-f0:] = np.linspace(1, 0, f0) ** 1.5; mix *= fade[:, None]
     mix = np.tanh(mix * 1.5) / np.tanh(1.5); mix *= .89 / np.max(np.abs(mix))
     out = os.path.join(HERE, '..', 'brand', 'video'); os.makedirs(out, exist_ok=True); pcm = (mix * 32767).astype(np.int16)
-    with wave.open(os.path.join(out, f'warmer-ad-{name}.wav'), 'wb') as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
+    with wave.open(os.path.join(out, f'scorcher-ad-{name}.wav'), 'wb') as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
     rms = [float(np.sqrt(np.mean(mix[int(i * SR):int((i + 1) * SR)] ** 2))) for i in range(int(secs))]
     print(f'{name}: {secs:.1f}s at {bpm} BPM, peak {np.max(np.abs(mix)):.2f}; rms/s', ' '.join(f'{r:.2f}' for r in rms))
 
