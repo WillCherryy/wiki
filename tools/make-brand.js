@@ -52,6 +52,17 @@ const FONTS = `@font-face{font-family:S;src:url(${font('eb-garamond-latin-400-no
       ${tile('Favicon 16 / 32 / 48', [16, 32, 48].map(s => `<div style="width:${s}px;height:${s}px;border-radius:${s * .22}px;overflow:hidden;margin:0 6px">${svg('app-icon.svg')}</div>`).join(''), '#fbf8f1', '#7a7265', 150)}</div>
     <div style="display:flex;gap:12px;margin-top:22px">${sw(INK, 'Ink')}${sw(PAPER, 'Paper')}${sw('#2a4f8a', 'Cold')}${sw('#5c8cbe', 'Cool')}${sw('#d6be8c', 'Sand')}${sw('#f08c50', 'Warm')}${sw(ACCENT, 'Hot · accent')}</div>
     <div style="font:500 14px/1.5 U;color:#4b453b;margin-top:18px">Type: EB Garamond (regular + italic for “er”). Clear space around the logo: the height of the largest dot. Minimum size: mark 16px, horizontal logo 90px wide.</div></div>`, 1544, 1300, path.join(brand, 'brand-sheet.png'), 1, true);
+  // profile pictures and transparent marks for social accounts (circle-crop safe: the mark sits inside the central 60%)
+  const shotT = async (html, w, h, file) => {
+    const tmp = path.join(os.tmpdir(), 'warmer-brand-t.html'); fs.writeFileSync(tmp, `<style>*{margin:0}html,body{background:transparent}</style>${html}`);
+    const p = await b.newPage({ viewport: { width: w, height: h } }); await p.goto('file://' + tmp); await p.waitForTimeout(150); await p.screenshot({ path: file, omitBackground: true }); await p.close();
+  };
+  const ig = (bg, mk, name) => shot(`<div style="width:1080px;height:1080px;background:${bg};display:grid;place-items:center"><div style="width:560px;height:467px">${svg(mk)}</div></div>`, 1080, 1080, path.join(brand, name));
+  await ig(INK, 'mark-on-dark.svg', 'instagram-profile-1080.png'); await ig(PAPER, 'mark.svg', 'instagram-profile-1080-light.png');
+  await ig(ACCENT, 'mark-white.svg', 'instagram-profile-1080-red.png');
+  await shotT(`<div style="width:1024px;height:853px">${svg('mark.svg')}</div>`, 1024, 853, path.join(brand, 'mark-1024-transparent.png'));
+  await shotT(`<div style="width:2400px;height:${Math.round(2400 * 0.3)}px">${svg('logo-horizontal.svg')}</div>`, 2400, 720, path.join(brand, 'logo-horizontal-2400-transparent.png'));
+  for (const sz of [32, 48, 96]) await sq(sz, path.join(brand, `favicon-${sz}.png`), flat('app-icon.svg'));
   const alt = path.join(brand, 'alt-sheet.html');
   if (fs.existsSync(alt)) { const p = await b.newPage({ viewport: { width: 1580, height: 900 } }); await p.goto('file://' + alt); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(250); await p.screenshot({ path: path.join(brand, 'alt-sheet.png'), fullPage: true }); await p.close(); }
   await b.close(); console.log('brand PNGs written');
