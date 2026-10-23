@@ -3,6 +3,7 @@
 Run these from the project folder, for example `C:\Users\will\wiki-warmer`.
 
 ## One-time per PowerShell window
+(Windows PowerShell 5 can corrupt the pound sign when it rewrites files, so the snippets below use .NET methods that keep UTF-8 intact. If `git pull --rebase` complains about unstaged changes, run `git stash` first, or `git reset --hard origin/main` if you have nothing worth keeping.)
 ```powershell
 cd C:\Users\will\wiki-warmer
 git pull
@@ -19,7 +20,9 @@ npm run stats                    # summary in the terminal (add -- --days 7 for 
 Or open `/admin.html` on your site and enter the key. Optional cookie-free visit counts: create a Cloudflare Web Analytics
 site, copy its token, then
 ```powershell
-(Get-Content config.js) -replace "analytics: ''","analytics: 'PASTE-TOKEN'" | Set-Content -Encoding utf8 config.js
+$c = [IO.File]::ReadAllText("$PWD\config.js")
+$c = $c.Replace("analytics: ''", "analytics: 'PASTE-TOKEN'")
+[IO.File]::WriteAllText("$PWD\config.js", $c, (New-Object Text.UTF8Encoding $false))
 git add config.js; git commit -m "Turn on Cloudflare Web Analytics"; git push
 ```
 
@@ -50,7 +53,9 @@ Nothing to install: the site already understands Stripe. You only need a Payment
 2. **Payment Link.** Payment Links, New: pick that product, switch off adjustable quantity, and under "Require customers to accept your terms" add `https://playwarmer.app/terms.html`. Copy the link (it looks like `https://buy.stripe.com/test_...`).
 3. **Give the link to the site.** The `?client_reference_id={pid}` part is how Stripe tells us which player paid. Replace the link below with yours:
 ```powershell
-(Get-Content config.js) -replace "checkoutUrl: ''","checkoutUrl: 'https://buy.stripe.com/test_XXXX?client_reference_id={pid}'" | Set-Content -Encoding utf8 config.js
+$c = [IO.File]::ReadAllText("$PWD\config.js")
+$c = $c.Replace("checkoutUrl: ''", "checkoutUrl: 'https://buy.stripe.com/test_XXXX?client_reference_id={pid}'")
+[IO.File]::WriteAllText("$PWD\config.js", $c, (New-Object Text.UTF8Encoding $false))
 git add config.js; git commit -m "Turn on the Supporter pack (Stripe test mode)"; git push
 ```
 4. **Webhook.** Developers, Webhooks, Add endpoint: `https://playwarmer.app/api/webhook/stripe`, events `checkout.session.completed` and `charge.refunded`. Reveal the signing secret (`whsec_...`) and store it:
@@ -69,7 +74,9 @@ Without this, every player simply gets one free rewind per puzzle and nobody see
 2. In AdSense turn on the consent message (Privacy and messaging) for the UK and EEA, which Google requires.
 3. Put your publisher id in `config.js` and your `ads.txt` line in the repo root (AdSense shows both):
 ```powershell
-(Get-Content config.js) -replace "adsenseClient: ''","adsenseClient: 'ca-pub-0000000000000000'" | Set-Content -Encoding utf8 config.js
+$c = [IO.File]::ReadAllText("$PWD\config.js")
+$c = $c.Replace("adsenseClient: ''", "adsenseClient: 'ca-pub-0000000000000000'")
+[IO.File]::WriteAllText("$PWD\config.js", $c, (New-Object Text.UTF8Encoding $false))
 Set-Content -Encoding ascii ads.txt "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
 git add config.js ads.txt; git commit -m "Turn on the rewarded video"; git push
 ```
