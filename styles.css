@@ -66,6 +66,8 @@ a { color: inherit; }
 .logo .mark svg { width: 34px; height: 28px; }
 .logo .word { font: 400 31px/1 var(--display); letter-spacing: -.01em; }
 .logo .word b { font-weight: 400; font-style: italic; color: var(--accent); }
+.logo .tagline { font: 600 10px/1 'Instrument Sans', sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--mute, #8a8274); padding-left: 12px; margin-left: 2px; border-left: 1px solid currentColor; opacity: .8; }
+@media (max-width: 760px) { .logo .tagline { display: none; } }
 .status { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; background: none; font: 600 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
 .status:hover { color: var(--accent-ink); }
 .status + .status { border-left: 1px solid var(--rule); border-radius: 0; }

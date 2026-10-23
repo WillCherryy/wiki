@@ -28,12 +28,12 @@ const FONTS = `@font-face{font-family:S;src:url(${font('eb-garamond-latin-400-no
   // banner (X / Twitch / YouTube header)
   await shot(`<div style="width:1500px;height:500px;background:${PAPER};position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:10px;background:${RAMP}"></div>
     <div style="position:absolute;left:150px;top:120px;width:760px;height:190px">${svg('logo-horizontal.svg')}</div>
-    <div style="position:absolute;left:176px;top:340px;font:600 22px U;letter-spacing:.22em;text-transform:uppercase;color:#4b453b">The daily Wikipedia race</div>
+    <div style="position:absolute;left:176px;top:340px;font:600 22px U;letter-spacing:.22em;text-transform:uppercase;color:#4b453b">The daily Wikipedia link race</div>
     <div style="position:absolute;right:120px;top:90px;width:430px;height:330px;opacity:.95">${svg('mark.svg')}</div></div>`, 1500, 500, path.join(brand, 'banner-1500x500.png'));
   // social preview
   await shot(`<div style="width:1200px;height:630px;background:${PAPER};position:relative;overflow:hidden"><div style="position:absolute;left:0;right:0;top:0;height:10px;background:${RAMP}"></div><div style="position:absolute;inset:44px;border:1px solid #d8cfbf"></div>
     <div style="position:absolute;left:96px;top:110px;width:760px;height:230px">${svg('logo-horizontal.svg')}</div>
-    <div style="position:absolute;left:104px;top:372px;font:600 26px U;letter-spacing:.2em;text-transform:uppercase;color:#4b453b">The daily Wikipedia race</div>
+    <div style="position:absolute;left:104px;top:372px;font:600 26px U;letter-spacing:.2em;text-transform:uppercase;color:#4b453b">The daily Wikipedia link race</div>
     <div style="position:absolute;left:104px;bottom:84px;font:500 25px U;color:#7a7265;letter-spacing:.03em">Click only links. Get warmer. No account needed.</div>
     <div style="position:absolute;right:110px;bottom:100px;width:230px;height:190px">${svg('mark.svg')}</div></div>`, 1200, 630, path.join(root, 'og.png'));
   // overview sheet

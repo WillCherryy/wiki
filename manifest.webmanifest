@@ -1,7 +1,7 @@
 {
   "name": "Warmer",
   "short_name": "Warmer",
-  "description": "Race from one Wikipedia article to another using only links. A new puzzle every day.",
+  "description": "Warmer, the daily Wikipedia link race. Get from one article to another using only links. A new puzzle every day.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

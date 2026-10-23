@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Warmer — the daily Wikipedia race</title>
-<meta name="description" content="Race from one Wikipedia article to another using only links. A new puzzle every day.">
+<title>Warmer — the daily Wikipedia link race</title>
+<meta name="description" content="Warmer, the daily Wikipedia link race. Race from one Wikipedia article to another using only links. A new puzzle every day.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#16130f">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Warmer">
-<meta property="og:title" content="Warmer — the daily Wikipedia race">
+<meta property="og:title" content="Warmer — the daily Wikipedia link race">
 <meta property="og:description" content="Get from one Wikipedia article to another using only links. Warmer, colder, a new puzzle every day. No account needed.">
 <meta property="og:url" content="https://playwarmer.app/">
 <meta property="og:image" content="https://playwarmer.app/og.png">
@@ -27,6 +27,7 @@
   <button class="logo" id="logo" aria-label="Home">
     <span class="mark" aria-hidden="true"><svg viewBox="4 2 60 50"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg></span>
     <span class="word" data-brand>Warm<b>er</b></span>
+    <span class="tagline">the daily Wikipedia link race</span>
   </button>
   <div class="spacer"></div>
   <button class="status hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span><b id="streakN">0</b> streak</span></button>
@@ -109,7 +110,7 @@
 'use strict';
 const CFG = window.WIKIIO || {};
 const BRAND = { name: CFG.name || 'Warmer', domain: CFG.domain || 'playwarmer.app', a: CFG.brandA || 'Warm', b: CFG.brandB || 'er' };
-document.title = `${BRAND.name} — the daily Wikipedia race`;
+document.title = `${BRAND.name} — the daily Wikipedia link race`;
 document.querySelectorAll('[data-brand]').forEach(el => { el.innerHTML = `${BRAND.a}<b>${BRAND.b}</b>`; });
 /* ------------------------------------------------------------------ data */
 let POOL = CATS; // replaced by pool.json when present
@@ -462,7 +463,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
 }
 /* ----------------------------------------------------------------- result components (one visual language) */
 const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 : i / (n - 1)) * 4));
