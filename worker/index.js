@@ -173,7 +173,9 @@ async function webhook(provider, raw, request, env, t, reply) {
     if (!safeEqual(parts.v1, await hmacHex(env.STRIPE_WEBHOOK_SECRET, `${parts.t}.${raw}`))) return reply({ error: 'bad signature' }, 401);
     try { evt = JSON.parse(raw); } catch { return reply({ error: 'bad json' }, 400); }
     const o = evt.data && evt.data.object || {};
-    if (evt.type === 'checkout.session.completed' && o.payment_status === 'paid') await recordOrder(env, provider, o.id, o.client_reference_id, t);
+    // the order id is the PaymentIntent, so a later refund event (which carries the same id) can find and remove it
+    if (evt.type === 'checkout.session.completed' && o.payment_status === 'paid') await recordOrder(env, provider, o.payment_intent || o.id, o.client_reference_id, t);
+    if (evt.type === 'charge.refunded' && o.refunded && o.payment_intent) await env.DB.prepare('DELETE FROM orders WHERE provider = ? AND id = ?').bind(provider, String(o.payment_intent)).run();
     return reply({ ok: true });
   }
   return reply({ error: 'not found' }, 404);

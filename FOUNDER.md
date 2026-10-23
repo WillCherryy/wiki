@@ -44,18 +44,24 @@ git pull
 npx wrangler deploy
 ```
 
-## Take payments (Supporter pack, £2.99)
-1. Create a Lemon Squeezy store (it is the seller and handles VAT), then a product: one-off payment, £2.99. Use test mode first.
-2. Copy the product's checkout link and add the player id to it, then put it in `config.js`:
+## Take payments with Stripe (Supporter pack, £2.99)
+Nothing to install: the site already understands Stripe. You only need a Payment Link and a webhook. Do everything in **test mode** first (the toggle at the top of the Stripe dashboard).
+1. **Product.** Product catalogue, Add product: "Warmer Supporter Pack", one-off price £2.99 GBP.
+2. **Payment Link.** Payment Links, New: pick that product, switch off adjustable quantity, and under "Require customers to accept your terms" add `https://playwarmer.app/terms.html`. Copy the link (it looks like `https://buy.stripe.com/test_...`).
+3. **Give the link to the site.** The `?client_reference_id={pid}` part is how Stripe tells us which player paid. Replace the link below with yours:
 ```powershell
-(Get-Content config.js) -replace "checkoutUrl: ''","checkoutUrl: 'https://YOURSTORE.lemonsqueezy.com/buy/PRODUCT-ID?checkout[custom][pid]={pid}'" | Set-Content -Encoding utf8 config.js
-git add config.js; git commit -m "Turn on the Supporter pack"; git push
+(Get-Content config.js) -replace "checkoutUrl: ''","checkoutUrl: 'https://buy.stripe.com/test_XXXX?client_reference_id={pid}'" | Set-Content -Encoding utf8 config.js
+git add config.js; git commit -m "Turn on the Supporter pack (Stripe test mode)"; git push
 ```
-3. In Lemon Squeezy go to Settings, Webhooks, add `https://playwarmer.app/api/webhook/lemonsqueezy`, tick `order_created` and `order_refunded`, and choose any long random signing secret. Store the same secret in Cloudflare:
+4. **Webhook.** Developers, Webhooks, Add endpoint: `https://playwarmer.app/api/webhook/stripe`, events `checkout.session.completed` and `charge.refunded`. Reveal the signing secret (`whsec_...`) and store it:
 ```powershell
-npx wrangler secret put LS_SIGNING_SECRET
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
-4. Buy it yourself in test mode, then open the site: the menu should say Supporter within a minute. Switch the store to live mode when happy.
+5. **Test.** Open the site, Menu, Support, tick the consent box, Buy. Use card `4242 4242 4242 4242`, any future date, any CVC. Back on the site the menu should say Supporter within a minute (or press "I have paid, check my purchase").
+6. **Go live.** Switch the dashboard to live mode, repeat steps 1 to 4 (live products, link and webhook have their own ids and secret), put the live link in `config.js` and the live secret in Cloudflare.
+You never need to share or store a Stripe secret key (`sk_...`) for this. The publishable key (`pk_...`) is not used by Payment Links. Full refunds in Stripe remove the pack automatically.
+Tax: Stripe is only the payment processor, so you are the seller. In the UK you do not charge VAT until your taxable turnover passes the VAT registration threshold (£90,000 at the time of writing, check gov.uk), but keep records. Selling to EU consumers has its own rules, so get advice before you grow.
+Using Lemon Squeezy or Paddle instead? Set `paymentProvider: 'lemonsqueezy'` in `config.js` so the legal pages say they are the seller. Their webhook is `/api/webhook/lemonsqueezy` with the secret `LS_SIGNING_SECRET`.
 
 ## Turn on the watch-a-video rewind (optional, needs approval)
 Without this, every player simply gets one free rewind per puzzle and nobody sees a video. To use Google AdSense for Games:

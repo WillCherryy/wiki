@@ -35,13 +35,16 @@ const noon = day => Date.parse(day + 'T12:00:00Z');
   assert.strictEqual((await ls(order('1001', 'refunded', 'order_refunded'))).status, 200); assert.strictEqual((await call('GET', `/api/entitlements?pid=${PID}`)).body.supporter, false, 'LS: refund removes supporter');
 
   // ---- Stripe webhook
-  const session = (id, pid = 'stripebuyer1', paid = 'paid') => JSON.stringify({ id: 'evt_' + id, type: 'checkout.session.completed', data: { object: { id, client_reference_id: pid, payment_status: paid } } });
+  const session = (id, pid = 'stripebuyer1', paid = 'paid') => JSON.stringify({ id: 'evt_' + id, type: 'checkout.session.completed', data: { object: { id, payment_intent: 'pi_' + id, client_reference_id: pid, payment_status: paid } } });
+  const refund = (id, full = true) => JSON.stringify({ id: 'evt_r' + id, type: 'charge.refunded', data: { object: { id: 'ch_' + id, payment_intent: 'pi_' + id, refunded: full } } });
   const stripe = (body, ts = Math.floor(Number(env.TEST_NOW) / 1000), secret = 'whsec_test') => call('POST', '/api/webhook/stripe', body, { 'stripe-signature': `t=${ts},v1=${hmac(secret, `${ts}.${body}`)}` });
   assert.strictEqual((await stripe(session('cs_1'), undefined, 'bad')).status, 401, 'Stripe: wrong secret rejected');
   assert.strictEqual((await stripe(session('cs_1'), Math.floor(Number(env.TEST_NOW) / 1000) - 3600)).status, 401, 'Stripe: stale timestamp rejected');
   assert.strictEqual((await stripe(session('cs_1', 'stripebuyer1', 'unpaid'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, false, 'Stripe: unpaid session grants nothing');
   assert.strictEqual((await stripe(session('cs_1'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, true, 'Stripe: paid session grants supporter');
   assert.strictEqual((await call('POST', '/api/webhook/paddle', '{}')).status, 404, 'unknown provider');
+  assert.strictEqual((await stripe(refund('cs_1', false))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, true, 'Stripe: a partial refund keeps the pack');
+  assert.strictEqual((await stripe(refund('cs_1'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, false, 'Stripe: a full refund removes the pack');
   const bare = makeEnv(); assert.strictEqual((await worker.fetch(new Request('http://api.test/api/webhook/stripe', { method: 'POST', body: '{}' }), bare)).status, 404, 'webhook disabled until its secret is configured');
 
   // ---- streaks: normal players reset after a missed day
