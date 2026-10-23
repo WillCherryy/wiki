@@ -52,5 +52,7 @@ const FONTS = `@font-face{font-family:S;src:url(${font('instrument-serif-latin-4
       ${tile('Favicon 16 / 32 / 48', [16, 32, 48].map(s => `<div style="width:${s}px;height:${s}px;border-radius:${s * .22}px;overflow:hidden;margin:0 6px">${svg('app-icon.svg')}</div>`).join(''), '#fbf8f1', '#7a7265', 150)}</div>
     <div style="display:flex;gap:12px;margin-top:22px">${sw(INK, 'Ink')}${sw(PAPER, 'Paper')}${sw('#2a4f8a', 'Cold')}${sw('#5c8cbe', 'Cool')}${sw('#d6be8c', 'Sand')}${sw('#f08c50', 'Warm')}${sw(ACCENT, 'Hot · accent')}</div>
     <div style="font:500 14px/1.5 U;color:#4b453b;margin-top:18px">Type: Instrument Serif (regular + italic for “er”). Clear space around the logo: the height of the largest dot. Minimum size: mark 16px, horizontal logo 90px wide.</div></div>`, 1544, 1300, path.join(brand, 'brand-sheet.png'), 1, true);
+  const alt = path.join(brand, 'alt-sheet.html');
+  if (fs.existsSync(alt)) { const p = await b.newPage({ viewport: { width: 1580, height: 900 } }); await p.goto('file://' + alt); await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(250); await p.screenshot({ path: path.join(brand, 'alt-sheet.png'), fullPage: true }); await p.close(); }
   await b.close(); console.log('brand PNGs written');
 })();
