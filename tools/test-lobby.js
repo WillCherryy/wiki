@@ -61,7 +61,7 @@ async function core() {
 
 function waitFor(ws, pred, ms = 8000) {
   return new Promise((res, rej) => {
-    const to = setTimeout(() => rej(new Error('timeout waiting for message')), ms);
+    const to = setTimeout(() => rej(new Error('timeout ' + String(pred).slice(0, 80))), ms);
     const on = e => { const m = JSON.parse(e.data); if (pred(m)) { clearTimeout(to); ws.removeEventListener('message', on); res(m); } };
     ws.addEventListener('message', on);
   });
@@ -87,8 +87,8 @@ async function wire() {
     await go;
     p1.send(JSON.stringify({ t: 'move', title: 'France', clicks: 1, temp: .4 }));
     const snap = await waitFor(ov, m => m.t === 'b' && m.stuck && m.stuck.some(s => s.title === 'France')); assert(snap);
-    const fin = waitFor(ov, m => m.t === 'ev'); p1.send(JSON.stringify({ t: 'finish', clicks: 3 })); assert.strictEqual((await fin).name, 'Alice');
-    const mine = await waitFor(p2, m => m.t === 'b' && m.fin === 1 && m.me === 2); assert(mine);
+    const fin = waitFor(ov, m => m.t === 'ev'), seen = waitFor(p2, m => m.t === 'b' && m.fin === 1 && m.me === 2); p1.send(JSON.stringify({ t: 'finish', clicks: 3 })); assert.strictEqual((await fin).name, 'Alice');
+    assert(await seen);
     assert.strictEqual((await new Promise(r => { const ws = new WebSocket(`ws://localhost:${port}/api/lobby/ZZZZZ/ws`); ws.onerror = () => r('refused'); ws.onopen = () => r('open'); })), 'refused', 'unknown lobby codes are refused');
     [host, p1, p2, ov].forEach(w => w.close());
     console.log('ok: lobby over real WebSockets (create, join, countdown, live board, finish alert)');
