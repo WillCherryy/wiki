@@ -1441,7 +1441,7 @@ $('#tocBtn').onclick = openToc;
 
 /* usability: link finder, text size, keyboard, hover prefetch, countdown */
 let hits = [], hi = -1;
-function stepFinder(d) { if (!hits.length) return; if (hi >= 0) hits[hi].classList.remove('cur'); hi = (hi + d + hits.length) % hits.length; hits[hi].classList.add('cur'); hits[hi].scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+function stepFinder(d) { if (!hits.length) return; if (hi >= 0) hits[hi].classList.remove('cur'); hi = (hi + d + hits.length) % hits.length; hits[hi].classList.add('cur'); const y = hits[hi].getBoundingClientRect().top + window.scrollY - window.innerHeight / 2; window.scrollTo({ top: Math.max(0, y), left: 0, behavior: 'smooth' }); }
 function runFinder() {
   const q = $('#finder').value.trim().toLowerCase();
   if (q.length >= 2 && G && !G.done) { G.usedFind = true; persistCur(); }
