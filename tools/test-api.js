@@ -79,6 +79,7 @@ async function scenario(call, label) {
   assert.deepStrictEqual([pub.from, pub.to, pub.par, pub.route.length, pub.alts.length], ['Tour de France', 'India', 3, 4, 1], `${label}: public lookup returns the pick`);
   assert.strictEqual((await call('GET', `/api/daily?day=${shiftDay(5)}`)).status, 404, `${label}: no pick, no override`);
   assert.strictEqual((await call('GET', '/api/admin/daily', null, adm)).body.length, 1, `${label}: admin list`);
+  ok(await call('POST', '/api/admin/daily', { ...pz, day: shiftDay(4) }, adm), 'set a far-future pick'); assert.strictEqual((await call('GET', `/api/daily?day=${shiftDay(4)}`)).status, 404, `${label}: picks stay secret until the day before`); assert.strictEqual((await call('GET', '/api/admin/daily', null, adm)).body.length, 2, `${label}: but the founder still sees them`); ok(await call('POST', '/api/admin/daily', { day: shiftDay(4), remove: true }, adm), 'remove far-future pick');
   ok(await call('POST', '/api/admin/daily', { day: pz.day, remove: true }, adm), 'remove pick'); assert.strictEqual((await call('GET', `/api/daily?day=${pz.day}`)).status, 404, `${label}: removed`);
   // delete removes scores, league membership and the player
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');

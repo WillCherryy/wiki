@@ -136,6 +136,7 @@ const server = http.createServer((req, res) => {
   { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
   if (url.pathname === '/api/daily' && req.method === 'GET') {
     const day = q.get('day') || ''; if (!DAY.test(day)) return json(res, 400, { error: 'invalid' });
+    if (day > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) return json(res, 404, { error: 'none' });   // picks stay secret until the day before
     const o = (db.overrides || {})[day]; return o ? json(res, 200, o) : json(res, 404, { error: 'none' });
   }
   if (url.pathname === '/api/admin/daily' && req.method === 'GET') {

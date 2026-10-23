@@ -258,6 +258,7 @@ const isAdmin = (env, request) => !!env.ADMIN_KEY && safeEqual((request.headers.
 const rowOut = r => ({ day: r.day, from: r.from_title, to: r.to_title, par: r.par, route: JSON.parse(r.route), alts: JSON.parse(r.alts || '[]') });
 async function getDaily(env, day, reply) {
   if (!DAY.test(day)) return reply({ error: 'invalid' }, 400);
+  if (day > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) return reply({ error: 'none' }, 404);   // picks stay secret until the day before
   const r = await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day = ?').bind(day).first();
   return r ? reply(rowOut(r)) : reply({ error: 'none' }, 404);
 }
