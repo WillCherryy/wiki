@@ -7,7 +7,7 @@ Same contract as the local dev server (`server.js`). `npm test` runs one test ag
 2. Create the database: `wrangler d1 create warmer`, then paste the printed `database_id` into `wrangler.toml`.
 3. Create the tables: `wrangler d1 execute warmer --remote --file=worker/schema.sql`
 4. Deploy: `wrangler deploy` (builds `dist/` and ships site + API together as one Worker at `https://warmer.<you>.workers.dev`; leave `api` in `config.js` empty, same origin). With Cloudflare Workers Builds set build command `npm run build:site` (or leave blank, wrangler runs it) and deploy command `npx wrangler deploy`.
-5. In `config.js` set `api` to that URL (or a custom domain such as `https://api.playscorcher.app`, added under Workers → Settings → Domains). Set `ALLOWED_ORIGIN` in `wrangler.toml` to your site's origin.
+5. In `config.js` set `api` to that URL (or a custom domain such as `https://api.playscorcher.com`, added under Workers → Settings → Domains). Set `ALLOWED_ORIGIN` in `wrangler.toml` to your site's origin.
 6. Add a Cloudflare rate-limiting rule for `POST /api/*` (dashboard → Security → WAF) as real abuse protection.
 
 ## Supporter pack payments

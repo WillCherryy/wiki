@@ -8,7 +8,7 @@ Run these from the project folder, for example `C:\Users\will\wiki-warmer`.
 cd C:\Users\will\wiki-warmer
 git pull
 npm install
-$env:WARMER_URL = "https://playscorcher.app"                       # or https://wiki.will-34e.workers.dev
+$env:WARMER_URL = "https://playscorcher.com"                       # or https://wiki.will-34e.workers.dev
 $env:WARMER_KEY = "PASTE-YOUR-ADMIN-KEY"
 $env:WIKI_UA    = "Scorcher/1.0 (you@example.com)"           # Wikipedia asks scripts to say who they are
 ```
@@ -50,7 +50,7 @@ npx wrangler deploy
 ## Take payments with Stripe (Supporter pack, £2.99)
 Nothing to install: the site already understands Stripe. You only need a Payment Link and a webhook. Do everything in **test mode** first (the toggle at the top of the Stripe dashboard).
 1. **Product.** Product catalogue, Add product: "Scorcher Supporter Pack", one-off price £2.99 GBP.
-2. **Payment Link.** Payment Links, New: pick that product, switch off adjustable quantity, and under "Require customers to accept your terms" add `https://playscorcher.app/terms.html`. Copy the link (it looks like `https://buy.stripe.com/test_...`).
+2. **Payment Link.** Payment Links, New: pick that product, switch off adjustable quantity, and under "Require customers to accept your terms" add `https://playscorcher.com/terms.html`. Copy the link (it looks like `https://buy.stripe.com/test_...`).
 3. **Give the link to the site.** The `?client_reference_id={pid}` part is how Stripe tells us which player paid. Replace the link below with yours:
 ```powershell
 $c = [IO.File]::ReadAllText("$PWD\config.js")
@@ -58,7 +58,7 @@ $c = $c.Replace("checkoutUrl: ''", "checkoutUrl: 'https://buy.stripe.com/test_XX
 [IO.File]::WriteAllText("$PWD\config.js", $c, (New-Object Text.UTF8Encoding $false))
 git add config.js; git commit -m "Turn on the Supporter pack (Stripe test mode)"; git push
 ```
-4. **Webhook.** Developers, Webhooks, Add endpoint: `https://playscorcher.app/api/webhook/stripe`, events `checkout.session.completed` and `charge.refunded`. Reveal the signing secret (`whsec_...`) and store it:
+4. **Webhook.** Developers, Webhooks, Add endpoint: `https://playscorcher.com/api/webhook/stripe`, events `checkout.session.completed` and `charge.refunded`. Reveal the signing secret (`whsec_...`) and store it:
 ```powershell
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
@@ -70,7 +70,7 @@ Using Lemon Squeezy or Paddle instead? Set `paymentProvider: 'lemonsqueezy'` in 
 
 ## Turn on the watch-a-video rewind (optional, needs approval)
 Without this, every player simply gets one free rewind per puzzle and nobody sees a video. To use Google AdSense for Games:
-1. Apply at adsense.google.com with `https://playscorcher.app`, add the site, and apply for the games/rewarded ads programme. Approval can take weeks and usually wants steady traffic.
+1. Apply at adsense.google.com with `https://playscorcher.com`, add the site, and apply for the games/rewarded ads programme. Approval can take weeks and usually wants steady traffic.
 2. In AdSense turn on the consent message (Privacy and messaging) for the UK and EEA, which Google requires.
 3. Put your publisher id in `config.js` and your `ads.txt` line in the repo root (AdSense shows both):
 ```powershell
