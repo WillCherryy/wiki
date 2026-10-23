@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>wikilink overlay</title>
+<link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+<div id="wait">Connecting to the lobby…</div>
+<main id="ov" hidden>
+  <header class="head panel">
+    <div class="brand" id="brand"></div>
+    <div class="goal" id="goal"></div>
+    <div class="code"><b id="code"></b><small id="stat"></small></div>
+  </header>
+  <section class="panel"><h3><span>Leaderboard</span><span id="count"></span></h3><div id="board"></div></section>
+  <section class="panel"><h3><span>Stuck on the weirdest pages</span></h3><div class="stuck" id="stuck"></div></section>
+</main>
+<div class="big" id="big"></div>
+<div id="alert"></div>
+<script src="config.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search), code = (q.get('c') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const CFG = window.WIKIIO || {}, API = (q.get('api') || CFG.api || '').replace(/\/$/, '') || location.origin;
+  if (q.get('bg')) document.body.classList.add('bg');
+  const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const ord = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
+  const STOPS = [[0, [42, 79, 138]], [.35, [92, 140, 190]], [.6, [214, 190, 140]], [.8, [240, 140, 80]], [1, [255, 90, 50]]];
+  const heat = t => { t = Math.max(0, Math.min(1, t)); let i = 1; while (i < STOPS.length - 1 && t > STOPS[i][0]) i++; const [a, ca] = STOPS[i - 1], [b, cb] = STOPS[i], k = (t - a) / (b - a || 1); return 'rgb(' + ca.map((c, j) => Math.round(c + (cb[j] - c) * k)).join(',') + ')'; };
+  const brand = (CFG.name || 'wikilink'), cut = brand.indexOf('link');
+  $('#brand').innerHTML = cut > 0 ? esc(brand.slice(0, cut)) + '<i>' + esc(brand.slice(cut)) + '</i>' : esc(brand);
+  $('#code').textContent = code;
+  if (!code) { $('#wait').textContent = 'Add ?c=YOURCODE to this URL (copy it from the host panel).'; return; }
+
+  let st = null, bd = null, off = 0, ws, tries = 0, lastTag = '', cdT = null;
+  function connect() {
+    ws = new WebSocket(API.replace(/^http/, 'ws') + '/api/lobby/' + code + '/ws');
+    ws.onopen = () => { tries = 0; ws.send(JSON.stringify({ t: 'view' })); };
+    ws.onmessage = e => { const m = JSON.parse(e.data); if (m.t === 's') { off = m.now - Date.now(); st = m; draw(); } else if (m.t === 'b') { bd = m; draw(); } else if (m.t === 'ev') alertFin(m); };
+    ws.onclose = () => setTimeout(connect, Math.min(8000, 800 * 2 ** tries++));
+  }
+  function draw() {
+    if (!st) return;
+    $('#wait').hidden = true; $('#ov').hidden = false;
+    const p = st.puzzle;
+    $('#goal').innerHTML = p ? `<em>From</em><span>${esc(p.from)}</span><em>to</em><span>${esc(p.to)}</span>` : '<span style="color:var(--mute)">Waiting for the host to start</span>';
+    $('#stat').textContent = { open: 'Open · join with the code', countdown: 'Starting', racing: 'Racing', ended: 'Finished' }[st.phase];
+    const b = bd || { n: 0, fin: 0, top: [], stuck: [] };
+    $('#count').textContent = `${b.fin}/${b.n} finished`;
+    $('#board').innerHTML = b.top.slice(0, 8).map((r, i) => `<div class="row${r.d ? ' done' : ''}"><span class="pos">${i + 1}</span><span class="nm">${esc(r.n)}</span><span class="meta">${r.d ? `${r.c} clicks · ${fmt(r.s)}` : r.at ? esc(r.at) : ''}</span><div class="bar"><i style="width:${Math.round((r.d ? 1 : r.tp) * 100)}%;--c:${heat(r.tp)}"></i></div></div>`).join('') || '<div class="empty">Nobody has joined yet. Share the link!</div>';
+    const sk = (b.stuck || []).slice(0, 6);
+    $('#stuck').innerHTML = sk.map(s => `<div class="chip" style="--c:${heat(s.tp)}"><b>${esc(s.title)}</b><span>${s.n > 1 ? s.n + ' players' : esc(s.names[0] || '')}</span></div>`).join('') || `<div class="empty">${st.phase === 'racing' ? 'Everyone is on the move.' : 'Appears once the race starts.'}</div>`;
+    clearInterval(cdT);
+    if (st.phase === 'countdown') { const tick = () => { const left = Math.ceil((st.startAt - (Date.now() + off)) / 1000); $('#big').innerHTML = left > 0 ? `<div class="cd">${left}</div>` : ''; }; tick(); cdT = setInterval(tick, 150); }
+    else $('#big').innerHTML = '';
+    const tag = code + st.round + st.phase; if (st.phase === 'racing' && tag !== lastTag && Date.now() + off - st.startAt < 3000) { $('#big').innerHTML = '<div class="go">Go!</div>'; setTimeout(() => { if (st.phase === 'racing') $('#big').innerHTML = ''; }, 1100); } lastTag = tag;
+  }
+  const queue = []; let busy = false;
+  function alertFin(m) { queue.push(m); if (!busy) next(); }
+  function next() {
+    const m = queue.shift(); if (!m) { busy = false; return; } busy = true;
+    const el = $('#alert'); el.innerHTML = `<small>${ord(m.rank)} to reach the target</small>${esc(m.name)} · ${m.clicks} clicks · ${fmt(m.secs)}`;
+    el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    setTimeout(() => { el.classList.remove('on'); setTimeout(next, 450); }, 3200);
+  }
+  connect();
+})();
+</script>
+</body>
+</html>

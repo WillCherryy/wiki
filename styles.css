@@ -361,3 +361,20 @@ details.route summary { cursor: pointer; font: 600 12px var(--sans); letter-spac
   .plate-route { max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---- live lobbies */
+.live-pill { position: fixed; left: 16px; bottom: 16px; z-index: 70; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--ink); border-radius: 999px; background: var(--ink); color: var(--paper); font: 600 12.5px var(--sans); letter-spacing: .02em; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+.live-pill[hidden] { display: none; }
+.live-pill b { letter-spacing: .14em; text-transform: uppercase; font-size: 11px; }
+.live-pill u { text-decoration: none; opacity: .65; }
+.live-pill i { width: 8px; height: 8px; border-radius: 50%; background: #ff4d3a; animation: livepulse 1.4s ease-in-out infinite; }
+@keyframes livepulse { 50% { opacity: .25; transform: scale(.75); } }
+.countdown { font: 400 clamp(96px, 22vw, 160px)/1 var(--display); color: var(--accent); margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+.lobby-n { margin: 18px 0 10px; } .lobby-n b { display: block; font: 400 72px/1 var(--display); } .lobby-n span { font: 600 11.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+.heat { width: 84px; height: 6px; border-radius: 3px; background: var(--rule-2); overflow: hidden; } .heat i { display: block; height: 100%; background: var(--sc, var(--accent)); border-radius: 3px; transition: width .6s; }
+.hostcode { font: 400 clamp(54px, 12vw, 84px)/1 var(--display); letter-spacing: .08em; color: var(--accent); margin: 8px 0 4px; }
+.hoststat { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 12px; font: 600 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); } .hoststat b { font: 400 26px/1 var(--display); color: var(--ink); letter-spacing: 0; margin-right: 4px; }
+.hplayers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; max-height: 120px; overflow: auto; }
+.hplayers .pill.off { opacity: .45; } .hplayers .pill button { border: 0; background: none; color: var(--mute); cursor: pointer; padding: 0 0 0 4px; font-size: 13px; } .hplayers .pill button:hover { color: var(--accent); }
+@media (max-width: 759px) { .live-pill { bottom: 78px; left: 12px; } }

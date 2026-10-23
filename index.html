@@ -75,6 +75,7 @@
 </main>
 
 <div class="scrim" id="scrim"><div class="card modal" id="modal"></div></div>
+<button class="live-pill" id="livePill" hidden></button>
 <div class="toast" id="toast"></div>
 <canvas id="fx"></canvas>
 
@@ -209,7 +210,7 @@ let G = null; // {mode, day, from, to, path[], steps[{title,sig}], base, t0, don
 let tick = null;
 
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
-function persistCur() { if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
+function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
 function show(view) { $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
@@ -254,8 +255,8 @@ function renderHeroAct() {
 }
 function renderQuiet() {
   const open = allCos().filter(isUnlocked).length, tot = allCos().length, solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + p.puzzles.length, 0);
-  $('#quiet').innerHTML = `<button class="qlink" id="qLb">Leaderboard</button><button class="qlink" id="qPacks">Packs <small>${solved}/${pt}</small></button><button class="qlink" id="qLocker">Locker <small>${open}/${tot}</small></button><button class="qlink" id="qLeague">Leagues</button><button class="qlink" id="qPractice">Practice</button>`;
-  $('#qLb').onclick = () => openLeaderboard('day'); $('#qPacks').onclick = openPacks; $('#qLocker').onclick = () => openLocker(); $('#qLeague').onclick = () => leagueModal(); $('#qPractice').onclick = () => startGame('practice');
+  $('#quiet').innerHTML = `<button class="qlink" id="qLb">Leaderboard</button><button class="qlink" id="qPacks">Packs <small>${solved}/${pt}</small></button><button class="qlink" id="qLocker">Locker <small>${open}/${tot}</small></button><button class="qlink" id="qLeague">Leagues</button><button class="qlink" id="qLive">Live</button><button class="qlink" id="qPractice">Practice</button>`;
+  $('#qLb').onclick = () => openLeaderboard('day'); $('#qPacks').onclick = openPacks; $('#qLocker').onclick = () => openLocker(); $('#qLeague').onclick = () => leagueModal(); $('#qLive').onclick = liveMenu; $('#qPractice').onclick = () => startGame('practice');
 }
 async function renderHome() {
   const day = dayKey();
@@ -277,11 +278,13 @@ async function startGame(mode, resume, extra) {
   let from, to, meta = { par: null, route: null };
   if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
+  else if (mode === 'live') { resume = null; from = extra.from; to = extra.to; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
   else { resume = null; [from, to] = await resolvePair('p' + Math.random()); }
   G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
+  if (mode === 'live') G.base = extra.base || 0;
   if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, usedFind: !!resume.usedFind, moves: resume.moves || 0, base: resume.base });
-  $('#reachLab').textContent = mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
+  $('#reachLab').textContent = mode === 'live' ? 'Reach · live race' : mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
   show('game'); setTemp(0);
   $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
   $('#article').innerHTML = `<div class="loading"><div class="spin"></div>Loading ${esc(G.from)}…</div>`;
@@ -321,6 +324,7 @@ async function go(title, initial, resume, kind = 'go') {
   window.scrollTo({ top: 0, behavior: initial ? 'auto' : 'smooth' });
   updateHud();
   persistCur();
+  if (G.mode === 'live' && !win) Live.move(page.title, G.sig, clicks());
   if (win) finish(true);
 }
 const clicks = () => G.moves || 0;
@@ -380,6 +384,7 @@ function finish(won) {
   if (won) { confetti(); setTemp(1); }
   setTimeout(() => showResult(), won ? 700 : 100);
   if (won && G.mode === 'daily' && P.name) submitScore();
+  if (G.mode === 'live' && won) Live.send({ t: 'finish', clicks: c });
 }
 async function submitScore() {
   const r = G.result;
@@ -398,12 +403,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 function resultHead(r) {
   if (!r.won) return 'Better luck next time';
   if (r.mode === 'daily') return 'Daily #' + dayNum(G.day) + ' solved';
+  if (r.mode === 'live') return Live.bd && Live.bd.me ? 'Live race · you are ' + ordinal(Live.bd.me) : 'Live race finished';
   if (r.mode === 'pack') return 'Pack puzzle solved';
   if (r.mode === 'challenge') return r.chal && r.chal.outcome === 'win' ? 'Challenge won' : r.chal && r.chal.outcome === 'tie' ? 'Challenge tied' : 'Challenge lost';
   return 'Practice solved';
 }
 function shareText() {
-  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
+  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
   return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
@@ -412,7 +418,7 @@ function showResult() {
   const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
   const lo = rk.xp, hi = nx ? nx.xp : rk.xp, pct = nx ? Math.round((P.xp - lo) / (hi - lo) * 100) : 100;
   const rankUp = ri > prevRi, daily = r.mode === 'daily', ref = r.par || r.goal, ch = r.chal;
-  const extra = r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
+  const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
   openModal(`
     <div class="win-top">
       <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
@@ -435,6 +441,7 @@ function showResult() {
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
   $('#replayBtn').onclick = () => openReplay(showResult);
+  $('#liveBtn') && ($('#liveBtn').onclick = openLiveBoard);
   $('#againBtn') && ($('#againBtn').onclick = () => { closeModal(); startGame('practice'); });
   $('#packBtn') && ($('#packBtn').onclick = () => { const nx2 = G.extra.idx + 1, id = G.extra.pack; if (r.won && nx2 < packsOf(id).length && P.packs[id][G.extra.idx]) { closeModal(); startGame('pack', null, { pack: id, idx: nx2 }); } else openPack(id); });
   document.querySelectorAll('[data-lock]').forEach(el => el.onclick = () => openLocker(el.dataset.lock));
@@ -573,6 +580,7 @@ function openMenu() {
     ['Companion packs', `${sv} of ${pt} solved`, openPacks],
     ['Locker', `${open} of ${tot} unlocked`, () => openLocker()],
     ['Leagues', 'Race your friends', () => leagueModal()],
+    ['Live races', 'Join a lobby or host one', liveMenu],
     ['Random practice', 'No pressure, half XP', () => { closeModal(); startGame('practice'); }],
     ...(solved ? [['Challenge a friend', `Beat your ${e.clicks}`, () => openChallenge(dailyCtx(), () => closeModal())]] : []),
     ['Settings', 'Theme, text size, data', () => openSettings()],
@@ -850,6 +858,198 @@ function handleChallenge() {
   $('#chAccept').onclick = () => { closeModal(); startGame('challenge', null, ch); };
 }
 
+/* --------------------------------------------------------------- live lobbies (streamer races) */
+const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
+const Live = {
+  ws: null, code: '', key: '', play: false, st: null, bd: null, off: 0, round: -1, began: '', screen: '', tries: 0, closed: true, cd: null,
+  url(code) { return (API_BASE || location.origin).replace(/^http/, 'ws') + '/api/lobby/' + code + '/ws'; },
+  link: code => SITE_URL + '#l=' + code,
+  overlay: code => SITE_URL + 'overlay.html?c=' + code,
+  connect(code, key) {
+    if (this.ws) this.leave(true);
+    Object.assign(this, { code, key: key || '', closed: false, tries: 0, st: null, bd: null, round: -1, began: '' }); this.open();
+  },
+  open() {
+    if (this.closed) return;
+    let ws; try { ws = this.ws = new WebSocket(this.url(this.code)); } catch { return; }
+    ws.onopen = () => { this.tries = 0; if (this.key) ws.send(JSON.stringify({ t: 'host', key: this.key })); this.hello(); };
+    ws.onmessage = e => { try { this.recv(JSON.parse(e.data)); } catch {} };
+    ws.onclose = () => { if (this.ws === ws && !this.closed) setTimeout(() => this.open(), Math.min(8000, 800 * 2 ** this.tries++)); };
+  },
+  send(o) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
+  hello() { if (this.play && P.name) this.send({ t: 'hello', pid: P.pid, name: P.name }); },
+  leave(quiet) {
+    this.closed = true; this.play = false; clearInterval(this.cd);
+    if (this.ws) { const w = this.ws; this.ws = null; try { w.close(); } catch {} }
+    this.code = ''; this.key = ''; this.st = this.bd = null; this.pill();
+    if (!quiet && G && G.mode === 'live' && !G.done) { G.done = true; clearInterval(tick); }
+  },
+  now() { return Date.now() + this.off; },
+  recv(m) {
+    if (m.t === 's') { this.off = m.now - Date.now(); this.st = m; this.onState(); }
+    else if (m.t === 'b') { this.bd = m; this.pill(); if (this.screen === 'board') renderLiveBoard(); if (this.screen === 'host') renderHost(true); }
+    else if (m.t === 'ev') { if (m.rank <= 3 && m.name !== P.name) toast(`${m.name} finished ${ordinal(m.rank)} · ${m.clicks} clicks`); }
+    else if (m.t === 'kicked') { this.leave(true); closeModal(); toast('The host removed you from the lobby'); if (G && G.mode === 'live') goHome(); }
+    else if (m.t === 'err' && m.error === 'full') toast('This lobby is full');
+  },
+  onState() {
+    const s = this.st, inGame = G && G.mode === 'live' && !G.done;
+    if (this.round >= 0 && s.round !== this.round && this.play) {          // the host started a new round
+      if (inGame) { G.done = true; clearInterval(tick); goHome(); }
+      if (!$('#game').classList.contains('on')) openLobby();
+    }
+    this.round = s.round; this.pill();
+    if (this.play && s.puzzle && (s.phase === 'countdown' || s.phase === 'racing')) {
+      const tag = this.code + ':' + s.round;
+      if (this.began !== tag && !inGame) {
+        if (s.phase === 'countdown') { getPage(s.puzzle.from).catch(() => {}); getSummary(s.puzzle.to).catch(() => {}); if (this.screen !== 'lobby' && !$('#game').classList.contains('on')) openLobby(); }
+        if (s.phase === 'racing') this.begin(tag);
+      }
+    }
+    if (this.screen === 'lobby') renderLobby();
+    if (this.screen === 'host') renderHost(true);
+    if (this.screen === 'board') renderLiveBoard();
+  },
+  begin(tag) {
+    const s = this.st; if (this.began === tag) return; this.began = tag;
+    const base = Math.max(0, (this.now() - s.startAt) / 1000);
+    clearInterval(this.cd); this.screen = ''; closeModal();
+    startGame('live', null, { code: this.code, from: s.puzzle.from, to: s.puzzle.to, par: s.puzzle.par, base: base > 1 ? base : 0 });
+  },
+  move(title, sig, c) { this.send({ t: 'move', title, clicks: c, temp: Math.round(sig * 100) / 100 }); },
+  pill() {
+    const el = $('#livePill'); if (!this.ws && !this.code) { el.hidden = true; return; }
+    const b = this.bd, n = b ? b.n : 0, me = b && b.me;
+    el.hidden = false;
+    el.innerHTML = `<i></i><b>Live</b> ${esc(this.code)} · ${this.play && me && this.st && this.st.phase === 'racing' ? ordinal(me) + ' of ' + n : n + ' player' + (n === 1 ? '' : 's')}${this.key ? ' · <u>Host</u>' : ''}`;
+  }
+};
+$('#livePill').onclick = () => { if (Live.key) openHostPanel(); else openLiveBoard(); };
+
+function ldName(inputId, then) {
+  const v = $(inputId).value.trim(); if (!v) { $(inputId).focus(); return toast('Pick a nickname first'); }
+  P.name = v; saveP(); then();
+}
+async function openLiveJoin(code) {
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length < 4) return toast('That code does not look right');
+  let info = null; try { const r = await fetch(API_BASE + '/api/lobby/' + code); if (r.ok) info = await r.json(); } catch {}
+  if (!info) return toast('Lobby not found — check the code, or the host may have closed it');
+  Live.screen = '';
+  if (Live.code !== code) Live.connect(code);
+  Live.play = false;
+  openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Live race</span><h2 style="margin-top:12px">Join the lobby</h2>
+    <p>${info.n} player${info.n === 1 ? '' : 's'} so far. Everyone races the same puzzle at the same moment. No account needed.</p>
+    <div class="field" style="text-align:left">Your nickname<input id="ldName" maxlength="20" value="${esc(P.name)}" placeholder="Shown on the stream" autocomplete="off"></div>
+    <button class="btn" id="ldJoin" style="width:100%;font-size:17px;padding:16px">Join the race →</button></div>`, () => { if (!Live.play) Live.leave(true); });
+  $('#ldJoin').onclick = () => ldName('#ldName', () => { Live.play = true; Live.hello(); openLobby(); });
+  $('#ldName').onkeydown = e => { if (e.key === 'Enter') $('#ldJoin').click(); };
+}
+function openLobby() {
+  Live.screen = 'lobby';
+  openModal('<div id="lobbyBody"></div>', () => { if (Live.screen === 'lobby') { Live.screen = ''; if (!(G && G.mode === 'live' && !G.done)) Live.leave(true); } });
+  renderLobby();
+}
+function renderLobby() {
+  const box = $('#lobbyBody'); if (!box) return; const s = Live.st, b = Live.bd, n = b ? b.n : 0; clearInterval(Live.cd);
+  if (!s) { box.innerHTML = '<div class="loading"><div class="spin"></div>Connecting…</div>'; return; }
+  if (s.phase === 'open') {
+    box.innerHTML = `<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Live race · ${esc(Live.code)}</span><h2 style="margin-top:12px">Waiting for the host…</h2>
+      <div class="lobby-n"><b>${n}</b><span>player${n === 1 ? '' : 's'} in the lobby</span></div>
+      <p class="mute">The puzzle is revealed with a 5-second countdown. Stay on this page.</p>
+      <div class="chips">${(b ? b.top : []).slice(0, 12).map(p => `<span class="pill">${esc(p.n)}</span>`).join('')}</div></div>`;
+  } else if (s.phase === 'countdown') {
+    const draw = () => {
+      const left = Math.max(0, Math.ceil((s.startAt - Live.now()) / 1000));
+      box.innerHTML = `<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Get ready</span><div class="countdown">${left || 'Go'}</div>
+        <div class="card" style="padding:14px;margin:6px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(s.puzzle.from)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700">${esc(s.puzzle.to)}</div></div></div>`;
+      if (Live.now() >= s.startAt && Live.play) Live.begin(Live.code + ':' + s.round);
+    };
+    draw(); Live.cd = setInterval(draw, 200);
+  } else if (s.phase === 'racing') {
+    box.innerHTML = '<div class="loading"><div class="spin"></div>Race in progress…</div>';
+  } else renderLiveBoard(box);
+}
+function openLiveBoard() { Live.screen = 'board'; openModal('<div id="lbBody"></div>', () => { if (Live.screen === 'board') Live.screen = ''; }); renderLiveBoard(); }
+function renderLiveBoard(box) {
+  box = box || $('#lbBody'); if (!box) return; const b = Live.bd, s = Live.st;
+  if (!b) { box.innerHTML = '<div class="loading"><div class="spin"></div>Loading…</div>'; return; }
+  const rows = b.top.map((p, i) => `<div class="row"><span class="pos">${i + 1}</span><span style="flex:1;font-weight:600">${esc(p.n)}${p.n === P.name ? ' <small class="mute">you</small>' : ''}</span>${p.d ? `<span class="s mute">${p.c} clicks · ${fmt(p.s)}</span><span class="pill">Done</span>` : `<span class="heat" style="--sc:${tempCss(p.tp)}"><i style="width:${Math.round(p.tp * 100)}%"></i></span>`}</div>`).join('');
+  box.innerHTML = `<h2>${s && s.phase === 'ended' ? 'Final results' : 'Live board'}</h2><p class="mute" style="margin-top:-6px">${b.fin} of ${b.n} finished${b.me ? ` · you are ${ordinal(b.me)}` : ''}</p>${rows || '<p class="mute">Nobody has joined yet.</p>'}
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="lbLeave">Leave lobby</button></div>`;
+  $('#lbLeave').onclick = () => { Live.leave(true); closeModal(); if (!$('#game').classList.contains('on')) renderHome(); };
+}
+
+/* host */
+async function openHost() {
+  Live.screen = '';
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('wikiio:host')); } catch {}
+  let alive = false; if (saved) { try { alive = (await fetch(API_BASE + '/api/lobby/' + saved.code)).ok; } catch {} }
+  openModal(`<span class="eyebrow">For streamers</span><h2 style="margin-top:10px">Host a live race</h2>
+    <p>Create a lobby, paste the link into chat, and let viewers race the same puzzle in their browsers. They need no account.</p>
+    ${alive ? `<div class="unlock" id="hostResume" style="cursor:pointer"><span class="medal">▶</span><span><b>Resume lobby ${esc(saved.code)}</b><small>Your last lobby is still open</small></span></div>` : ''}
+    <div class="tabs" id="hostSrc"><button data-s="daily" class="on">Today’s puzzle</button><button data-s="random">Random</button><button data-s="custom">Custom</button></div>
+    <div id="hostCustom" hidden><div class="field">Start article<input id="hostFrom" maxlength="80" placeholder="e.g. Tour de France"></div><div class="field">Target article<input id="hostTo" maxlength="80" placeholder="e.g. India"></div></div>
+    <div class="actions"><button class="btn" id="hostMake">Create lobby →</button></div>`);
+  let src = 'daily';
+  document.querySelectorAll('#hostSrc button').forEach(b => b.onclick = () => { src = b.dataset.s; document.querySelectorAll('#hostSrc button').forEach(x => x.classList.toggle('on', x === b)); $('#hostCustom').hidden = src !== 'custom'; });
+  if ($('#hostResume')) $('#hostResume').onclick = () => { Live.connect(saved.code, saved.key); openHostPanel(); };
+  $('#hostMake').onclick = async () => {
+    $('#hostMake').disabled = true;
+    try {
+      const pz = await hostPuzzle(src, $('#hostFrom').value, $('#hostTo').value);
+      const r = await fetch(API_BASE + '/api/lobby', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pz) });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'failed');
+      const { code, key } = await r.json(); try { localStorage.setItem('wikiio:host', JSON.stringify({ code, key })); } catch {}
+      Live.connect(code, key); openHostPanel();
+    } catch (e) { $('#hostMake').disabled = false; toast(e.message === 'bad' ? 'Those articles could not be found' : 'Could not create the lobby — is the API set up?'); }
+  };
+}
+async function hostPuzzle(src, f, t) {
+  if (src === 'daily') { const d = await getDaily(dayKey()); return { from: d.from, to: d.to, par: d.par || null }; }
+  if (src === 'random') { const [from, to] = await resolvePair('p' + Math.random()); return { from, to }; }
+  try { const [a, b] = await Promise.all([getSummary(f.trim()), getSummary(t.trim())]); return { from: a.title, to: b.title }; } catch { throw new Error('bad'); }
+}
+function openHostPanel() { Live.screen = 'host'; openModal('<div id="hostBody"></div>', () => { if (Live.screen === 'host') Live.screen = ''; }); renderHost(); }
+function renderHost() {
+  const box = $('#hostBody'); if (!box) return;
+  const s = Live.st, b = Live.bd; if (!s) { box.innerHTML = '<div class="loading"><div class="spin"></div>Connecting…</div>'; return; }
+  const focus = document.activeElement && document.activeElement.id, nameVal = $('#hostName') ? $('#hostName').value : P.name;
+  const n = b ? b.n : 0, phase = { open: 'Open for players', countdown: 'Starting…', racing: 'Race in progress', ended: 'Race finished' }[s.phase];
+  const act = s.phase === 'open' ? `<button class="btn" id="hStart">Start race · 5 s countdown</button>`
+    : s.phase === 'racing' ? `<button class="btn" id="hEnd">End race</button>`
+    : s.phase === 'ended' ? `<button class="btn" id="hSame">New round · same puzzle</button><button class="btn ghost" id="hNew">New round · new puzzle</button>` : '';
+  box.innerHTML = `<span class="eyebrow">Streamer lobby</span><div class="hostcode">${esc(Live.code)}</div>
+    <div class="field">Viewer link — paste in chat<div class="namebox" style="margin:0"><input id="hLink" readonly value="${esc(Live.link(Live.code))}"><button class="btn ghost" data-copy="hLink">Copy</button></div></div>
+    <div class="field">OBS overlay — add as a Browser Source (1920×1080)<div class="namebox" style="margin:0"><input id="hOv" readonly value="${esc(Live.overlay(Live.code))}"><button class="btn ghost" data-copy="hOv">Copy</button></div></div>
+    <div class="hoststat"><span><b>${n}</b> players</span><span><b>${b ? b.fin : 0}</b> finished</span><span>${phase}</span></div>
+    <div class="actions">${act}</div>
+    ${Live.play ? '' : `<div class="field" style="margin-top:14px">Play along yourself<div class="namebox" style="margin:0"><input id="hostName" maxlength="20" value="${esc(nameVal)}" placeholder="Your nickname"><button class="btn ghost" id="hPlay">Join as player</button></div></div>`}
+    ${b && b.players && b.players.length ? `<div class="hplayers">${b.players.slice(0, 60).map(p => `<span class="pill${p.on ? '' : ' off'}">${esc(p.n)}${p.d ? ' ✓' : ''} <button data-kick="${p.pid}" title="Remove">×</button></span>`).join('')}</div>` : ''}
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="hClose">Close lobby</button></div>`;
+  box.querySelectorAll('[data-copy]').forEach(c => c.onclick = async () => { const i = $('#' + c.dataset.copy); try { await navigator.clipboard.writeText(i.value); toast('Copied'); } catch { i.select(); } });
+  box.querySelectorAll('[data-kick]').forEach(k => k.onclick = () => Live.send({ t: 'kick', pid: k.dataset.kick }));
+  if ($('#hStart')) $('#hStart').onclick = () => Live.send({ t: 'start' });
+  if ($('#hEnd')) $('#hEnd').onclick = () => Live.send({ t: 'end' });
+  if ($('#hSame')) $('#hSame').onclick = () => Live.send({ t: 'reset' });
+  if ($('#hNew')) $('#hNew').onclick = async () => { try { const [from, to] = await resolvePair('p' + Math.random()); Live.send({ t: 'reset', puzzle: { from, to } }); } catch { toast('Could not pick a puzzle'); } };
+  if ($('#hPlay')) $('#hPlay').onclick = () => ldName('#hostName', () => { Live.play = true; Live.hello(); toast('You are in the race — start it when ready'); renderHost(); });
+  $('#hClose').onclick = () => ask('Close the lobby?', 'Everyone is disconnected from the race.', 'Close lobby', () => { try { localStorage.removeItem('wikiio:host'); } catch {} Live.leave(true); closeModal(); });
+  if (focus && $('#' + focus) && $('#' + focus).tagName === 'INPUT') $('#' + focus).focus();
+}
+function liveMenu() {
+  openModal(`<span class="eyebrow">Live races</span><h2 style="margin-top:10px">Race together</h2>
+    <div class="field">Join a lobby<div class="namebox" style="margin:0"><input id="liveCode" maxlength="8" placeholder="Code, e.g. K7QMA" style="text-transform:uppercase"><button class="btn" id="liveGo">Join</button></div></div>
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="liveHost">Host a lobby for my stream</button></div>`);
+  $('#liveGo').onclick = () => { const c = $('#liveCode').value; closeModal(); openLiveJoin(c); };
+  $('#liveCode').onkeydown = e => { if (e.key === 'Enter') $('#liveGo').click(); };
+  $('#liveHost').onclick = openHost;
+}
+function handleLive() {
+  const m = location.hash.match(/^#l=([A-Za-z0-9]{4,8})$/); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search); openLiveJoin(m[1]);
+}
+
 /* --------------------------------------------------------------- companion packs */
 const packsOf = id => PACKS.find(p => p.id === id).puzzles;
 function packPuzzle(id, idx) {
@@ -1116,8 +1316,8 @@ handleInvite();
 
 applyTheme();
 applyCos();
-loadData().then(() => { renderHome(); handleChallenge(); refreshEntitlement(false); });
-const viaLink = /^#c=/.test(location.hash) || /[?&]league=/.test(location.search);
+loadData().then(() => { renderHome(); handleChallenge(); handleLive(); refreshEntitlement(false); });
+const viaLink = /^#[cl]=/.test(location.hash) || /[?&]league=/.test(location.search);
 if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
 </script>
 </body>

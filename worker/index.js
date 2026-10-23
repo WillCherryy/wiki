@@ -7,6 +7,7 @@ const shift = (day, n) => { const [y, m, d] = day.split('-').map(Number); return
 const hits = new Map(); // best-effort per-isolate rate limit; add a Cloudflare rate-limiting rule for real protection
 
 import SCHEMA from './schema.js';
+export { Lobby } from './lobby.js';
 let ready;
 
 export default {
@@ -17,6 +18,7 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
     if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);   // everything else is the static site
+    if (path.startsWith('/api/lobby')) return lobbyRoute(request, env, path, request.method, reply, now());
     try {
       if (!env.DB) return reply({ error: 'database not set up' }, 503);
       if (!ready) ready = env.DB.batch(SCHEMA.map(s => env.DB.prepare(s))).catch(e => { ready = null; throw e; });
@@ -166,4 +168,29 @@ async function webhook(provider, raw, request, env, t, reply) {
     return reply({ ok: true });
   }
   return reply({ error: 'not found' }, 404);
+}
+
+// ---- streamer lobbies (Durable Object, no database needed) ------------------------------------------------------
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const randomString = (n, chars) => Array.from(crypto.getRandomValues(new Uint8Array(n)), x => chars[x % chars.length]).join('');
+async function lobbyRoute(request, env, path, method, reply, t) {
+  if (!env.LOBBY) return reply({ error: 'lobbies not set up' }, 503);
+  if (path === '/api/lobby' && method === 'POST') {
+    const ip = request.headers.get('cf-connecting-ip') || 'x', list = (hits.get('L' + ip) || []).filter(x => t - x < 3600e3); list.push(t); hits.set('L' + ip, list);
+    if (list.length > 20) return reply({ error: 'slow down' }, 429);
+    let b; try { b = await request.json(); } catch { return reply({ error: 'bad json' }, 400); }
+    const puzzle = { from: b && b.from, to: b && b.to, par: b && b.par };
+    for (let i = 0; i < 6; i++) {
+      const code = randomString(5, ALPHABET), key = randomString(20, 'abcdefghijklmnopqrstuvwxyz0123456789');
+      const res = await env.LOBBY.get(env.LOBBY.idFromName(code)).fetch('https://lobby/init', { method: 'POST', body: JSON.stringify({ code, hostKey: key, puzzle }) });
+      if (res.status === 409) continue;
+      return res.ok ? reply({ code, key }) : reply({ error: 'invalid puzzle' }, 400);
+    }
+    return reply({ error: 'try again' }, 503);
+  }
+  const m = path.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})(\/ws)?$/); if (!m || method !== 'GET') return reply({ error: 'not found' }, 404);
+  const stub = env.LOBBY.get(env.LOBBY.idFromName(m[1].toUpperCase()));
+  const res = await stub.fetch(new Request('https://lobby' + (m[2] || '/info'), request));
+  if (m[2]) return res;   // websocket upgrade response passes straight through
+  return res.ok ? reply(await res.json()) : reply({ error: 'no such lobby' }, 404);
 }

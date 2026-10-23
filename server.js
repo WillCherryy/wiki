@@ -76,12 +76,60 @@ function pathTree(day) {
   return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best: rows.length ? best : 0, bestCount: clicks.filter(c => c === best).length, nodes: keep };
 }
 
+
+// ---- streamer lobbies (same LobbyCore as the Worker's Durable Object) with a minimal WebSocket server ------------------
+const crypto = require('crypto');
+const lobbies = new Map();
+let LobbyCore = null; const coreReady = import('./worker/lobby-core.js').then(m => { LobbyCore = m.LobbyCore; });
+const rnd = (n, chars) => Array.from(crypto.randomBytes(n), x => chars[x % chars.length]).join('');
+function wsFrame(str) {
+  const p = Buffer.from(str), n = p.length;
+  const h = n < 126 ? Buffer.from([0x81, n]) : n < 65536 ? Buffer.from([0x81, 126, n >> 8, n & 255]) : Buffer.concat([Buffer.from([0x81, 127, 0, 0, 0, 0]), Buffer.from([n >>> 24, n >>> 16 & 255, n >>> 8 & 255, n & 255])]);
+  return Buffer.concat([h, p]);
+}
+function wsAttach(socket, lobby) {
+  const conn = { send: s => { if (!socket.destroyed) socket.write(wsFrame(s)); } };
+  let buf = Buffer.alloc(0);
+  socket.on('data', d => {
+    buf = Buffer.concat([buf, d]);
+    for (;;) {
+      if (buf.length < 2) return;
+      const op = buf[0] & 15, masked = buf[1] & 128; let len = buf[1] & 127, off = 2;
+      if (len === 126) { if (buf.length < 4) return; len = buf.readUInt16BE(2); off = 4; } else if (len === 127) return socket.destroy();
+      if (buf.length < off + (masked ? 4 : 0) + len) return;
+      const mask = masked ? buf.subarray(off, off + 4) : null; off += masked ? 4 : 0;
+      const payload = Buffer.from(buf.subarray(off, off + len)); if (mask) for (let i = 0; i < len; i++) payload[i] ^= mask[i & 3];
+      buf = buf.subarray(off + len);
+      if (op === 8) return socket.end();
+      if (op === 9) { socket.write(Buffer.concat([Buffer.from([0x8a, len]), payload])); continue; }
+      if (op === 1 && len < 2000) lobby.core.message(conn, payload.toString());
+    }
+  });
+  const drop = () => lobby.core.leave(conn); socket.on('close', drop); socket.on('error', drop);
+  lobby.core.join(conn);
+}
+setInterval(() => { const t = Date.now(); for (const [c, l] of lobbies) if (l.core.idle() && t - l.core.lastActive > 6 * 3600e3) lobbies.delete(c); }, 600000).unref();
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x'), q = url.searchParams;
   if (url.pathname.startsWith('/api/')) {
     res.setHeader('access-control-allow-origin', '*'); res.setHeader('access-control-allow-headers', 'content-type'); res.setHeader('access-control-allow-methods', 'GET,POST,OPTIONS');
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
   }
+  if (url.pathname === '/api/lobby' && req.method === 'POST') {
+    if (limited(req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
+    return readBody(req, async b => {
+      await coreReady;
+      for (let i = 0; i < 6; i++) {
+        const code = rnd(5, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'); if (lobbies.has(code)) continue;
+        const key = rnd(20, 'abcdefghijklmnopqrstuvwxyz0123456789'), core = new LobbyCore({ code, hostKey: key });
+        if (!b || !core.setPuzzle({ from: b.from, to: b.to, par: b.par })) return json(res, 400, { error: 'invalid puzzle' });
+        lobbies.set(code, { core }); return json(res, 200, { code, key });
+      }
+      json(res, 503, { error: 'try again' });
+    });
+  }
+  { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
   if (url.pathname === '/api/leaderboard' && req.method === 'GET') {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
     const mode = ['day', 'week', 'all', 'streak'].includes(q.get('mode')) ? q.get('mode') : 'day';
@@ -145,7 +193,7 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {
@@ -166,5 +214,11 @@ const server = http.createServer((req, res) => {
     });
   }
   json(res, 404, { error: 'not found' });
+});
+server.on('upgrade', (req, socket) => {
+  const m = new URL(req.url, 'http://x').pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})\/ws$/), l = m && lobbies.get(m[1].toUpperCase()), k = req.headers['sec-websocket-key'];
+  if (!l || !k) return socket.end('HTTP/1.1 404 Not Found\r\n\r\n');
+  socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + crypto.createHash('sha1').update(k + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64') + '\r\n\r\n');
+  wsAttach(socket, l);
 });
 server.listen(PORT, () => console.log(`wikilink running on http://localhost:${PORT}`));

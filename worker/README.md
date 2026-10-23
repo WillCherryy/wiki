@@ -32,3 +32,8 @@ The webhook formats follow each provider's documentation at the time of writing;
 
 ## Local development
 `DEV=1 node server.js` serves the game and API on one port; `POST /api/dev/supporter {"pid":"...","on":true}` flips supporter status for testing the UI.
+
+## Streamer lobbies
+`worker/lobby.js` is a Durable Object (one per lobby, SQLite-backed so it works on the free plan); `wrangler.toml` already declares the binding and migration, so the first `wrangler deploy` creates it. Lobbies need no D1 database.
+- Host: **Menu → Live races → Host a lobby**. Paste the viewer link (`/#l=CODE`) in chat; add `/overlay.html?c=CODE` in OBS as a 1920×1080 Browser Source (transparent background; add `&bg=1` to preview on a solid colour).
+- Race logic lives in `worker/lobby-core.js` and is shared with the dev server, which speaks WebSocket too, so `node server.js` runs lobbies locally. `npm test` covers the rules and a real WebSocket round trip; the Durable Object wrapper itself can only be verified after deploying.
