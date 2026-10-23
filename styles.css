@@ -35,6 +35,8 @@
 /* cosmetic themes */
 :root[data-skin="paper"]:not([data-theme="dark"]) { --paper: #ebe9e4; --sheet: #f6f5f1; --rule: #d1cec6; --rule-2: #e3e1db; }
 :root[data-skin="midnight"][data-theme="dark"] { --paper: #090a11; --sheet: #10121c; --rule: #232638; --rule-2: #181a28; --ink: #e9ebf6; --ink-2: #b9bdd2; --mute: #7f849d; }
+:root[data-skin="noir"]:not([data-theme="dark"]) { --paper: #ffffff; --sheet: #ffffff; --ink: #000000; --ink-2: #222222; --mute: #555555; --rule: #000000; --rule-2: #dddddd; }
+:root[data-skin="noir"][data-theme="dark"] { --paper: #000000; --sheet: #0a0a0a; --ink: #ffffff; --ink-2: #dddddd; --mute: #aaaaaa; --rule: #555555; --rule-2: #222222; }
 :root[data-skin="aurora"]:not([data-theme="dark"]) { --accent: #0f8b7e; --accent-ink: #0b6c62; --accent-soft: rgba(15, 139, 126, .1); }
 :root[data-skin="aurora"][data-theme="dark"] { --accent: #3ed2c0; --accent-ink: #6fe0d1; --accent-soft: rgba(62, 210, 192, .14); }
 
@@ -335,6 +337,10 @@ details.route summary { cursor: pointer; font: 600 12px var(--sans); letter-spac
 .purist { display: flex; justify-content: center; align-items: center; gap: 9px; margin: 2px 0 12px; font: 600 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
 .purist b { color: var(--accent); font-size: 14px; }
 .pm { color: var(--accent); font-style: normal; margin-left: 7px; font-size: 11px; }
+/* supporter */
+.supp-price { display: flex; align-items: baseline; gap: 12px; margin: 6px 0 4px; } .supp-price b { font: 400 64px/1 var(--display); letter-spacing: -.02em; } .supp-price span { color: var(--mute); font-size: 13px; }
+.supp-perk { display: flex; flex-direction: column; gap: 2px; padding: 13px 2px; border-bottom: 1px solid var(--rule); } .supp-perk b { font: 400 24px/1.1 var(--display); } .supp-perk small { color: var(--mute); font-size: 13.5px; }
+.supp-consent { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; font: 400 14.5px/1.45 var(--serif); color: var(--ink-2); cursor: pointer; } .supp-consent input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 /* tuning */
 .plate-from, .plate-to { font-size: calc(clamp(48px, 9.4vw, 150px) * var(--fit, 1)); }
 .plate-meta { margin-bottom: clamp(14px, 2.4vw, 30px); }

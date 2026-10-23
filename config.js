@@ -6,6 +6,8 @@ window.WIKIIO = {
   api: '',                          // base URL of the leaderboard API (e.g. 'https://api.example.com'); '' = same origin
   operator: 'William Cherry',                     // legal name of the person or company running the site (REQUIRED before launch)
   contact: 'will@cherrys.me.uk',                      // public contact email for privacy requests (REQUIRED before launch)
+  checkoutUrl: '',                  // Supporter pack checkout link; {pid} is replaced by the buyer's anonymous player ID (see worker/README.md)
+  price: '£2.99',
   jurisdiction: 'England and Wales',
   updated: '23 October 2026'
 };

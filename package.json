@@ -8,8 +8,10 @@
     "pool": "node tools/build-pool.js",
     "puzzles": "node tools/build-puzzles.js",
     "build:site": "node tools/build-site.js",
-    "test": "node tools/test-fake.js"
+    "test": "node tools/test-fake.js && node tools/test-api.js && node tools/test-worker.js"
   },
   "dependencies": {},
-  "devDependencies": { "linkedom": "^0.18.0" }
+  "devDependencies": {
+    "linkedom": "^0.18.0"
+  }
 }

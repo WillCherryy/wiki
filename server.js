@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const DATA = path.join(__dirname, 'data.json');
+const DATA = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 let db = { scores: {}, players: {}, leagues: {} };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA, 'utf8'))); } catch {}
 
@@ -26,11 +26,12 @@ const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 function shift(day, n) { const [y, m, d] = day.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
 const cleanPath = a => (Array.isArray(a) ? a : []).slice(0, 16).map(x => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 80));
+const dayOk = day => DAY.test(day) && Math.abs(Date.parse(day + 'T12:00:00Z') - Date.now()) <= 48 * 3600e3;
 const xpOf = pid => (db.players[pid] || {}).xp || 0;
 
 function board(mode, day, league, purist) {
   let all = Object.values(db.scores);
-  if (purist) all = all.filter(e => e.purist);
+  if (purist && mode !== 'streak') all = all.filter(e => e.purist);
   if (league) {
     const L = db.leagues[league]; if (!L) return [];
     const set = new Set(L.members); all = all.filter(e => set.has(e.pid));
@@ -100,6 +101,14 @@ const server = http.createServer((req, res) => {
       save(); json(res, 200, { ok: true });
     });
   }
+  if (url.pathname === '/api/entitlements' && req.method === 'GET') {
+    const pid = q.get('pid') || ''; if (!/^[a-z0-9]{6,16}$/.test(pid)) return json(res, 400, { error: 'invalid' });
+    return json(res, 200, { supporter: !!(db.supporters || {})[pid] });
+  }
+  if (url.pathname === '/api/dev/supporter' && req.method === 'POST' && process.env.DEV === '1') {   // local testing only; production uses signed payment webhooks (worker/)
+    return readBody(req, b => { if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' }); (db.supporters = db.supporters || {})[b.pid] = b.on !== false; save(); json(res, 200, { ok: true }); });
+  }
+  if (url.pathname === '/api/health' && req.method === 'GET') return json(res, 200, { ok: true });
   if (url.pathname === '/api/league' && req.method === 'GET') {
     const L = db.leagues[(q.get('code') || '').toUpperCase()];
     return L ? json(res, 200, { name: L.name, members: L.members.length }) : json(res, 404, { error: 'no such league' });
@@ -126,7 +135,7 @@ const server = http.createServer((req, res) => {
         save(); return json(res, 200, { code, name: L.name, members: L.members.length });
       }
 
-      const ok = DAY.test(b.day) && Number.isInteger(b.clicks) && b.clicks >= 1 && b.clicks <= 200 &&
+      const ok = dayOk(b.day) && Number.isInteger(b.clicks) && b.clicks >= 1 && b.clicks <= 200 &&
         Number.isInteger(b.secs) && b.secs >= 1 && b.secs < 86400 && Number.isInteger(b.score) &&
         Array.isArray(b.path) && b.path.length >= 2 && b.path.length <= 300;
       if (!ok) return json(res, 400, { error: 'invalid' });

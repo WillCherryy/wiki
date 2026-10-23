@@ -114,7 +114,7 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.ad
 const KEY = 'wikiio:v1', CUR = 'wikiio:cur';
 function loadP() {
   let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
-  return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
+  return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
 let P = loadP();
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
@@ -334,7 +334,7 @@ function updateHud() {
   tr.innerHTML = G.steps.map((st, i) => `${i ? '<span class="sep">›</span>' : ''}<span class="step" style="--sc:${tempCss(st.sig)}" title="${esc(st.title)}">${esc(st.title)}</span>`).join('');
   tr.scrollLeft = tr.scrollWidth; const tm = $('#trailM'); tm.innerHTML = tr.innerHTML; tm.scrollLeft = tm.scrollWidth;
   $('#backBtn').disabled = G.steps.length < 2;
-  const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || G.rewinds >= 1 || G.done; rb.querySelector('small').textContent = G.rewinds >= 1 ? 'used' : '1 left';
+  const rb = $('#rewindBtn'); rb.disabled = G.steps.length < 2 || (!P.supporter && G.rewinds >= 1) || G.done; rb.querySelector('small').textContent = P.supporter ? 'free' : G.rewinds >= 1 ? 'used' : 'video · 1 left';
 }
 async function back() {
   if (G.done || G.path.length < 2) return;
@@ -343,8 +343,8 @@ async function back() {
   await go(title, false, null, 'back');
 }
 async function rewind() {
-  if (G.done || G.path.length < 2 || G.rewinds >= 1) return;
-  if (!(await Ads.rewarded())) return toast('Watch the whole video to rewind');
+  if (G.done || G.path.length < 2 || (!P.supporter && G.rewinds >= 1)) return;
+  if (!P.supporter && !(await Ads.rewarded())) return toast('Watch the whole video to rewind');
   G.path.pop(); G.steps.pop(); const title = G.path.pop(); G.steps.pop();
   await go(title, false, null, 'rewind');
   G.moves = Math.max(0, G.moves - 2); G.rewinds++; updateHud(); persistCur(); toast('Rewound one click — free');
@@ -363,7 +363,7 @@ function finish(won) {
   if (G.mode === 'daily') {
     if (!P.days[G.day]) {
       P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, purist: !G.usedFind && !G.rewinds };
-      if (won) { P.streak = P.lastDay === yesterday(G.day) ? P.streak + 1 : 1; P.lastDay = G.day; P.maxStreak = Math.max(P.maxStreak, P.streak); streakBonus = Math.min(50, P.streak * 5); gain += streakBonus; }
+      if (won) { const shield = P.supporter && P.lastDay === yesterday(yesterday(G.day)) && P.shieldMonth !== G.day.slice(0, 7); if (shield) { P.shieldMonth = G.day.slice(0, 7); G.result.shield = true; } P.streak = P.lastDay === yesterday(G.day) || shield ? P.streak + 1 : 1; P.lastDay = G.day; P.maxStreak = Math.max(P.maxStreak, P.streak); streakBonus = Math.min(50, P.streak * 5); gain += streakBonus; }
       else if (P.lastDay !== G.day && P.lastDay !== yesterday(G.day)) P.streak = 0;
     } else gain = 0;
   } else if (G.mode === 'pack') {
@@ -425,6 +425,7 @@ function showResult() {
     ${(() => { const rt = r.route || (PUZZLES && PUZZLES[G.day] && daily && PUZZLES[G.day].route); return rt && r.par ? `<details class="route"><summary>Shortest known route · ${rt.length - 1} clicks</summary><div class="pathline">${rt.map((p, i) => `${i ? '<span>→</span>' : ''}<b>${esc(p)}</b>`).join('')}</div></details>` : ''; })()}
     <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (+${r.streakBonus} streak)` : ''}</span></div></div>
     <div class="xpbar"><div class="xpmeta"><span style="color:${rk.c}">${rankUp ? 'Rank up · ' : ''}${rk.n}</span><span>${nx ? `${P.xp} / ${hi} XP · next: ${nx.n}` : `${P.xp} XP · max rank`}</span></div><div class="bar"><i style="width:${pct}%;background:${rk.c}"></i></div></div>
+    ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
     ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
     ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${i.cat}</b><small>New cosmetic unlocked · tap to equip in the Locker</small></span></div>`).join('')}
     ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
@@ -575,11 +576,38 @@ function openMenu() {
     ['Random practice', 'No pressure, half XP', () => { closeModal(); startGame('practice'); }],
     ...(solved ? [['Challenge a friend', `Beat your ${e.clicks}`, () => openChallenge(dailyCtx(), () => closeModal())]] : []),
     ['Settings', 'Theme, text size, data', () => openSettings()],
+    [P.supporter ? 'Supporter' : 'Support wikilink', P.supporter ? 'Thank you ◆' : `${CFG.price || '£2.99'} · one-off`, openSupport],
     ['How to play', '', showHelp]
   ];
   openModal(`<h2>Menu</h2><div class="menu">${items.map((it, i) => `<button data-i="${i}"><b>${it[0]}</b><small>${esc(it[1])}</small></button>`).join('')}</div><div class="slinks" style="margin-top:14px"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>`);
   document.querySelectorAll('.menu button').forEach(b => b.onclick = () => items[+b.dataset.i][2]());
 }
+async function refreshEntitlement(announce) {
+  try {
+    const r = await fetch(`${API_BASE}/api/entitlements?pid=${encodeURIComponent(P.pid)}`); if (!r.ok) throw 0;
+    const was = !!P.supporter, now = !!(await r.json()).supporter;
+    P.supporter = now; saveP();
+    if (now && !was) { toast('Supporter unlocked — thank you!'); renderHeader(); if ($('#quiet')) renderQuiet(); }
+    else if (announce) toast(now ? 'You are a supporter. Thank you!' : 'No purchase found yet. It can take a minute to arrive.');
+    return now;
+  } catch { if (announce) toast('Could not check right now. Try again shortly.'); return !!P.supporter; }
+}
+function openSupport() {
+  const perks = [['Exclusive cosmetics', 'Comet and Ink trails, the Noir theme and Candy confetti'], ['Free, unlimited rewinds', 'No video to watch, as many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
+  const live = !!(CFG.checkoutUrl);
+  if (P.supporter) { openModal(`<h2>Thank you ◆</h2><p>You are a wikilink supporter. Your pack is tied to this Player ID, so it moves with your backup code.</p><div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>`); return; }
+  openModal(`<h2>Support wikilink</h2><p>One payment, no subscription, no account. It keeps the daily puzzle free.</p>
+    <div class="supp-price"><b>${esc(CFG.price || '£2.99')}</b><span>one-off, tax included at checkout</span></div>
+    <div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>
+    <label class="supp-consent"><input type="checkbox" id="suConsent"><span>I want the Supporter pack supplied immediately, and I understand I lose my 14-day right to cancel once it starts.</span></label>
+    <div class="actions" style="margin-top:14px"><button class="btn" id="suBuy" disabled>${live ? 'Continue to checkout' : 'Coming soon'}</button></div>
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="suCheck">I have paid, check my purchase</button></div>
+    <div class="s mute" style="margin-top:12px;font-size:12.5px">Already a supporter on another device? Restore your backup code in Settings, then check your purchase.</div>`);
+  $('#suConsent').onchange = e => { $('#suBuy').disabled = !live || !e.target.checked; };
+  $('#suBuy').onclick = () => { P.checkoutAt = Date.now(); saveP(); window.open(CFG.checkoutUrl.replace('{pid}', encodeURIComponent(P.pid)), '_blank', 'noopener'); };
+  $('#suCheck').onclick = () => refreshEntitlement(true);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && P.checkoutAt && Date.now() - P.checkoutAt < 3600e3 && !P.supporter) refreshEntitlement(false); });
 function ask(h, text, yes, cb) {
   openModal(`<h2>${h}</h2><p>${text}</p><div class="actions"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="askYes">${yes}</button></div>`);
   $('#askYes').onclick = () => { closeModal(); cb(); };
@@ -601,7 +629,7 @@ async function showTarget() {
 /* ------------------------------------------------------------------- confetti */
 function confetti() {
   const c = $('#fx'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-  const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'] };
+  const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'], candy: ['#ffb3d9', '#b3e0ff', '#fff2b3', '#c8f7c5', '#e0c3ff'] };
   const cols = CONF[P.cos.confetti] || CONF.classic, sq = P.cos.confetti === 'pixel';
   const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
   let f = 0; (function loop() {
@@ -642,6 +670,7 @@ const COS = {
     { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#f3eee4 50%,#d63a1f 50%)' },
     { id: 'paper', name: 'Newsprint', sw: 'linear-gradient(135deg,#f6f5f1 50%,#cfccc4 50%)', need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
     { id: 'midnight', name: 'Midnight', sw: 'linear-gradient(135deg,#090a11 50%,#2a2e48 50%)', need: { t: 'rank', v: 2 }, label: 'Reach Scholar rank' },
+    { id: 'noir', name: 'Noir', sw: 'linear-gradient(135deg,#ffffff 50%,#000000 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'aurora', name: 'Verdigris', sw: 'linear-gradient(135deg,#0f8b7e 50%,#3ed2c0 50%)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' }
   ],
   trail: [
@@ -651,13 +680,14 @@ const COS = {
     { id: 'neon', name: 'Neon', sw: 'linear-gradient(135deg,#22c55e,#06b6d4)', need: { t: 'chal', v: 3 }, label: 'Win 3 challenges' },
     { id: 'gilded', name: 'Gilded', sw: 'linear-gradient(135deg,#fde68a,#f59e0b)', need: { t: 'rank', v: 5 }, label: 'Reach Archivist rank' },
     { id: 'frost', name: 'Frost', sw: 'linear-gradient(135deg,#bae6fd,#38bdf8)', need: { t: 'streak', v: 30 }, label: '30-day streak' },
-    { id: 'comet', name: 'Comet', sw: 'linear-gradient(135deg,#ec4899,#8b5cf6)', need: { t: 'supporter' }, label: 'Supporter · coming soon' },
-    { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter · coming soon' }
+    { id: 'comet', name: 'Comet', sw: 'linear-gradient(135deg,#ec4899,#8b5cf6)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter pack' }
   ],
   confetti: [
     { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#d63a1f,#16130f,#ee9a54)' },
     { id: 'pixel', name: 'Pixel burst', sw: 'linear-gradient(135deg,#ff004d,#ffec27,#00e436,#29adff)', need: { t: 'par', v: 3 }, label: '3 solves at or under par' },
-    { id: 'gold', name: 'Gold rush', sw: 'linear-gradient(135deg,#fff7d6,#f59e0b)', need: { t: 'rank', v: 4 }, label: 'Reach Cartographer rank' }
+    { id: 'gold', name: 'Gold rush', sw: 'linear-gradient(135deg,#fff7d6,#f59e0b)', need: { t: 'rank', v: 4 }, label: 'Reach Cartographer rank' },
+    { id: 'candy', name: 'Candy', sw: 'linear-gradient(135deg,#ffb3d9,#b3e0ff,#fff2b3)', need: { t: 'supporter' }, label: 'Supporter pack' }
   ]
 };
 const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'] };
@@ -671,7 +701,7 @@ const dotCss = (sig, pos) => P.cos.trail === 'classic' ? tempCss(sig) : lerpStop
 const allCos = () => Object.entries(COS).flatMap(([cat, arr]) => arr.map(i => ({ ...i, cat })));
 function isUnlocked(i) {
   const n = i.need; if (!n) return true;
-  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; default: return false; }
+  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; case 'supporter': return !!P.supporter; default: return false; }
 }
 function checkCos() {
   const out = allCos().filter(i => isUnlocked(i) && !P.cosSeen.includes(i.cat + ':' + i.id));
@@ -697,7 +727,7 @@ function openLocker(tab = 'theme') {
     document.querySelectorAll('#lkTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     $('#lkBody').innerHTML = `<div class="lkgrid">${COS[tab].map(i => { const u = isUnlocked({ need: i.need }), on = P.cos[tab] === i.id; return `<button class="item ${on ? 'on' : ''} ${u ? '' : 'lock'}" data-id="${i.id}"><div class="sw" style="background:${i.sw}"></div>${esc(i.name)}<small>${on ? 'equipped' : u ? 'tap to equip' : '🔒 ' + esc(i.label)}</small></button>`; }).join('')}</div>`;
     document.querySelectorAll('#lkBody .item').forEach(b => b.onclick = () => {
-      const it = COS[tab].find(i => i.id === b.dataset.id); if (!isUnlocked(it)) return toast(it.label);
+      const it = COS[tab].find(i => i.id === b.dataset.id); if (!isUnlocked(it)) return it.need && it.need.t === 'supporter' ? openSupport() : toast(it.label);
       P.cos[tab] = it.id; saveP(); applyCos(); drawTrailPreview($('#lkCv')); draw(); if (tab === 'confetti') confetti();
     });
   };
@@ -1010,19 +1040,20 @@ function openReplay(back) {
   $('#rpBack').onclick = () => { closeModal(); if (back) back(); };
   if (canRec) $('#rpSave').onclick = () => exportVideo(d, S, $('#rpSave'));
 }
+const exportSize = () => (P.supporter ? 1080 : 720);
 async function exportVideo(d, S, btn) {
   const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(m => MediaRecorder.isTypeSupported(m));
   if (!mime) return toast('Video export is not supported in this browser');
   const label = btn.textContent; btn.disabled = true;
-  const c = document.createElement('canvas'); c.width = c.height = 720; const ctx = c.getContext('2d');
+  const size = exportSize(), c = document.createElement('canvas'); c.width = c.height = size; const ctx = c.getContext('2d'); ctx.scale(size / 720, size / 720);
   const rec = new MediaRecorder(c.captureStream(30), { mimeType: mime, videoBitsPerSecond: 2500000 }), chunks = [];
   rec.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
   const stopped = new Promise(r => rec.onstop = r); rec.start(250);
   const t0 = performance.now();
-  await new Promise(res => { (function loop() { const t = (performance.now() - t0) / 1000; drawFrame(ctx, 720, d, stateAt(d, S, t)); btn.textContent = `Rendering ${Math.min(99, Math.round(t / S.total * 100))}%`; if (t < S.total) requestAnimationFrame(loop); else res(); })(); });
+  await new Promise(res => { (function loop() { const t = (performance.now() - t0) / 1000; drawFrame(ctx, 720, d, stateAt(d, S, t)); if (!P.supporter) { ctx.font = '600 14px "Instrument Sans", sans-serif'; ctx.fillStyle = 'rgba(243,238,228,.5)'; ctx.textAlign = 'center'; ctx.fillText(BRAND.domain, 360, 712); } btn.textContent = `Rendering ${Math.min(99, Math.round(t / S.total * 100))}%`; if (t < S.total) requestAnimationFrame(loop); else res(); })(); });
   rec.stop(); await stopped;
   const blob = new Blob(chunks, { type: mime }), a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `${BRAND.name}-${d.label.replace('#', '')}.${mime.includes('mp4') ? 'mp4' : 'webm'}`; document.body.appendChild(a); a.click(); a.remove();
+  a.href = URL.createObjectURL(blob); a.download = `${BRAND.name}-${d.label.replace('#', '')}${P.supporter ? '-hd' : ''}.${mime.includes('mp4') ? 'mp4' : 'webm'}`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); btn.textContent = label; btn.disabled = false; toast('Video saved');
 }
 $('#rewindBtn').onclick = rewind;
@@ -1085,7 +1116,7 @@ handleInvite();
 
 applyTheme();
 applyCos();
-loadData().then(() => { renderHome(); handleChallenge(); });
+loadData().then(() => { renderHome(); handleChallenge(); refreshEntitlement(false); });
 const viaLink = /^#c=/.test(location.hash) || /[?&]league=/.test(location.search);
 if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
 </script>
