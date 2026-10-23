@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 // Renders the epic adverts (1080x1920, 30 fps) from tools/video/epic.html, a pure function of time, and muxes the score.
-//   python3 tools/make-epic-audio.py && node tools/make-epic.js [trailer|heat|lobby] [--workers 4]
+//   python3 tools/make-epic-audio.py && node tools/make-epic.js [trailer|heat|lobby|strobe] [--workers 4]
 const fs = require('fs'), os = require('os'), path = require('path'), { execFileSync } = require('child_process');
 let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
 const FPS = 30, out = path.join(__dirname, '..', 'brand', 'video');
 const wi = process.argv.indexOf('--workers'), WORKERS = wi > 0 ? +process.argv[wi + 1] : 4;
-const NAMES = ['trailer', 'heat', 'lobby'], want = process.argv.slice(2).filter(a => NAMES.includes(a));
+const NAMES = ['trailer', 'heat', 'lobby', 'strobe'], want = process.argv.slice(2).filter(a => NAMES.includes(a));
 fs.mkdirSync(out, { recursive: true });
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });

@@ -67,6 +67,11 @@ function endCard(){return {html:()=>`<div class="layer">${mark5('em',540,500,10)
 
 // ------------------------------------------------------------------ storyboards
 const FIELD=(a,nodes=[],path=null)=>({a,nodes,path});
+const MONTAGE={html:()=>`<div class="abs rl" style="left:196px;top:300px;width:8px;height:0;background:linear-gradient(#5c8cbe,#d63a1f)"></div>`+[['Tour de France',0],['France',1],['British Empire',2],['India',3],['Mahatma Gandhi',4]].map(([t,i])=>`<div class="abs rn pop" style="left:100px;top:${280+i*250}px;width:900px;display:flex;align-items:center;gap:56px"><i class="dot" style="position:relative;width:${40+i*12}px;height:${40+i*12}px;background:${C[i]};box-shadow:0 0 ${20+i*10}px ${C[i]}"></i><span style="font:400 ${96-i*0}px/1 EB;${i===4?'font-style:italic;':''}">${t}</span></div>`).join('')+`<div class="abs tw pop" style="left:70px;bottom:130px;font:italic 400 210px/1 EB"></div><div class="abs cap" style="right:70px;top:1700px">Clicks <b class="cn" style="font:400 130px EB;color:#f3eee4;letter-spacing:0">0</b></div>`+ring('rk0',540,1000),
+  up:(S,u,b)=>{const T=[.5,2,3.5,5,6.5];let n=0;S.qa('.rn').forEach((e,i)=>{const k=p(b,T[i],T[i]+.5,E.back);e.style.opacity=b>=T[i]?1:.0;e.style.transform=`translateX(${(1-k)*-80}px) scale(${.85+.15*k})`;if(b>=T[i])n=i});
+   S.q('.rl').style.height=Math.max(0,Math.min(1,(n+p(b,T[Math.min(n+1,4)]-.5,T[Math.min(n+1,4)],E.lin))/4))*1000+'px';
+   const words=['Cold','Cool','Warm','Hot','Scorching'],tw=S.q('.tw');tw.textContent=words[n];tw.style.color=ramp(n/4);S.q('.cn').textContent=n;
+   const punch=Math.exp(-((b-T[n])*4))*(b>=T[n]?1:0);return 1+0*punch}};
 const STORY={
 trailer:[
  {html:()=>kt(640,[{t:'Over six million',s:118,b:.4},{t:'articles.',s:236,i:1,em:1,b:1.3}]),field:(u,b)=>FIELD(.9*p(b,0,1.5))},
@@ -77,11 +82,7 @@ trailer:[
   field:(u,b)=>FIELD(.45,[{x:170,y:1500,c:C[1],r:20,a:1},{x:900,y:1170,c:C[3],r:20,a:1}],{pts:[[170,1500],[330,1400],[520,1420],[640,1290],[900,1170]],prog:p(b,1.4,3.5,E.inOut)})},
  {html:()=>`<div class="abs num pop" style="left:0;right:0;top:470px;text-align:center;font:400 800px/1 EB;letter-spacing:-.04em"></div>`+kt(1330,[{t:'clicks or fewer.',s:124,b:2.2}]),
   up:(S,u,b)=>{const n=b<.8?'1':b<1.6?'2':b<2.4?'3':'4',st=[0,.8,1.6,2.4],i=+n-1,k=p(b,st[i],st[i]+.3,E.back);const e=S.q('.num');e.textContent=n==='4'?'≤4':n;e.style.color=C[Math.min(4,i+1)];e.style.transform=`scale(${.7+.3*k})`;e.style.opacity=k;return 1-p(b,3.1,3.6,E.lin)}},
- {html:()=>`<div class="abs rl" style="left:196px;top:300px;width:8px;height:0;background:linear-gradient(#5c8cbe,#d63a1f)"></div>`+[['Tour de France',0],['France',1],['British Empire',2],['India',3],['Mahatma Gandhi',4]].map(([t,i])=>`<div class="abs rn pop" style="left:100px;top:${280+i*250}px;width:900px;display:flex;align-items:center;gap:56px"><i class="dot" style="position:relative;width:${40+i*12}px;height:${40+i*12}px;background:${C[i]};box-shadow:0 0 ${20+i*10}px ${C[i]}"></i><span style="font:400 ${96-i*0}px/1 EB;${i===4?'font-style:italic;':''}">${t}</span></div>`).join('')+`<div class="abs tw pop" style="left:70px;bottom:130px;font:italic 400 210px/1 EB"></div><div class="abs cap" style="right:70px;top:1700px">Clicks <b class="cn" style="font:400 130px EB;color:#f3eee4;letter-spacing:0">0</b></div>`+ring('rk0',540,1000),
-  up:(S,u,b)=>{const T=[.5,2,3.5,5,6.5];let n=0;S.qa('.rn').forEach((e,i)=>{const k=p(b,T[i],T[i]+.5,E.back);e.style.opacity=b>=T[i]?1:.0;e.style.transform=`translateX(${(1-k)*-80}px) scale(${.85+.15*k})`;if(b>=T[i])n=i});
-   S.q('.rl').style.height=Math.max(0,Math.min(1,(n+p(b,T[Math.min(n+1,4)]-.5,T[Math.min(n+1,4)],E.lin))/4))*1000+'px';
-   const words=['Cold','Cool','Warm','Hot','Scorching'],tw=S.q('.tw');tw.textContent=words[n];tw.style.color=ramp(n/4);S.q('.cn').textContent=n;
-   const punch=Math.exp(-((b-T[n])*4))*(b>=T[n]?1:0);return 1+0*punch}},
+ MONTAGE,
  {html:()=>kt(640,[{t:'Scorching.',s:236,i:1,em:1,b:.15}])+`<div class="abs cap" style="left:0;right:0;top:960px;text-align:center;opacity:0" id="s5c">You are nearly there</div>`+ring('r0',540,760)+ring('r1',540,760)+ring('r2',540,760),
   up:(S,u,b)=>{ringUp(S,'.r0',b,.15,1.4);ringUp(S,'.r1',b,.45,1.4);ringUp(S,'.r2',b,.75,1.4);S.q('#s5c').style.opacity=p(b,1.8,2.4)}},
  {html:()=>kt(520,[{t:'Daily.',s:250,b:.1},{t:'Free.',s:250,i:1,em:1,b:1.1},{t:'No account.',s:176,b:2.1}])},
@@ -119,6 +120,14 @@ heat:[
    <div class="pop r2" style="padding:34px 40px 0"><div class="cap" style="color:#7a7265;font-size:22px;margin-bottom:14px">Optimal route 1 · 3 clicks</div>${routeRow(['Tour de France','France','British Empire','India'],[0,1,3,4])}</div>
    <div class="pop r3 abs" style="left:40px;right:40px;bottom:34px;font:italic 400 40px EB;color:#2b261f">You found one of the shortest routes.</div></div>`+ring('r0',540,420),
   up:(S,u,b)=>{ringUp(S,'.r0',b,.55,1.4,1500);['.r1','.r2','.r3'].forEach((s,i)=>{const t0=1.3+i*.7,k=p(b,t0,t0+.45,E.out5);const e=S.q(s);e.style.opacity=k;e.style.transform=`translateY(${(1-k)*40}px)`})}},
+ endCard()
+],
+strobe:[
+ {html:()=>kt(520,[{t:'Wikipedia.',s:210,b:.3},{t:'but it\'s',s:120,c:'#a1978a',b:1.6},{t:'a race.',s:280,i:1,em:1,b:2.2}])+`<div class="abs cap" style="left:0;right:0;top:1700px;text-align:center;font-size:24px">Flashing lights</div>`},
+ {html:()=>kt(330,[{t:'Tour de France',s:156,b:.1},{t:'to',s:92,i:1,c:'#a1978a',b:.9},{t:'India.',s:300,i:1,em:1,b:1.3}])+kt(1330,[{t:'Four clicks.',s:136,b:2.6}]),up:(S,u,b)=>1-p(b,3.3,3.7,E.lin)},
+ {html:()=>`<div class="abs sw pop" style="left:0;right:0;top:640px;text-align:center;font:italic 400 360px/1 EB;letter-spacing:-.03em"></div><div class="abs cap sn" style="left:0;right:0;top:420px;text-align:center;font-size:34px"></div>`,
+  up:(S,u,b)=>{const i=Math.min(7,Math.floor(b)),W=[['1',360],['2',360],['3',360],['≤4',360],['Cold',300],['Warm',300],['Hot',300],['Scorching',200]][i],k=p(b-i,0,.22,E.out5),e=S.q('.sw');e.textContent=W[0];e.style.fontSize=W[1]+'px';e.style.color=i<4?ramp(.12+i*.2):ramp((i-3)/4);e.style.transform=`scale(${1+(1-k)*.7})`;e.style.opacity=Math.min(1,k*5+.2);S.q('.sn').textContent=i<4?'Click':'Temperature'}},
+ MONTAGE,
  endCard()
 ],
 lobby:[
@@ -180,7 +189,8 @@ function render(t){t=Math.min(t,window.DURATION-1e-3);const cur=SC.find(s=>t>=s.
     if(cur.tr==='glitch'||cur.tr==='slab')fieldFrom=r<.5?prev:cur}
   drawBg(t,h);drawField(t,fieldFrom.def.field?fieldFrom.def.field(t-fieldFrom.start,(t-fieldFrom.start)/BEAT):null,h);
   let sx=0,sy=0,fl=0;HITS.forEach(hh=>{const d=t-hh.t;if(d<0||d>1.4)return;sx+=hh.w*22*Math.exp(-d*9)*Math.sin(d*88+hh.t*3);sy+=hh.w*16*Math.exp(-d*9)*Math.cos(d*77+hh.t);fl+=hh.w*(hh.w>=.9?.7:.28)*Math.exp(-d*16)});
-  $('#cam').style.transform=`translate(${sx}px,${sy}px) rotate(${sx*.012}deg)`;$('#flash').style.opacity=Math.min(1,fl);
+  let fc='#fff';if(CFG.strobe&&t>=CFG.strobe[0]*BEAT&&t<CFG.strobe[1]*BEAT){const bi=Math.floor(t/BEAT),d=t-bi*BEAT;fl=Math.max(fl,.5*Math.exp(-d*13));fc=bi%2?'#ffd9b0':'#ff4a1c'}
+  $('#cam').style.transform=`translate(${sx}px,${sy}px) rotate(${sx*.012}deg)`;$('#flash').style.background=fc;$('#flash').style.opacity=Math.min(1,fl);
   $('#brand').style.opacity=cur.i===SC.length-1?0:.6;
 }
 window.render=render;document.fonts.ready.then(()=>{window.__ready=true;render(0)});

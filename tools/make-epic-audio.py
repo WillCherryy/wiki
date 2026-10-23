@@ -9,6 +9,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, 'make-ad-audio.py')).read().split('ROOT = [33, 29, 36, 31]')[0]
 ns = {'__name__': 'instruments'}; exec(src, ns)
 SR, put, hz, t_, saw, bandpass, pluck, riser, rng = (ns[k] for k in ('SR', 'put', 'hz', 't_', 'saw', 'bandpass', 'pluck', 'riser', 'rng'))
+kick, clap, hat, snare = (ns[k] for k in ('kick', 'clap', 'hat', 'snare'))
 TIMING = json.loads(re.search(r'window\.EPIC\s*=\s*(\{.*\});?\s*$', open(os.path.join(HERE, 'video', 'epic-timing.js')).read(), re.S).group(1))
 
 def noise(n): return rng.standard_normal(n)
@@ -72,7 +73,73 @@ def convolve(x, h):
     n = 1 << int(np.ceil(np.log2(len(x) + len(h)))); X = np.fft.rfft(x, n)
     return np.stack([np.fft.irfft(X * np.fft.rfft(h[c], n), n)[:len(x)] for c in range(2)], 1)
 
+def reese(f, dur, g=1.0):
+    t = t_(dur); s = sum(saw(f * d, t, 10) for d in (0.994, 1.0, 1.006)) / 3 + 0.6 * np.sin(2 * np.pi * f * t)
+    return s * np.minimum(t / 0.008, 1) * np.minimum((dur - t) / 0.03, 1) * 0.5 * g
+
+def build_strobe(name, cfg):
+    """Original club-style track: tension build, a held breath, then a four-on-the-floor drop with an offbeat bass,
+    syncopated chord stabs and claps. Every strobe flash in the picture lands on a kick."""
+    bpm = cfg['bpm']; beat = 60 / bpm; T = lambda b: b * beat
+    scenes = [s['b'] for s in cfg['scenes']]; total = sum(scenes); end_start = sum(scenes[:-1]); drop = cfg['drop']; s0, s1 = cfg['silence']; secs = total * beat
+    N = int(SR * (secs + 4.5)); z = lambda: np.zeros(N, np.float32)
+    DL, DR, ML, MR, FL, FR, SL, SR_ = z(), z(), z(), z(), z(), z(), z(), z()
+    ROOT = [33, 29, 36, 31]; CHORD = [[57, 60, 64, 69], [53, 57, 60, 65], [60, 64, 67, 72], [55, 59, 62, 67]]
+    kicks = []; both = lambda L, R, tt, sg, g: (put(L, tt, sg, g), put(R, tt, sg, g))
+    for bar in range(int(total // 4)):
+        b0 = bar * 4; ch = bar % 4; main = drop <= b0 < end_start; intro = b0 < drop
+        d = np.zeros(int(SR * (4 * beat + 0.6))); tt = t_(len(d) / SR)
+        for note in (ROOT[ch], ROOT[ch] + 7): d += sum(saw(hz(note) * dt, tt, 6) for dt in (0.997, 1.003)) * np.minimum(tt / 0.6, 1) * 0.5
+        both(ML, MR, T(b0), d, 0.2)
+        if intro:
+            for k in range(8):                                                         # quiet eighth-note hats and a pulsing sub
+                both(DL, DR, T(b0 + k * 0.5), hat(), 0.25 + 0.04 * bar)
+            if b0 >= 4:
+                for k in range(4): both(DL, DR, T(b0 + k), kick(0.7), 0.0 if b0 < 6 else 0.8); kicks.append(T(b0 + k))
+        if main:
+            for k in range(4):
+                tk = T(b0 + k); both(DL, DR, tk, kick(1.15), 1.0); kicks.append(tk)
+                both(DL, DR, T(b0 + k + 0.5), hat(True), 0.55)
+                bs = reese(hz(ROOT[ch] + (12 if k % 2 else 0)), beat * 0.42); both(ML, MR, T(b0 + k + 0.5), bs, 0.62)
+                for q in (0, 0.25, 0.75): both(DL, DR, T(b0 + k + q), hat(), 0.28)
+            for k in (1, 3): both(DL, DR, T(b0 + k), clap(), 0.65)
+            for q in (0, 0.75, 1.5, 2.25, 3.0):                                          # 3-3-2 style chord stabs
+                st = brass(hz(CHORD[ch][0] + 12), beat * 0.5, 0.9); both(FL, FR, T(b0 + q), st, 0.5); both(SL, SR_, T(b0 + q), st, 0.25)
+                st2 = brass(hz(CHORD[ch][2] + 12), beat * 0.5, 0.7); both(FL, FR, T(b0 + q), st2, 0.35)
+            if bar % 4 == 3:                                                               # fill into the next phrase
+                for k in range(8): sn = snare(); both(DL, DR, T(b0 + 3 + k * 0.125), sn, 0.25 + 0.09 * k)
+    # build: riser over the first scenes, snare roll that speeds up, then the gap
+    rs = riser(T(drop - 1.0), 180, 4200); both(FL, FR, 0.0, rs, 0.6)
+    for k in range(int((drop - 4) * 8)):
+        tt = T(4 + k * 0.125 * 4 / 4) if False else T(4 + k * 0.5 * (1 - 0.5 * k / ((drop - 4) * 2 + 1)))
+        if tt >= T(s0): break
+        both(DL, DR, tt, snare(), 0.2 + 0.5 * (tt / T(s0)))
+    rc = revcym(T(s0 - 4)); both(FL, FR, max(0, T(s0) - len(rc) / SR), rc, 0.5)
+    for h in cfg['hits']:
+        tt = T(h['b']); w = h['w']
+        if w >= 0.9:
+            bm = boom(); both(DL, DR, tt, bm, 0.9); cr = crash(); both(FL, FR, tt, cr, 0.5); both(SL, SR_, tt, bm, 0.4); kicks.append(tt)
+        else: both(DL, DR, tt, boom(1.8), 0.4)
+    for k, m in enumerate((69, 72, 76, 81, 84, 88)):                                      # end-card bells
+        sg = pluck(hz(m + 12), 1.6); tt = T(end_start) + T(1.5) + k * 0.14; both(FL, FR, tt, sg, 0.22); both(SL, SR_, tt, sg, 0.35)
+    for note in (57, 64, 69, 76):
+        c = choir(hz(note), 4 * beat * 2, 1.0); both(ML, MR, T(end_start), c, 0.5)
+    gate = np.ones(N, np.float32); a, b_ = int(T(s0) * SR), int(T(s1) * SR); gate[a:b_] = 0.0; ramp = int(0.03 * SR); gate[a - ramp:a] = np.linspace(1, 0, ramp)
+    duck = np.ones(N, np.float32)
+    for k in kicks:
+        i = int(k * SR); n = min(int(0.3 * SR), N - i); x = np.arange(n) / SR; duck[i:i + n] *= (1 - 0.65 * np.exp(-x / 0.1)).astype(np.float32)
+    dl, dr = (DL + ML * duck) * gate + FL * np.minimum(duck + 0.3, 1), (DR + MR * duck) * gate + FR * np.minimum(duck + 0.3, 1)
+    wet = convolve((((DL + DR) * 0.25) + (ML + MR) * 0.35 + (FL + FR) * 0.35) * gate + SL + SR_, ir(2.4)) * 0.26
+    mix = np.stack([dl, dr], 1)[:wet.shape[0]] + wet; mix = mix[:int(SR * (secs + 2.5))]
+    fade = np.ones(len(mix), np.float32); f0 = int(SR * 2.0); fade[-f0:] = np.linspace(1, 0, f0) ** 1.6; mix *= fade[:, None]
+    mix *= 0.55 / np.percentile(np.abs(mix), 97); mix = np.tanh(mix * 1.7) / np.tanh(1.7); mix *= 0.93 / np.max(np.abs(mix))
+    out = os.path.join(HERE, '..', 'brand', 'video'); os.makedirs(out, exist_ok=True)
+    with wave.open(os.path.join(out, f'scorcher-epic-{name}.wav'), 'wb') as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((mix * 32767).astype(np.int16).tobytes())
+    rms = [float(np.sqrt(np.mean(mix[int(i * SR):int((i + 1) * SR)] ** 2))) for i in range(int(secs))]
+    print(f'{name}: {secs:.1f}s at {bpm} BPM, peak {np.max(np.abs(mix)):.2f}; rms/s', ' '.join(f'{r:.2f}' for r in rms))
+
 def build(name):
+    if TIMING[name].get('style') == 'strobe': return build_strobe(name, TIMING[name])
     cfg = TIMING[name]; bpm = cfg['bpm']; beat = 60 / bpm; T = lambda b: b * beat
     scenes = [s['b'] for s in cfg['scenes']]; starts = [sum(scenes[:i]) for i in range(len(scenes))]; total = sum(scenes)
     drop, end_start = cfg['drop'], starts[-1]; s0, s1 = cfg['silence']; secs = total * beat
