@@ -28,7 +28,7 @@ ALLOWED_ORIGIN = "*"
 # [[d1_databases]]
 # binding = "DB"
 # database_name = "warmer"
-# database_id = "PASTE-DATABASE-ID-HERE"
+# database_id = "f2089bff-57e9-4e54-be80-ea66c9da3215"
 
 # Secrets (set with `wrangler secret put NAME`, never commit them):
 #   LS_SIGNING_SECRET        Lemon Squeezy webhook signing secret   (optional)
