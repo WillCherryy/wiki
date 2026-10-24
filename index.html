@@ -1343,6 +1343,7 @@ function renderPathMap(d, mine, clicks) {
     if (li) lv.sort((a, b) => (pos.get(key(a.p.slice(0, -1))).x - pos.get(key(b.p.slice(0, -1))).x) || b.n - a.n);
     lv.forEach((n, i) => pos.set(key(n.p), { x: Math.round(W * (i + 1) / (lv.length + 1)), y: 34 + li * dy }));
   });
+  const lvlen = new Map(); levels.forEach(lv => lv.forEach(n => lvlen.set(key(n.p), lv.length)));
   let edges = '', over = '', nodes = '';
   levels.slice(1).flat().forEach(n => {
     const a = pos.get(key(n.p.slice(0, -1))), b = pos.get(key(n.p)), dd = `M${a.x} ${a.y + 13} C${a.x} ${(a.y + b.y) / 2},${b.x} ${(a.y + b.y) / 2},${b.x} ${b.y - 13}`, w = (2 + 14 * n.n / total).toFixed(1);
@@ -1351,7 +1352,7 @@ function renderPathMap(d, mine, clicks) {
     if (mineKeys.has(key(n.p))) over += `<path d="${dd}" stroke="${ACC}" stroke-width="6" fill="none" stroke-linecap="round" opacity=".95"/>`;
   });
   levels.flat().forEach(n => {
-    const q = pos.get(key(n.p)), t = n.p[n.p.length - 1], isT = t === target && n.p.length > 1, me = mineKeys.has(key(n.p)), lab = (t.length > 13 ? t.slice(0, 12) + '…' : t), w = Math.max(54, 14 + lab.length * 6.6);
+    const q = pos.get(key(n.p)), t = n.p[n.p.length - 1], isT = t === target && n.p.length > 1, me = mineKeys.has(key(n.p)), cap = Math.max(34, Math.floor((W - 8) / lvlen.get(key(n.p))) - 6), ch = Math.max(3, Math.floor((cap - 14) / 6.2)), lab = t.length > ch ? t.slice(0, ch - 1) + '…' : t, w = Math.min(cap, Math.max(40, 14 + lab.length * 6.6));
     const fill = isT ? INKC : me ? ACC : 'var(--card)', ink = isT ? PAPER : me ? '#fff' : 'var(--ink)', stroke = favKeys.has(key(n.p)) && !me && !isT ? INKC : 'var(--line)';
     nodes += `<g><rect x="${q.x - w / 2}" y="${q.y - 13}" width="${w}" height="26" rx="13" style="fill:${fill};stroke:${stroke}" stroke-width="${favKeys.has(key(n.p)) ? 2 : 1}"/><text x="${q.x}" y="${q.y + 4}" text-anchor="middle" font-size="11" font-weight="700" style="fill:${ink}">${esc(lab)}</text><text x="${q.x}" y="${q.y + 27}" text-anchor="middle" font-size="9.5" font-weight="700" style="fill:var(--mute);stroke:var(--card);stroke-width:3px;paint-order:stroke">${n.n ? Math.round(n.n / total * 100) + '%' : '<1%'}</text></g>`;
   });
