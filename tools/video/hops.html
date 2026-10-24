@@ -8,7 +8,7 @@ html,body{margin:0;background:#000}canvas{display:block}
 </style></head><body><canvas id="c" width="1080" height="1920"></canvas>
 <script src="race-logo.js"></script>
 <script>
-const W = 1080, H = 1920, cv = document.getElementById('c'), g = cv.getContext('2d');
+const W = 1080, H = 1920, cv = document.getElementById('c'); let g = cv.getContext('2d'); const mainG = g, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const ocg = oc.getContext('2d');
 window.EVENTS = []; window.__ready = false;
 const CD = ['#4f7fc4', '#7ba4d4', '#e2cfa0', '#f59a62', '#ff6a45'];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
@@ -17,7 +17,7 @@ const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
 const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 const note = (t, kind, a = 0, b = 1) => window.EVENTS.push({ t: +t.toFixed(4), kind, a, b });
 const BG = '#14100c', CREAM = '#efe6d2', INK = '#1c1812', LINE = 'rgba(239,230,210,.92)', FAINT = 'rgba(239,230,210,.28)';
-const HOP = 3.3, EN = .4, D0 = 1.65;
+const HOP = 5.1, EN = .45, D0 = 1.9125;
 const D = h => D0 + h * HOP;
 const PAGES = [
   { title: 'Isaac Newton', link: 'gravity', oth: ['mathematician', 'physicist'], dia: 'orbit', eq: 'F = G m₁ m₂ / r²', text: 'Sir Isaac Newton (1643–1727) was an English mathematician, physicist and astronomer. In the Principia (1687) he formulated the three laws of motion and the law of universal gravity, laying the foundations of classical mechanics.' },
@@ -32,7 +32,7 @@ const PAGES = [
 const PW = 900, PX = 90, FS = 58, LH2 = 86;
 const LS = 1.5, LW = 611.95 * LS, LH = 419 * LS, LX = (W - LW) / 2, LY = 600;
 const logoDot = i => { const d = LOGO.dots[i]; return [LX + d.x * LS, LY + d.y * LS, d.r * LS]; };
-const ENDX = () => D(7) + 6.95;
+const ENDX = () => D(7) + 7.1;
 let END = 0, NET = [];
 function layoutPage(pg) {
   g.font = `400 ${FS}px EB`; const words = pg.text.split(' '), lines = []; let cur = [], w = 0; const sp = g.measureText(' ').width;
@@ -44,13 +44,13 @@ function layoutPage(pg) {
   pg.target = target; pg.endY = y;
 }
 function init() {
-  PAGES.forEach(layoutPage); END = ENDX() + 1.7; window.DURATION = END;
+  PAGES.forEach(layoutPage); END = ENDX() + 1.6; window.DURATION = END;
   const r = (n => () => hash(n++))(5);
   for (let i = 0; i < 24; i++) NET.push({ x: 150 + r() * 780, y: 760 + r() * 680, ap: i / 24 * .5 });
   // designated nodes: pick five that are spread out
   NET.forEach((n, i) => { n.des = -1; }); [3, 8, 13, 17, 21].forEach((ix, d) => NET[ix].des = d);
   PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + .2, 'mark', h); note(d + 1.15, 'zoom', h); note(d + 1.8, 'iris', h); });
-  note(D(7) + 3.3, 'collapse', 0); note(D(7) + 4.95, 'reveal', 0); note(D(7) + 5.8, 'tag', 0);
+  note(D(7) + 3.8, 'collapse', 0); note(D(7) + 5.1, 'reveal', 0); note(D(7) + 5.95, 'tag', 0);
   window.__ready = true;
 }
 // ------------------------------------------------------------------ paper page
@@ -159,19 +159,21 @@ function dLinks(u, tt, col) {
   edges.forEach(([i, j], ei) => { const a = nd[i], b = nd[j], gp = clamp((u - Math.max(NET[i].ap, NET[j].ap) - .06) * 5); if (gp <= 0) return; strokeC(2.2, `rgba(239,230,210,${.65 * (1 - col)})`); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(lerp(a.x, b.x, gp), lerp(a.y, b.y, gp)); g.stroke();
     if (gp >= 1 && col < .5) { const f = ((tt * .55 + ei * .137) % 1); if (hash(ei * 3.3) > .45) glowDot(lerp(a.x, b.x, f), lerp(a.y, b.y, f), 5, CD[4], 12); } });
   // a link race: a red route lights up along the graph
-  if (u > .7 && col < .7) { const route = [0, 5, 11, 16, 20, 23], f = clamp((tt - 1.0) / 1.2) * (route.length - 1); for (let q = 0; q < route.length - 1; q++) { const gp = clamp(f - q); if (gp <= 0) continue; const a = nd[route[q]], b = nd[route[q + 1]]; strokeC(5, rgba2(CD[4], .95 * (1 - col))); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(lerp(a.x, b.x, gp), lerp(a.y, b.y, gp)); g.stroke(); } route.forEach((id, q) => { if (f >= q) glowDot(nd[id].x, nd[id].y, 14 * (1 - col), CD[4], 18); }); }
+  if (u > .7 && col < .7) { const route = [0, 5, 11, 16, 20, 23], f = clamp((tt - 1.2) / 1.6) * (route.length - 1); for (let q = 0; q < route.length - 1; q++) { const gp = clamp(f - q); if (gp <= 0) continue; const a = nd[route[q]], b = nd[route[q + 1]]; strokeC(5, rgba2(CD[4], .95 * (1 - col))); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(lerp(a.x, b.x, gp), lerp(a.y, b.y, gp)); g.stroke(); } route.forEach((id, q) => { if (f >= q) glowDot(nd[id].x, nd[id].y, 14 * (1 - col), CD[4], 18); }); }
   nd.forEach(n => { if (n.a <= .01) return; g.globalAlpha = n.a; const des = NET[n.i].des; dot(n.x, n.y, Math.max(0, n.r), des >= 0 ? CD[des] : CREAM); }); g.globalAlpha = 1;
 }
 function darkScene(h, k) {
   const pg = PAGES[h]; g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); vg.addColorStop(0, 'rgba(60,45,30,.35)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, e = E.io(clamp((k - 1.92) / .6));
-  const last = h === 7, tt = Math.max(0, k - 1.9), u = clamp(tt / (last ? 1.5 : 1.6)), col = last ? clamp((k - 3.3) / 1.3) : 0;
-  g.save(); g.globalAlpha = p(k, 2.1, 2.6) * (last ? 1 - clamp((k - 3.3) / .3) : 1);
-  g.translate(540, CY); g.rotate(.018 * Math.sin(tt * .9 + h)); const zs = 1 + .03 * tt; g.scale(zs, zs); g.translate(-540, -CY);
+  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, e = E.io(clamp((k - 2.0) / .85));
+  const last = h === 7, tt = Math.max(0, k - 2.0), u = clamp(tt / (last ? 2.2 : 1.9)), col = last ? clamp((k - 3.8) / 1.3) : 0;
+  g.save(); g.globalAlpha = p(k, 2.3, 2.95) * (last ? 1 - clamp((k - 3.8) / .3) : 1);
+  g.translate(540, CY); g.rotate(.018 * Math.sin(tt * .9 + h)); const zs = (1 + .03 * tt) * (.92 + .08 * p(k, 2.2, 3.0)); g.scale(zs, zs); g.translate(-540, -CY);
   const dg = { orbit: dOrbit, wave: dWave, atom: dAtom, benzene: dBenzene, helix: dHelix, tree: dTree, universe: dUniverse }[pg.dia]; if (dg) dg(u, tt); g.restore();
-  if (last) { g.save(); g.globalAlpha = p(k, 2.1, 2.6); dLinks(u, tt, col); g.restore(); }
-  const ta = last ? 1 - clamp((k - 3.1) / .4) : 1; g.save(); g.globalAlpha = ta; g.fillStyle = CREAM; g.textAlign = 'center'; const sz = lerp(sz0, sz1, e), ty = lerp(H / 2 + sz0 * .3, 300, e); g.font = `400 ${sz}px EB`; g.fillText(word, W / 2, ty); const tw = g.measureText(word).width; g.fillStyle = '#d63a1f'; g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw, Math.max(4, sz * .04)); g.restore();
-  if (pg.eq && !last) { g.save(); const a = p(k, 2.3, 2.9); g.globalAlpha = a; g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1670 + (1 - a) * 20); g.restore(); }
+  if (last) { g.save(); g.globalAlpha = p(k, 2.3, 2.95); dLinks(u, tt, col); g.restore(); }
+  const ta = last ? 1 - clamp((k - 3.5) / .4) : 1; const tyOf = ee => lerp(H / 2 + sz0 * .3, 300, ee), szOf = ee => lerp(sz0, sz1, ee);
+  g.save(); for (let gI = 3; gI >= 1; gI--) { const ee = E.io(clamp((k - 2.0 - gI * .05) / .85)); if (ee > .02 && ee < .98) { g.globalAlpha = ta * .09 * (4 - gI); g.fillStyle = CREAM; g.textAlign = 'center'; g.font = `400 ${szOf(ee)}px EB`; g.fillText(word, W / 2, tyOf(ee)); } } g.restore();
+  g.save(); g.globalAlpha = ta; g.fillStyle = CREAM; g.textAlign = 'center'; const sz = lerp(sz0, sz1, e), ty = lerp(H / 2 + sz0 * .3, 300, e); g.font = `400 ${sz}px EB`; g.fillText(word, W / 2, ty); const tw = g.measureText(word).width; g.fillStyle = '#d63a1f'; const ug = clamp(e * 1.5 + .0); g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw * Math.max(ug, e < .01 ? 1 : 0), Math.max(4, sz * .04)); if (e < .01) g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw, Math.max(4, sz * .04)); g.restore();
+  if (pg.eq && !last) { g.save(); const a = p(k, 2.7, 3.3); g.globalAlpha = a; g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1670 + (1 - a) * 20); g.restore(); }
 }
 // ------------------------------------------------------------------ the logo card (start and end are identical, so the video loops)
 function card(opt = {}) {
@@ -183,11 +185,17 @@ function card(opt = {}) {
   if (dm > 0) { g.globalAlpha = dm; g.fillStyle = CREAM; g.font = 'italic 400 54px EB'; g.fillText('playscorcher.com', W / 2, LY + LH + 190 - (1 - dm) * 14); } g.globalAlpha = 1;
 }
 function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
-  const irisA = 1.62, irisB = 1.92;
+  const irisA = 1.5, irisB = 2.1;
   if (k < irisA) { pageScene(h, k); return; }
-  if (k < irisB) { pageScene(h, k); const R = 1500 * E.in3(clamp((k - irisA) / (irisB - irisA))) + 10; g.save(); g.beginPath(); g.arc(W / 2, H / 2, R, 0, 7); g.clip(); darkScene(h, k); g.restore(); return; }
+  if (k < irisB) {
+    pageScene(h, k); const f = E.io(clamp((k - irisA) / (irisB - irisA))), R = 1700 * f + 8, saved = g;
+    g = ocg; ocg.setTransform(1, 0, 0, 1, 0, 0); ocg.globalCompositeOperation = 'source-over'; ocg.globalAlpha = 1; ocg.clearRect(0, 0, W, H); darkScene(h, k);
+    ocg.globalCompositeOperation = 'destination-in'; const gr = ocg.createRadialGradient(W / 2, H / 2, Math.max(0, R - 170), W / 2, H / 2, R + 30); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ocg.fillStyle = gr; ocg.fillRect(0, 0, W, H); ocg.globalCompositeOperation = 'source-over';
+    g = saved; g.drawImage(oc, 0, 0);
+    g.save(); g.strokeStyle = `rgba(255,232,190,${.5 * (1 - f)})`; g.lineWidth = 3 + 7 * (1 - f); g.shadowColor = 'rgba(255,200,140,.8)'; g.shadowBlur = 30; g.beginPath(); g.arc(W / 2, H / 2, R + 6, 0, 7); g.stroke(); g.restore(); return;
+  }
   darkScene(h, k);
-  if (h === 7) { const col = clamp((k - 3.3) / 1.3); if (col > 0) { const dd = p(k, 4.2, 4.9), wp = p(k, 4.95, 5.85, E.io), tg = p(k, 5.8, 6.55), dm = p(k, 6.2, 6.95); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
+  if (h === 7) { const col = clamp((k - 3.8) / 1.3); if (col > 0) { const dd = p(k, 4.4, 5.1), wp = p(k, 5.1, 5.95, E.io), tg = p(k, 5.95, 6.7), dm = p(k, 6.35, 7.1); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
 }
 function render(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.textAlign = 'left'; const E0 = .5;

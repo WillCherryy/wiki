@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score for the hops advert: Bach's Prelude in C major (BWV 846, public domain), synthesised here as a piano, one bar per Wikipedia hop, under a cinematic bed (sub pedal, slow pad) with a heartbeat pulse that builds into a four-on-the-floor groove, whips, a marker swipe, risers into each zoom and a thud on each iris, then a collapse into the logo and a final C major chord. Cues come from tools/video/.hops-events.json (written from the picture itself). numpy only, no samples.
+"""Score for the hops advert, in the spirit of the Presto from Vivaldi's Summer (G minor, 188 bpm): a driving string orchestra synthesised from scratch (no samples) with racing 16th-note violin figures, repeated-note storm tremolo and scale runs, off-beat viola chords, a cello/bass 8th-note engine, tutti stabs and timpani, building hop by hop, then a collapse into the logo and a final G major tutti. It is original music written in that style, not a copy of the score. Cues come from tools/video/.hops-events.json. numpy only.
 Original docstring for the race advert: (140 BPM, A minor): four-on-the-floor kick, offbeat bass, claps, 16th hats and an
 arpeggio, with a bell ping on every link the dots find, a whoosh and pop at each hole, loops with a swoosh, a snare-roll build
 into the final spiral and a big hit on the last drop. Cues come from tools/video/.hops-events.json, written from the picture
@@ -13,7 +13,7 @@ ns = {'__name__': 'instruments'}; exec(src, ns)
 SR, put, hz, t_, saw, bandpass = (ns[k] for k in ('SR', 'put', 'hz', 't_', 'saw', 'bandpass'))
 kick, clap, hat, snare, riser, pluck = (ns[k] for k in ('kick', 'clap', 'hat', 'snare', 'riser', 'pluck'))
 D = json.load(open(os.path.join(HERE, 'video', '.hops-events.json'))); DUR, EV = D['duration'], D['events']; D0 = 1.1; HOP = 2.2; D7 = D0 + 7 * HOP; WM = [e['t'] for e in EV if e['kind'] == 'reveal'][0]
-BPM = 72.73; B = 60 / BPM; rng = np.random.default_rng(9)
+BPM = 188.2; B = 60 / BPM; rng = np.random.default_rng(9)
 N = int(SR * (DUR + 4)); z = lambda: np.zeros(N, np.float32)
 dry = [z(), z()]; send = [z(), z()]; mus = [z(), z()]; kicks = []
 both = lambda bufs, t, sg, g: (put(bufs[0], t, sg, g), put(bufs[1], t, sg, g))
@@ -49,67 +49,82 @@ def stab(f, dur):
 
 
 
-B = 60 / 72.727; SX = B / 4; HOP = 3.3; D0 = 1.65
+
+HOP = 5.1; B = HOP / 16; SX = B / 4; D0 = 6 * B
 def D(h): return D0 + h * HOP
-BARS = [[60, 64, 67, 72, 76], [60, 62, 69, 74, 77], [59, 62, 67, 74, 77], [60, 64, 67, 72, 76], [60, 64, 69, 76, 81], [60, 62, 66, 69, 74], [59, 62, 67, 74, 79], [59, 60, 64, 67, 72]]
-TENSION = [59, 62, 67, 74, 77]; PATTERN = [0, 1, 2, 3, 4, 2, 3, 4]
+PC = {'Gm': [7, 10, 2], 'Cm': [0, 3, 7], 'D7': [2, 6, 9, 0], 'Eb': [3, 7, 10], 'F': [5, 9, 0], 'Bb': [10, 2, 5], 'Am7b5': [9, 0, 3, 7]}
+ROOT = {'Gm': 7, 'Cm': 0, 'D7': 2, 'Eb': 3, 'F': 5, 'Bb': 10, 'Am7b5': 9}
+PHR = [['Gm', 'Gm', 'Cm', 'D7'], ['Gm', 'Cm', 'D7', 'Gm'], ['Gm', 'Cm', 'F', 'Bb'], ['Eb', 'Am7b5', 'D7', 'Gm'], ['Gm', 'Cm', 'D7', 'Gm'], ['Cm', 'F', 'Bb', 'Eb'], ['Am7b5', 'D7', 'Gm', 'D7'], ['Gm', 'Cm', 'D7', 'D7']]
+SCALE = [7, 9, 10, 0, 2, 3, 6]                      # G harmonic minor
+def tones(ch, lo, hi, pcs=None):
+    p = pcs or PC[ch]; return sorted(m for m in range(lo, hi + 1) if m % 12 in p)
 def lowpass(x, fc):
     n = len(x); X = np.fft.rfft(x); f = np.fft.rfftfreq(n, 1 / SR); return np.fft.irfft(X / (1 + (f / fc) ** 4), n)
-def piano(m, dur=3.0, vel=.7):
-    f = hz(m); t = t_(dur); out = np.zeros(len(t)); dec0 = .9 + f / 500
-    for k in range(1, 10):
-        if k * f > 9500: break
-        amp = vel / k ** 1.2; inh = 1 + .00035 * k * k
-        for det in (-.0009, 0, .0009): out += amp / 3 * np.sin(2 * np.pi * f * k * inh * (1 + det) * t) * np.exp(-t * dec0 * (1 + .55 * (k - 1)))
-    hm = noise(len(t)) * np.exp(-t * 110) * vel * .05; hm = lowpass(hm, 3500)
-    return (out + hm) * np.minimum(t / .0025, 1) * np.minimum((dur - t) / .08, 1)
-def pad(ms, dur, g=.05):
-    t = t_(dur); o = np.zeros(len(t))
-    for m in ms:
-        for d in (.996, 1.0, 1.004): o += saw(hz(m) * d, t, 12)
-    o = lowpass(o, 900) * g
-    return o * np.minimum(t / 1.1, 1) * np.minimum((dur - t) / .9, 1)
-def sub(m, dur, g=.6):
-    t = t_(dur); return np.sin(2 * np.pi * hz(m) * t) * np.minimum(t / .25, 1) * np.minimum((dur - t) / .4, 1) * g
-# bed + prelude: one bar per hop
+def bow(m, dur, vel=.7, att=.012, stac=False, vib=True):
+    f = hz(m); t = t_(dur); K = int(min(16, 7500 / f)); out = np.zeros(len(t))
+    ph0 = 2 * np.pi * np.cumsum(f * (1 + (.0035 * np.sin(2 * np.pi * 5.6 * t + m) * np.minimum(t / .25, 1) if vib else 0))) / SR
+    for d in (.9975, 1.0, 1.0028):
+        ph = ph0 * d
+        for k in range(1, K + 1): out += np.sin(k * ph) / k ** 1.05
+    env = np.minimum(t / att, 1) * (np.exp(-t * 14) if stac else np.minimum((dur - t) / .03, 1))
+    return out / 3 * env * vel * .5
+def stab(m, dur=.12, vel=.6): return bow(m, dur, vel, .004, True, False)
+def timp(m=31, g=1.0):
+    t = t_(.9); fr = hz(m) * (1 + .6 * np.exp(-t * 28)); ph = 2 * np.pi * np.cumsum(fr) / SR
+    return (np.sin(ph) * np.exp(-t * 5.5) + .5 * noise(len(t)) * np.exp(-t * 90) * .5) * g
+nbar = 4 * 8
 for h in range(8):
-    t0 = D(h); bar = BARS[h]
-    both(mus, t0, sub(bar[0] - 24, HOP + .3, .55), 1.0)
-    both(mus, t0, pad([bar[0] - 12, bar[2], bar[3]], HOP + 1.0, .07 + .012 * h), 1.0); both(send, t0, pad([bar[2], bar[3], bar[4]], HOP + 1.0, .04), 1.0)
-    pk = piano(bar[0] - 12, 3.4, .55); both(dry, t0, pk, .55)
-    for i in range(16):
-        m = bar[PATTERN[i % 8]]; v = .62 + (.18 if i % 4 == 0 else 0) + (.08 if i % 8 == 0 else 0); pn = piano(m, 3.0, v)
-        pan = .35 + .3 * (i % 8) / 7; put(dry[0], t0 + i * SX, pn, .5 * np.cos(pan * np.pi / 2)); put(dry[1], t0 + i * SX, pn, .5 * np.sin(pan * np.pi / 2)); both(send, t0 + i * SX, pn, .2)
-# intro swell on the C pedal
-both(mus, 0.0, sub(36, D0 + .3, .5), 1.0); both(mus, 0.0, pad([48, 55, 64], D0 + .6, .06), 1.0)
-for i in range(4): both(dry, .2 + i * SX * 2, piano((60, 64, 67, 72)[i], 2.0, .5), .35)
-# collapse bar (tension), final chord
-t0 = D(7) + HOP; both(mus, t0, sub(35, 2.2, .5), 1.0); both(mus, t0, pad([47, 62, 67, 74], 2.4, .09), 1.0)
-for i in range(8):
-    pn = piano(TENSION[PATTERN[i]], 2.4, .7 + .02 * i); both(dry, t0 + i * SX, pn, .5); both(send, t0 + i * SX, pn, .25)
-WM = [e['t'] for e in EV if e['kind'] == 'reveal'][0]
-for m, v in zip((36, 48, 55, 64, 67, 72, 76, 79), (.9, .8, .7, .7, .7, .7, .65, .6)): pn = piano(m, 5.0, v); both(dry, WM, pn, .5); both(send, WM, pn, .3)
-both(mus, WM, sub(24, 4.5, .9), 1.0); both(mus, WM, pad([48, 55, 60, 64, 67, 72], 4.5, .09), 1.0); both(dry, WM, ns['impact'](), .55)
-for j, m in enumerate((84, 88, 91, 96, 91, 88)): bl = bell(hz(m), .6); tt = WM + .3 + j * .2; both(dry, tt, bl, .1); both(send, tt, bl, .2)
-# rhythm that builds with the hops: heartbeat, then four-on-the-floor, claps, hats
-for i in range(int((D(7) + HOP) / B) + 2):
+    for b in range(4):
+        ch = PHR[h][b]; t0 = D(h) + b * 4 * B; lvl = h; first = b == 0
+        top = tones(ch, 69, 88); mid = tones(ch, 55, 74); low = tones(ch, 36, 52); bar = h * 4 + b
+        # violins: tremolo storm on bar 0, arpeggios on 1 and 3, scale run on 2
+        style = b % 4 if h % 2 == 0 else (b + 1) % 4
+        seq = []
+        if style == 0: seq = [top[len(top) // 2]] * 16
+        elif style in (1, 3):
+            ext = top + [m + 12 for m in top if m + 12 <= 91]; ix = [0, 1, 2, 3, 4, 3, 2, 1] * 2
+            seq = [ext[min(i, len(ext) - 1)] for i in ix]
+        else:
+            rt = ROOT[ch]; sc = [m for m in range(60, 92) if m % 12 in SCALE]; s0 = min(range(len(sc)), key=lambda i: (abs(sc[i] % 12 - rt) > 0, abs(sc[i] - 67)))
+            idx = list(range(s0, s0 + 8)) + list(range(s0 + 7, s0 - 1, -1)); seq = [sc[min(i, len(sc) - 1)] for i in idx]
+        for i, m in enumerate(seq):
+            v = .55 + (.25 if i % 4 == 0 else 0) + .02 * lvl; nt = bow(m, SX * 1.15, v, .006, True); pan = .3 + .4 * (i % 8) / 7
+            put(dry[0], t0 + i * SX, nt, 1.1 * np.cos(pan * np.pi / 2)); put(dry[1], t0 + i * SX, nt, 1.1 * np.sin(pan * np.pi / 2)); both(send, t0 + i * SX, nt, .3)
+        # viola off-beat chords (from hop 1)
+        if lvl >= 1:
+            for j in range(8):
+                for m in mid[:3]: both(dry, t0 + j * B / 2 + B / 4, stab(m, B * .3, .5), .5)
+        # cello/bass: driving 8ths on the root, octave jumps
+        for j in range(8):
+            rm = low[0] + (12 if j % 4 == 2 else 0); nt = bow(rm, B / 2 * .9, .85, .006, True, False); both(mus, t0 + j * B / 2, nt, .9)
+        # tutti stabs on bar downbeats (phrase starts louder)
+        if lvl >= 2 and (first or b == 2):
+            for m in low[:2] + mid[:3] + top[:2]: both(dry, t0, stab(m, B * .55, .8 if first else .55), .5); both(send, t0, stab(m, B * .55, .6), .3)
+        # timpani on the downbeat and a fill at the end of a phrase
+        if lvl >= 4: both(dry, t0, timp(31 if ROOT[ch] in (7, 3) else 36), .9)
+        if lvl >= 4 and b == 3:
+            for j in range(4): both(dry, t0 + 3 * B + j * B / 4, timp(36), .3 + .08 * j)
+# intro: low tremolo swelling in on G, and a bar of bass
+for i in range(int(D0 / SX)):
+    t = i * SX; v = .15 + .6 * (t / D0); both(mus, t, bow(55, SX * 1.1, v, .006, True, False), .7); both(dry, t, bow(79, SX * 1.1, v * .7, .006, True), .6)
+both(dry, 0, riser(D0, 150, 2800), .35)
+# collapse (the dominant D7 builds) and the final G major tutti
+WM = [e['t'] for e in EV if e['kind'] == 'reveal'][0]; tc = D(7) + 3.8
+both(dry, tc - .05, riser(WM - tc + .1, 200, 5200), .55)
+for i in range(int((WM - tc) / SX)): t = tc + i * SX; both(dry, t, bow(86 if i % 2 else 81, SX * 1.1, .6 + .03 * i, .006, True), .7); both(dry, t, timp(38, 1.0), .4 * (i % 4 == 0))
+for m, v in zip((31, 43, 50, 55, 59, 62, 67, 71, 74, 79), (1, .9, .8, .8, .8, .8, .75, .75, .7, .7)): nt = bow(m, 4.2, v, .02); both(dry, WM, nt, .11); both(send, WM, nt, .12)
+both(dry, WM, timp(31, 1.4), .6); both(dry, WM, ns['impact'](), .3)
+for j, m in enumerate((86, 91, 95, 98, 95, 91)): bl = bell(hz(m), .6); tt = WM + .25 + j * .2; both(dry, tt, bl, .1); both(send, tt, bl, .2)
+for i in range(int(D(7) / B) + 1):
     t = i * B
-    if t < D(1) - .01 or t > D(7) + HOP - .1: continue
-    h = int((t - D0) / HOP); heart = i % 2 == 0
-    if h < 3 and not heart: continue
-    both(dry, t, kick(1.0), .5 + .06 * h); kicks.append(t)
-    if h >= 2: both(dry, t + B / 2, hat(True), .12 + .02 * h)
-    if h >= 4 and i % 4 in (1, 3): both(dry, t, clap(), .3)
-    if h >= 3: both(dry, t + B / 4, hat(), .07); both(dry, t + B * .75, hat(), .07)
-    if h >= 5 and i % 4 == 0: both(mus, t, reese(hz(BARS[h][0] - 24), B * .9), .32)
+    if t < D(2) - .01 or t > D(7) + 3.8: continue
+    both(dry, t + B / 2, hat(True), .1)
 for e in EV:
     t, kd = e['t'], e['kind']
-    if kd == 'whip': both(dry, t, sweep(.42, 400, 6500, .6), .6)
-    elif kd == 'start': both(dry, t, riser(1.2, 150, 3500), .45)
-    elif kd == 'mark': both(dry, t, sweep(.4, 2000, 4200, .5), .3); both(dry, t + .42, pop(hz(96)), .16)
-    elif kd == 'zoom': both(dry, t, riser(.65, 300, 5200), .55)
-    elif kd == 'iris': both(dry, t, thud(hz(34)), 1.0); both(dry, t, sweep(.7, 5000, 300, .5), .4); both(send, t, bell(hz(81), .6), .16)
-    elif kd == 'collapse': both(dry, t - .1, riser(1.65, 200, 5200), .55)
+    if kd == 'whip': both(dry, t, sweep(.45, 400, 6500, .6), .4)
+    elif kd == 'mark': both(dry, t, sweep(.4, 2000, 4200, .5), .2)
+    elif kd == 'zoom': both(dry, t, riser(.65, 300, 5200), .4)
+    elif kd == 'iris': both(dry, t, thud(hz(34)), .7); both(dry, t, sweep(.7, 5000, 300, .5), .3); both(send, t, bell(hz(81), .6), .12)
 # sidechain, reverb, master
 duck = np.ones(N, np.float32)
 for k in kicks:
