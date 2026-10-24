@@ -64,8 +64,8 @@ function simulate() {
     frames.push(cells.map(c => [c.x, c.y, rad(c), c.alive, c.pulse, c.by === undefined ? -1 : c.by, c.eatT === undefined ? 0 : c.eatT, c.ex || 0, c.ey || 0]));
   }
   // camera follows the hero and pulls back as it grows
-  let cx = frames[0][0][0], cy = frames[0][0][1], z = 1.0, vx = 0, vy = 0, vz = 0;
-  for (let f = 0; f < frames.length; f++) { const h = frames[f][0], tz = clamp(235 / (h[2] * 2.2), .4, 1.0), k = 30, d = 2 * Math.sqrt(k);
+  let cx = frames[0][0][0], cy = frames[0][0][1], z = 1.3, vx = 0, vy = 0, vz = 0;
+  for (let f = 0; f < frames.length; f++) { const h = frames[f][0], tz = clamp(300 / (h[2] * 2.2), .45, 1.3), k = 30, d = 2 * Math.sqrt(k);
     vx += (k * (h[0] - cx) - d * vx) * dt; vy += (k * (h[1] - cy) - d * vy) * dt; vz += (12 * (tz - z) - 7 * vz) * dt; cx += vx * dt; cy += vy * dt; z += vz * dt; camTrack.push([cx, cy, z]); }
 }
 const camBase = t => { const f = clamp(t * FPS, 0, camTrack.length - 1), i = Math.floor(f), u = f - i, a = camTrack[i], b = camTrack[Math.min(camTrack.length - 1, i + 1)]; return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)]; };
@@ -128,10 +128,33 @@ function dotPath(x0, y0, r, t, ph, amp, pul) { // wobbling blob
   for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, rr = r * s * (1 + amp * (.5 * Math.sin(a * 5 + t * 3.1 + ph) + .35 * Math.sin(a * 3 - t * 2.3 + ph * 1.7))); const x = x0 + Math.cos(a) * rr, y = y0 + Math.sin(a) * rr; i ? g.lineTo(x, y) : g.moveTo(x, y); }
   g.closePath();
 }
-function blob(x, y, r, col, t, ph, pul = 0, glow = 0) {
-  const c = rgb(col); if (glow) { g.save(); g.shadowColor = rgba(c, .8); g.shadowBlur = glow; dotPath(x, y, r, t, ph, .035, pul); g.fillStyle = col; g.fill(); g.restore(); }
-  dotPath(x, y, r, t, ph, .035, pul); const gr = g.createRadialGradient(x - r * .3, y - r * .35, r * .1, x, y, r * 1.05); gr.addColorStop(0, rgba(mixc(c, [255, 255, 255], .22), 1)); gr.addColorStop(.7, col); gr.addColorStop(1, rgba(mixc(c, [0, 0, 0], .25), 1)); g.fillStyle = gr; g.fill();
+function face(x, y, r, col, t, ph, f) {
+  // cute kawaii face: glossy eyes, blush, tiny mouth. f = {mode, lx, ly, a}
+  const c = rgb(col), ink = rgba(mixc(c, [10, 6, 12], .82), 1), mode = f.mode, bl = (t * .8 + ph * .37) % 3.1 < .13 || mode === 'sleep';
+  g.save(); g.globalAlpha *= f.a; g.translate(x + f.lx * r * .08, y + f.ly * r * .06 + r * .04);
+  const ex = r * .3, ey = -r * .06, er = r * (mode === 'scared' ? .17 : .135);
+  // blush
+  g.fillStyle = 'rgba(255,120,140,.42)'; [-1, 1].forEach(sd => { g.beginPath(); g.ellipse(sd * r * .5, r * .2, r * .13, r * .08, 0, 0, 7); g.fill(); });
+  g.lineCap = 'round'; g.strokeStyle = ink; g.fillStyle = ink; g.lineWidth = Math.max(1.4, r * .055);
+  [-1, 1].forEach(sd => {
+    const cx = sd * ex;
+    if (bl || mode === 'happy') { g.beginPath(); g.arc(cx, ey + r * .03, er * .95, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
+    else if (mode === 'ouch') { g.beginPath(); g.moveTo(cx - sd * er * .9, ey - er * .9); g.lineTo(cx + sd * er * .7, ey); g.lineTo(cx - sd * er * .9, ey + er * .9); g.stroke(); }
+    else { g.beginPath(); g.ellipse(cx, ey, er * .85, er * 1.15, 0, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + er * .25, ey - er * .38, er * .36, 0, 7); g.fill(); g.beginPath(); g.arc(cx - er * .28, ey + er * .4, er * .16, 0, 7); g.fill(); g.fillStyle = ink; }
+  });
+  const my = r * .24;
+  if (mode === 'nom') { g.beginPath(); g.ellipse(0, my + r * .04, r * .15, r * .13 + r * .03 * Math.sin(t * 30), 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,110,130,.95)'; g.beginPath(); g.ellipse(0, my + r * .1, r * .09, r * .06, 0, 0, 7); g.fill(); }
+  else if (mode === 'scared' || mode === 'ouch') { g.beginPath(); g.ellipse(0, my + r * .04, r * .07, r * .09, 0, 0, 7); g.fill(); }
+  else { g.beginPath(); g.arc(-r * .09, my, r * .09, .15, Math.PI * .95); g.arc(r * .09, my, r * .09, Math.PI * .05, Math.PI * .85); g.stroke(); }
+  g.restore();
+}
+function blob(x, y, r, col, t, ph, pul = 0, glow = 0, fc = null) {
+  const c = rgb(col); if (glow) { g.save(); g.shadowColor = rgba(c, .8); g.shadowBlur = glow; dotPath(x, y, r, t, ph, .045, pul); g.fillStyle = col; g.fill(); g.restore(); }
+  dotPath(x, y, r, t, ph, .045, pul); const gr = g.createRadialGradient(x - r * .3, y - r * .35, r * .1, x, y, r * 1.05); gr.addColorStop(0, rgba(mixc(c, [255, 255, 255], .22), 1)); gr.addColorStop(.7, col); gr.addColorStop(1, rgba(mixc(c, [0, 0, 0], .25), 1)); g.fillStyle = gr; g.fill();
   g.lineWidth = Math.max(1.5, r * .06); g.strokeStyle = rgba(mixc(c, [0, 0, 0], .45), .85); g.stroke();
+  // glossy highlight
+  g.save(); g.globalAlpha *= .55; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x - r * .42, y - r * .55, r * .2, r * .11, -.6, 0, 7); g.fill(); g.restore();
+  if (fc && fc.a > .01) face(x, y, r, col, t, ph, fc);
 }
 function fitText(txt, font, maxw) { g.font = font(100); const w = g.measureText(txt).width; return 100 * Math.min(1, maxw / w); }
 function drawWorld(t, cam, alpha) {
@@ -160,7 +183,14 @@ function drawWorld(t, cam, alpha) {
   // hero ghost trail while dashing
   if (t > 17 && t < hitT) for (let k = 5; k >= 1; k--) { const f = stAt(t - k * .035)[0]; g.globalAlpha = alpha * .12 * (6 - k) / 5; blob(f[0], f[1], f[2], CD[4], t, 0, 0, 0); }
   g.globalAlpha = alpha;
-  draw.forEach(d => { const ph = cells[d.i].ph, since = t - d.pul, pul = since >= 0 && since < .5 ? .1 * Math.exp(-since * 9) * Math.cos(since * 28) : 0; blob(d.x, d.y, d.r, d.col, t, ph, pul, d.i === 0 ? 50 : 0); });
+  const prev = stAt(Math.max(0, t - .06)), hero = st[0];
+  draw.forEach(d => { const ph = cells[d.i].ph, since = t - d.pul, pul = since >= 0 && since < .5 ? .1 * Math.exp(-since * 9) * Math.cos(since * 28) : 0;
+    const vx = d.x - prev[d.i][0], vy = d.y - prev[d.i][1], vm = Math.hypot(vx, vy) || 1, hd = Math.hypot(hero[0] - d.x, hero[1] - d.y);
+    let mode = 'idle'; if (d.sw) mode = 'scared'; else if (d.i === 0) { const near = st.some((q, j) => j && q[3] && Math.hypot(q[0] - d.x, q[1] - d.y) < d.r * 2.1 + q[2]); mode = near || since < .4 || t > 16.8 ? 'nom' : 'idle'; } else if (hd < 520 + hero[2] && hero[2] > d.r * 1.1) mode = 'scared';
+    const bob = Math.sin(t * 2.1 + ph) * d.r * .03, sq = Math.min(.1, vm / 60 * .1);
+    if (!d.sw) { g.save(); g.globalAlpha = alpha * .28; g.fillStyle = '#000'; g.beginPath(); g.ellipse(d.x + d.r * .1, d.y + d.r * .98, d.r * .85, d.r * .22, 0, 0, 7); g.fill(); g.restore(); }
+    g.save(); g.translate(d.x, d.y + bob); g.rotate(Math.atan2(vy, vx)); g.scale(1 + sq, 1 - sq); g.rotate(-Math.atan2(vy, vx)); g.translate(-d.x, -d.y);
+    blob(d.x, d.y, d.r, d.col, t, ph, pul, d.i === 0 ? 50 : 0, d.r * z > 9 ? { mode, lx: vx / vm, ly: vy / vm, a: 1 } : null); g.restore(); });
   // eat puffs
   eats.forEach(e => { const a = t - e.t; if (a < 0 || a > .45 || t > hitT) return; const pr = cells[e.prey], f = frames[Math.round(e.t * FPS)][e.prey]; const k = a / .45; g.globalAlpha = alpha * (1 - k) * .8; g.strokeStyle = CD[Math.max(0, C.indexOf(pr.c))]; g.lineWidth = (1 - k) * 8 / 1; g.beginPath(); const ex = frames[Math.round(e.t * FPS)][e.who]; g.arc(ex[0] + f[7], ex[1] + f[8], f[2] * (1 + 1.6 * E.out3(k)), 0, 7); g.stroke(); });
   g.restore();
@@ -193,7 +223,7 @@ function render(t) {
     const pulses = [0, 0, 0, 0, 0]; items.forEach(it => { if (it.dest < 0) { const arr = it.ts + it.dur, dd = logoDot(it.ab); if (h > arr && h < arr + .5) pulses[it.ab] += .16 * Math.exp(-(h - arr) * 10) * Math.cos((h - arr) * 26); } });
     items.sort((a, b) => (a.kind === 'dot' ? 1 : 0) - (b.kind === 'dot' ? 1 : 0) || (a.dest >= 0) - (b.dest >= 0)).forEach(it => {
       const s = state(it, h); if (s.a <= .01) return; g.save(); g.globalAlpha = s.a; g.translate(s.x, s.y); g.rotate(s.rot); g.scale(s.sc, s.sc);
-      if (it.kind === 'dot') { g.rotate(-s.rot); const pul = it.dest >= 0 ? pulses[it.dest] : 0; g.translate(0, 0); blob(0, 0, it.r, it.col, h, it.ang, pul, it.core ? 60 : it.dest >= 0 ? 24 : 0); }
+      if (it.kind === 'dot') { g.rotate(-s.rot); const pul = it.dest >= 0 ? pulses[it.dest] : 0; g.translate(0, 0); const eFace = it.dest >= 0 || it.kind === 'dot' ? { mode: h < 1.3 ? 'ouch' : 'happy', lx: 0, ly: 0, a: h < it.ts + it.dur * .6 ? 1 : 1 - clamp((h - it.ts - it.dur * .6) / (it.dur * .4)) * (it.dest >= 0 ? 1 : 1) } : null; blob(0, 0, it.r, it.col, h, it.ang, pul, it.core ? 60 : it.dest >= 0 ? 24 : 0, it.r * s.sc > 8 ? eFace : null); }
       else if (it.kind === 'shard') { g.fillStyle = it.col; g.shadowColor = rgba(rgb(it.col), .6); g.shadowBlur = 12; g.fillRect(-it.w / 2, -it.h / 2, it.w, it.h); }
       else { const fs = it.sz; g.font = `400 ${fs}px EB`; g.textAlign = 'center'; g.fillStyle = CREAM; g.fillText(it.txt, 0, fs * .3); if (it.kind === 'word') { const w = g.measureText(it.txt).width; g.fillStyle = RED; g.fillRect(-w / 2, fs * .3 + fs * .1, w, Math.max(3, fs * .06)); } }
       g.restore();
