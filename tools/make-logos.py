@@ -91,7 +91,7 @@ write('wordmark.svg', wordonly(INK, ACCENT)); write('wordmark-on-dark.svg', word
 write('wordmark-black.svg', wordonly(INK, INK, True)); write('wordmark-white.svg', wordonly('#ffffff', '#ffffff', True))
 write('logo-horizontal.svg', horizontal(INK, ACCENT, RAMP)); write('logo-horizontal-on-dark.svg', horizontal(PAPER, '#ff6a45', RAMP_DARK, bg=INK))
 write('logo-horizontal-black.svg', horizontal(INK, INK, RAMP, INK)); write('logo-horizontal-white.svg', horizontal('#fff', '#fff', RAMP, '#fff'))
-write('logo-stacked.svg', stacked(INK, ACCENT, RAMP)); write('logo-stacked-on-dark.svg', stacked(PAPER, '#ff6a45', RAMP_DARK, bg=INK))
+write('logo-stacked.svg', stacked(INK, ACCENT, RAMP)); write('logo-stacked-on-dark.svg', stacked(PAPER, '#ff6a45', RAMP_DARK, bg=INK)); write('logo-stacked-transparent-on-dark.svg', stacked(PAPER, '#ff6a45', RAMP_DARK))
 write('app-icon.svg', icon(INK, RAMP_DARK)); write('app-icon-light.svg', icon(PAPER, RAMP))
 open(os.path.join(ROOT, 'favicon.svg'), 'w').write(icon(INK, RAMP_DARK, 0.9, 14))
 print('logo suite written to brand/')
