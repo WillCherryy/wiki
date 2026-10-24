@@ -319,6 +319,17 @@ async function renderHome() {
 function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch { return null; } }
 
 /* ------------------------------------------------------------------ gameplay */
+/* Practice puzzles always come with a verified shortest route: a stored one if we have it, otherwise one found and checked here. */
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+async function practicePuzzle() {
+  const v = verifiedPair(); if (v) return { from: v.from, to: v.to, par: v.par, route: v.route, alts: v.alts || [] };
+  const say = m => { const l = document.querySelector('#article .loading'); if (l) l.lastChild.textContent = m; };
+  for (let i = 0; i < 6; i++) {
+    const [from, to] = await resolvePair('p' + Math.random()); say(`Finding a puzzle with a guaranteed route…${i ? ` (${i + 1})` : ''}`);
+    try { const r = await withTimeout(checkRoute(from, to), 30000); if (r && r.route && r.par <= 4) return { from, to, par: r.par, route: r.route, alts: r.alts || [] }; } catch {}
+  }
+  const [from, to] = await resolvePair('p' + Math.random()); return { from, to, par: null, route: null, alts: [] };     // last resort: network trouble, so play without a route
+}
 async function startGame(mode, resume, extra) {
   const day = dayKey();
   show('game'); setTemp(0);
@@ -328,7 +339,7 @@ async function startGame(mode, resume, extra) {
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
   else if (mode === 'live') { resume = null; from = extra.from; to = extra.to; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
-  else { resume = null; const v = verifiedPair(); if (v) { from = v.from; to = v.to; meta = { par: v.par, route: v.route, alts: v.alts || [] }; } else [from, to] = await resolvePair('p' + Math.random()); }
+  else { resume = null; const v = await practicePuzzle(); from = v.from; to = v.to; meta = { par: v.par, route: v.route, alts: v.alts || [] }; }
   G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, alts: meta.alts || [], base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
   if (mode === 'live') G.base = extra.base || 0;
   if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, usedFind: !!resume.usedFind, moves: resume.moves || 0, base: resume.base });
@@ -513,18 +524,27 @@ async function fillCrowd(r) {
   });
   if (dev) dev.innerHTML = left ? `You left the crowd at step ${left.step}: ${left.topPct}% went via <b>${esc(left.top)}</b>, you chose <b>${esc(left.mine)}</b> (${left.pct}%).` : 'You followed the crowd favourite all the way.';
 }
+function routeLine(titles, tones, shared) {
+  const n = titles.length;
+  return `<div class="rln${n >= 5 ? ' dense' : ''}" style="--n:${n}"><i class="ln"></i>${titles.map((t, i) => `<div class="nd${shared && i && i < n - 1 && shared.has(norm(t)) ? ' sh' : ''}"><div class="cw"><i style="background:${tones[i].c};width:${tones[i].d}px;height:${tones[i].d}px">${i ? `<b>${i}</b>` : ''}</i></div><span>${esc(t)}</span></div>`).join('')}</div>`;
+}
+const routeHead = (tag, clicks, cls = '') => `<div class="rhd"><span class="tag ${cls}">${tag}</span><span class="pill">${clicks} click${clicks === 1 ? '' : 's'}</span></div>`;
 function routesCard(r) {
-  const yours = r.path || [], sigs = (r.steps || []).map(s => s.sig);
-  const yd = yours.map((_, i) => { const sg = r.won && i === yours.length - 1 ? 1 : sigs[i] == null ? 0 : sigs[i]; return { c: tempCss(sg), d: 14 + Math.round(sg * 14) }; });
+  const yours = r.path || [], sigs = (r.steps || []).map(s => s.sig), key = k => k.map(norm).join('>');
+  const yt = yours.map((_, i) => { const sg = r.won && i === yours.length - 1 ? 1 : sigs[i] == null ? 0 : sigs[i]; return { c: tempCss(sg), d: 22 + Math.round(sg * 12) }; });
   const known = [r.route, ...(r.alts || [])].filter(a => Array.isArray(a) && a.length > 1);
-  const shortest = known.length ? known[0].length - 1 : null, mine = yours.map(norm).join('>');
-  const hit = known.findIndex(k => k.map(norm).join('>') === mine);
+  const shortest = known.length ? known[0].length - 1 : null, mineKey = key(yours);
+  const mineOptimal = r.won && known.some(k => key(k) === mineKey);
+  const others = known.filter(k => key(k) !== mineKey), shared = new Set(yours.map(norm));            // never list your own route a second time
+  const tag = i => r.won ? (mineOptimal ? (others.length > 1 ? `Another optimal route ${i + 1}` : 'Another optimal route') : (others.length > 1 ? `Optimal route ${i + 1}` : 'Optimal route')) : (others.length > 1 ? `A way through ${i + 1}` : 'A way through');
   let verdict = '';
-  if (known.length && r.won) verdict = r.clicks < shortest ? 'Shorter than our shortest known route. Nice find.' : r.clicks === shortest ? (hit >= 0 ? 'You found one of the shortest routes.' : 'Your own route, as short as the shortest.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
+  if (known.length && r.won) verdict = r.clicks < shortest ? 'Shorter than our shortest known route. Nice find.' : r.clicks === shortest ? (mineOptimal ? 'You found one of the shortest routes.' : 'Your own route, as short as the shortest.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
   else if (known.length) verdict = 'Here is a way through.';
-  return `<section class="rcard"><h4>Optimal paths <small>${known.length ? `fastest possible: ${shortest} click${shortest === 1 ? '' : 's'}${known.length > 1 ? ` · ${known.length} routes shown` : ''}` : r.won ? 'yours' : ''}</small></h4>
-    ${r.won ? routeRow(yours, yd, ['You', `${r.clicks} click${r.clicks === 1 ? '' : 's'}`], 'you') : ''}
-    ${known.map((k, i) => routeRow(k, rampDots(k.length).map(ci => ({ c: DOT_C[ci], d: 14 + ci * 3 })), [i ? `Optimal route ${i + 1}` : 'Optimal route 1', `${k.length - 1} click${k.length === 2 ? '' : 's'}${i === hit ? ' · yours' : ''}`], i === hit ? 'mine' : '')).join('')}
+  const ramp = n => rampDots(n).map(ci => ({ c: DOT_C[ci], d: 22 + ci * 3 }));
+  return `<section class="rcard"><h4>Optimal paths <small>${known.length ? `fastest possible: ${shortest} click${shortest === 1 ? '' : 's'}` : r.won ? 'yours' : ''}</small></h4>
+    ${r.won ? routeHead(mineOptimal ? 'Your route · optimal' : 'Your route', r.clicks, 'you') + routeLine(yours, yt, null) : ''}
+    ${others.map((k, i) => routeHead(tag(i), k.length - 1) + routeLine(k, ramp(k.length), shared)).join('')}
+    ${mineOptimal && !others.length ? '<p class="rtf">That is the only shortest route we found.</p>' : ''}
     ${verdict ? `<p class="rtv">${verdict}</p>` : ''}
     ${known.length ? '<p class="rtf">Every puzzle is checked: it can always be solved in four clicks or fewer.</p>' : r.mode === 'practice' || r.mode === 'daily' ? '<p class="rtf">This pair was picked automatically and has not been route-checked.</p>' : ''}</section>`;
 }

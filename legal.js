@@ -5,6 +5,7 @@
   const set = (k, v) => document.querySelectorAll('[data-fill="' + k + '"]').forEach(el => {
     if (k === 'contact' && v) { el.innerHTML = '<a href="mailto:' + v + '">' + v + '</a>'; } else el.textContent = v;
   });
+  set('team', c.team || 'the Scorcher team');
   set('operator', c.operator || '[operator name not set]');
   set('contact', c.contact || '[contact email not set]');
   set('jurisdiction', c.jurisdiction || 'England and Wales');
