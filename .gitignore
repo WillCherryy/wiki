@@ -8,3 +8,4 @@ dist/
 brand/video/*.wav
 posters/
 tools/video/.calm-events.json
+tools/video/.race-events.json

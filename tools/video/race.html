@@ -1,0 +1,170 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher race</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:500;src:url(../../fonts/eb-garamond-latin-500-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:500;src:url(../../fonts/instrument-sans-latin-500-normal.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+*{box-sizing:border-box;margin:0}html,body{background:#000;overflow:hidden}
+#scene{position:relative;width:1080px;height:1920px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#2a221c 0%,#14100d 70%);perspective:1050px;perspective-origin:50% 42%}
+#plane{position:absolute;left:540px;top:1000px;width:1000px;transform-origin:0 0;will-change:transform}
+#page{position:relative;width:1000px;background:#fbf8f1;color:#16130f;font-family:EB;padding:70px 64px 120px;box-shadow:0 0 0 2px #e6dfce,0 40px 120px rgba(0,0,0,.65),0 0 0 14px rgba(255,255,255,.03);
+  background-image:radial-gradient(rgba(60,40,10,.045) 1px,transparent 1.2px),radial-gradient(rgba(60,40,10,.03) 1px,transparent 1.4px);background-size:7px 7px,11px 11px;background-position:0 0,3px 4px}
+#page h1{font:400 118px/1 EB;letter-spacing:-.02em;margin:0 0 6px;border-bottom:3px solid #16130f;padding-bottom:10px}
+#page .sub{font:italic 400 36px/1.2 EB;color:#4b453b;margin:12px 0 38px}
+#page h2{font:400 66px/1.1 EB;margin:58px 0 16px;border-bottom:2px solid #d8cfbf;padding-bottom:6px;letter-spacing:-.01em}
+#page p{font:400 38px/1.5 EB;margin:0 0 26px;color:#1d1a15}
+#page .l{text-decoration:underline;text-decoration-color:#d63a1f;text-decoration-thickness:3px;text-underline-offset:5px}
+#page .box{float:right;width:330px;margin:6px 0 24px 34px;border:2px solid #d8cfbf;background:#f3eee4;padding:18px;font:500 26px/1.3 IS}
+#page .box .ph{height:200px;background:linear-gradient(135deg,#d6cdb8,#b9ae98);margin-bottom:12px;display:grid;place-items:center;font:italic 400 30px EB;color:#7a7265}
+#page .box b{display:block;font:600 22px IS;letter-spacing:.14em;text-transform:uppercase;color:#7a7265;margin:10px 0 2px}
+#page .quote{border-left:8px solid #d63a1f;padding:6px 0 6px 30px;margin:34px 0;font:italic 400 52px/1.25 EB;color:#2b261f}
+#page ul{margin:0 0 26px 40px;font:400 38px/1.6 EB}
+#fx{position:absolute;left:0;top:0;width:1000px;pointer-events:none}
+#haze{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(20,16,13,.96) 0%,rgba(20,16,13,.55) 16%,rgba(20,16,13,0) 36%)}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.6) 100%)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#end{position:absolute;inset:0;opacity:0;pointer-events:none}
+</style></head><body>
+<div id="scene">
+ <div id="plane"><div id="page"></div><canvas id="fx"></canvas></div>
+ <div id="haze"></div><div id="vig"></div><div id="flash"></div><canvas id="end" width="1080" height="1920"></canvas>
+</div>
+<script>
+const $ = s => document.querySelector(s), W = 1080, H = 1920, C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'];
+const L = t => `<span class="l">${t}</span>`;
+const PAGE = `<h1>Bradley Wiggins</h1><div class="sub">British former professional road and track racing cyclist</div>
+<div class="box"><div class="ph">photo</div><b>Born</b>Kilburn, London<b>Nationality</b>British<b>Discipline</b>Road and track</div>
+<p>${L('Cycling')} is the use of bicycles for transport, recreation and sport. A ${L('bicycle')} is a human-powered vehicle with two wheels, and the sport is practised on roads, tracks and trails across the ${L('world')}.</p>
+<p>Races on the road are often organised in stages. The best known is the ${L('Tour de France')}, held every year in ${L('France')} and its neighbouring countries, while track events are run in indoor arenas called ${L('velodromes')}.</p>
+<h2>Overview</h2>
+<p>The ${L('Olympic Games')} are a major international multi-sport event held every four years. Cycling has been part of the programme since the first modern Games, and the ${L('Great Britain')} team has competed in every edition.</p>
+<div class="quote">Every link is a door to another page.</div>
+<p>${L('London')} is the capital of England and the United Kingdom, and it has hosted the Games three times. ${L('Sydney')} is the capital city of New South Wales and hosted the Games in the year 2000.</p>
+<h2>History</h2>
+<p>The first ${L('Wikipedia')} article was written in 2001. Today the encyclopedia has millions of pages, connected by links that let a reader move from one subject to almost any other in only a few clicks.</p>
+<ul><li>${L('Europe')} has a long tradition of road racing.</li><li>${L('Australia')} is both a country and a continent.</li><li>The ${L('BBC')} is the national broadcaster of the United Kingdom.</li></ul>
+<p>Broadcasting made cycling a spectator sport. The ${L('British Broadcasting Corporation')} was founded in 1922, and public broadcasters elsewhere followed, including the ${L('Australian Broadcasting Corporation')}, which is Australia's public broadcaster.</p>
+<h2>See also</h2>
+<p>${L('Sport')} ${L('Television')} ${L('Journalism')} ${L('Radio')} ${L('Media')} ${L('Culture')} ${L('Australian Broadcasting Corporation')}</p><div style="height:300px"></div>`;
+$('#page').innerHTML = PAGE;
+window.__ready = false; window.EVENTS = []; const DUR = 24, FPS = 60; window.DURATION = DUR;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, back: k => { const c1 = 2, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); } };
+const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), mixc = (a, b, k) => a.map((v, i) => Math.round(lerp(v, b[i], k)));
+const ramp = h => { h = clamp(h) * 4; const i = Math.min(3, Math.floor(h)); return mixc(rgb(C[i]), rgb(C[i + 1]), h - i); }, rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const NDOT = 5, DR = [20, 26, 34, 43, 54], HOLE_R = 84;
+let PH = 0, LK = [], paths = [], ev = [], cam = [], hole = {}, hit = {};
+const note = (t, kind, midi = 0, vel = 1, pan = .5) => window.EVENTS.push({ t: +t.toFixed(4), kind, midi, vel, pan });
+function crom(P, i, u) { const g = j => P[clamp(j, 0, P.length - 1)], a = g(i - 1), b = g(i), c = g(i + 1), d = g(i + 2), u2 = u * u, u3 = u2 * u; const f = (p0, p1, p2, p3) => .5 * (2 * p1 + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 + (-p0 + 3 * p1 - 3 * p2 + p3) * u3); return [f(a[0], b[0], c[0], d[0]), f(a[1], b[1], c[1], d[1])]; }
+function init() {
+  const page = $('#page'); PH = page.offsetHeight; const fx = $('#fx'); fx.width = 1000; fx.height = PH; fx.style.height = PH + 'px';
+  const pr = page.getBoundingClientRect(); LK = [...document.querySelectorAll('#page .l')].map(e => { const r = e.getBoundingClientRect(); return { t: e.textContent, x: r.left - pr.left + r.width / 2, y: r.top - pr.top + r.height / 2, w: r.width, h: r.height }; });
+  const R = rng(11), by = (name, nth = 0) => LK.filter(l => l.t === name)[nth];
+  // the route, in order. Holes: Tour de France -> Olympic Games, Sydney -> Europe. Target: the Australian Broadcasting Corporation in the text.
+  const route = ['Cycling', 'bicycle', 'world', 'Tour de France', 'Olympic Games', 'Great Britain', 'London', 'Sydney', 'Europe', 'Australia', 'BBC', 'British Broadcasting Corporation', 'Australian Broadcasting Corporation'].map(n => by(n));
+  const IDX = n => route.findIndex(l => l.t === n), TD = IDX('Tour de France'), SY = IDX('Sydney'), WD = IDX('world'), AU = IDX('Australia'), LAST = route.length - 1;
+  const TITLE = [500, 150];
+  const T0 = 1.9; const base = [];                                           // base arrival time at each route stop
+  { let t = T0 + .85; const gaps = [.5, .55, .6, .6, .75, .55, .55, .7, .8, .6, .5, .5, .6]; route.forEach((l, i) => { base.push(t); t += gaps[i] + ([WD, AU].includes(i) ? 1.15 : 0) + ([TD, SY].includes(i) ? 1.9 : 0); }); window.ENDT = base[LAST]; }
+  hole = { A: { x: route[TD].x, y: route[TD].y, in: base[TD] - .7, out: base[TD + 1] - 1.0 }, B: { x: route[SY].x, y: route[SY].y, in: base[SY] - .7, out: base[SY + 1] - 1.0 }, F: { x: route[LAST].x, y: route[LAST].y, in: base[LAST] - 1.2, out: 1e9 } };
+  hole.A2 = { x: route[TD + 1].x, y: route[TD + 1].y, in: hole.A.out - .5, out: base[TD + 1] + 1.4 }; hole.B2 = { x: route[SY + 1].x, y: route[SY + 1].y, in: hole.B.out - .5, out: base[SY + 1] + 1.4 };
+  for (let k = 0; k < NDOT; k++) {
+    const seg = [], jit = i => .1 * k + .32 * Math.sin(i * .9 + k * 1.7) * Math.min(1, i / 3) + (k % 2 ? .08 : -.02), off = () => [(R() - .5) * 70, (R() - .5) * 46];
+    const T = i => base[i] + jit(i);
+    // drop onto the title
+    const dt0 = .3 + k * .22; seg.push({ type: 'drop', t0: dt0, t1: dt0 + .6, x: TITLE[0] - 160 + k * 80, y: TITLE[1] });
+    let pts = [{ x: TITLE[0] - 160 + k * 80, y: TITLE[1], t: dt0 + .6 }];
+    const flush = () => { if (pts.length > 1) seg.push({ type: 'spline', pts: pts.slice() }); pts = []; };
+    route.forEach((l, i) => {
+      const o = off(), here = { x: l.x + o[0], y: l.y + o[1], t: T(i) };
+      if (i === WD || i === AU) {                                           // a loop-the-loop around the link
+        const dir = (k + i) % 2 ? 1 : -1, r = 120 + k * 10, cx = here.x + dir * r, tt = T(i) - 1.15;
+        for (let m = 1; m <= 14; m++) { const a = 2 * Math.PI * 1.2 * m / 14; pts.push({ x: cx + r * Math.cos(Math.PI + dir * a) * 1, y: here.y + r * Math.sin(Math.PI + dir * a), t: tt + 1.15 * m / 14 }); }
+        pts.push({ x: here.x + dir * 40, y: here.y + 70, t: T(i) + .12 }); return;
+      }
+      if (i === TD || i === SY) {                                           // fall into the hole at this link
+        pts.push({ x: l.x, y: l.y, t: T(i) }); flush(); seg.push({ type: 'fall', t0: T(i), t1: T(i) + .38, x: l.x, y: l.y });
+        const nx = route[i + 1], tOut = T(i + 1) - .95; seg.push({ type: 'hide', t0: T(i) + .38, t1: tOut });
+        seg.push({ type: 'rise', t0: tOut, t1: tOut + .95, x: nx.x + (k - 2) * 12, y: nx.y, x2: nx.x + (R() - .5) * 60, y2: nx.y + 90 });
+        pts = [{ x: nx.x + (R() - .5) * 60, y: nx.y + 90, t: tOut + .95 }]; hit[route.indexOf(nx)] = hit[route.indexOf(nx)] || 0; return;
+      }
+      if (i === LAST) {                                                     // final approach: a spiral that tightens into the last hole
+        pts.push({ x: l.x + 150, y: l.y - 40, t: T(i) - .2 }); const turns = 2.6, N = 30, t1 = T(i) + 2.2;
+        for (let m = 1; m <= N; m++) { const u = m / N, a = k * .9 + turns * 2 * Math.PI * u * (1 + .15 * k * 0), rr = 190 * (1 - u * u) + 8; pts.push({ x: l.x + rr * Math.cos(a), y: l.y + rr * Math.sin(a), t: T(i) - .2 + 2.4 * u }); }
+        flush(); seg.push({ type: 'fall', t0: T(i) + 2.2, t1: T(i) + 2.6, x: l.x, y: l.y }); return;
+      }
+      pts.push(here);
+    });
+    paths.push(seg);
+  }
+  // sample every dot at 60 Hz
+  const NS = Math.ceil(DUR * FPS);
+  samples = paths.map(seg => { const out = []; for (let i = 0; i <= NS; i++) { const t = i / FPS; let r = { x: -999, y: -999, h: 0, s: 0, v: 0 };
+    for (const sg of seg) {
+      if (sg.type === 'drop') { if (t >= sg.t0 && t <= sg.t1) { const u = clamp((t - sg.t0) / (sg.t1 - sg.t0)), bounce = u < 1 ? 700 * Math.pow(1 - u, 2) * Math.abs(Math.cos(u * 2.4 * Math.PI)) * (1 - u * .3) : 0; r = { x: sg.x, y: sg.y, h: bounce, s: 1, v: 1 }; } }
+      else if (sg.type === 'spline') { const P = sg.pts, t0 = P[0].t, t1 = P[P.length - 1].t; if (t >= t0 && t <= t1) { let j = 0; while (j < P.length - 2 && t > P[j + 1].t) j++; const u = clamp((t - P[j].t) / Math.max(1e-6, P[j + 1].t - P[j].t)), q = crom(P.map(a => [a.x, a.y]), j, u); r = { x: q[0], y: q[1], h: 0, s: 1, v: 1 }; } else if (t > t1 && sg === seg[seg.length - 1] && false) {} }
+      else if (sg.type === 'fall') { if (t >= sg.t0 && t <= sg.t1) { const u = (t - sg.t0) / (sg.t1 - sg.t0); r = { x: sg.x, y: sg.y + 24 * u, h: -50 * u, s: 1 - E.io(u), v: 1 }; } }
+      else if (sg.type === 'rise') { if (t >= sg.t0 && t <= sg.t1) { const u = (t - sg.t0) / (sg.t1 - sg.t0); r = { x: lerp(sg.x, sg.x2, E.out3(u)), y: lerp(sg.y, sg.y2, u * u * (3 - 2 * u)), h: 4 * 260 * u * (1 - u) + 0, s: clamp(u * 5, 0, 1), v: 1 }; } }
+    } out.push(r); } return out; });
+  // pings and cues for the music; link highlights
+  route.forEach((l, i) => { let first = 1e9; for (let k = 0; k < NDOT; k++) { const sm = samples[k]; for (let j = 0; j < sm.length; j++) { if (sm[j].v && Math.hypot(sm[j].x - l.x, sm[j].y - l.y) < 55 && sm[j].s > .9) { first = Math.min(first, j / FPS); break; } } } hit[i] = first < 1e8 ? first : base[i]; });
+  route.forEach((l, i) => note(hit[i], 'ping', [69, 72, 74, 76, 79, 81, 84][i % 7] + (i > 6 ? 0 : 0), .9, .2 + .6 * ((i * 37) % 10) / 10));
+  for (let k = 0; k < NDOT; k++) note(.3 + k * .22 + .45, 'thud', 40 + k * 2, 1, .2 + .15 * k);
+  [hole.A, hole.B].forEach(h => { note(h.in + .7, 'whoosh', 0, 1, .5); note(h.in + 1.05, 'pop', 55, 1, .5); note(h.out + 1.0, 'pop', 62, 1, .5); note(h.out + .8, 'whoosh', 1, .8, .5); });
+  [WD, AU].forEach(i => note(base[i] - 1.1, 'swoosh', 0, 1, .5));
+  note(base[LAST] - .2, 'riser', 0, 1, .5); note(base[LAST] + 2.2, 'drain', 0, 1, .5); window.LASTT = base[LAST] + 2.6; note(window.LASTT + .05, 'whoosh', 0, 1, .5); [72, 76, 79, 84, 88].forEach((m, k) => note(window.LASTT + .12 + k * .11 + 1.1, 'ping', m, .95, .15 + .175 * k));
+  // camera: follows the pack; whips across the page when the dots drop into a hole
+  const cl = (t) => { const vis = samples.map(sm => sm[Math.min(sm.length - 1, Math.floor(t * FPS))]).filter(q => q.v && q.s > .2); if (vis.length) { const lead = vis.reduce((a, q) => q.y > a.y ? q : a, vis[0]); const lock = p(t, window.LASTT - 2.6, window.LASTT - .6, E.io), py = lead.y * .6 + vis.reduce((a, q) => a + q.y, 0) / vis.length * .4 + 160 * (1 - lock); return [lerp(lerp(vis.reduce((a, q) => a + q.x, 0) / vis.length, 500, .12), hole.F.x, lock), lerp(py, hole.F.y, lock)]; } return null; };
+  let cx = 500, cy = 120, vx = 0, vy = 0, last = [500, 160]; const NC = Math.ceil(DUR * 120);
+  for (let i = 0; i <= NC; i++) { const t = i / 120; let tg = cl(t); if (!tg) { const nx = [route[TD + 1], route[SY + 1]].find((l, ii) => t < [hole.A.out + 1, hole.B.out + 1][ii] + .5); tg = nx ? [nx.x, nx.y + 160] : last; } last = tg; const k = 38, d = 2 * Math.sqrt(k), ax = k * (tg[0] - cx) - d * vx, ay = k * (tg[1] - cy) - d * vy; vx += ax / 120; vy += ay / 120; cx += vx / 120; cy += vy / 120; cam.push([cx, cy]); }
+  window.__ready = true;
+}
+let samples = [];
+const camAt = t => { const f = clamp(t * 120, 0, cam.length - 1), i = Math.floor(f), u = f - i, a = cam[i], b = cam[Math.min(cam.length - 1, i + 1)]; return [lerp(a[0], b[0], u), lerp(a[1], b[1], u)]; };
+function render(t) {
+  t = Math.min(t, DUR - 1e-3); const fx = $('#fx'), g = fx.getContext('2d'); g.clearRect(0, 0, fx.width, fx.height); const i = Math.floor(t * FPS), TS = Math.min(t, window.LASTT + 1);
+  // scorch: the whole history of every dot burns into the paper; the recent part glows
+  for (let k = 0; k < NDOT; k++) { const sm = samples[k]; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.strokeStyle = 'rgba(70,40,15,.22)'; g.lineWidth = 9 + k * 1.5; g.beginPath(); let on = false; for (let j = 0; j <= i; j += 2) { const q = sm[j]; if (q.v && q.s > .5 && q.h < 40) { if (!on) { g.moveTo(q.x, q.y); on = true; } else g.lineTo(q.x, q.y); } else on = false; } g.stroke();
+    const c = rgb(C[k]); for (let j = Math.max(0, i - 60); j < i; j++) { const q = sm[j], q2 = sm[j + 1]; if (!q.v || !q2.v || q.s < .5 || q2.s < .5 || q.h > 40 || q2.h > 40) continue; const a = (j - (i - 60)) / 60; g.strokeStyle = rgba(c, a * .85); g.lineWidth = 5 + a * DR[k] * 1.2; g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q2.x, q2.y); g.stroke(); g.strokeStyle = rgba([255, 230, 190], a * .5); g.lineWidth = 2 + a * 5; g.stroke(); } }
+  // link highlights
+  LK.forEach((l, idx) => { }); const route = window.ROUTE || []; 
+  Object.keys(window.HITS || {}).forEach(ix => { const ht = window.HITS[ix], l = window.ROUTEL[ix]; if (t < ht) return; const u = t - ht, pop = p(u, 0, .22, E.back), a = .55 * (1 - clamp(u / 1.4)) + .24, col = ramp(ix / (window.ROUTEL.length - 1)); g.fillStyle = rgba(col, a); const w = l.w + 22, h = l.h + 12; g.beginPath(); g.roundRect(l.x - w / 2 * pop, l.y - h / 2 * pop, w * pop, h * pop, 10); g.fill(); g.strokeStyle = rgba(col, .6 * (1 - clamp(u / .9))); g.lineWidth = 5; g.beginPath(); g.arc(l.x, l.y, 20 + u * 150, 0, 7); g.stroke(); });
+  // holes in the paper
+  Object.values(hole).forEach(h => { const open = p(t, h.in, h.in + .35, E.back), shut = 1 - p(t, h.out, h.out + .5, E.io); const r = HOLE_R * (h === hole.F ? 1.5 : 1) * open * shut; if (r < 2) return; const gr = g.createRadialGradient(h.x, h.y, 0, h.x, h.y, r); gr.addColorStop(0, '#050302'); gr.addColorStop(.62, '#120b07'); gr.addColorStop(1, '#2a1a10'); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y, r, 0, 7); g.fill();
+    const heat = clamp(Math.sin((t - h.in) * 3) * .5 + .6); g.strokeStyle = rgba(ramp(.55 + .4 * heat), .9); g.lineWidth = 7; g.beginPath(); g.arc(h.x, h.y, r + 3, 0, 7); g.stroke(); g.strokeStyle = 'rgba(40,24,12,.55)'; g.lineWidth = 16; g.beginPath(); g.arc(h.x, h.y, r + 14, 0, 7); g.stroke();
+    if (h === hole.F && t > h.in) for (let a = 0; a < 4; a++) { g.strokeStyle = rgba(ramp(.3 + a * .2), .35); g.lineWidth = 5; g.beginPath(); for (let q = 0; q < 60; q++) { const u = q / 60, ang = a * Math.PI / 2 + t * 3.5 + u * 7, rr = r + 160 * (1 - u) * (1 - u); const xx = h.x + rr * Math.cos(ang), yy = h.y + rr * Math.sin(ang); q ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); } });
+  // the dots, each with a shadow on the paper and a lift for the jumps
+  const order = [...Array(NDOT).keys()].sort((a, b) => samples[a][i].y - samples[b][i].y);
+  order.forEach(k => { const q = samples[k][i]; if (!q.v || q.s < .02) return; const r = DR[k] * q.s * (1 + Math.max(0, q.h) / 520), c = rgb(C[k]), by = q.y - q.h * .85;
+    g.fillStyle = `rgba(0,0,0,${.28 * q.s / (1 + Math.max(0, q.h) / 200)})`; g.beginPath(); g.ellipse(q.x + 6, q.y + 8, r * .95, r * .6, 0, 0, 7); g.fill();
+    const gl = g.createRadialGradient(q.x, by, r * .8, q.x, by, r * 2.6); gl.addColorStop(0, rgba(c, .32)); gl.addColorStop(1, rgba(c, 0)); g.fillStyle = gl; g.beginPath(); g.arc(q.x, by, r * 2.6, 0, 7); g.fill();
+    g.fillStyle = rgba(c, 1); g.beginPath(); g.arc(q.x, by, r, 0, 7); g.fill(); });
+  // camera
+  const [cx, cy] = camAt(t), u = t / DUR, pitch = lerp(63, 52, p(t, 0, 4, E.io)) - 22 * p(t, 4, 15, E.io) - 22 * p(t, window.LASTT - 1.5, window.LASTT + .6, E.io) - 9 * p(t, window.LASTT + .6, DUR - 2, E.io),
+    roll = 7 * Math.sin(t * .85) + 5 * Math.sin(t * 2.1 + 1), shake = [hole.A.in + 1.05, hole.A.out + 1, hole.B.in + 1.05, hole.B.out + 1, window.LASTT].reduce((a, h) => a + Math.exp(-Math.abs(t - h) * 9) * Math.sin(t * 90) * 7, 0),
+    zoom = lerp(1.12, 1.5, p(t, 0, window.LASTT)) + .3 * p(t, window.LASTT, DUR, E.io);
+  window.setCam(cx + shake, cy + shake * .6, Math.max(0, pitch), roll * (1 - .8 * p(t, window.LASTT, DUR - 1, E.io)), zoom);
+  const fl = Math.exp(-Math.abs(t - window.LASTT) * 14) * .5; $('#flash').style.opacity = fl;
+  // end card
+  const e = $('#end'), x = e.getContext('2d'); x.clearRect(0, 0, W, H); const eo = p(t, window.LASTT + .1, window.LASTT + 1.4, E.io); e.style.opacity = 1;
+  if (eo > 0) { x.fillStyle = `rgba(14,11,9,${.93 * eo})`; x.fillRect(0, 0, W, H); const M = [[9, 47, 3.2], [21, 42, 4.2], [33, 34, 5.4], [44, 24, 6.8], [54, 12, 8.4]]; M.forEach(([mx, my, mr], k2) => {
+      const t0 = window.LASTT + .12 + k2 * .11, u = p(t, t0, t0 + 1.15, E.io), bx = 540 + (mx - 34) * 11, by2 = 760 + (my - 27) * 11, S = [540 + (k2 - 2) * 20, 1010], Cc = [540 + (k2 - 2) * 330, 560 - k2 * 40];
+      const qx = (1 - u) * (1 - u) * S[0] + 2 * (1 - u) * u * Cc[0] + u * u * bx, qy = (1 - u) * (1 - u) * S[1] + 2 * (1 - u) * u * Cc[1] + u * u * by2, rr = lerp(DR[k2] * 1.2, mr * 11, E.out3(u)) * clamp((t - t0) * 6 + .02, 0, 1) * (1 + .06 * Math.sin(clamp(u, 0, 1) * Math.PI)); if (rr < 1 || t < t0) return;
+      const c = rgb(C[k2]), land = clamp((t - (t0 + 1.15)) / .5), bob = Math.sin(t * 2.4 + k2) * 3 * land;
+      for (let tr = 6; tr > 0; tr--) { const ut = Math.max(0, u - tr * .03), tx = (1 - ut) * (1 - ut) * S[0] + 2 * (1 - ut) * ut * Cc[0] + ut * ut * bx, ty = (1 - ut) * (1 - ut) * S[1] + 2 * (1 - ut) * ut * Cc[1] + ut * ut * by2; x.fillStyle = rgba(c, .1 * (7 - tr) / 6 * (1 - land)); x.beginPath(); x.arc(tx, ty, rr * (1 - tr * .07), 0, 7); x.fill(); }
+      const gl = x.createRadialGradient(qx, qy + bob, rr * .8, qx, qy + bob, rr * 2.3); gl.addColorStop(0, rgba(c, .34)); gl.addColorStop(1, rgba(c, 0)); x.fillStyle = gl; x.beginPath(); x.arc(qx, qy + bob, rr * 2.3, 0, 7); x.fill(); x.fillStyle = rgba(c, 1); x.beginPath(); x.arc(qx, qy + bob, rr, 0, 7); x.fill(); });
+
+    const w = p(t, window.LASTT + 1.7, window.LASTT + 2.5, E.out3); x.textAlign = 'center'; x.save(); x.globalAlpha = w; x.fillStyle = '#f3eee4'; x.font = '400 250px EB'; const a = 'Scorch', b = 'er', wa = x.measureText(a).width; x.font = 'italic 400 250px EB'; const wb = x.measureText(b).width; const x0 = 540 - (wa + wb) / 2, yy = 1130 + (1 - w) * 40; x.textAlign = 'left'; x.font = '400 250px EB'; x.fillText(a, x0, yy); x.fillStyle = '#ff6a45'; x.font = 'italic 400 250px EB'; x.fillText(b, x0 + wa, yy); x.restore();
+    const f2 = (a2, b2) => p(t, window.LASTT + a2, window.LASTT + b2, E.out3); x.textAlign = 'center'; x.globalAlpha = f2(2.8, 3.5); x.fillStyle = '#a1978a'; x.font = '600 28px IS'; try { x.letterSpacing = '7px'; } catch {} x.fillText('THE DAILY WIKIPEDIA LINK RACE', 540, 1220); x.globalAlpha = f2(3.2, 3.9); x.fillStyle = '#f3eee4'; x.font = '500 56px IS'; try { x.letterSpacing = '0px'; } catch {} x.fillText('playscorcher.com', 540, 1330); x.globalAlpha = 1; }
+}
+window.render = render;
+document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('500 26px IS'), document.fonts.load('400 250px EB'), document.fonts.load('italic 400 250px EB')])).then(() => { init(); window.ROUTEL = []; window.HITS = hit; window.ROUTEL = ROUTEL_FN(); render(0); });
+function ROUTEL_FN() { const by = n => LK.filter(l => l.t === n)[0]; return ['Cycling', 'bicycle', 'world', 'Tour de France', 'Olympic Games', 'Great Britain', 'London', 'Sydney', 'Europe', 'Australia', 'BBC', 'British Broadcasting Corporation', 'Australian Broadcasting Corporation'].map(by); }
+function setCam(cx, cy, pitch, roll, zoom) { $('#plane').style.transform = `rotateX(${pitch}deg) rotateZ(${roll}deg) scale(${zoom}) translate(${-cx}px,${-cy}px)`; }
+window.setCam = setCam;
+</script></body></html>
