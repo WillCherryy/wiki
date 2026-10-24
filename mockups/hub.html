@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scorcher hub (mockup)</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { background: var(--paper); }
+.hub { max-width: 1120px; margin: 0 auto; padding: 22px 22px 40px; }
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.chips { display: flex; gap: 8px; align-items: center; }
+.pillm { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); padding: 7px 12px; font: 600 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); } .pillm i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.streak { border: 2px solid var(--ink); background: var(--sheet); padding: 16px 18px; box-shadow: 8px 8px 0 var(--accent); display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.streak .n { font: 400 64px/.9 var(--display); letter-spacing: -.03em; } .streak .n small { display: block; margin-top: 8px; font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); white-space: nowrap; }
+.today { text-align: right; font: 600 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); } .today .dots { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; } .today .dots span { display: flex; align-items: center; gap: 6px; } .today .dots i { width: 16px; height: 16px; border-radius: 50%; background: var(--rule); display: block; } .today .dots i.ok { background: #d63a1f; }
+.grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.game { border: 1px solid var(--rule); background: var(--paper); padding: 18px 18px 16px; position: relative; }
+.game .kind { display: flex; justify-content: space-between; font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); } .game .kind b { color: var(--ink); }
+.game h3 { margin: 10px 0 12px; font: 400 clamp(32px, 6vw, 44px)/1 var(--display); letter-spacing: -.02em; } .game h3 em { color: var(--accent); }
+.game .what { font: 500 15px/1.4 var(--serif); color: var(--ink-2); margin: 4px 0 14px; }
+.facts { display: flex; gap: 14px; font: 600 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 14px; } .facts span + span::before { content: "·"; margin-right: 14px; color: var(--rule); }
+.btnrow { display: flex; gap: 10px; align-items: center; } .btnrow .btn { flex: 1; } .next { font: 600 11px var(--sans); letter-spacing: .08em; color: var(--mute); text-align: right; white-space: nowrap; }
+.route { display: flex; align-items: center; gap: 6px; margin: 8px 0 14px; } .route i { display: block; border-radius: 50%; } .route u { flex: 1; border-top: 2px dotted var(--rule); }
+.ph2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 14px; } .ph2 div { aspect-ratio: 1.5; border: 2px solid var(--ink); background: var(--rule-2); display: grid; place-items: center; font: italic 400 36px var(--display); color: var(--mute); position: relative; box-shadow: 5px 5px 0 var(--c, #5c8cbe); } .ph2 small { position: absolute; left: 8px; bottom: 6px; font: 600 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.done { border-color: var(--ink); } .done .badge { font: 600 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: #2e7d4f; }
+.sub { display: grid; gap: 16px; margin-top: 16px; }
+.board { border: 1px solid var(--rule); padding: 16px 18px; } .board h4 { margin: 0 0 12px; display: flex; justify-content: space-between; font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); } .board h4 small { color: var(--mute); font-weight: 500; }
+.row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; padding: 9px 0; border-top: 1px solid var(--rule-2); align-items: center; font: 600 14px var(--sans); } .row .p { font: 400 22px var(--display); color: var(--mute); } .row .v { font: 400 22px var(--display); }
+.row.me { color: var(--accent-ink); } .tabs2 { display: flex; gap: 18px; margin: -2px 0 8px; font: 600 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); } .tabs2 .on { color: var(--ink); border-bottom: 2px solid var(--ink); padding-bottom: 4px; }
+.more { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .more div { border: 1px solid var(--rule); padding: 12px 14px; font: 600 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; } .more small { display: block; margin-top: 4px; font: 500 12px var(--sans); letter-spacing: 0; text-transform: none; color: var(--mute); }
+.nav { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--paper); border-top: 1px solid var(--rule); padding: 8px 0 14px; text-align: center; font: 600 10.5px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); } .nav .on { color: var(--ink); }
+.nav svg { width: 22px; height: 22px; display: block; margin: 0 auto 3px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.flat .nav { position: static; margin-top: 16px; }
+@media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; gap: 22px; } .sub { grid-template-columns: 1.3fr 1fr 1fr; } .nav { display: none; } .game { padding: 24px; } .streak { padding: 22px 26px; } .streak .n { font-size: 84px; } }
+@media (max-width: 899px) { .hub { padding-bottom: 96px; } }
+</style></head>
+<body class="flat">
+<div class="hub">
+  <div class="top"><div class="logo" style="display:flex;align-items:center;gap:12px"><span class="mark"><svg viewBox="4 2 60 50" style="width:34px;height:28px"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg></span><span style="font:400 30px/1 var(--display)">Scorch<b style="font-weight:400;font-style:italic;color:var(--accent)">er</b></span></div><div class="chips"><div class="pillm"><i></i>Reader</div></div></div>
+
+  <div class="streak"><div class="n">12<small>day streak</small></div><div class="today">Saturday 24 October<div class="dots"><span><i class="ok"></i>Link race</span><span><i></i>Divergence</span></div></div></div>
+
+  <div class="grid">
+    <section class="game done">
+      <div class="kind"><b>Link race</b><span class="badge">✓ Played today</span></div>
+      <h3>Tour de France <em>→</em> Mahatma Gandhi</h3>
+      <div class="route"><i style="width:14px;height:14px;background:#2a4f8a"></i><u></u><i style="width:17px;height:17px;background:#5c8cbe"></i><u></u><i style="width:20px;height:20px;background:#d6be8c"></i><u></u><i style="width:24px;height:24px;background:#f08c50"></i><u></u><i style="width:30px;height:30px;background:#d63a1f"></i></div>
+      <div class="facts"><span>4 clicks</span><span>Fastest 3</span><span>1:27</span></div>
+      <div class="btnrow"><button class="btn ghost">See your route</button><button class="btn">Share</button></div>
+    </section>
+    <section class="game">
+      <div class="kind"><b>Divergence</b><span>New · 3 guesses</span></div>
+      <h3>When did <em>Lion</em> and <em>Tiger</em> split?</h3>
+      <div class="ph2"><div style="--c:#d6be8c">L<small>Lion</small></div><div style="--c:#d63a1f">T<small>Tiger</small></div></div>
+      <div class="facts"><span>Slider · log scale</span><span>Hot / cold hints</span></div>
+      <div class="btnrow"><button class="btn">Play today’s pair</button><span class="next">New pair in 7h 52m</span></div>
+    </section>
+  </div>
+
+  <div class="sub">
+    <div class="board"><h4>Today’s board <small>shared XP across games</small></h4><div class="tabs2"><span class="on">Global</span><span>Friends</span><span>Leagues</span></div>
+      <div class="row"><span class="p">1</span><span>Priya</span><span class="v">1,240</span></div><div class="row"><span class="p">2</span><span>Mara</span><span class="v">1,180</span></div><div class="row me"><span class="p">3</span><span>You</span><span class="v">1,020</span></div><div class="row"><span class="p">4</span><span>Jonas</span><span class="v">960</span></div></div>
+    <div class="board"><h4>Streamers</h4><div class="more" style="grid-template-columns:1fr"><div>Host a live race<small>One link, live board, OBS overlay</small></div><div>Join with a code<small>Enter a lobby code</small></div></div></div>
+    <div class="board"><h4>More</h4><div class="more" style="grid-template-columns:1fr"><div>Practice<small>Unlimited link races</small></div><div>Companion packs<small>Themed sets</small></div></div></div>
+  </div>
+</div>
+<nav class="nav"><div class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10H3z"/></svg>Today</div><div><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/></svg>Boards</div><div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Practice</div><div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/></svg>You</div></nav>
+</body></html>
