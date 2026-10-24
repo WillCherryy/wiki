@@ -1,0 +1,217 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher eat</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:500;src:url(../../fonts/instrument-sans-latin-500-normal.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="race-logo.js"></script>
+<script>
+const W = 1080, H = 1920, DUR = 28, FPS = 60, cv = document.getElementById('c'), g = cv.getContext('2d');
+window.DURATION = DUR; window.EVENTS = [];
+const C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], CD = ['#4f7fc4', '#7ba4d4', '#e2cfa0', '#f59a62', '#ff6a45'];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), out5: k => 1 - Math.pow(1 - k, 5), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, back: k => { const c1 = 2, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); } };
+const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), mixc = (a, b, k) => a.map((v, i) => Math.round(lerp(v, b[i], k))), rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(21);
+const note = (t, kind, a = 0, b = 1, pan = .5) => window.EVENTS.push({ t: +t.toFixed(4), kind, a, b, pan });
+// ------------------------------------------------------------------ the arena simulation (fixed 60 Hz, fully deterministic)
+const WORLD = [1300, 2100], HIT = 18.4, LINK = { x: 330, y: 1880, w: 640, h: 200, word: 'Wikipedia' }; let hitT = HIT;
+let cells = [], frames = [], eats = [], camTrack = [], dashTarget = null, hitPos = null;
+function simulate() {
+  const dt = 1 / FPS, N_SMALL = 46;
+  // the hero is cell 0 (red). A few mid-size cells in the other logo colours, and a crowd of small ones, all in the ramp colours.
+  cells.push({ id: 0, c: C[4], x: 300, y: 1300, vx: 0, vy: 0, a: Math.PI * 58 * 58, alive: 1, hero: 1 });
+  [[C[0], 46, 900, 500], [C[1], 52, 250, 380], [C[2], 50, 1000, 1500], [C[3], 55, 650, 1750]].forEach(([c, r, x, y], i) => cells.push({ id: 1 + i, c, x, y, vx: 0, vy: 0, a: Math.PI * r * r, alive: 1 }));
+  for (let i = 0; i < N_SMALL; i++) { const r = 11 + R() * 17; cells.push({ id: 5 + i, c: C[Math.floor(R() * 4)], x: 80 + R() * (WORLD[0] - 160), y: 80 + R() * (WORLD[1] - 160), vx: 0, vy: 0, a: Math.PI * r * r, alive: 1 }); }
+  cells.forEach(c => { c.ang = R() * 7; c.w = R() * 7; c.ph = R() * 7; c.pulse = -9; });
+  const rad = c => Math.sqrt(c.a / Math.PI), n = Math.round(21 * FPS);
+  const EAT_END = 16.0, DASH_T = 17.0, stopAt = { f: -1 };
+  for (let f = 0; f <= n; f++) {
+    const t = f * dt, hero = cells[0];
+    // planned pace: the hero should have eaten about this many cells by now (so the whole feast fits the music)
+    const want = Math.floor(clamp((t - 1.0) / (EAT_END - 1.0)) ** .8 * (cells.length - 1)), got = cells.filter(c => !c.alive && c.by === 0).length;
+    cells.forEach(c => {
+      if (!c.alive) return; const r = rad(c); let ax = 0, ay = 0, fl = 0;
+      if (c.hero) {
+        // chase: nearest of the edible cells; easiest (smallest) first early on
+        const pr = cells.filter(q => q.alive && !q.hero && rad(q) < r * .88).sort((a, b) => (Math.hypot(a.x - c.x, a.y - c.y) + 60 * rad(a)) - (Math.hypot(b.x - c.x, b.y - c.y) + 60 * rad(b)));
+        const tg = pr[0] || null; if (tg) { const d = Math.hypot(tg.x - c.x, tg.y - c.y) || 1; ax = (tg.x - c.x) / d; ay = (tg.y - c.y) / d; }
+        const boost = 1 + clamp((want - got) * .14, 0, 2.4) + (t > 14 ? .6 : 0); c.sp = (330 / (1 + (r - 58) / 420)) * boost * (t < 1 ? t : 1);
+      } else {
+        // flee from anything that could eat us, chase something we can eat, otherwise drift
+        let fx = 0, fy = 0, thr = 0; cells.forEach(q => { if (q === c || !q.alive) return; const d = Math.hypot(q.x - c.x, q.y - c.y) + 1, rq = rad(q); if (rq > r * 1.12 && d < 420 + rq) { const w = (1 - d / (420 + rq)) * (q.hero ? 2.2 : 1); fx -= (q.x - c.x) / d * w; fy -= (q.y - c.y) / d * w; thr += w; } });
+        if (thr > .01) { const m = Math.hypot(fx, fy) || 1; ax = fx / m; ay = fy / m; fl = 1; }
+        else { let best = null, bd = 1e9; cells.forEach(q => { if (q === c || !q.alive || q.hero) return; const d = Math.hypot(q.x - c.x, q.y - c.y); if (rad(q) < r * .84 && d < 300 && d < bd) { bd = d; best = q; } }); if (best) { ax = (best.x - c.x) / bd; ay = (best.y - c.y) / bd; } else { c.w += (R() - .5) * .35; ax = Math.cos(c.w); ay = Math.sin(c.w); } }
+        c.sp = (fl ? 215 : 120) / (1 + (r - 14) / 140);
+      }
+      // walls push back
+      const m = 70; if (c.x < m) ax += (m - c.x) / m * 2; if (c.x > WORLD[0] - m) ax -= (c.x - (WORLD[0] - m)) / m * 2; if (c.y < m) ay += (m - c.y) / m * 2; if (c.y > WORLD[1] - m) ay -= (c.y - (WORLD[1] - m)) / m * 2;
+      let mg = Math.hypot(ax, ay) || 1, tx = ax / mg * c.sp, ty = ay / mg * c.sp;
+      if (!c.hero && t > 14.6) { const d = Math.hypot(hero.x - c.x, hero.y - c.y) || 1, k2 = clamp((t - 14.6) / 1.1); tx = lerp(tx, (hero.x - c.x) / d * 520, k2); ty = lerp(ty, (hero.y - c.y) / d * 520, k2); }
+      if (c.hero && t > DASH_T) { const d = Math.hypot(LINK.x - c.x, LINK.y - c.y) || 1, sp = Math.min(1500, 260 + 1100 * (t - DASH_T)); tx = (LINK.x - c.x) / d * sp; ty = (LINK.y - c.y) / d * sp; }
+      c.vx = lerp(c.vx, tx, c.hero && t > DASH_T ? .2 : .09); c.vy = lerp(c.vy, ty, c.hero && t > DASH_T ? .2 : .09);
+    });
+    if (stopAt.f < 0) cells.forEach(c => { if (!c.alive) return; c.x = clamp(c.x + c.vx * dt, 20, WORLD[0] - 20); c.y = c.hero && t > DASH_T ? c.y + c.vy * dt : clamp(c.y + c.vy * dt, 20, WORLD[1] - 20); });
+    if (stopAt.f < 0 && t > DASH_T && Math.hypot(Math.max(Math.abs(hero.x - LINK.x) - LINK.w / 2, 0), Math.max(Math.abs(hero.y - LINK.y) - LINK.h / 2, 0)) < rad(hero) * .02) { stopAt.f = f; hitT = t; }
+    // eating: the bigger cell swallows the smaller one when it is mostly inside
+    for (const a of cells) { if (!a.alive) continue; for (const b of cells) { if (a === b || !b.alive) continue; const ra = rad(a), rb = rad(b), d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (ra > rb * 1.12 && d < ra - rb * .35 && (a.hero || !b.hero)) { b.alive = 0; b.by = a.id; b.eatT = t; b.ex = b.x - a.x; b.ey = b.y - a.y; a.a += b.a; a.pulse = t; eats.push({ t, who: a.id, prey: b.id, ra: rad(a), rb, hero: a.hero ? 1 : 0, n: eats.length }); } } }
+    frames.push(cells.map(c => [c.x, c.y, rad(c), c.alive, c.pulse, c.by === undefined ? -1 : c.by, c.eatT === undefined ? 0 : c.eatT, c.ex || 0, c.ey || 0]));
+  }
+  // camera follows the hero and pulls back as it grows
+  let cx = frames[0][0][0], cy = frames[0][0][1], z = 1.0, vx = 0, vy = 0, vz = 0;
+  for (let f = 0; f < frames.length; f++) { const h = frames[f][0], tz = clamp(235 / (h[2] * 2.2), .4, 1.0), k = 30, d = 2 * Math.sqrt(k);
+    vx += (k * (h[0] - cx) - d * vx) * dt; vy += (k * (h[1] - cy) - d * vy) * dt; vz += (12 * (tz - z) - 7 * vz) * dt; cx += vx * dt; cy += vy * dt; z += vz * dt; camTrack.push([cx, cy, z]); }
+}
+const camBase = t => { const f = clamp(t * FPS, 0, camTrack.length - 1), i = Math.floor(f), u = f - i, a = camTrack[i], b = camTrack[Math.min(camTrack.length - 1, i + 1)]; return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)]; };
+const camAt = t => { const b = camBase(Math.min(t, hitT)); if (t <= 16.6) return b; const k = E.io(clamp((t - 16.6) / (hitT - 16.6))), hf = frames[Math.round(Math.min(t, hitT) * FPS)][0]; return [lerp(b[0], (hf[0] + LINK.x) / 2, .6 * k), lerp(b[1], (hf[1] + LINK.y) / 2, .6 * k), b[2] * (1 + .12 * k)]; };
+const stAt = t => frames[clamp(Math.round(t * FPS), 0, frames.length - 1)];
+window.__sim = () => ({ eats: eats.length, heroEats: eats.filter(e => e.hero).length, alive: frames[Math.round(hitT * FPS)].filter(c => c[3]).length, heroR: frames[Math.round(hitT * FPS)][0][2], cells: cells.length, hitT, hitAt: frames[Math.round(hitT * FPS)][0].slice(0, 2) });
+
+// ------------------------------------------------------------------ the show
+const BG = '#0b0f17', CREAM = '#efe6d2', INK = '#17140f', RED = '#d63a1f';
+const WORDS = ['Cycling', 'Paris', 'Isaac Newton', 'France', 'Gravity', 'Europe', 'Science', 'Sydney', 'BBC', 'Physics', 'Seine', 'London', 'Olympic Games', 'Tour de France', 'Moon', 'Gold medal'];
+const LS = 1.5, LW = 611.95 * LS, LH = 419 * LS, LX = (W - LW) / 2, LY = 560;
+const logoDot = i => { const d = LOGO.dots[i]; return [LX + d.x * LS, LY + d.y * LS, d.r * LS]; };
+let hz = 1, hs = [540, 960], items = [], sparks = [], rays = [], WARP = [], HC0 = 2.7, END = 28, plateFit = 100;
+function init() {
+  simulate(); END = Math.ceil((hitT + 8.8) * 10) / 10; window.DURATION = END;
+  const r = rng(77), hf = frames[Math.round(hitT * FPS)], cam = camAt(hitT); hz = cam[2]; hs = [(hf[0][0] - cam[0]) * hz + W / 2, (hf[0][1] - cam[1]) * hz + H / 2];
+  // slow-motion clock for the explosion: u(h) is the "slowed" time since impact
+  let u = 0; for (let i = 0; i <= 3000; i++) { WARP.push(u); const h = i / 240; u += (h < .1 ? .02 : lerp(.14, 1, E.io(clamp((h - .1) / 2.4)))) / 240; }
+  const mk = o => { const a = r() * Math.PI * 2; items.push(Object.assign({ ang: a, vx: Math.cos(a), vy: Math.sin(a), rot: r() * 6, spin: (r() - .5) * 9, ts: HC0 + r() * 1.0, dur: .9 + r() * .5, curv: (r() - .5) * 360, dest: -1, ab: 0 }, o)); return items[items.length - 1]; };
+  // every eaten cell comes back out; the four mid ones and the red core are destined to be the logo dots
+  cells.forEach((c, i) => { if (i === 0) return; const k = i <= 4 ? i - 1 : -1; mk({ kind: 'dot', col: CD[Math.max(0, C.indexOf(c.c))], r: Math.sqrt(c.a / Math.PI) * hz * (k >= 0 ? 1.15 : 1.25), sp: 600 + r() * 900 - (k >= 0 ? 150 : 0), dest: k, ts: k >= 0 ? HC0 + .2 + k * .16 : HC0 + r() * 1.0, dur: k >= 0 ? 1.15 : .9 + r() * .5 }); });
+  mk({ kind: 'dot', col: CD[4], r: 66 * hz * 1.5, sp: 90, dest: 4, ts: HC0 + .2 + 4 * .16, dur: 1.2, core: 1 });
+  WORDS.forEach(w => mk({ kind: 'word', txt: w, sz: 38 + r() * 26, sp: 450 + r() * 800 }));
+  'Wikipedia'.split('').forEach((l, i) => mk({ kind: 'letter', txt: l, sz: 96 + r() * 30, sp: 400 + r() * 900 }));
+  for (let i = 0; i < 18; i++) mk({ kind: 'shard', col: i < 9 ? CREAM : CD[4], w: 24 + r() * 52, h: 8 + r() * 18, sp: 800 + r() * 1100 });
+  items.forEach(it => { it.k = 1.4 + r() * .8; it.vx *= it.sp; it.vy *= it.sp; it.curv = it.curv; if (it.dest < 0) it.ab = Math.floor(r() * 5); });
+  for (let i = 0; i < 260; i++) { const a = r() * Math.PI * 2, c = i % 5; sparks.push({ ax: Math.cos(a), ay: Math.sin(a), sp: 350 + r() * r() * 2200, life: .5 + r() * 1.1, col: i % 3 ? CD[3 + (i % 2)] : '#fff6e0', w: 2 + r() * 4 }); }
+  for (let i = 0; i < 26; i++) rays.push({ a: i / 26 * Math.PI * 2 + r() * .2, l: 500 + r() * 900, w: 5 + r() * 16 });
+  // events for the score
+  eats.forEach(e => note(e.t, e.hero ? 'eat' : 'eat2', e.ra, e.rb));
+  note(DASH_T_EV, 'dash'); note(hitT, 'hit'); note(hitT + .12, 'boom');
+  items.forEach(it => { if (it.dest >= 0 || it.kind === 'dot' && it.core) note(hitT + it.ts + it.dur, 'arrive', it.dest, 0); });
+  note(hitT + 4.35, 'reveal'); note(hitT + 5.4, 'tag');
+  plateFit = 640;
+  window.__ready = true;
+}
+const DASH_T_EV = 17.0;
+const Uc = h => WARP[Math.min(WARP.length - 1, Math.max(0, Math.round(h * 240)))] + (h > 12.5 ? h - 12.5 : 0);
+function state(it, h) {
+  const u = Uc(h), reach = (1 - Math.exp(-it.k * u)) / it.k;
+  let x = hs[0] + it.vx * reach, y = hs[1] + it.vy * reach, rot = it.rot + it.spin * u * (1 - Math.min(.7, u * .25)), a = 1, sc = 1;
+  const lt = it.dest >= 0 ? logoDot(it.dest) : null;
+  if (h >= it.ts) {
+    const us = Uc(it.ts), rs = (1 - Math.exp(-it.k * us)) / it.k, sx = hs[0] + it.vx * rs, sy = hs[1] + it.vy * rs;
+    const k = clamp((h - it.ts) / it.dur), e = E.io(k);
+    let tx, ty;
+    if (lt) { tx = lt[0]; ty = lt[1]; }
+    else if (it.kind === 'word' || it.kind === 'letter' || it.kind === 'shard') { tx = LX + LW * (.2 + .6 * ((it.ab + (it.rot % 1)) / 5 % 1)); ty = LY + LH * .8; }
+    else { const d = logoDot(it.ab); tx = d[0]; ty = d[1]; }
+    const dx = tx - sx, dy = ty - sy, L = Math.hypot(dx, dy) || 1;
+    x = lerp(sx, tx, e) - dy / L * Math.sin(Math.PI * e) * it.curv; y = lerp(sy, ty, e) + dx / L * Math.sin(Math.PI * e) * it.curv;
+    rot = lerp(rot, it.kind === 'word' || it.kind === 'letter' ? 0 : rot, e);
+    if (!lt) { sc = 1 - .75 * e; a = k >= 1 ? 0 : 1 - E.out3(clamp((k - .6) / .4)); }
+    else { sc = lerp(1, lt[2] / it.r, e); }
+  }
+  return { x, y, rot, a, sc };
+}
+function dotPath(x0, y0, r, t, ph, amp, pul) { // wobbling blob
+  g.beginPath(); const n = 36, s = 1 + pul;
+  for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, rr = r * s * (1 + amp * (.5 * Math.sin(a * 5 + t * 3.1 + ph) + .35 * Math.sin(a * 3 - t * 2.3 + ph * 1.7))); const x = x0 + Math.cos(a) * rr, y = y0 + Math.sin(a) * rr; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath();
+}
+function blob(x, y, r, col, t, ph, pul = 0, glow = 0) {
+  const c = rgb(col); if (glow) { g.save(); g.shadowColor = rgba(c, .8); g.shadowBlur = glow; dotPath(x, y, r, t, ph, .035, pul); g.fillStyle = col; g.fill(); g.restore(); }
+  dotPath(x, y, r, t, ph, .035, pul); const gr = g.createRadialGradient(x - r * .3, y - r * .35, r * .1, x, y, r * 1.05); gr.addColorStop(0, rgba(mixc(c, [255, 255, 255], .22), 1)); gr.addColorStop(.7, col); gr.addColorStop(1, rgba(mixc(c, [0, 0, 0], .25), 1)); g.fillStyle = gr; g.fill();
+  g.lineWidth = Math.max(1.5, r * .06); g.strokeStyle = rgba(mixc(c, [0, 0, 0], .45), .85); g.stroke();
+}
+function fitText(txt, font, maxw) { g.font = font(100); const w = g.measureText(txt).width; return 100 * Math.min(1, maxw / w); }
+function drawWorld(t, cam, alpha) {
+  const [cx, cy, z] = cam; g.save(); g.globalAlpha = alpha; g.translate(W / 2, H / 2); g.scale(z, z); g.translate(-cx, -cy);
+  // grid + border
+  g.lineWidth = 2 / z; g.strokeStyle = 'rgba(120,150,200,.07)'; g.beginPath();
+  for (let x = 0; x <= WORLD[0]; x += 100) { g.moveTo(x, 0); g.lineTo(x, WORLD[1]); } for (let y = 0; y <= WORLD[1]; y += 100) { g.moveTo(0, y); g.lineTo(WORLD[0], y); } g.stroke();
+  g.lineWidth = 8 / z; g.strokeStyle = 'rgba(214,58,31,.35)'; g.strokeRect(0, 0, WORLD[0], WORLD[1]);
+  if (t < hitT) {
+    // the link target
+    const near = clamp(1 - Math.hypot(stAt(t)[0][0] - LINK.x, stAt(t)[0][1] - LINK.y) / 1200), pu = 1 + .025 * Math.sin(t * 6);
+    g.save(); g.translate(LINK.x, LINK.y); g.scale(pu, pu); g.shadowColor = `rgba(255,106,69,${.35 + .5 * near})`; g.shadowBlur = 40 + 60 * near;
+    g.fillStyle = CREAM; const w = LINK.w, h = LINK.h, rr = 18; g.beginPath(); g.moveTo(-w / 2 + rr, -h / 2); g.arcTo(w / 2, -h / 2, w / 2, h / 2, rr); g.arcTo(w / 2, h / 2, -w / 2, h / 2, rr); g.arcTo(-w / 2, h / 2, -w / 2, -h / 2, rr); g.arcTo(-w / 2, -h / 2, w / 2, -h / 2, rr); g.fill(); g.shadowBlur = 0;
+    const fs = fitText(LINK.word, s => `400 ${s}px EB`, w * .84) * 1.18; g.font = `400 ${fs}px EB`; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = INK; g.fillText(LINK.word, 0, fs * .22);
+    const tw = g.measureText(LINK.word).width; g.fillStyle = RED; g.fillRect(-tw / 2, fs * .22 + fs * .1, tw, Math.max(5, fs * .045)); g.restore();
+  }
+  // cells
+  const st = stAt(Math.min(t, hitT)), eaters = [];
+  const draw = [];
+  st.forEach((c, i) => {
+    const colIdx = i === 0 ? 4 : Math.max(0, C.indexOf(cells[i].c)); const col = CD[colIdx];
+    if (c[3]) { if (t >= hitT && i === 0) return; draw.push({ i, x: c[0], y: c[1], r: c[2], col, pul: c[4], sw: 0 }); }
+    else if (t - c[6] < .3 && t - c[6] >= 0 && t <= hitT) { const e = st[c[5]], k = E.io((t - c[6]) / .3); draw.push({ i, x: e[0] + c[7] * (1 - k), y: e[1] + c[8] * (1 - k), r: c[2] * (1 - .55 * k), col, pul: -9, sw: 1, under: 1 }); }
+  });
+  draw.sort((a, b) => (b.under || 0) - (a.under || 0) || a.r - b.r);
+  // hero ghost trail while dashing
+  if (t > 17 && t < hitT) for (let k = 5; k >= 1; k--) { const f = stAt(t - k * .035)[0]; g.globalAlpha = alpha * .12 * (6 - k) / 5; blob(f[0], f[1], f[2], CD[4], t, 0, 0, 0); }
+  g.globalAlpha = alpha;
+  draw.forEach(d => { const ph = cells[d.i].ph, since = t - d.pul, pul = since >= 0 && since < .5 ? .1 * Math.exp(-since * 9) * Math.cos(since * 28) : 0; blob(d.x, d.y, d.r, d.col, t, ph, pul, d.i === 0 ? 50 : 0); });
+  // eat puffs
+  eats.forEach(e => { const a = t - e.t; if (a < 0 || a > .45 || t > hitT) return; const pr = cells[e.prey], f = frames[Math.round(e.t * FPS)][e.prey]; const k = a / .45; g.globalAlpha = alpha * (1 - k) * .8; g.strokeStyle = CD[Math.max(0, C.indexOf(pr.c))]; g.lineWidth = (1 - k) * 8 / 1; g.beginPath(); const ex = frames[Math.round(e.t * FPS)][e.who]; g.arc(ex[0] + f[7], ex[1] + f[8], f[2] * (1 + 1.6 * E.out3(k)), 0, 7); g.stroke(); });
+  g.restore();
+}
+function render(t) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.fillStyle = BG; g.fillRect(0, 0, W, H);
+  const h = t - hitT, tt = Math.min(t, hitT); let cam = camAt(tt);
+  // dash: camera pushes in and shakes a little as the hero closes on the link
+  let shx = 0, shy = 0; if (t > 17 && h < 0) { const k = clamp((t - 17) / (hitT - 17)); shx = Math.sin(t * 90) * 3 * k; shy = Math.cos(t * 77) * 3 * k; }
+  if (h >= 0) { const sk = Math.exp(-h * 5) * 24; shx = Math.sin(h * 130) * sk; shy = Math.cos(h * 110) * sk; cam = [cam[0], cam[1], cam[2] * (1 - .1 * E.out3(clamp(h / 3)))]; }
+  g.save(); g.translate(shx, shy);
+  // world fades out into the finale background
+  const wa = h < 0 ? 1 : Math.max(0, 1 - h / 3.0) * .55 + (h < 1 ? .45 * (1 - h) : 0);
+  if (wa > .001) drawWorld(t, h >= 0 ? [camAt(hitT)[0], camAt(hitT)[1], cam[2]] : cam, wa);
+  // vignette + dash speed lines
+  if (t > 17 && h < 0) { const k = clamp((t - 17) / 1.0); g.save(); g.translate(W / 2, H / 2); g.strokeStyle = `rgba(255,220,200,${.22 * k})`; const r = rng(9); for (let i = 0; i < 40; i++) { const a = r() * 6.283, l0 = 380 + r() * 300, l1 = l0 + 260 + r() * 520 * k, ph = (t * 3 + r() * 5) % 1; g.lineWidth = 2 + r() * 4; g.beginPath(); g.moveTo(Math.cos(a) * (l0 + ph * 260), Math.sin(a) * (l0 + ph * 260)); g.lineTo(Math.cos(a) * (l1 + ph * 260), Math.sin(a) * (l1 + ph * 260)); g.stroke(); } g.restore(); }
+  // ---- HUD counter
+  { const n = eats.filter(e => e.hero && e.t <= t).length, last = eats.filter(e => e.hero && e.t <= t).pop(), bump = last ? Math.exp(-(t - last.t) * 10) : 0, a = Math.min(clamp(t / .4), 1 - clamp((t - 16.6) / .5));
+    if (a > .01) { g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = '#8e96a8'; g.font = '600 26px IS'; if ('letterSpacing' in g) g.letterSpacing = '7px'; g.fillText('LINKS EATEN', W / 2, 108); if ('letterSpacing' in g) g.letterSpacing = '0px'; g.translate(W / 2, 214); const sc = 1 + .22 * bump; g.scale(sc, sc); g.fillStyle = bump > .1 ? '#ffb08f' : CREAM; g.font = '400 120px EB'; g.fillText(String(n), 0, 0); g.restore(); } }
+  // ---- explosion + finale
+  if (h >= 0) {
+    const u = Uc(h);
+    // radial rays, shockwave rings
+    rays.forEach(r => { const k = clamp(u / .45); if (k >= 1) return; g.save(); g.translate(hs[0], hs[1]); g.rotate(r.a); g.globalAlpha = (1 - k); const a0 = 60 + r.l * E.out3(k) * .3, a1 = a0 + r.l * E.out3(k); g.fillStyle = '#ffd9b8'; g.beginPath(); g.moveTo(a0, 0); g.lineTo(a1, -r.w * (1 - k)); g.lineTo(a1, r.w * (1 - k)); g.closePath(); g.fill(); g.restore(); });
+    [0, .12].forEach((d, i) => { const k = clamp((u - d) / 1.6); if (k <= 0 || k >= 1) return; g.save(); g.globalAlpha = (1 - k) * .8; g.strokeStyle = i ? CD[3] : '#fff3e0'; g.lineWidth = (i ? 10 : 22) * (1 - k); g.beginPath(); g.arc(hs[0], hs[1], 40 + 1250 * E.out5(k), 0, 7); g.stroke(); g.restore(); });
+    // debris
+    g.save(); g.globalCompositeOperation = 'lighter'; sparks.forEach(s => { const lt = u / s.life; if (lt >= 1) return; const reach = (1 - Math.exp(-3 * u)) / 3 * s.sp, x = hs[0] + s.ax * reach, y = hs[1] + s.ay * reach, tail = s.sp * Math.exp(-3 * u) * .05 + 6; g.globalAlpha = (1 - lt) * .95; g.strokeStyle = s.col; g.lineWidth = s.w * (1 - lt * .6); g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y); g.lineTo(x - s.ax * tail, y - s.ay * tail); g.stroke(); }); g.restore();
+    // glow behind logo while converging
+    const gl = p(h, HC0 + .6, HC0 + 2.4, E.io); if (gl > 0) { const gg = g.createRadialGradient(W / 2, LY + LH * .35, 20, W / 2, LY + LH * .35, 760); gg.addColorStop(0, `rgba(245,154,98,${.2 * gl})`); gg.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gg; g.fillRect(0, 0, W, H); }
+    const pulses = [0, 0, 0, 0, 0]; items.forEach(it => { if (it.dest < 0) { const arr = it.ts + it.dur, dd = logoDot(it.ab); if (h > arr && h < arr + .5) pulses[it.ab] += .16 * Math.exp(-(h - arr) * 10) * Math.cos((h - arr) * 26); } });
+    items.sort((a, b) => (a.kind === 'dot' ? 1 : 0) - (b.kind === 'dot' ? 1 : 0) || (a.dest >= 0) - (b.dest >= 0)).forEach(it => {
+      const s = state(it, h); if (s.a <= .01) return; g.save(); g.globalAlpha = s.a; g.translate(s.x, s.y); g.rotate(s.rot); g.scale(s.sc, s.sc);
+      if (it.kind === 'dot') { g.rotate(-s.rot); const pul = it.dest >= 0 ? pulses[it.dest] : 0; g.translate(0, 0); blob(0, 0, it.r, it.col, h, it.ang, pul, it.core ? 60 : it.dest >= 0 ? 24 : 0); }
+      else if (it.kind === 'shard') { g.fillStyle = it.col; g.shadowColor = rgba(rgb(it.col), .6); g.shadowBlur = 12; g.fillRect(-it.w / 2, -it.h / 2, it.w, it.h); }
+      else { const fs = it.sz; g.font = `400 ${fs}px EB`; g.textAlign = 'center'; g.fillStyle = CREAM; g.fillText(it.txt, 0, fs * .3); if (it.kind === 'word') { const w = g.measureText(it.txt).width; g.fillStyle = RED; g.fillRect(-w / 2, fs * .3 + fs * .1, w, Math.max(3, fs * .06)); } }
+      g.restore();
+    });
+    // designated logo dots keep their pulse after landing (drawn above)
+    // wordmark wipe + texts
+    const wp = p(h, 4.2, 5.2, E.io); if (wp > 0 && LOGO.img && LOGO.img.complete) { g.save(); g.beginPath(); g.rect(LX, LY, LW * wp, LH); g.clip(); g.drawImage(LOGO.img, LX, LY, LW, LH); g.restore(); }
+    const tg = p(h, 5.3, 6.1), dm = p(h, 5.9, 6.7);
+    g.textAlign = 'center'; if (tg > 0) { g.globalAlpha = tg; g.fillStyle = '#c9bfa8'; g.font = '600 31px IS'; if ('letterSpacing' in g) g.letterSpacing = '8px'; g.fillText('THE DAILY WIKIPEDIA LINK RACE', W / 2 + 4, LY + LH + 90 - (1 - tg) * 14); if ('letterSpacing' in g) g.letterSpacing = '0px'; }
+    if (dm > 0) { g.globalAlpha = dm; g.fillStyle = CREAM; g.font = 'italic 400 54px EB'; g.fillText('playscorcher.com', W / 2, LY + LH + 190 - (1 - dm) * 14); }
+    g.globalAlpha = 1;
+    // impact flash
+    const fl = Math.exp(-h * 7) * (h < .12 ? 1 : .85); if (fl > .01) { g.fillStyle = `rgba(255,248,235,${fl})`; g.fillRect(-40, -40, W + 80, H + 80); }
+  } else if (h > -.06) { g.fillStyle = `rgba(255,248,235,${(h + .06) / .06 * .5})`; g.fillRect(-40, -40, W + 80, H + 80); }
+  g.restore();
+  // end fade
+  const ef = clamp((t - (END - .5)) / .5); if (ef > 0) { g.fillStyle = `rgba(11,15,23,${ef})`; g.fillRect(0, 0, W, H); }
+}
+window.render = render;
+document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('600 28px IS'), new Promise(r => { LOGO.img = new Image(); LOGO.img.onload = r; LOGO.img.src = LOGO.word; })])).then(() => { init(); render(0); });
+</script></body></html>
