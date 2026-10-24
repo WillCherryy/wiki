@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher calm</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:500;src:url(../../fonts/instrument-sans-latin-500-normal.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+const W = 1080, H = 1920, BPM = 96, B = 60 / BPM, BEATS = 48, cv = document.getElementById('c'), x = cv.getContext('2d');
+window.DURATION = BEATS * B; window.EVENTS = [];
+const C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], MARK = [[9, 47, 3.2], [21, 42, 4.2], [33, 34, 5.4], [44, 24, 6.8], [54, 12, 8.4]];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), out5: k => 1 - Math.pow(1 - k, 5), back: k => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }, io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, sm: k => k * k * (3 - 2 * k) };
+const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), mix = (a, b, k) => a.map((v, i) => Math.round(lerp(v, b[i], k)));
+const ramp = h => { h = clamp(h) * 4; const i = Math.min(3, Math.floor(h)); return mix(rgb(C[i]), rgb(C[i + 1]), h - i); };
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(5), PENT = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84];
+const note = (beat, midi, vel = 1, kind = 'bell', pan = .5) => window.EVENTS.push({ t: +(beat * B).toFixed(4), midi, vel, kind, pan });
+
+// ---------------------------------------------------------------- geometry
+const MK = 15, MC = [540, 930];                                   // the five-dot mark, big, centred
+const markPos = (k, c) => MARK.map(([mx, my, mr]) => [c[0] + (mx - 34) * k, c[1] + (my - 27) * k, mr * k]);
+const COLS = 14, ROWS = 24, SP = 78, GX = (W - (COLS - 1) * SP) / 2, GY = (H - (ROWS - 1) * SP) / 2;
+const GRID = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) GRID.push({ x: GX + c * SP + (r % 2) * SP / 2 - SP / 4, y: GY + r * SP, i: GRID.length });
+const gDist = g => Math.hypot(g.x - MC[0], g.y - MC[1]);
+// waves: concentric from the mark, then diagonal sweeps climbing from the bottom-left
+const WAVES = []; [8, 11, 14, 17, 20].forEach(b => WAVES.push({ b, kind: 'ring' })); WAVES.push({ b: 23, kind: 'diag' });
+const waveAt = (g, t) => { let s = 0; for (const w of WAVES) { const dt = (t - w.b * B) / B; if (dt < 0 || dt > 6.5) continue; const d = w.kind === 'ring' ? gDist(g) : (g.x * .6 + (H - g.y) * .8) * .62, r = dt * (w.kind === 'ring' ? 210 : 255) - 40; s += Math.exp(-Math.pow((d - r) / 95, 2)) * (1 - p(dt, 4.5, 6.5, E.lin2 || (k => k))); } return s; };
+// ---------------------------------------------------------------- the word, sampled into dots
+let TEXT = [];
+function sampleText() {
+  const o = document.createElement('canvas'); o.width = W; o.height = 420; const g = o.getContext('2d'), S = 282; g.fillStyle = '#000'; g.textBaseline = 'alphabetic';
+  g.font = `400 ${S}px EB`; const a = 'Scorch'; const wa = g.measureText(a).width; g.font = `italic 400 ${S}px EB`; const wb = g.measureText('er').width; const x0 = (W - wa - wb) / 2 + 2;
+  g.font = `400 ${S}px EB`; g.fillText(a, x0, 290); g.font = `italic 400 ${S}px EB`; g.fillText('er', x0 + wa, 290);
+  const d = g.getImageData(0, 0, W, 420).data, step = 9, pts = [];
+  for (let yy = 0; yy < 420; yy += step) for (let xx = 0; xx < W; xx += step) { const k = (Math.floor(yy) * W + Math.floor(xx)) * 4 + 3; if (d[k] > 120) pts.push({ x: xx, y: yy + 880, acc: xx > x0 + wa - 4, u: 0 }); }
+  const mnx = Math.min(...pts.map(q => q.x)), mxx = Math.max(...pts.map(q => q.x)); pts.forEach(q => q.u = (q.x - mnx) / (mxx - mnx));
+  // each word-dot flies from a grid dot; nearest-first so the swirl looks orderly
+  const gs = GRID.slice().sort((p1, p2) => (p1.y - p2.y) || (p1.x - p2.x)); pts.sort((p1, p2) => (p1.y - p2.y) || (p1.x - p2.x));
+  pts.forEach((q, i) => { const src = gs[Math.floor(i / pts.length * gs.length) % gs.length]; q.src = src.i; q.sx = src.x; q.sy = src.y; q.delay = (src.y / H) * 2.6 + R() * .35; q.sw = (R() - .5) * 220; });
+  TEXT = pts; GRID.forEach(g => { g.kids = TEXT.filter(q => q.src === g.i); g.first = g.kids.length ? Math.min(...g.kids.map(q => q.delay)) : 0; });
+}
+// ---------------------------------------------------------------- sound events (the picture and the music read the same list)
+[0.5, 1.5, 2.5, 3.5, 4.5].forEach((b, i) => note(b, [72, 74, 76, 79, 81][i], 1, 'marimba', .2 + .15 * i));
+WAVES.forEach((w, wi) => { for (let k = 0; k < 5; k++) note(w.b + .35 + k * .6, PENT[(wi * 2 + (4 - k) * (wi % 2 ? 1 : 2) + 3) % 8 + 2], .55 - .06 * k, 'bell', .15 + .17 * k); });
+for (let i = 0; i < 14; i++) note(31 + i * .42 + R() * .12, PENT[5 + Math.floor(R() * 6)], .35 + R() * .25, 'chime', R());
+[38, 38.04, 38.08, 38.12].forEach((b, i) => note(b, [60, 67, 72, 76][i], .9, 'bell', .5));
+for (let b = 36; b < 44; b += 2) note(b, PENT[7 + (b / 2) % 3], .5, 'bell', .5);
+note(44, 84, .5, 'chime', .3); note(45.5, 79, .45, 'chime', .7); note(46.5, 72, .6, 'bell', .5);
+window.EVENTS.sort((a, b) => a.t - b.t);
+// ---------------------------------------------------------------- drawing
+function dot(cx, cy, r, c, a = 1, glow = .22) { if (r < .3 || a <= 0) return; x.fillStyle = rgba(c, a * glow); x.beginPath(); x.arc(cx, cy, r * 2.1, 0, 7); x.fill(); x.fillStyle = rgba(c, a); x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); }
+function ringAt(cx, cy, r, c, a, lw = 4) { if (a <= 0) return; x.strokeStyle = rgba(c, a); x.lineWidth = lw; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.stroke(); }
+function bg(t) {
+  const h = clamp((t / window.DURATION - .15) * 1.2);
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0b0a09'); g.addColorStop(1, rgba(mix([14, 11, 10], ramp(h * .8 + .1), .22 + .1 * h), 1)); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const r = x.createRadialGradient(540, H * .62, 0, 540, H * .62, 1100); r.addColorStop(0, rgba(ramp(h * .85 + .08), .13 + .12 * h)); r.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = r; x.fillRect(0, 0, W, H);
+}
+function render(t) {
+  t = Math.min(t, window.DURATION - 1e-3); const beat = t / B; bg(t); x.save();
+  const drift = 1 + .018 * Math.sin(t * .35); x.translate(540, 960); x.scale(drift, drift); x.translate(-540, -960);
+  // --- the dot field
+  const gIn = p(beat, 6, 10), gOut = 1;
+  GRID.forEach(g => {
+    const d = gDist(g), appear = p(beat, 6 + d / 520, 7.6 + d / 520, E.out3) * gIn, w = waveAt(g, t), h = clamp(w * .95);
+    let sc = 1 + .95 * Math.min(1.2, w), a = (.42 + .58 * Math.min(1, w)) * appear;
+    if (beat > 26) { const k = p(beat, 26 + g.first, 26 + g.first + .6, E.io); a *= 1 - k; sc *= 1 - .5 * k; if (k > 0 && k < 1) ringAt(g.x, g.y, 9 + 70 * k, ramp(.6), .35 * (1 - k), 2.5); }
+    if (a > .01) dot(g.x, g.y, 7 * sc * (.25 + .75 * appear), w < .02 ? mix(ramp(.04), [60, 66, 84], .45) : ramp(h), a, .16 + .2 * h);
+  });
+  // --- the five-dot mark
+  const mv = p(beat, 29, 35, E.io), kk = lerp(MK, 4.6, mv), cc = [lerp(MC[0], 540, mv), lerp(MC[1], 700, mv)], mp = markPos(kk, cc);
+  mp.forEach(([mx, my, mr], i) => {
+    const t0 = [.5, 1.5, 2.5, 3.5, 4.5][i], s = p(beat, t0, t0 + .9, E.back), br = 1 + .04 * Math.sin(t * 2.2 + i * .9);
+    const wv = waveAt({ x: mx, y: my }, t) * .12; ringAt(mx, my, mr * 1.1 + 330 * p(beat, t0, t0 + 2.2, E.out3), rgb(C[i]), .5 * (1 - p(beat, t0, t0 + 2.2, E.out3)) * (mv < 1 ? 1 : 0), 4);
+    dot(mx, my, mr * s * br * (1 + wv), rgb(C[i]), clamp(s * 3), .12);
+  });
+  // comet along the mark
+  if (beat > 5 && mv < .02) { const q = (((beat - 5) / 2) % 1), seg = q * 4, i = Math.min(3, Math.floor(seg)), f = seg - i; for (let tr = 0; tr < 7; tr++) { const sq = Math.max(0, seg - tr * .06), j = Math.min(3, Math.floor(sq)), ff = sq - j, cx = lerp(mp[j][0], mp[j + 1][0], ff), cy = lerp(mp[j][1], mp[j + 1][1], ff); dot(cx, cy - 6, 9 - tr, [255, 244, 224], .8 * (1 - tr / 7), .3); } }
+  // --- the word, made of dots
+  TEXT.forEach(q => {
+    const k = p(beat, 26 + q.delay, 26 + q.delay + 3.4, E.io); if (k <= 0) return;
+    const mxp = lerp(q.sx, q.x, k) + Math.sin(k * Math.PI) * q.sw, myp = lerp(q.sy, q.y, k) - Math.sin(k * Math.PI) * 120;
+    const settle = p(beat, 35 + q.u * 1.5, 37.2 + q.u * 1.5, E.out3), sh = beat > 36 ? (() => { let s = 0; for (let b = 36; b < 46; b += 2) { const dt = beat - b; if (dt > 0 && dt < 3) s += Math.exp(-Math.pow((q.u * 3 - dt * 1.7) / .35, 2)); } return s; })() : 0;
+    const hot = ramp(clamp(q.u * .85 + .1)), fin = q.acc ? [255, 106, 69] : [243, 238, 228], col = mix(mix(hot, fin, settle), ramp(.85), clamp(sh) * .8);
+    const r = lerp(8.5, 4.2, k) * (1 + .5 * clamp(sh)) * (1 + .03 * Math.sin(t * 1.6 + q.x * .02));
+    dot(mxp, myp, r, col, clamp(k * 3), .16 + .2 * clamp(sh));
+  });
+  x.restore();
+  // --- type
+  const f = (a, b2) => p(beat, a, b2, E.out3); x.textAlign = 'center';
+  x.globalAlpha = f(38.4, 40); x.fillStyle = '#a1978a'; x.font = '600 28px IS'; try { x.letterSpacing = '7px'; } catch {} x.fillText('THE DAILY WIKIPEDIA LINK RACE', 540, 1260 + (1 - f(38.4, 40)) * 18);
+  x.globalAlpha = f(40.2, 41.8); x.fillStyle = '#f3eee4'; x.font = '500 54px IS'; try { x.letterSpacing = '0px'; } catch {} x.fillText('playscorcher.com', 540, 1360 + (1 - f(40.2, 41.8)) * 18);
+  x.globalAlpha = f(42, 43.6) * .8; x.fillStyle = '#a1978a'; x.font = '600 22px IS'; try { x.letterSpacing = '5px'; } catch {} x.fillText('FREE  ·  NO ACCOUNT  ·  NEW PUZZLE DAILY', 540, 1450 + (1 - f(42, 43.6)) * 14); x.globalAlpha = 1; try { x.letterSpacing = '0px'; } catch {}
+  const fade = 1 - p(t, window.DURATION - 1.2, window.DURATION, k => k), vg = x.createRadialGradient(540, 960, 500, 540, 960, 1150); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)'); x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  if (fade < 1) { x.fillStyle = `rgba(11,10,9,${1 - fade})`; x.fillRect(0, 0, W, H); }
+}
+window.render = render;
+Promise.all([document.fonts.load('400 240px EB'), document.fonts.load('italic 400 240px EB'), document.fonts.load('600 28px IS'), document.fonts.load('500 54px IS')]).then(() => { sampleText(); window.TEXTN = TEXT.length; window.__ready = true; render(0); });
+</script></body></html>

@@ -7,3 +7,4 @@ _site/
 dist/
 brand/video/*.wav
 posters/
+tools/video/.calm-events.json
