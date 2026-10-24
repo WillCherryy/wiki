@@ -1,0 +1,180 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher hops</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="race-logo.js"></script>
+<script>
+const W = 1080, H = 1920, cv = document.getElementById('c'), g = cv.getContext('2d');
+window.EVENTS = []; window.__ready = false;
+const CD = ['#4f7fc4', '#7ba4d4', '#e2cfa0', '#f59a62', '#ff6a45'];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, ss: k => k * k * (3 - 2 * k), in3: k => k * k * k };
+const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const note = (t, kind, a = 0, b = 1) => window.EVENTS.push({ t: +t.toFixed(4), kind, a, b });
+const BG = '#14100c', CREAM = '#efe6d2', INK = '#1c1812', LINE = 'rgba(239,230,210,.92)', FAINT = 'rgba(239,230,210,.28)';
+const HOP = 2.2, EN = .22, D0 = 1.1;
+const D = h => D0 + h * HOP;
+const PAGES = [
+  { title: 'Isaac Newton', link: 'gravity', oth: ['mathematician', 'physicist'], dia: 'orbit', eq: 'F = G m₁ m₂ / r²', text: 'Sir Isaac Newton (1643–1727) was an English mathematician, physicist and astronomer. In the Principia (1687) he formulated the three laws of motion and the law of universal gravity, laying the foundations of classical mechanics.' },
+  { title: 'Gravity', link: 'light', oth: ['spacetime', 'general relativity'], dia: 'wave', eq: 'c = λ f', text: 'Gravity is the attraction between objects that have mass or energy. In general relativity it appears as the curvature of spacetime, which bends the path of light passing near a massive body.' },
+  { title: 'Light', link: 'electron', oth: ['electromagnetic', 'photon'], dia: 'atom', eq: 'E = h f', text: 'Light is electromagnetic radiation that the human eye can detect. It behaves as both a wave and a particle, the photon, and a single photon can knock an electron out of a metal surface.' },
+  { title: 'Electron', link: 'molecule', oth: ['subatomic', 'atoms'], dia: 'benzene', eq: 'C₆H₆', text: 'The electron is a subatomic particle with a negative electric charge. Electrons orbit the nuclei of atoms, and electrons shared between atoms form the chemical bonds of a molecule.' },
+  { title: 'Molecule', link: 'DNA', oth: ['atoms', 'chemical bonds'], dia: 'helix', eq: 'A–T   ·   G–C', text: 'A molecule is a group of two or more atoms held together by chemical bonds. The largest are macromolecules, such as the DNA that carries genetic information in every living cell.' },
+  { title: 'DNA', link: 'evolution', oth: ['double helix', 'nucleotides'], dia: 'tree', eq: 'descent with modification', text: 'Deoxyribonucleic acid (DNA) is a double helix made of two strands of nucleotides. Small differences in DNA between individuals are the raw material of natural selection and evolution.' },
+  { title: 'Evolution', link: 'Universe', oth: ['heritable', 'common ancestor'], dia: 'universe', eq: 'v = H₀ d', text: 'Evolution is the change in the heritable traits of populations over generations. All known life shares a common ancestor that lived more than 3.5 billion years ago, long after the Universe began.' },
+  { title: 'Universe', link: 'links', oth: ['Big Bang', 'gravity'], dia: 'links', eq: '', text: 'The Universe is all of space and time and their contents. It began about 13.8 billion years ago in the Big Bang, and everything in it is tied together by gravity, and on Wikipedia, by links.' },
+];
+const PW = 900, PX = 90, FS = 58, LH2 = 86;
+const LS = 1.5, LW = 611.95 * LS, LH = 419 * LS, LX = (W - LW) / 2, LY = 600;
+const logoDot = i => { const d = LOGO.dots[i]; return [LX + d.x * LS, LY + d.y * LS, d.r * LS]; };
+const ENDX = () => D(7) + 4.8;
+let END = 0, NET = [];
+function layoutPage(pg) {
+  g.font = `400 ${FS}px EB`; const words = pg.text.split(' '), lines = []; let cur = [], w = 0; const sp = g.measureText(' ').width;
+  words.forEach(wd => { const ww = g.measureText(wd).width; if (w + ww > PW && cur.length) { lines.push(cur); cur = []; w = 0; } cur.push(wd); w += ww + sp; }); lines.push(cur);
+  pg.tokens = []; let y = 640, target = null;
+  lines.forEach(ln => { let x = PX; ln.forEach(wd => { const clean = wd.replace(/[.,]$/, ''), ww = g.measureText(clean).width, tw = g.measureText(wd).width;
+    const isT = clean === pg.link, isL = isT || pg.oth.some(o => o.split(' ')[0] === clean || clean === o); pg.tokens.push({ txt: wd, clean, x, y, w: ww, link: isL, target: isT }); if (isT && !target) target = { x, y, w: ww };
+    x += tw + sp; }); y += LH2; });
+  pg.target = target; pg.endY = y;
+}
+function init() {
+  PAGES.forEach(layoutPage); END = ENDX() + 1.4; window.DURATION = END;
+  const r = (n => () => hash(n++))(5);
+  for (let i = 0; i < 24; i++) NET.push({ x: 150 + r() * 780, y: 760 + r() * 680, ap: i / 24 * .5 });
+  // designated nodes: pick five that are spread out
+  NET.forEach((n, i) => { n.des = -1; }); [3, 8, 13, 17, 21].forEach((ix, d) => NET[ix].des = d);
+  PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + .1, 'mark', h); note(d + .73, 'zoom', h); note(d + 1.1, 'iris', h); for (let i = 0; i < 4; i++) note(d + 1.12 + i * .22, 'note', h * 4 + i, i); });
+  note(D(7) + 2.15, 'collapse', 0); note(D(7) + 2.95, 'reveal', 0); note(D(7) + 3.7, 'tag', 0);
+  window.__ready = true;
+}
+// ------------------------------------------------------------------ paper page
+function pageScene(h, k, zoomOnly) {
+  const pg = PAGES[h], T = pg.target, cx = T.x + T.w / 2, cy = T.y - FS * .3;
+  const kz = clamp((k - .73) / .37), slow = E.ss(clamp(k / .73)), zEnd = 860 / (T.w + 24), zmid = lerp(1.0, 1.3, slow);
+  const samples = kz > 0 && kz < 1 ? 4 : 1;
+  for (let s = 0; s < samples; s++) {
+    const kk = clamp(kz - s * .03), zz = zmid * Math.pow(zEnd / zmid, Math.pow(kk, 2.2)), fk = .38 * slow + .62 * Math.pow(kk, 1.6), fx = lerp(540, cx, fk), fy = lerp(900, cy, fk), rot = .012 * Math.sin(k * 1.4 + h) * (1 - kz);
+    g.save(); if (samples > 1) g.globalAlpha = s === 0 ? 1 : .22; g.translate(W / 2, H / 2); g.scale(zz, zz); g.rotate(rot); g.translate(-fx, -fy);
+    // paper
+    g.fillStyle = '#ece4cf'; g.fillRect(-1200, -1200, W + 2400, H + 2400);
+    g.fillStyle = INK; g.textBaseline = 'alphabetic';
+    g.font = '400 128px EB'; g.fillText(pg.title, PX, 330); g.fillStyle = 'rgba(28,24,18,.55)'; g.fillRect(PX, 372, PW, 3);
+    g.font = 'italic 400 36px EB'; g.fillStyle = 'rgba(28,24,18,.6)'; g.fillText('From Wikipedia, the free encyclopedia', PX, 446);
+    // marker highlight on the target word
+    const mk = p(k, .08, .36, E.io); if (mk > 0) { g.fillStyle = '#ffe14d'; g.save(); g.translate(T.x - 10, T.y - FS * .86); g.transform(1, 0, -.06, 1, 0, 0); g.fillRect(0, 0, (T.w + 20) * mk, FS * 1.12); g.restore(); }
+    g.font = `400 ${FS}px EB`;
+    pg.tokens.forEach(tk => { g.fillStyle = tk.link && !tk.target ? '#2a4f8a' : INK; g.fillText(tk.txt, tk.x, tk.y); if (tk.link && !tk.target) { g.fillRect(tk.x, tk.y + 8, tk.w, 2.5); } else if (tk.target) { g.fillStyle = INK; g.fillRect(tk.x, tk.y + 8, tk.w, 3); } });
+    // a second heading and ghost lines below, for page feel
+    g.fillStyle = 'rgba(28,24,18,.5)'; g.font = '400 70px EB'; g.fillText(pg.title === 'Universe' ? 'Overview' : 'History', PX, pg.endY + 120); g.fillRect(PX, pg.endY + 140, PW, 2);
+    g.fillStyle = 'rgba(28,24,18,.14)'; for (let i = 0; i < 6; i++) g.fillRect(PX, pg.endY + 200 + i * 50, PW * (i === 5 ? .5 : .96 - (i % 3) * .05), 18);
+    g.restore();
+  }
+  // soft vignette
+  const vg = g.createRadialGradient(W / 2, H / 2, 500, W / 2, H / 2, 1250); vg.addColorStop(0, 'rgba(60,40,10,0)'); vg.addColorStop(1, 'rgba(60,40,10,.42)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+}
+// ------------------------------------------------------------------ dark scenes (diagrams)
+const strokeC = (w, c = LINE) => { g.lineWidth = w; g.strokeStyle = c; g.lineCap = 'round'; g.lineJoin = 'round'; };
+function axes(cx, cy, w, hh) { strokeC(1.5, FAINT); g.beginPath(); g.moveTo(cx - w, cy); g.lineTo(cx + w, cy); g.moveTo(cx, cy - hh); g.lineTo(cx, cy + hh); g.stroke(); }
+const dot = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+const CY = 1090;
+function dOrbit(u) {
+  const cx = 540, a = 370, b = 250, fc = Math.sqrt(a * a - b * b); axes(cx, CY, 470, 330);
+  const th = u * Math.PI * 2 * 1.05; strokeC(2.5); g.beginPath(); for (let k = 0; k <= 80; k++) { const t = Math.min(th, k / 80 * Math.PI * 2 * 1.0); const x = cx + a * Math.cos(t), y = CY + b * Math.sin(t); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  strokeC(1.2, FAINT); g.beginPath(); g.ellipse(cx, CY, a, b, 0, 0, 7); g.stroke();
+  const sx = cx + fc, sy = CY, px = cx + a * Math.cos(th), py = CY + b * Math.sin(th);
+  g.fillStyle = 'rgba(245,154,98,.2)'; g.beginPath(); g.moveTo(sx, sy); for (let k = 0; k <= 14; k++) { const t = th - .9 + k / 14 * .9; g.lineTo(cx + a * Math.cos(t), CY + b * Math.sin(t)); } g.closePath(); g.fill();
+  strokeC(1.8, 'rgba(239,230,210,.55)'); g.beginPath(); g.moveTo(sx, sy); g.lineTo(px, py); g.stroke();
+  dot(sx, sy, 34, CD[3]); g.save(); g.shadowColor = CD[3]; g.shadowBlur = 40; dot(sx, sy, 34, CD[3]); g.restore(); dot(px, py, 16, CD[1]);
+}
+function dWave(u) {
+  const cx = 250, r = 160, th = u * Math.PI * 2 * 1.55 + .01, X0 = 470, K = 96; axes(cx, CY, 200, 200); axes(X0 + 100, CY, 0, 0);
+  strokeC(1.5, FAINT); g.beginPath(); g.moveTo(X0, CY); g.lineTo(X0 + 520, CY); g.stroke(); strokeC(2.5); g.beginPath(); g.arc(cx, CY, r, 0, 7); g.stroke();
+  const px = cx + r * Math.cos(th), py = CY - r * Math.sin(th); strokeC(3, CD[2]); g.beginPath(); for (let k = 0; k <= 160; k++) { const f = k / 160 * th, x = X0 + f * K, y = CY - r * Math.sin(f); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  const hx = X0 + th * K; strokeC(1.5, 'rgba(239,230,210,.5)'); g.setLineDash([8, 8]); g.beginPath(); g.moveTo(px, py); g.lineTo(hx, py); g.stroke(); g.setLineDash([]); strokeC(2.5); g.beginPath(); g.moveTo(cx, CY); g.lineTo(px, py); g.stroke(); dot(px, py, 14, CD[4]); dot(hx, py, 12, CD[4]);
+}
+function dAtom(u) {
+  const cx = 540; axes(cx, CY, 450, 330); const gr = E.out3(clamp(u / .35));
+  for (let i = 0; i < 3; i++) { const rot = i * Math.PI / 3 + u * .5; g.save(); g.translate(cx, CY); g.rotate(rot); strokeC(2.2); g.beginPath(); g.ellipse(0, 0, 360, 135, 0, 0, Math.PI * 2 * gr); g.stroke();
+    if (gr > .95) { const a = u * 9 + i * 2.1, ex = 360 * Math.cos(a), ey = 135 * Math.sin(a); for (let k = 1; k <= 8; k++) { const aa = a - k * .09; g.globalAlpha = .5 * (1 - k / 8); dot(360 * Math.cos(aa), 135 * Math.sin(aa), 11 * (1 - k / 12), CD[1]); } g.globalAlpha = 1; dot(ex, ey, 15, CD[1]); } g.restore(); }
+  [[0, 0], [22, 8], [-20, 14], [6, -22], [-8, 26], [24, -14]].forEach(([x, y], i) => dot(cx + x * gr, CY + y * gr, 20, i % 2 ? CD[3] : CD[4]));
+}
+function dBenzene(u) {
+  const cx = 540, cy = CY, R = 250, rot = u * .6; axes(cx, cy, 440, 360); const V = k => [cx + R * Math.cos(rot + k * Math.PI / 3 - Math.PI / 2), cy + R * Math.sin(rot + k * Math.PI / 3 - Math.PI / 2)];
+  for (let k = 0; k < 6; k++) { const gp = clamp(u * 7 - k * .55), a = V(k), b = V(k + 1); strokeC(5); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(lerp(a[0], b[0], gp), lerp(a[1], b[1], gp)); g.stroke();
+    if (k % 2 === 0 && gp >= 1) { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], dx = cx - m[0], dy = cy - m[1], L = Math.hypot(dx, dy), o = 34; const ux = dx / L * o, uy = dy / L * o, sh = .16; strokeC(4, 'rgba(239,230,210,.8)'); g.beginPath(); g.moveTo(lerp(a[0], b[0], sh) + ux, lerp(a[1], b[1], sh) + uy); g.lineTo(lerp(a[0], b[0], 1 - sh) + ux, lerp(a[1], b[1], 1 - sh) + uy); g.stroke(); } }
+  for (let k = 0; k < 6; k++) { const a = V(k), s = E.out3(clamp(u * 7 - k * .55 + .5)), dx = a[0] - cx, dy = a[1] - cy, L = Math.hypot(dx, dy), hx = a[0] + dx / L * 120, hy = a[1] + dy / L * 120; strokeC(3, 'rgba(239,230,210,.6)'); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(lerp(a[0], hx, s), lerp(a[1], hy, s)); g.stroke(); dot(a[0], a[1], 24 * s, CD[2]); dot(lerp(a[0], hx, s), lerp(a[1], hy, s), 15 * s, CD[0]); }
+}
+function dHelix(u) {
+  const top = 680, bot = 1500, len = (bot - top) * E.out3(clamp(u * 1.5)), ph = u * 5; const X = (y, s) => 540 + s * 190 * Math.sin(y * .0105 + ph);
+  for (let y = top; y <= top + len; y += 34) { const x1 = X(y, 1), x2 = X(y, -1), dp = Math.cos(y * .0105 + ph); strokeC(3 + 2 * Math.abs(dp), 'rgba(239,230,210,.55)'); const ix = Math.floor((y - top) / 34), pair = ix % 2; g.beginPath(); g.moveTo(x1, y); g.lineTo(x2, y); g.stroke(); dot(x1, y, 9, pair ? CD[0] : CD[1]); dot(x2, y, 9, pair ? CD[3] : CD[2]); }
+  [1, -1].forEach(s => { strokeC(7, s > 0 ? CD[1] : CD[4]); g.beginPath(); for (let y = top; y <= top + len; y += 6) { const x = X(y, s); y === top ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); });
+}
+function dTree(u) {
+  const rec = (x, y, ang, len, d, id) => { const gp = clamp((u * 1.55 - d * .17) / .26); if (gp <= 0) return; const x2 = x + Math.sin(ang) * len * gp, y2 = y - Math.cos(ang) * len * gp; strokeC(2 + (5 - d) * 2.2); g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+    if (d >= 5) { if (gp >= 1) dot(x2, y2, 14 * E.out3(clamp((u - .78) * 5 - hash(id) * .5)), CD[(id * 7) % 5]); return; } if (gp < 1) return;
+    const sp = .3 + .25 * hash(id * 3.1); rec(x2, y2, ang - sp, len * .76, d + 1, id * 2); rec(x2, y2, ang + sp * (.8 + .4 * hash(id)), len * .76, d + 1, id * 2 + 1); };
+  rec(540, 1520, 0, 270, 0, 1);
+}
+function dUniverse(u) {
+  const cx = 540, e = lerp(.22, 1.2, E.out3(u)); for (let i = 1; i <= 5; i++) { strokeC(1.2, `rgba(239,230,210,${.16 / i * (1.4 - u * .6)})`); g.beginPath(); g.arc(cx, CY, i * 90 * e, 0, 7); g.stroke(); }
+  for (let i = 0; i < 90; i++) { const a = hash(i * 1.7) * 6.283, r0 = Math.sqrt(hash(i * 2.9 + 1)) * 380, x = cx + Math.cos(a) * r0 * e, y = CY + Math.sin(a) * r0 * e, rr = 3 + 7 * hash(i * 4.4); g.globalAlpha = .55 + .45 * hash(i); dot(x, y, rr, CD[i % 5]); } g.globalAlpha = 1;
+  const A = [cx + Math.cos(.7) * 150 * e, CY + Math.sin(.7) * 150 * e], B = [cx + Math.cos(.7) * 330 * e, CY + Math.sin(.7) * 330 * e]; strokeC(2.5, CD[4]); g.beginPath(); g.moveTo(cx, CY); g.lineTo(B[0], B[1]); g.stroke(); dot(cx, CY, 12, CD[4]); dot(B[0], B[1], 16, CD[4]);
+}
+function netLayout(u, k, col) { // nodes at time; col = collapse progress
+  return NET.map((n, i) => { const ap = E.out3(clamp((u - n.ap) * 6)); let x = n.x, y = n.y, r = 10 * ap, a = ap; if (col > 0) { const T = n.des >= 0 ? logoDot(n.des) : null; if (T) { const e = E.io(col); x = lerp(n.x, T[0], e); y = lerp(n.y, T[1], e); r = lerp(10, T[2], e); } else { let bi = 0, bd = 1e9; [3, 8, 13, 17, 21].forEach((ix, d) => { const dd = Math.hypot(NET[ix].x - n.x, NET[ix].y - n.y); if (dd < bd) { bd = dd; bi = d; } }); const T2 = logoDot(bi), e = E.in3(clamp(col * 1.15)); x = lerp(n.x, T2[0], e); y = lerp(n.y, T2[1], e); r = 10 * (1 - e); a = 1 - clamp((col - .7) / .3); } } return { x, y, r, a, i }; });
+}
+function dLinks(u, col) {
+  const nd = netLayout(u, 0, col); const edges = []; nd.forEach((a, i) => { nd.map((b, j) => ({ j, d: Math.hypot(NET[i].x - NET[j].x, NET[i].y - NET[j].y) })).filter(o => o.j !== i).sort((p1, p2) => p1.d - p2.d).slice(0, 2).forEach(o => { if (i < o.j || !edges.some(e => e[0] === o.j && e[1] === i)) edges.push([i, o.j]); }); });
+  edges.forEach(([i, j]) => { const a = nd[i], b = nd[j], gp = clamp((u - Math.max(NET[i].ap, NET[j].ap) - .06) * 5); if (gp <= 0) return; strokeC(2.2, `rgba(239,230,210,${.65 * (1 - col)})`); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(lerp(a.x, b.x, gp), lerp(a.y, b.y, gp)); g.stroke(); });
+  nd.forEach(n => { if (n.a <= 0.01) return; g.globalAlpha = n.a; const des = NET[n.i].des; dot(n.x, n.y, Math.max(0, n.r), des >= 0 ? CD[des] : CREAM); }); g.globalAlpha = 1;
+}
+function darkScene(h, k) {
+  const pg = PAGES[h]; g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); vg.addColorStop(0, 'rgba(60,45,30,.35)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, e = E.io(clamp((k - 1.08) / .42));
+  const last = h === 7, u = clamp((k - 1.15) / 1.0), col = last ? clamp((k - 2.15) / .85) : 0, dk = last ? 1 - clamp((k - 2.1) / .4) : 1;
+  g.save(); g.globalAlpha = Math.max(0, p(k, 1.3, 1.6)) * (last ? dk : 1);
+  const dg = { orbit: dOrbit, wave: dWave, atom: dAtom, benzene: dBenzene, helix: dHelix, tree: dTree, universe: dUniverse }[pg.dia]; if (dg) dg(u);
+  g.restore();
+  if (last) { dLinks(u, col); }
+  // title: starts as the huge word from the page (match-cut) then settles at the top
+  const ta = last ? 1 - clamp((k - 1.9) / .4) : 1; g.save(); g.globalAlpha = ta; g.fillStyle = CREAM; g.textAlign = 'center'; const sz = lerp(sz0, sz1, e), ty = lerp(H / 2 - FS * zEnd * .3 * -1 + 0, 300, e); g.font = `400 ${sz}px EB`; g.fillText(word, W / 2, lerp(H / 2 + sz0 * .3, 300, e)); const tw = g.measureText(word).width; g.fillStyle = '#d63a1f'; g.fillRect(W / 2 - tw / 2, lerp(H / 2 + sz0 * .3, 300, e) + sz * .1, tw, Math.max(4, sz * .04)); g.restore();
+  if (pg.eq && !last) { g.save(); g.globalAlpha = p(k, 1.45, 1.8); g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1640 + (1 - p(k, 1.45, 1.8)) * 20); g.restore(); }
+}
+// ------------------------------------------------------------------ the logo card (start and end are identical, so the video loops)
+function card(opt = {}) {
+  const dots = opt.dots !== false, wipe = opt.wipe === undefined ? 1 : opt.wipe, tg = opt.tag === undefined ? 1 : opt.tag, dm = opt.dom === undefined ? 1 : opt.dom;
+  if (opt.bg !== false) { g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); vg.addColorStop(0, 'rgba(245,154,98,.2)'); vg.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }
+  if (dots) for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26; dot(T[0], T[1], T[2], CD[i]); g.restore(); }
+  if (wipe > 0 && LOGO.img && LOGO.img.complete) { g.save(); g.beginPath(); g.rect(LX, LY, LW * wipe, LH); g.clip(); g.drawImage(LOGO.img, LX, LY, LW, LH); g.restore(); }
+  g.textAlign = 'center'; if (tg > 0) { g.globalAlpha = tg; g.fillStyle = '#c9bfa8'; g.font = '600 31px IS'; if ('letterSpacing' in g) g.letterSpacing = '8px'; g.fillText('THE DAILY WIKIPEDIA LINK RACE', W / 2 + 4, LY + LH + 90 - (1 - tg) * 14); if ('letterSpacing' in g) g.letterSpacing = '0px'; }
+  if (dm > 0) { g.globalAlpha = dm; g.fillStyle = CREAM; g.font = 'italic 400 54px EB'; g.fillText('playscorcher.com', W / 2, LY + LH + 190 - (1 - dm) * 14); } g.globalAlpha = 1;
+}
+function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
+  const irisA = .92, irisB = 1.1;
+  if (k < irisA) { pageScene(h, k); return; }
+  if (k < irisB) { pageScene(h, k); const R = 1500 * E.in3(clamp((k - irisA) / (irisB - irisA))) + 10; g.save(); g.beginPath(); g.arc(W / 2, H / 2, R, 0, 7); g.clip(); darkScene(h, k); g.restore(); return; }
+  darkScene(h, k);
+  if (h === 7) { const col = clamp((k - 2.15) / .85); if (col > 0) { const dd = p(k, 2.2, 2.9); /* dots are drawn by the network layer; add glow and card pieces */ const wp = p(k, 2.95, 3.75, E.io), tg = p(k, 3.7, 4.4), dm = p(k, 4.1, 4.8); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
+}
+function render(t) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.textAlign = 'left'; const E0 = .5;
+  if (t < E0) { card(); return; }
+  if (t < D(0)) { card(); const rd = [LX + 365.98 * LS, LY + 86 * LS]; const R = 1700 * E.in3(clamp((t - E0) / (D(0) - E0))) + 4; g.save(); g.beginPath(); g.arc(rd[0], rd[1], R, 0, 7); g.clip(); pageScene(0, (t - D(0))); g.restore(); return; }
+  let h = 0; for (let i = 0; i < 8; i++) if (t >= D(i) - (i > 0 ? EN : 0)) h = i;
+  const k = t - D(h);
+  if (h > 0 && k < 0) { // whip: previous scene slides out, new page slides in
+    const s = E.io(clamp((t - (D(h) - EN)) / EN)); g.save(); g.translate(-s * W, 0); sceneAt(h - 1, t - D(h - 1)); g.restore(); g.save(); g.beginPath(); g.rect((1 - s) * W, 0, W, H); g.clip(); g.translate((1 - s) * W, 0); pageScene(h, k); g.restore();
+    g.save(); g.lineCap = 'round'; for (let i = 0; i < 14; i++) { const y = hash(i * 3.3) * H, l = 200 + 500 * hash(i); g.strokeStyle = `rgba(255,248,230,${.35 * Math.sin(s * Math.PI)})`; g.lineWidth = 3 + 5 * hash(i * 2); g.beginPath(); g.moveTo(W * (1 - s) - l * .3 + hash(i) * 200, y); g.lineTo(W * (1 - s) + l, y); g.stroke(); } g.restore(); return;
+  }
+  sceneAt(h, k);
+  const ef = clamp((t - (END - .0001)) / .0001); // no fade out: the last frame equals the first so it loops
+}
+window.render = render;
+document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('600 28px IS'), new Promise(r => { LOGO.img = new Image(); LOGO.img.onload = r; LOGO.img.src = LOGO.word; })])).then(() => { init(); render(0); });
+</script></body></html>
