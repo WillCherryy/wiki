@@ -454,3 +454,5 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .nl span::after { content: attr(data-l); position: absolute; left: 0; top: 56px; transform: translateX(-50%); }
 .nl span.you b { color: var(--accent-ink); } .nl span.you::before { background: var(--accent); left: -8px; top: 32px; width: 16px; height: 16px; } .nl span.you::after { top: 74px; color: var(--accent-ink); }
 .pcrowd:empty { display: none; }
+
+.posterbtn { margin-top: 10px; width: 100%; }

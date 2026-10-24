@@ -292,10 +292,12 @@ function renderHeroAct() {
       <div class="act-row">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge a friend</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button></div>`;
     if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
     $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
+    box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
   } else {
     const resume = cur && cur.mode === 'daily' && cur.day === day;
     box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
     $('#playBtn').onclick = playDaily;
+    box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
   }
 }
 function renderQuiet() {
@@ -303,6 +305,7 @@ function renderQuiet() {
   $('#quiet').innerHTML = `<button class="qlink" id="qLb">Leaderboard</button><button class="qlink" id="qPacks">Packs <small>${solved}/${pt}</small></button><button class="qlink" id="qLocker">Locker <small>${open}/${tot}</small></button><button class="qlink" id="qLeague">Leagues</button><button class="qlink" id="qLive">Live</button><button class="qlink" id="qPractice">Practice</button>`;
   $('#qLb').onclick = () => openLeaderboard('day'); $('#qPacks').onclick = openPacks; $('#qLocker').onclick = () => openLocker(); $('#qLeague').onclick = () => leagueModal(); $('#qLive').onclick = liveMenu; $('#qPractice').onclick = () => startGame('practice');
 }
+let TODAY = null;
 async function renderHome() {
   const day = dayKey();
   $('#plateDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -310,7 +313,7 @@ async function renderHome() {
   renderHeader(); renderHeroAct(); renderQuiet();
   let d = { from: '', to: '', ka: '', kb: '' };
   try { d = await getDaily(day); } catch { const [a, b, ka, kb] = pickPair(todaySeed()); d = { from: a, to: b, ka, kb }; }
-  setPlate(d, null, null);
+  TODAY = d; setPlate(d, null, null);
   try { const [sa, sb] = await Promise.all([getSummary(d.from), getSummary(d.to)]); setPlate(d, sa, sb); } catch {}
 }
 function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch { return null; } }
@@ -965,6 +968,47 @@ async function openShareCard(r, back) {
   };
   $('#scTxt').onclick = async () => { try { await navigator.clipboard.writeText(shareText()); toast('Text copied'); } catch { prompt('Copy your result:', shareText()); } };
   $('#scBack').onclick = () => { closeModal(); if (back) back(); };
+}
+
+/* -------------------------------------------------------------- today's poster: the puzzle itself, ready to post */
+async function posterCanvas(d, tease) {
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif';
+  try { await Promise.all([document.fonts.load(`400 80px ${DISP}`), document.fonts.load(`italic 400 80px ${DISP}`), document.fonts.load(`600 24px ${SANS}`), document.fonts.load(`500 36px ${SANS}`)]); } catch {}
+  const INK = '#16130f', INK2 = '#4b453b', PAPER = '#f3eee4', MUTE = '#7a7265', RULE = '#cfc6b3', ACC = '#d63a1f', M = 96, day = dayKey();
+  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = sp + 'px'; } catch {} x.fillText(t.toUpperCase(), px, y); try { x.letterSpacing = '0px'; } catch {} };
+  x.fillStyle = PAPER; x.fillRect(0, 0, W, H); x.strokeStyle = INK; x.lineWidth = 3; x.strokeRect(34, 34, W - 68, H - 68); x.strokeStyle = RULE; x.lineWidth = 1.5; x.strokeRect(48, 48, W - 96, H - 96);
+  [[9, 47, 3.2, '#2a4f8a'], [21, 42, 4.2, '#5c8cbe'], [33, 34, 5.4, '#d6be8c'], [44, 24, 6.8, '#f08c50'], [54, 12, 8.4, '#d63a1f']].forEach(([dx, dy, dr, col]) => { x.fillStyle = col; x.beginPath(); x.arc(M - 8 + dx * 1.7, 100 + dy * 1.7, dr * 1.7, 0, 7); x.fill(); });
+  x.textAlign = 'left'; x.font = `400 62px ${DISP}`; x.fillStyle = INK; x.fillText(BRAND.a, M + 118, 172); const bw = x.measureText(BRAND.a).width; x.font = `italic 400 62px ${DISP}`; x.fillStyle = ACC; x.fillText(BRAND.b, M + 118 + bw, 172);
+  caps(`Plate No. ${dayNum(day)}`, W - M, 140, 22, MUTE, 'right', 4.4); caps(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), W - M, 176, 22, MUTE, 'right', 4.4);
+  x.fillStyle = INK; x.fillRect(M, 208, W - 2 * M, 4);
+  const fit = (t, big, maxLines) => { const n = t.length, base = big * (n <= 12 ? 1 : n <= 18 ? .8 : n <= 26 ? .62 : .5); for (let sz = base; sz >= 56; sz -= 6) { x.font = `400 ${sz}px ${DISP}`; const ls = wrapLines(x, t, W - 2 * M); if (ls.length <= maxLines) return { sz, ls }; } return { sz: 56, ls: wrapLines(x, t, W - 2 * M).slice(0, maxLines) }; };
+  const from = fit(d.from, 150, 2); const to = tease ? { sz: 210, ls: ['?'] } : fit(d.to, 150, 2);
+  const lines = from.ls.length * from.sz * .98 + to.ls.length * to.sz * .98, mid = 236 + (H - 104 - 236 - 250) / 2 + 20, top = mid - (lines + 230) / 2;
+  let y = top; caps('Start', W / 2, y + 22, 22, MUTE, 'center', 5.2); y += 66; x.fillStyle = INK; x.textAlign = 'center'; x.font = `400 ${from.sz}px ${DISP}`; from.ls.forEach(l => { y += from.sz * .86; x.fillText(l, W / 2, y); y += from.sz * .12; });
+  y += 52 + from.sz * .26; x.strokeStyle = RULE; x.lineWidth = 4; x.setLineDash([2, 10]); x.lineCap = 'round'; x.beginPath(); x.moveTo(M, y); x.lineTo(W / 2 - 150, y); x.moveTo(W / 2 + 150, y); x.lineTo(W - M, y); x.stroke(); x.setLineDash([]);
+  [['#2a4f8a', 11], ['#5c8cbe', 14], ['#d6be8c', 18], ['#f08c50', 23], ['#d63a1f', 29]].forEach(([col, r], i) => { x.fillStyle = col; x.beginPath(); x.arc(W / 2 - 108 + i * 54, y + 10 - r + 14, r, 0, 7); x.fill(); });
+  y += 84; caps('Reach', W / 2, y, 22, MUTE, 'center', 5.2); y += 38; x.fillStyle = ACC; x.font = `italic 400 ${to.sz}px ${DISP}`; to.ls.forEach(l => { y += to.sz * .86; x.fillText(l, W / 2, y); y += to.sz * .12; });
+  const chips = [d.par ? `Fastest possible · ${d.par} click${d.par === 1 ? '' : 's'}` : 'Click only links', d.par ? diffOf(d.par) : '', 'Solvable in 4 or fewer'].filter(Boolean); x.font = `600 19px ${SANS}`; try { x.letterSpacing = '1.9px'; } catch {}
+  const ws = chips.map(t => x.measureText(t.toUpperCase()).width + 36), tot = ws.reduce((a, b) => a + b, 0) + 12 * (chips.length - 1); let cx = (W - tot) / 2, cy = H - 104 - 218;
+  chips.forEach((t, i) => { x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(cx, cy, ws[i], 44); x.fillStyle = INK2; x.textAlign = 'left'; x.fillText(t.toUpperCase(), cx + 18, cy + 29); cx += ws[i] + 12; }); try { x.letterSpacing = '0px'; } catch {}
+  x.textAlign = 'center'; x.fillStyle = INK; x.font = `italic 400 66px ${DISP}`; x.fillText('Can you beat it?', W / 2, H - 104 - 90); x.font = `500 36px ${SANS}`; x.fillText(BRAND.domain, W / 2, H - 104 - 38); caps('Free · No account · New puzzle every day', W / 2, H - 104 + 4, 18, MUTE, 'center', 3.6);
+  return c;
+}
+async function openPoster() {
+  const d = TODAY; if (!d || !d.from) return toast('Today’s puzzle is still loading');
+  let tease = false, url = null, file = null;
+  openModal(`<h2>Today’s poster</h2><p style="margin-bottom:12px">The puzzle, ready to post. Friends can play the same one.</p>
+    <div class="seg3" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><button class="seg on" id="pzFull">Full puzzle</button><button class="seg" id="pzTease">Hide destination</button></div>
+    <img id="pzImg" alt="Today’s puzzle poster" style="width:100%;border-radius:14px;display:block;background:#111;aspect-ratio:4/5">
+    <div class="actions" style="margin-top:14px"><button class="btn" id="pzShare">Share</button><button class="btn ghost" id="pzSave">Save image</button></div>`);
+  const draw = async () => { const cv = await posterCanvas(d, tease), blob = await new Promise(r => cv.toBlob(r, 'image/png')); if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(blob); file = new File([blob], `${BRAND.name}-${dayNum(dayKey())}${tease ? '-teaser' : ''}.png`, { type: 'image/png' }); $('#pzImg').src = url; };
+  await draw();
+  const set = t => { tease = t; $('#pzFull').classList.toggle('on', !t); $('#pzTease').classList.toggle('on', t); draw(); };
+  $('#pzFull').onclick = () => set(false); $('#pzTease').onclick = () => set(true);
+  const save = () => { const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); };
+  $('#pzSave').onclick = () => { save(); Ping.share(); toast('Image saved'); };
+  $('#pzShare').onclick = async () => { Ping.share(); const text = `${BRAND.name}, plate ${dayNum(dayKey())}: ${d.from} → ${tease ? '?' : d.to}. ${SITE_URL}`; try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text }); else { save(); toast('Image saved — attach it to your post'); } } catch {} };
 }
 
 /* -------------------------------------------------------------- friend challenges */
