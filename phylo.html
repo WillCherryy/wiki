@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Divergence · Scorcher</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.ph { max-width: 560px; margin: 0 auto; padding: 18px 18px 90px; }
+.ph h1 { font: 400 clamp(38px, 9vw, 54px)/1 var(--display); letter-spacing: -.02em; margin: 14px 0 6px; } .ph h1 em { color: var(--accent); }
+.ph .sub { font: 500 16px/1.4 var(--serif); color: var(--ink-2); margin: 0 0 18px; }
+.pair { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 6px 0 4px; }
+.sp { text-align: center; } .sp .im { aspect-ratio: 1; border: 2px solid var(--ink); background: var(--rule-2) center/cover; display: grid; place-items: center; font: italic 400 58px var(--display); color: var(--mute); box-shadow: 8px 8px 0 var(--temp, var(--accent)); }
+.sp b { display: block; margin-top: 14px; font: 400 26px/1.05 var(--display); } .sp small { font: 500 12px var(--sans); color: var(--mute); }
+.fork { grid-column: 1 / -1; height: 64px; margin: -2px 0 -6px; } .fork svg { width: 100%; height: 100%; display: block; }
+.q { text-align: center; font: italic 400 22px/1.2 var(--display); margin: 18px 0 4px; }
+.read { text-align: center; margin: 10px 0 2px; } .read b { display: block; font: 400 clamp(46px, 12vw, 70px)/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; } .read span { font: 600 11px var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
+.track { position: relative; margin: 66px 8px 4px; height: 70px; }
+.track input { position: absolute; left: -8px; right: -8px; width: calc(100% + 16px); top: 18px; margin: 0; background: none; -webkit-appearance: none; appearance: none; height: 34px; }
+.track input::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #2a4f8a, #5c8cbe, #d6be8c, #f08c50, #d63a1f); }
+.track input::-moz-range-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #2a4f8a, #5c8cbe, #d6be8c, #f08c50, #d63a1f); }
+.track input::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -11px; border-radius: 50%; background: var(--paper); border: 4px solid var(--ink); box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+.track input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--paper); border: 4px solid var(--ink); }
+.tk { position: absolute; top: 40px; transform: translateX(-50%); font: 600 11px var(--sans); color: var(--mute); text-align: center; white-space: nowrap; } .tk::before { content: ""; display: block; width: 1px; height: 8px; margin: 0 auto 2px; background: var(--rule); }
+.ms { position: absolute; top: -2px; transform: translateX(-50%); font: 600 9.5px/1.15 var(--sans); letter-spacing: .04em; color: var(--ink-2); text-align: center; width: 76px; } .ms:nth-of-type(even) { top: -30px; } .ms:nth-of-type(even)::after { height: 42px; }
+.ms::after { content: ""; display: block; width: 1px; height: 14px; margin: 3px auto 0; background: var(--ink-2); opacity: .5; }
+.axis { display: flex; justify-content: space-between; font: 600 10px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 0 4px 16px; }
+.go { width: 100%; } .guesses { margin: 18px 0 0; display: grid; gap: 8px; }
+.gr { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: center; border: 1px solid var(--rule); background: var(--paper); padding: 10px 14px; }
+.gr .n { font: 400 24px var(--display); color: var(--mute); } .gr .v { font: 400 24px/1 var(--display); } .gr .v small { display: block; margin-top: 3px; font: 600 11px var(--sans); letter-spacing: .06em; color: var(--mute); text-transform: none; }
+.gr .t { text-align: right; font: italic 400 22px/1 var(--display); } .gr .t i { display: flex; gap: 4px; justify-content: flex-end; margin-top: 5px; } .gr .t i b { width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+.res { margin-top: 22px; border: 2px solid var(--ink); background: var(--sheet); padding: 18px 18px 16px; box-shadow: 10px 10px 0 var(--accent); }
+.res h2 { margin: 0 0 4px; font: 400 clamp(30px, 8vw, 42px)/1.05 var(--display); } .res h2 em { color: var(--accent); }
+.res .big { font: 400 56px/1 var(--display); } .res .big small { display: block; margin-top: 6px; font: 600 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.res p { font: 500 16px/1.45 var(--serif); color: var(--ink-2); margin: 10px 0 0; } .res .fine { font: 500 12px/1.4 var(--sans); color: var(--mute); }
+.tree { width: 100%; display: block; margin: 12px 0 0; overflow: visible; }
+.act { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.toast2 { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; font: 600 14px var(--sans); border-radius: 3px; opacity: 0; transition: .25s; pointer-events: none; } .toast2.on { opacity: 1; }
+header.ph-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--rule); } header.ph-top a { color: var(--ink); text-decoration: none; }
+.prot { font: 600 10.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); border: 1px solid var(--accent-ink); padding: 3px 8px; }
+</style></head>
+<body style="--temp:#5c8cbe">
+<header class="ph-top"><a class="logo" href="./" style="display:flex;align-items:center;gap:12px"><span class="mark" aria-hidden="true"><svg viewBox="4 2 60 50" style="width:34px;height:28px"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg></span><span class="word" data-brand style="font:400 28px/1 var(--display)">Scorch<b style="font-weight:400;font-style:italic;color:var(--accent)">er</b></span></a><span class="prot">Prototype</span></header>
+<main class="ph" id="app"></main>
+<div class="toast2" id="toast"></div>
+<script src="config.js" charset="utf-8"></script>
+<script src="phylo-data.js"></script>
+<script>
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const MIN = 0.1, MAX = 1000, DEC = Math.log10(MAX / MIN), MAX_GUESSES = 3;
+const toMa = v => MIN * Math.pow(10, v / 1000 * DEC), toV = ma => Math.log10(ma / MIN) / DEC * 1000;
+const fmt = ma => ma < 1 ? `${Math.round(ma * 1000 / 10) * 10} thousand years` : ma < 10 ? `${(Math.round(ma * 10) / 10)} million years` : ma < 1000 ? `${Math.round(ma)} million years` : `${(ma / 1000).toFixed(1)} billion years`;
+const short = ma => ma < 1 ? `${Math.round(ma * 100) * 10} kya` : ma < 1000 ? `${ma < 10 ? Math.round(ma * 10) / 10 : Math.round(ma)} Ma` : `${(ma / 1000).toFixed(1)} Ga`;
+const TICKS = [[0.1, '100k'], [1, '1M'], [10, '10M'], [100, '100M'], [1000, '1B']], MILE = [[0.3, 'Homo sapiens'], [66, 'Dinosaurs end'], [252, 'Mass extinction'], [539, 'Cambrian']];
+const C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'];
+const lerp = (a, b, t) => a + (b - a) * t, rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const heat = t => { t = Math.min(1, Math.max(0, t)) * 4; const i = Math.min(3, Math.floor(t)), a = rgb(C[i]), b = rgb(C[i + 1]); return `rgb(${a.map((v, k) => Math.round(lerp(v, b[k], t - i))).join(',')})`; };
+const word = s => s >= .97 ? 'In sight!' : s > .72 ? 'Scorching' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold';
+// how warm a guess is: 1 inside the published range, otherwise falling off with the factor by which it misses (log scale)
+function temp(g, p) { if (g >= p.lo && g <= p.hi) return 1; const e = Math.abs(Math.log10(g / p.ma)); return Math.max(0, 1 - e / 0.9); }
+// ---------------------------------------------------------------- state
+const LS = 'scorcher:phylo:v0';
+const load = () => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch { return {}; } };
+const save = d => { try { localStorage.setItem(LS, JSON.stringify(d)); } catch {} };
+const today = () => new Date().toLocaleDateString('en-CA');
+const dayNo = d => Math.floor(Date.UTC(...d.split('-').map((x, i) => i === 1 ? x - 1 : +x)) / 864e5);
+function shuffled(n, seed) { const a = [...Array(n).keys()]; let s = seed; const r = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const PAIRS = PHYLO.pairs, ORDER = shuffled(PAIRS.length, 2026), DAY0 = dayNo('2026-11-01');
+let day = today(), pair = null, guesses = [], practice = false;
+function pickDaily() { const k = ((dayNo(day) - DAY0) % PAIRS.length + PAIRS.length) % PAIRS.length; return PAIRS[ORDER[k]]; }
+const imgCache = {};
+async function photo(title) {
+  if (imgCache[title] !== undefined) return imgCache[title];
+  try { const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title)); const j = await r.json(); return imgCache[title] = (j.thumbnail && j.thumbnail.source) || null; } catch { return imgCache[title] = null; }
+}
+// ---------------------------------------------------------------- views
+function trackHtml() {
+  return `<div class="track">${MILE.map(([m, l]) => `<div class="ms" style="left:${toV(m) / 10}%">${l}</div>`).join('')}<input id="sl" type="range" min="0" max="1000" step="1" value="500" aria-label="Million years ago">${TICKS.map(([m, l]) => `<div class="tk" style="left:${toV(m) / 10}%">${l}</div>`).join('')}</div><div class="axis"><span>◂ more recent</span><span>older ▸</span></div>`;
+}
+function forkSvg() { return `<svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M75 0 V22 Q75 34 100 34 H150 M225 0 V22 Q225 34 200 34 H150 M150 34 V64" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="150" cy="34" r="6" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/><text x="150" y="58" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)" font-family="inherit" letter-spacing=".12em">LAST COMMON ANCESTOR</text></svg>`; }
+const card = (sp, i) => `<div class="sp"><div class="im" id="im${i}">${esc(sp[1][0])}</div><b>${esc(sp[1])}</b></div>`;
+function render() {
+  const done = guesses.length && (guesses[guesses.length - 1].t === 1 || guesses.length >= MAX_GUESSES);
+  const best = guesses.length ? Math.max(...guesses.map(g => g.t)) : 0;
+  document.body.style.setProperty('--temp', heat(best));
+  $('#app').innerHTML = `<h1>Divergence</h1><p class="sub">${practice ? 'Practice round. ' : ''}When did these two lineages split from their last common ancestor?</p>
+    <div class="pair">${card([0, pair.a[1]], 0).replace('<b>', '<b>')}${card([0, pair.b[1]], 1)}<div class="fork">${forkSvg()}</div></div>
+    ${done ? '' : `<div class="q">Move the slider to your best guess</div><div class="read"><b id="rd">${fmt(toMa(500))}</b><span>ago</span></div>${trackHtml()}<button class="btn go" id="lock">Lock in guess ${guesses.length + 1} of ${MAX_GUESSES}</button>`}
+    <div class="guesses" id="gl">${guesses.map((g, i) => `<div class="gr"><span class="n">${i + 1}</span><div class="v">${fmt(g.ma)}<small>${g.t === 1 ? 'inside the published range' : g.ma < pair.ma ? 'the split was OLDER than that' : 'the split was MORE RECENT than that'}</small></div><div class="t" style="color:${heat(g.t)}">${word(g.t)}<i>${[0, 1, 2, 3, 4].map(k => `<b style="background:${k <= Math.floor(g.t * 4.99) ? C[k] : ''}"></b>`).join('')}</i></div></div>`).join('')}</div>
+    ${done ? resultHtml() : ''}`;
+  [pair.a, pair.b].forEach((sp, i) => photo(sp[0]).then(u => { const el = $('#im' + i); if (el && u) { el.textContent = ''; el.style.backgroundImage = `url(${u})`; } }));
+  const sl = $('#sl'); if (sl) { sl.oninput = () => $('#rd').textContent = fmt(toMa(+sl.value)); $('#lock').onclick = () => { const ma = toMa(+sl.value); guesses.push({ ma, t: temp(ma, pair) }); persist(); render(); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }; }
+  const sh = $('#share'); if (sh) sh.onclick = share; const ag = $('#again'); if (ag) ag.onclick = () => { practice = true; pair = PAIRS[Math.floor(Math.random() * PAIRS.length)]; guesses = []; render(); window.scrollTo(0, 0); };
+}
+function treeSvg() {
+  const W = 360, H = 262, L = 18, R = 342, X = ma => R - (Math.log10(ma / MIN) / DEC) * (R - L), yA = 56, yB = 130, yR = (yA + yB) / 2, x0 = X(pair.ma);
+  const band = `<rect x="${X(pair.hi)}" y="30" width="${Math.max(3, X(pair.lo) - X(pair.hi))}" height="${H - 96}" fill="${heat(1)}" opacity=".16"/>`;
+  const axis = TICKS.map(([m, l]) => `<g><line x1="${X(m)}" x2="${X(m)}" y1="30" y2="${H - 66}" stroke="var(--rule)" stroke-dasharray="2 4"/><text x="${X(m)}" y="${H - 50}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--mute)" font-family="inherit">${l}</text></g>`).join('');
+  const mile = MILE.map(([m, l], i) => `<g><line x1="${X(m)}" x2="${X(m)}" y1="${H - 66}" y2="${H - 40 + (i % 2) * 14}" stroke="var(--ink-2)" opacity=".45"/><text x="${X(m)}" y="${H - 28 + (i % 2) * 14}" text-anchor="middle" font-size="9.5" fill="var(--ink-2)" font-family="inherit">${l}</text></g>`).join('');
+  const pins = guesses.map((g, i) => `<g><line x1="${X(g.ma)}" x2="${X(g.ma)}" y1="${yB + 22}" y2="${H - 66}" stroke="${heat(g.t)}" stroke-width="2"/><circle cx="${X(g.ma)}" cy="${yB + 22}" r="9" fill="${heat(g.t)}" stroke="var(--sheet)" stroke-width="2"/><text x="${X(g.ma)}" y="${yB + 26}" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="inherit">${i + 1}</text></g>`).join('');
+  const nm = (sp, y) => `<text x="${R + 2}" y="${y - 10}" text-anchor="end" font-size="14" font-style="italic" fill="var(--ink)" font-family="var(--display)">${esc(sp[1])}</text>`;
+  return `<svg class="tree" viewBox="0 0 ${W} ${H}">${band}${axis}${mile}
+    <path d="M${x0} ${yR} V${yA} H${R} M${x0} ${yR} V${yB} H${R}" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${x0}" cy="${yR}" r="7" fill="${heat(1)}" stroke="var(--sheet)" stroke-width="2.5"/>${nm(pair.a, yA)}${nm(pair.b, yB)}
+    <circle cx="${R}" cy="${yA}" r="4" fill="var(--ink)"/><circle cx="${R}" cy="${yB}" r="4" fill="var(--ink)"/>${pins}
+    <text x="${x0}" y="${yR - 14}" text-anchor="${x0 > 250 ? 'end' : 'start'}" dx="${x0 > 250 ? -10 : 10}" font-size="12" font-weight="800" fill="var(--accent-ink)" font-family="inherit">${short(pair.ma)}</text></svg>`;
+}
+function resultHtml() {
+  const g = guesses, last = g[g.length - 1], got = g.findIndex(x => x.t === 1), best = Math.max(...g.map(x => x.t));
+  const head = got >= 0 ? `${got === 0 ? 'First try. ' : ''}<em>${['In sight!', 'You got it.', 'Got it.'][Math.min(got, 2)]}</em>` : `<em>${word(best)}</em>, not quite`;
+  return `<div class="res"><h2>${head}</h2><div class="big">${short(pair.ma)}<small>${fmt(pair.ma)} ago</small></div>
+    ${treeSvg()}
+    <p>${esc(pair.a[1])} and ${esc(pair.b[1])} last shared an ancestor about <b>${fmt(pair.ma)}</b> ago <span class="fine">(published estimates run from ${short(pair.lo)} to ${short(pair.hi)})</span>. They sit in the group <b>${esc(pair.clade)}</b>. ${esc(pair.fact)}</p>
+    <p class="fine">Divergence times are molecular-clock estimates and vary between studies. Photos load from each species’ Wikipedia article, where licences and credits are listed.</p>
+    <div class="act"><button class="btn" id="share">Share result</button><button class="btn ghost" id="again">Play another</button></div></div>`;
+}
+const SQ = t => t >= .97 ? '🟥' : t > .72 ? '🟧' : t > .5 ? '🟨' : t > .32 ? '🟩' : '🟦';
+function share() {
+  const txt = `${BRAND()} · Divergence ${practice ? 'practice' : '#' + (dayNo(day) - DAY0 + 1)}\n${guesses.map(g => SQ(g.t)).join('')} ${guesses.some(g => g.t === 1) ? `${guesses.findIndex(g => g.t === 1) + 1}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`}\n${location.origin.startsWith('http') ? location.origin : 'playscorcher.com'}/phylo.html`;
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Result copied'), () => prompt('Copy your result:', txt));
+}
+const BRAND = () => (window.WIKIIO && WIKIIO.name) || 'Scorcher';
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800); }
+function persist() { if (practice) return; const d = load(); d.days = d.days || {}; d.days[day] = { pair: pair.id, guesses }; save(d); }
+(function init() {
+  const q = new URLSearchParams(location.search), want = q.get('pair'); pair = want ? PAIRS.find(p => p.id === want) || pickDaily() : pickDaily(); practice = !!want;
+  const d = load(); if (!practice && d.days && d.days[day] && d.days[day].pair === pair.id) guesses = d.days[day].guesses;
+  if (q.get('demo')) { guesses = q.get('demo').split(',').map(v => ({ ma: +v, t: temp(+v, pair) })); }
+  render();
+})();
+</script></body></html>

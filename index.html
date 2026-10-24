@@ -471,6 +471,45 @@ const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 
 function routeRow(titles, dots, head, extra = '') {
   return `<div class="rtr ${extra}"><div class="rth"><span>${head[0]}</span><span>${head[1]}</span></div><div class="rtd">${titles.map((t, i) => `${i ? '<span class="rtl"></span>' : ''}<span class="rtn"><i style="width:${dots[i].d}px;height:${dots[i].d}px;background:${dots[i].c}"></i><span>${esc(t)}</span></span>`).join('')}</div></div>`;
 }
+/* "Your route": the temperature profile of the path you took, with the crowd's choice at every step underneath. */
+function profileCard(r) {
+  const path = r.path || [], steps = r.steps || [];
+  if (path.length < 2) return '';
+  const n = path.length, W = 360, H = 132, top = 26, bot = 18;
+  const sigs = path.map((_, i) => r.won && i === n - 1 ? 1 : steps[i] && steps[i].sig != null ? steps[i].sig : 0);
+  const X = i => (i + .5) / n * W, Y = s => H - bot - s * (H - top - bot);
+  const pts = sigs.map((s, i) => [X(i), Y(s)]);
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < n - 1; i++) { const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c, t = .2; d += ` C${b[0] + (c[0] - a[0]) * t} ${b[1] + (c[1] - a[1]) * t},${c[0] - (e[0] - b[0]) * t} ${c[1] - (e[1] - b[1]) * t},${c[0]} ${c[1]}`; }
+  const area = `${d} L${pts[n - 1][0]} ${H - bot + 6} L${pts[0][0]} ${H - bot + 6} Z`;
+  const stops = sigs.map((s, i) => `<stop offset="${(X(i) / W * 100).toFixed(1)}%" stop-color="${tempCss(s)}"/>`).join('');
+  const dots = pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${(6 + sigs[i] * 7).toFixed(1)}" fill="${tempCss(sigs[i])}" stroke="var(--paper)" stroke-width="2.5"/>${i === n - 1 && r.won ? `<circle cx="${x}" cy="${y}" r="${(6 + 7 + 5).toFixed(1)}" fill="none" stroke="${tempCss(1)}" stroke-width="2" opacity=".55"/>` : ''}`).join('');
+  const tags = pts.map(([x, y], i) => `<text x="${x}" y="${Math.max(10, y - 15 - sigs[i] * 7 - (i === n - 1 && r.won ? 6 : 0))}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--mute)" font-family="inherit">${i ? 'step ' + i : 'start'}</text>`).join('');
+  return `<section class="rcard prof" id="profile"><h4>Your route <small>${r.won ? `${r.clicks} click${r.clicks === 1 ? '' : 's'}` : 'where you got to'}</small></h4>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="pfl" x1="0" x2="1" y1="0" y2="0">${stops}</linearGradient><linearGradient id="pfa" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".16"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs>
+      <path d="M0 ${Y(0)} H${W}" stroke="var(--rule)" stroke-dasharray="2 5"/><path d="${area}" fill="url(#pfa)"/><path d="${d}" fill="none" stroke="url(#pfl)" stroke-width="5" stroke-linecap="round"/>${dots}${tags}</svg>
+    <div class="pgrid" style="grid-template-columns:repeat(${n},1fr)">${path.map((t, i) => `<div><div class="pname">${esc(t)}</div><div class="pcrowd" data-i="${i}"></div></div>`).join('')}</div>
+    <p class="rtv" id="pdev"></p></section>`;
+}
+let _paths = null;
+const crowdData = day => _paths && _paths.day === day ? _paths.p : (_paths = { day, p: fetch(API_BASE + '/api/paths?day=' + day).then(x => x.ok ? x.json() : null).catch(() => null) }).p;
+async function fillCrowd(r) {
+  const prof = $('#profile'); if (!prof || r.mode !== 'daily') return;
+  const j = await crowdData(G.day), path = r.path || [], dev = $('#pdev');
+  if (!j || !j.total || j.total < 5) { if (dev) dev.textContent = `The crowd comparison appears here once five players have finished today’s puzzle${j && j.total ? ` (${j.total} so far)` : ''}.`; return; }
+  const key = p => p.join('\u0001'), by = new Map(j.nodes.map(x => [key(x.p), x.n])); by.set(key([path[0]]), j.total);
+  let left = null;
+  path.forEach((t, i) => {
+    const el = prof.querySelector(`.pcrowd[data-i="${i}"]`); if (!el) return;
+    if (!i) { el.innerHTML = '<span class="pb"><i style="width:100%"></i></span>everyone'; return; }
+    const parent = by.get(key(path.slice(0, i))) || 0, mine = by.get(key(path.slice(0, i + 1))) || 0;
+    const sib = j.nodes.filter(x => x.p.length === i + 1 && key(x.p.slice(0, -1)) === key(path.slice(0, i))).sort((a, b) => b.n - a.n)[0];
+    const pct = parent ? Math.round(mine / parent * 100) : 0, fav = sib && sib.p[i] === t;
+    if (!fav && sib && !left) left = { step: i, top: sib.p[i], topPct: Math.round(sib.n / parent * 100), mine: t, pct };
+    el.classList.toggle('off', !fav); el.innerHTML = `<span class="pb"><i style="width:${Math.max(4, pct)}%"></i></span>${mine ? pct + '%' : 'rare'}`;
+  });
+  if (dev) dev.innerHTML = left ? `You left the crowd at step ${left.step}: ${left.topPct}% went via <b>${esc(left.top)}</b>, you chose <b>${esc(left.mine)}</b> (${left.pct}%).` : 'You followed the crowd favourite all the way.';
+}
 function routesCard(r) {
   const yours = r.path || [], sigs = (r.steps || []).map(s => s.sig);
   const yd = yours.map((_, i) => { const sg = r.won && i === yours.length - 1 ? 1 : sigs[i] == null ? 0 : sigs[i]; return { c: tempCss(sg), d: 14 + Math.round(sg * 14) }; });
@@ -497,9 +536,10 @@ function streakCard(r) {
 async function fillStanding(r) {
   if (r.mode !== 'daily' || !r.won) return;
   try {
-    const j = await (await fetch(API_BASE + '/api/paths?day=' + G.day)).json(); if (!j || !j.total || j.total < 5) return;
+    const j = await crowdData(G.day); if (!j || !j.total || j.total < 5) return;
     const d = $('#standing'); if (!d) return; const diff = Math.round((j.avg - r.clicks) * 10) / 10;
-    d.innerHTML = `<h4>How you stack up <small>today’s players</small></h4><div class="stand"><div><b>${j.avg.toFixed(1)}</b><span>average clicks</span></div><div><b>${j.best}</b><span>best · ${j.bestCount} player${j.bestCount === 1 ? '' : 's'}</span></div><div><b>${j.total}</b><span>posted</span></div></div><p class="rtv">${diff > 0 ? `You beat the average by ${diff} click${diff === 1 ? '' : 's'}.` : diff < 0 ? `${-diff} click${diff === -1 ? '' : 's'} over the average.` : 'Right on the average.'}</p>`; d.hidden = false;
+    const lo = Math.min(j.best, r.clicks), hi = Math.max(j.avg, r.clicks) + .6, pos = v => (6 + (v - lo + .3) / (hi - lo + .3) * 88).toFixed(1) + '%', nl = `<div class="nl"><i class="nlb"></i><span data-l="best" style="left:${pos(j.best)}"><b>${j.best}</b></span><span class="you" data-l="you" style="left:${pos(r.clicks)}"><b>${r.clicks}</b></span><span data-l="average" style="left:${pos(j.avg)}"><b>${j.avg.toFixed(1)}</b></span></div>`;
+    d.innerHTML = `<h4>How you stack up <small>today’s players</small></h4><div class="stand"><div><b>${j.avg.toFixed(1)}</b><span>average clicks</span></div><div><b>${j.best}</b><span>best · ${j.bestCount} player${j.bestCount === 1 ? '' : 's'}</span></div><div><b>${j.total}</b><span>posted</span></div></div>${nl}<p class="rtv">${diff > 0 ? `You beat the average by ${diff} click${diff === 1 ? '' : 's'}.` : diff < 0 ? `${-diff} click${diff === -1 ? '' : 's'} over the average.` : 'Right on the average.'}</p>`; d.hidden = false;
   } catch {}
 }
 function showResult() {
@@ -515,6 +555,7 @@ function showResult() {
     ${r.won && ref ? `<div class="stars">${'★'.repeat(r.stars) || '·'}<small>${r.par ? 'par' : 'goal'} ${ref}${r.clicks <= ref ? ' — nailed it' : ` · you +${r.clicks - ref}`}</small></div>` : ''}
     ${r.won && r.purist ? '<div class="purist"><b>◆</b> Purist run: no link search, no rewind</div>' : ''}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
+    ${profileCard(r)}
     ${routesCard(r)}
     <div class="grid3"><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>${r.score}</b><span>Score</span></div><div><b>+${r.gain}</b><span>XP${r.streakBonus ? ` (+${r.streakBonus} streak)` : ''}</span></div></div>
     ${streakCard(r)}
@@ -527,7 +568,7 @@ function showResult() {
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r);
+  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r);
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
