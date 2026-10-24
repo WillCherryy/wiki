@@ -82,3 +82,22 @@ git add config.js ads.txt; git commit -m "Turn on the rewarded video"; git push
 ```
 4. While testing, also set `adsenseTest: true` in `config.js` so Google shows test ads, then set it back to false.
 Nothing from Google loads until a player taps Watch video. If no ad is available, or an ad blocker is on, the rewind is simply granted.
+
+## Daily Instagram poster
+
+One command makes today's poster (1080x1350, the 4:5 feed size) from the live puzzle. Run it from the project folder:
+
+```powershell
+$env:WARMER_URL = "https://playscorcher.com"
+node tools/make-poster.js --today
+```
+
+The picture lands in `posters\` (for example `posters\2026-10-24.png`). Useful variations:
+
+- Teaser, hiding the destination so people have to play to find out: add `--tease`
+- Story or Reel cover (1080x1920): add `--story`
+- Dark version: add `--theme dark`
+- Another day: add `--day 2026-10-25`
+- By hand, if the puzzle is not set yet: `node tools/make-poster.js --from "Bradley Wiggins" --to "Tour de France" --par 3`
+
+`--today` asks your site for the puzzle, then falls back to `puzzles.json` (run `git pull` first so you have the latest one).
