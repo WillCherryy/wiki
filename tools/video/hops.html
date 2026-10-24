@@ -23,15 +23,18 @@ const EN = .45;
 const D = h => HB.b[HB.d0 + 12 * h], D0 = D(0), WMT = HB.b[HB.wm];
 const kb = (h, n) => { const i0 = HB.d0 + 12 * h, i = Math.floor(n), f = n - i; return HB.b[i0 + i] * (1 - f) + HB.b[i0 + i + 1] * f - HB.b[i0]; };
 const PAGES = [
-  { title: 'Isaac Newton', link: 'gravity', oth: ['mathematician', 'physicist'], dia: 'orbit', eq: 'F = G m₁ m₂ / r²', text: 'Sir Isaac Newton (1643–1727) was an English mathematician, physicist and astronomer. In the Principia (1687) he formulated the three laws of motion and the law of universal gravity, laying the foundations of classical mechanics.' },
-  { title: 'Gravity', link: 'light', oth: ['spacetime', 'general relativity'], dia: 'wave', eq: 'c = λ f', text: 'Gravity is the attraction between objects that have mass or energy. In general relativity it appears as the curvature of spacetime, which bends the path of light passing near a massive body.' },
+  { title: 'Isaac Newton', link: 'gravity', oth: ['mathematician', 'physicist'], dia: 'orbit', eq: 'F = G m\u2081 m\u2082 / r\u00b2', text: 'Sir Isaac Newton (1643\u20131727) was an English mathematician, physicist and astronomer. In the Principia (1687) he formulated the three laws of motion and the law of universal gravity, laying the foundations of classical mechanics.' },
+  { title: 'Gravity', link: 'black hole', word: 'Black hole', oth: ['spacetime', 'general relativity'], dia: 'blackhole', eq: 'r\u209b = 2GM / c\u00b2', text: 'Gravity is the attraction between objects that have mass or energy. In general relativity it appears as the curvature of spacetime, and when enough mass is packed into a small enough space it forms a black hole.' },
+  { title: 'Black hole', link: 'light', oth: ['event horizon', 'Schwarzschild radius'], dia: 'wave', eq: 'c = \u03bb f', text: 'A black hole is a region of spacetime where gravity is so strong that nothing, not even light, can escape from inside the event horizon. Its size is set by the Schwarzschild radius, which grows in proportion to its mass.' },
   { title: 'Light', link: 'electron', oth: ['electromagnetic', 'photon'], dia: 'atom', eq: 'E = h f', text: 'Light is electromagnetic radiation that the human eye can detect. It behaves as both a wave and a particle, the photon, and a single photon can knock an electron out of a metal surface.' },
-  { title: 'Electron', link: 'molecule', oth: ['subatomic', 'atoms'], dia: 'benzene', eq: 'C₆H₆', text: 'The electron is a subatomic particle with a negative electric charge. Electrons orbit the nuclei of atoms, and electrons shared between atoms form the chemical bonds of a molecule.' },
-  { title: 'Molecule', link: 'DNA', oth: ['atoms', 'chemical bonds'], dia: 'helix', eq: 'A–T   ·   G–C', text: 'A molecule is a group of two or more atoms held together by chemical bonds. The largest are macromolecules, such as the DNA that carries genetic information in every living cell.' },
-  { title: 'DNA', link: 'evolution', oth: ['double helix', 'nucleotides'], dia: 'tree', eq: 'descent with modification', text: 'Deoxyribonucleic acid (DNA) is a double helix made of two strands of nucleotides. Small differences in DNA between individuals are the raw material of natural selection and evolution.' },
-  { title: 'Evolution', link: 'Universe', oth: ['heritable', 'common ancestor'], dia: 'universe', eq: 'v = H₀ d', text: 'Evolution is the change in the heritable traits of populations over generations. All known life shares a common ancestor that lived more than 3.5 billion years ago, long after the Universe began.' },
+  { title: 'Electron', link: 'molecule', oth: ['subatomic', 'atoms'], dia: 'benzene', eq: 'C\u2086H\u2086', text: 'The electron is a subatomic particle with a negative electric charge. Electrons orbit the nuclei of atoms, and electrons shared between atoms form the chemical bonds of a molecule.' },
+  { title: 'Molecule', link: 'DNA', oth: ['atoms', 'chemical bonds'], dia: 'helix', eq: 'A\u2013T   \u00b7   G\u2013C', text: 'A molecule is a group of two or more atoms held together by chemical bonds. The largest are macromolecules, such as the DNA that carries genetic information in every living cell.' },
+  { title: 'DNA', link: 'neurons', word: 'Neuron', oth: ['double helix', 'nucleotides'], dia: 'neuron', eq: '\u221270 mV \u2192 +30 mV', text: 'Deoxyribonucleic acid (DNA) is a double helix made of two strands of nucleotides. Genes in DNA encode the proteins that build every cell, including the neurons of the brain.' },
+  { title: 'Neuron', link: 'evolution', oth: ['action potentials', 'nervous systems'], dia: 'tree', eq: 'descent with modification', text: 'A neuron is a cell that carries information as electrical pulses called action potentials. Over hundreds of millions of years, evolution assembled neurons into nervous systems and, in humans, a brain of about 86 billion of them.' },
+  { title: 'Evolution', link: 'Universe', oth: ['heritable', 'common ancestor'], dia: 'universe', eq: 'v = H\u2080 d', text: 'Evolution is the change in the heritable traits of populations over generations. All known life shares a common ancestor that lived more than 3.5 billion years ago, long after the Universe began.' },
   { title: 'Universe', link: 'links', oth: ['Big Bang', 'gravity'], dia: 'links', eq: '', text: 'The Universe is all of space and time and their contents. It began about 13.8 billion years ago in the Big Bang, and everything in it is tied together by gravity, and on Wikipedia, by links.' },
 ];
+const NH = PAGES.length, LASTH = NH - 1;
 const PW = 900, PX = 90, FS = 58, LH2 = 86;
 const LS = 1.5, LW = 611.95 * LS, LH = 419 * LS, LX = (W - LW) / 2, LY = 600;
 const logoDot = i => { const d = LOGO.dots[i]; return [LX + d.x * LS, LY + d.y * LS, d.r * LS]; };
@@ -39,9 +42,9 @@ let END = 0, NET = [];
 function layoutPage(pg) {
   g.font = `400 ${FS}px EB`; const words = pg.text.split(' '), lines = []; let cur = [], w = 0; const sp = g.measureText(' ').width;
   words.forEach(wd => { const ww = g.measureText(wd).width; if (w + ww > PW && cur.length) { lines.push(cur); cur = []; w = 0; } cur.push(wd); w += ww + sp; }); lines.push(cur);
-  pg.tokens = []; let y = 640, target = null;
+  pg.tokens = []; let y = 640, target = null; const lw = pg.link.split(' ');
   lines.forEach((ln, li) => { let x = PX; ln.forEach(wd => { const clean = wd.replace(/[.,]$/, ''), ww = g.measureText(clean).width, tw = g.measureText(wd).width;
-    const isT = clean === pg.link, isL = isT || pg.oth.some(o => o.split(' ')[0] === clean || clean === o); pg.tokens.push({ li, txt: wd, clean, x, y, w: ww, link: isL, target: isT }); if (isT && !target) target = { x, y, w: ww };
+    const isT = lw.includes(clean), isL = isT || pg.oth.some(o => o.split(' ').includes(clean)); pg.tokens.push({ li, txt: wd, clean, x, y, w: ww, link: isL, target: isT }); if (isT) { if (!target) target = { x, y, w: ww, li }; else if (target.li === li) target.w = x + ww - target.x; }
     x += tw + sp; }); y += LH2; });
   pg.target = target; pg.endY = y;
 }
@@ -51,14 +54,14 @@ function init() {
   for (let i = 0; i < 24; i++) NET.push({ x: 150 + r() * 780, y: 760 + r() * 680, ap: i / 24 * .5 });
   // designated nodes: pick five that are spread out
   NET.forEach((n, i) => { n.des = -1; }); [3, 8, 13, 17, 21].forEach((ix, d) => NET[ix].des = d);
-  PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + kb(h, 1), 'mark', h); note(d + kb(h, 4), 'zoom', h); note(d + kb(h, 5.5), 'iris', h); });
-  note(D(7) + kb(7, 13), 'collapse', 0); note(WMT, 'reveal', 0); note(D(7) + kb(7, 18.5), 'tag', 0);
+  PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + kb(h, 1), 'mark', h); note(d + kb(h, 2), 'zoom', h); note(d + kb(h, 3), 'iris', h); });
+  note(D(LASTH) + kb(LASTH, 13), 'collapse', 0); note(WMT, 'reveal', 0); note(D(LASTH) + kb(LASTH, 18.5), 'tag', 0);
   window.__ready = true;
 }
 // ------------------------------------------------------------------ paper page
 function pageScene(h, k) {
   const pg = PAGES[h], T = pg.target, cx = T.x + T.w / 2, cy = T.y - FS * .3;
-  const kz = clamp((k - kb(h, 4)) / (kb(h, 5.5) - kb(h, 4))), slow = E.ss(clamp(k / kb(h, 4))), zEnd = 860 / (T.w + 24), zmid = lerp(1.0, 1.3, slow);
+  const kz = clamp((k - kb(h, 2)) / (kb(h, 3) - kb(h, 2))), slow = E.ss(clamp(k / kb(h, 2))), zEnd = 860 / (T.w + 24), zmid = lerp(1.0, 1.3, slow);
   const samples = kz > 0 && kz < 1 ? 4 : 1;
   for (let s = 0; s < samples; s++) {
     const kk = clamp(kz - s * .025), zz = zmid * Math.pow(zEnd / zmid, Math.pow(kk, 2.2)), fk = .38 * slow + .62 * Math.pow(kk, 1.6), fx = lerp(540, cx, fk), fy = lerp(900, cy, fk), rot = .014 * Math.sin(k * 1.1 + h) * (1 - kz);
@@ -67,7 +70,7 @@ function pageScene(h, k) {
     g.fillStyle = INK; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
     g.font = '400 128px EB'; g.fillText(pg.title, PX, 330); g.fillStyle = 'rgba(28,24,18,.55)'; g.fillRect(PX, 372, PW * p(k, -.3, .3), 3);
     g.font = 'italic 400 36px EB'; g.fillStyle = 'rgba(28,24,18,.6)'; g.fillText('From Wikipedia, the free encyclopedia', PX, 446);
-    const mk = p(k, kb(h, 1), kb(h, 2.5), E.io); if (mk > 0) { g.fillStyle = '#ffe14d'; g.save(); g.translate(T.x - 10, T.y - FS * .86); g.transform(1, 0, -.06, 1, 0, 0); g.fillRect(0, 0, (T.w + 20) * mk, FS * 1.12); g.restore(); }
+    const mk = p(k, kb(h, 1), kb(h, 2), E.io); if (mk > 0) { g.fillStyle = '#ffe14d'; g.save(); g.translate(T.x - 10, T.y - FS * .86); g.transform(1, 0, -.06, 1, 0, 0); g.fillRect(0, 0, (T.w + 20) * mk, FS * 1.12); g.restore(); }
     g.font = `400 ${FS}px EB`;
     pg.tokens.forEach(tk => { const a = clamp((k + .3 - tk.li * .08) / .35); if (a <= 0) return; g.globalAlpha = (samples > 1 ? (s === 0 ? 1 : .22) : 1) * a; g.fillStyle = tk.link && !tk.target ? '#2a4f8a' : INK; g.fillText(tk.txt, tk.x, tk.y + (1 - a) * 14); if (tk.link && !tk.target) g.fillRect(tk.x, tk.y + 8 + (1 - a) * 14, tk.w, 2.5); else if (tk.target) { g.fillStyle = INK; g.fillRect(tk.x, tk.y + 8, tk.w, 3); } });
     g.globalAlpha = samples > 1 ? (s === 0 ? 1 : .22) : 1;
@@ -80,7 +83,8 @@ function pageScene(h, k) {
 // ------------------------------------------------------------------ dark scenes (diagrams); u = 0..1 build-up, tt = seconds since the diagram began, so everything keeps moving
 const strokeC = (w, c = LINE) => { g.lineWidth = w; g.strokeStyle = c; g.lineCap = 'round'; g.lineJoin = 'round'; };
 function axes(cx, cy, w, hh) { strokeC(1.5, FAINT); g.beginPath(); g.moveTo(cx - w, cy); g.lineTo(cx + w, cy); g.moveTo(cx, cy - hh); g.lineTo(cx, cy + hh); g.stroke(); }
-const dot = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+let BPG = 0;
+const dot = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r * (1 + .22 * BPG), 0, 7); g.fill(); };
 const glowDot = (x, y, r, c, b = 30) => { g.save(); g.shadowColor = c; g.shadowBlur = b; dot(x, y, r, c); g.restore(); };
 const arrow = (x0, y0, x1, y1, c, w = 4) => { const a = Math.atan2(y1 - y0, x1 - x0); strokeC(w, c); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.fillStyle = c; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x1 - 18 * Math.cos(a - .45), y1 - 18 * Math.sin(a - .45)); g.lineTo(x1 - 18 * Math.cos(a + .45), y1 - 18 * Math.sin(a + .45)); g.closePath(); g.fill(); };
 const CY = 1090;
@@ -136,6 +140,34 @@ function dHelix(u, tt) {
   [1, -1].forEach(s => { strokeC(7, s > 0 ? CD[1] : CD[4]); g.beginPath(); for (let y = top; y <= top + len; y += 6) { const x = X(y, s); y === top ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); });
   g.font = 'italic 400 34px EB'; g.fillStyle = 'rgba(239,230,210,.8)'; g.textAlign = 'center'; for (let k = 0; k < 6; k++) { const y = top + 120 + k * 136 + ((tt * 40) % 136) * 0, ix = Math.round((y - top) / 34), xx = X(y, 1), xx2 = X(y, -1), pair = ix % 2; const L1 = pair ? 'A' : 'G', L2 = pair ? 'T' : 'C'; g.globalAlpha = .9 * E.out3(clamp(u * 2 - .6)); g.fillText(L1, Math.max(xx, xx2) + 40, y + 12); g.fillText(L2, Math.min(xx, xx2) - 40, y + 12); } g.globalAlpha = 1;
 }
+function dBlackhole(u, tt) {
+  const cx = 540, cy = CY, rh = 92 * E.out3(clamp(u * 2)); axes(cx, cy, 460, 340);
+  // starlight streaming past is bent towards the hole
+  for (let k = 0; k < 15; k++) { const b = (k - 7) * 52 + (k % 2 ? 14 : -14); if (Math.abs(b) < 100) continue; strokeC(2, 'rgba(239,230,210,.22)'); g.beginPath(); for (let x = -500; x <= 500; x += 20) { const y = b - Math.sign(b) * 150 * 150 / (Math.abs(b) + 60) * Math.exp(-(x * x) / (2 * 190 * 190)) * .5; x === -500 ? g.moveTo(cx + x, cy + y) : g.lineTo(cx + x, cy + y); } g.stroke();
+    const ph = (tt * .45 + k * .137) % 1, x = -500 + ph * 1000, y = b - Math.sign(b) * 150 * 150 / (Math.abs(b) + 60) * Math.exp(-(x * x) / (2 * 190 * 190)) * .5; glowDot(cx + x, cy + y, 6, CD[2], 12); }
+  // accretion disc: orbiting hot gas, faster closer in
+  for (let r = 0; r < 6; r++) { const rx = 150 + r * 48, ry = rx * .24; g.save(); g.translate(cx, cy); g.rotate(-.28); strokeC(2 + (5 - r) * .5, rgba2(CD[3 + (r % 2)], .35 + .08 * (5 - r))); g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.stroke();
+    for (let q = 0; q < 7; q++) { const a = tt * (4.6 / Math.pow(rx / 150, 1.5)) + q * .9 + r; const px = rx * Math.cos(a), py = ry * Math.sin(a); if (py < 0 && Math.abs(px) < rh * 1.1) continue; glowDot(px, py, 4 + (5 - r) * .6, CD[3 + (r % 2)], 10); } g.restore(); }
+  // the lensed far side of the disc arcs over the top and under the bottom
+  strokeC(5, rgba2(CD[3], .6)); g.beginPath(); g.arc(cx, cy, rh * 1.55, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); g.beginPath(); g.arc(cx, cy, rh * 1.55, Math.PI * .1, Math.PI * .9); g.stroke();
+  g.save(); g.shadowColor = 'rgba(255,200,140,.9)'; g.shadowBlur = 40; strokeC(4, 'rgba(255,225,180,.9)'); g.beginPath(); g.arc(cx, cy, rh * 1.12, 0, 7); g.stroke(); g.restore();
+  g.fillStyle = '#000'; g.beginPath(); g.arc(cx, cy, rh, 0, 7); g.fill();
+}
+function dNeuron(u, tt) {
+  const cx = 540, sy = 1170, gu = E.out3(clamp(u * 2)); axes(cx, sy, 440, 520);
+  const dend = [], rec = (x, y, ang, len, d, id) => { if (d > 3) return; const sw = Math.sin(tt * 1.3 + id) * .03; const a = ang + sw, x2 = x + Math.sin(a) * len, y2 = y + Math.cos(a) * len; dend.push([x, y, x2, y2, d]); const sp = .55 - d * .07; rec(x2, y2, a - sp, len * .72, d + 1, id * 2); rec(x2, y2, a + sp, len * .72, d + 1, id * 2 + 1); };
+  [-.9, -.3, .3, .9].forEach((a, i) => rec(cx + Math.sin(a) * 50, sy + 46, a, 108, 0, i + 1));
+  dend.forEach(([x, y, x2, y2, d]) => { const gp = clamp(gu * 2 - d * .3); if (gp <= 0) return; strokeC(8 - d * 1.6, rgba2(CD[1], .75)); g.beginPath(); g.moveTo(x, y); g.lineTo(lerp(x, x2, gp), lerp(y, y2, gp)); g.stroke(); });
+  // axon up to the terminals
+  const ay = sy - 70 - 470 * gu; strokeC(9, rgba2(CD[2], .85)); g.beginPath(); g.moveTo(cx, sy - 50); g.lineTo(cx, ay); g.stroke();
+  if (gu > .9) [-1, 0, 1].forEach(sd => { const tx = cx + sd * 130, ty = sy - 600; strokeC(6, rgba2(CD[2], .85)); g.beginPath(); g.moveTo(cx, sy - 540); g.lineTo(tx, ty); g.stroke(); glowDot(tx, ty, 14, CD[2], 16); });
+  // the soma and nucleus
+  glowDot(cx, sy, 62, CD[0], 24); dot(cx + 8, sy - 6, 22, CD[1]);
+  // input pulses climb the dendrites, then an action potential races along the axon
+  if (gu > .9) { dend.forEach(([x, y, x2, y2, d], i) => { const f = (tt * .8 + i * .21) % 1; if (d === 3 || hash(i) > .55) glowDot(lerp(x2, x, f), lerp(y2, y, f), 7, CD[3], 12); });
+    const per = 1.15, f = ((tt - .6) % per) / per; if (tt > .6) { const py = lerp(sy - 50, sy - 540, f); g.save(); const gr = g.createLinearGradient(0, py + 90, 0, py); gr.addColorStop(0, 'rgba(255,106,69,0)'); gr.addColorStop(1, 'rgba(255,106,69,.9)'); g.fillStyle = gr; g.fillRect(cx - 7, py, 14, 90); g.restore(); glowDot(cx, py, 14, CD[4], 30); if (f > .93) [-1, 0, 1].forEach(sd => glowDot(cx + sd * 130, sy - 600, 26 * (f - .93) / .07, CD[4], 30)); } }
+}
+
 function dTree(u, tt) {
   const segs = [], rec = (x, y, ang, len, d, id) => { const gp = clamp((u * 1.9 - d * .2) / .28); if (gp <= 0) return; const sw = Math.sin(tt * 1.7 + d * .8 + id * .3) * .025 * d; const a2 = ang + sw, x2 = x + Math.sin(a2) * len * gp, y2 = y - Math.cos(a2) * len * gp; segs.push([x, y, x2, y2, d, id]); strokeC(2 + (5 - d) * 2.2); g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
     if (d >= 5) { if (gp >= 1) { const r2 = 14 * E.out3(clamp((u - .72) * 5 - hash(id) * .5)) * (1 + .12 * Math.sin(tt * 4 + id)); dot(x2, y2, r2, CD[(id * 7) % 5]); } return; } if (gp < 1) return;
@@ -166,19 +198,22 @@ function dLinks(u, tt, col) {
 }
 function darkScene(h, k) {
   const pg = PAGES[h]; g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); vg.addColorStop(0, 'rgba(60,45,30,.35)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, ds = kb(h, 5.75), e = E.io(clamp((k - ds) / .85));
-  const last = h === 7, tt = Math.max(0, k - ds), u = clamp(tt / (last ? 2.2 : 1.9)), c0 = kb(7, 13), c1 = kb(7, 16), col = last ? clamp((k - c0) / (c1 - c0)) : 0;
+  const word = pg.word || (pg.link.charAt(0).toUpperCase() + pg.link.slice(1)), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, ds = kb(h, 3.25), e = E.io(clamp((k - ds) / .85));
+  const last = h === LASTH, tt = Math.max(0, k - ds), u = clamp(tt / (last ? 2.2 : 1.9)), c0 = kb(LASTH, 13), c1 = kb(LASTH, 16), col = last ? clamp((k - c0) / (c1 - c0)) : 0;
   g.save(); g.globalAlpha = p(k, ds + .3, ds + .95) * (last ? 1 - clamp((k - c0) / .3) : 1);
   g.translate(540, CY); g.rotate(.018 * Math.sin(tt * .9 + h)); const zs = (1 + .03 * tt) * (.92 + .08 * p(k, ds + .2, ds + 1.0)); g.scale(zs, zs); g.translate(-540, -CY);
-  const dg = { orbit: dOrbit, wave: dWave, atom: dAtom, benzene: dBenzene, helix: dHelix, tree: dTree, universe: dUniverse }[pg.dia]; if (dg) dg(u, tt); g.restore();
+  const dg = { blackhole: dBlackhole, neuron: dNeuron, orbit: dOrbit, wave: dWave, atom: dAtom, benzene: dBenzene, helix: dHelix, tree: dTree, universe: dUniverse }[pg.dia]; if (dg) dg(u, tt); g.restore();
   if (last) { g.save(); g.globalAlpha = p(k, ds + .3, ds + .95); dLinks(u, tt, col); g.restore(); }
-  const ta = last ? 1 - clamp((k - kb(7, 12.5)) / .4) : 1; const tyOf = ee => lerp(H / 2 + sz0 * .3, 300, ee), szOf = ee => lerp(sz0, sz1, ee);
-  g.save(); for (let gI = 3; gI >= 1; gI--) { const ee = E.io(clamp((k - ds - gI * .05) / .85)); if (ee > .02 && ee < .98) { g.globalAlpha = ta * .09 * (4 - gI); g.fillStyle = CREAM; g.textAlign = 'center'; g.font = `400 ${szOf(ee)}px EB`; g.fillText(word, W / 2, tyOf(ee)); } } g.restore();
+  const ta = last ? 1 - clamp((k - kb(LASTH, 12.5)) / .4) : 1; const tyOf = ee => lerp(H / 2 + sz0 * .3, 300, ee), szOf = ee => lerp(sz0, sz1, ee);
+  g.save(); for (let gI = 2; gI >= 1; gI--) { const ee = E.io(clamp((k - ds - gI * .05) / .85)); if (ee > .02 && ee < .98) { g.globalAlpha = ta * .09 * (4 - gI); g.fillStyle = CREAM; g.textAlign = 'center'; g.font = `400 ${szOf(ee)}px EB`; g.fillText(word, W / 2, tyOf(ee)); } } g.restore();
   g.save(); g.globalAlpha = ta; g.fillStyle = CREAM; g.textAlign = 'center'; const sz = lerp(sz0, sz1, e), ty = lerp(H / 2 + sz0 * .3, 300, e); g.font = `400 ${sz}px EB`; g.fillText(word, W / 2, ty); const tw = g.measureText(word).width; g.fillStyle = '#d63a1f'; const ug = clamp(e * 1.5 + .0); g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw * Math.max(ug, e < .01 ? 1 : 0), Math.max(4, sz * .04)); if (e < .01) g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw, Math.max(4, sz * .04)); g.restore();
   if (pg.eq && !last) { g.save(); const a = p(k, ds + .7, ds + 1.3); g.globalAlpha = a; g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1670 + (1 - a) * 20); g.restore(); }
 }
 // ------------------------------------------------------------------ the logo card (start and end are identical, so the video loops)
 function card(opt = {}) {
+  const bpSave = BPG; BPG = 0; try { cardInner(opt); } finally { BPG = bpSave; }
+}
+function cardInner(opt) {
   const dots = opt.dots !== false, wipe = opt.wipe === undefined ? 1 : opt.wipe, tg = opt.tag === undefined ? 1 : opt.tag, dm = opt.dom === undefined ? 1 : opt.dom;
   if (opt.bg !== false) { g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); vg.addColorStop(0, 'rgba(245,154,98,.2)'); vg.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }
   if (dots) for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26; dot(T[0], T[1], T[2], CD[i]); g.restore(); }
@@ -187,7 +222,7 @@ function card(opt = {}) {
   if (dm > 0) { g.globalAlpha = dm; g.fillStyle = CREAM; g.font = 'italic 400 54px EB'; g.fillText('playscorcher.com', W / 2, LY + LH + 190 - (1 - dm) * 14); } g.globalAlpha = 1;
 }
 function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
-  const irisA = kb(h, 5), irisB = kb(h, 6);
+  const irisA = kb(h, 2.6), irisB = kb(h, 3.4);
   if (k < irisA) { pageScene(h, k); return; }
   if (k < irisB) {
     pageScene(h, k); const f = E.io(clamp((k - irisA) / (irisB - irisA))), R = 1700 * f + 8, saved = g;
@@ -197,13 +232,13 @@ function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
     g.save(); g.strokeStyle = `rgba(255,232,190,${.5 * (1 - f)})`; g.lineWidth = 3 + 7 * (1 - f); g.shadowColor = 'rgba(255,200,140,.8)'; g.shadowBlur = 30; g.beginPath(); g.arc(W / 2, H / 2, R + 6, 0, 7); g.stroke(); g.restore(); return;
   }
   darkScene(h, k);
-  if (h === 7) { const c0 = kb(7, 13), c1 = kb(7, 16), col = clamp((k - c0) / (c1 - c0)); if (col > 0) { const dd = p(k, kb(7, 14.5), kb(7, 16)), wp = p(k, kb(7, 16), kb(7, 18.5), E.io), tg = p(k, kb(7, 18.5), kb(7, 21)), dm = p(k, kb(7, 20), kb(7, 22.5)); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
+  if (h === LASTH) { const c0 = kb(LASTH, 13), c1 = kb(LASTH, 16), col = clamp((k - c0) / (c1 - c0)); if (col > 0) { const dd = p(k, kb(LASTH, 14.5), kb(LASTH, 16)), wp = p(k, kb(LASTH, 16), kb(LASTH, 18.5), E.io), tg = p(k, kb(LASTH, 18.5), kb(LASTH, 21)), dm = p(k, kb(LASTH, 20), kb(LASTH, 22.5)); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
 }
 function renderBase(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.textAlign = 'left'; const E0 = .5;
   if (t < E0) { card(); return; }
   if (t < D(0)) { card(); const rd = [LX + 365.98 * LS, LY + 86 * LS]; const R = 1700 * E.in3(clamp((t - E0) / (D(0) - E0))) + 4; g.save(); g.beginPath(); g.arc(rd[0], rd[1], R, 0, 7); g.clip(); pageScene(0, (t - D(0))); g.restore(); return; }
-  let h = 0; for (let i = 0; i < 8; i++) if (t >= D(i) - (i > 0 ? EN : 0)) h = i;
+  let h = 0; for (let i = 0; i < NH; i++) if (t >= D(i) - (i > 0 ? EN : 0)) h = i;
   const k = t - D(h);
   if (h > 0 && k < 0) {
     const s = E.io(clamp((t - (D(h) - EN)) / EN)); g.save(); g.translate(-s * W, 0); sceneAt(h - 1, t - D(h - 1)); g.restore(); g.save(); g.beginPath(); g.rect((1 - s) * W, 0, W, H); g.clip(); g.translate((1 - s) * W, 0); pageScene(h, k); g.restore();
@@ -216,10 +251,10 @@ function renderBase(t) {
 const tcv = document.createElement('canvas'); tcv.width = W; tcv.height = H; const tcg = tcv.getContext('2d');
 function render(t) {
   let bi = 0; { let lo = 0, hi = HB.b.length - 2; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (HB.b[m] <= t) lo = m; else hi = m - 1; } bi = lo; }
-  const s = clamp((t - D0) / (D(7) - D0)), on = t >= D0 - .4 && t < WMT + .2, ph = clamp((t - HB.b[bi]) / (HB.b[bi + 1] - HB.b[bi])), pulse = Math.exp(-ph * 6.5), downb = (bi - HB.d0) % 4 === 0, down = downb ? 1 : .55, amp = on ? .35 + .65 * s : 0, step = Math.floor(t * 30);
+  const s = clamp((t - D0) / (D(LASTH) - D0)), on = t >= D0 - .4 && t < WMT + .2, ph = clamp((t - HB.b[bi]) / (HB.b[bi + 1] - HB.b[bi])), pulse = Math.exp(-ph * 6.5), downb = (bi - HB.d0) % 4 === 0, down = downb ? 1 : .55, amp = on ? .35 + .65 * s : 0, step = Math.floor(t * 30);
   g.save();
   if (on && amp > 0) { const z = 1 + .026 * amp * pulse * down, A = 11 * amp * pulse * down, jx = (hash(step * 1.3) - .5) * 2 * A, jy = (hash(step * 2.7 + 5) - .5) * 2 * A, jr = (hash(step * 4.1 + 2) - .5) * .012 * amp * pulse * down; g.translate(W / 2 + jx, H / 2 + jy); g.rotate(jr); g.scale(z, z); g.translate(-W / 2, -H / 2); }
-  renderBase(t); g.restore();
+  BPG = on ? pulse * amp * down : 0; renderBase(t); BPG = 0; g.restore();
   if (on && amp > 0 && pulse > .12) {
     // phase split: the red and blue channels drift apart on every beat, plus a few torn horizontal strips
     ocg.setTransform(1, 0, 0, 1, 0, 0); ocg.globalCompositeOperation = 'source-over'; ocg.globalAlpha = 1; ocg.clearRect(0, 0, W, H); ocg.drawImage(cv, 0, 0);
@@ -231,7 +266,7 @@ function render(t) {
   }
   if (on) {
     let fl = .1 * amp * pulse * down * (downb ? 1.6 : 1);
-    for (let hh = 0; hh < 8; hh++) { const ki = t - D(hh) - kb(hh, 5.5); if (ki >= 0 && ki < .3) fl = Math.max(fl, .45 * Math.exp(-ki * 9)); }
+    for (let hh = 0; hh < NH; hh++) { const ki = t - D(hh) - kb(hh, 3); if (ki >= 0 && ki < .3) fl = Math.max(fl, .45 * Math.exp(-ki * 9)); }
     if (fl > .01) { g.fillStyle = `rgba(255,244,225,${Math.min(.6, fl)})`; g.fillRect(0, 0, W, H); }
     if (amp > .5 && pulse > .5 && (bi - HB.d0) % 2 === 1) { g.fillStyle = `rgba(255,255,255,${.05 * pulse})`; for (let i = 0; i < 6; i++) g.fillRect(0, hash(step * 3.1 + i) * H, W, 3 + hash(i + step) * 8); }
   }

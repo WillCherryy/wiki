@@ -60,14 +60,12 @@ nm = int(SR * DUR); m = np.zeros((nm, 2), np.float32); m[:min(nm, len(music))] =
 fi = int(SR * .35); m[:fi] *= np.linspace(0, 1, fi)[:, None] ** 1.5; fo = int(SR * 1.6); m[-fo:] *= (np.linspace(1, 0, fo) ** 1.5)[:, None]
 iris = [e['t'] for e in EV if e['kind'] == 'iris']; zoom = [e['t'] for e in EV if e['kind'] == 'zoom']
 WM = [e['t'] for e in EV if e['kind'] == 'reveal'][0]; coll = [e['t'] for e in EV if e['kind'] == 'collapse'][0]
+# only subtle air: a soft swish into each page and a softer one as each screen goes dark, a long airy swell into the logo (no hits, thuds or bells)
 for e in EV:
     t, kd = e['t'], e['kind']
-    if kd == 'whip': both(dry, t, sweep(.45, 400, 6500, .6), .35)
-    elif kd == 'zoom': i = zoom.index(t); d = max(.2, iris[i] - t); both(dry, t, riser(d, 300, 5200), .32)
-    elif kd == 'iris': both(dry, t, thud(hz(34)), .75); both(dry, t, ns['impact'](), .18); both(dry, t, hat(True), .35)
-both(dry, coll, riser(WM - coll, 200, 5200), .45)
-both(dry, WM, thud(hz(31)), 1.0); both(dry, WM, ns['impact'](), .45); both(dry, WM, hat(True), .5)
-for j, mm in enumerate((86, 90, 93, 98, 93, 90)): bl = bell(hz(mm), .6); tt = WM + .25 + j * .2; both(dry, tt, bl, .1); both(send, tt, bl, .2)
+    if kd == 'whip': both(dry, t, sweep(.6, 1200, 5500, .5), .14)
+    elif kd == 'iris': both(dry, t - .15, sweep(.7, 3500, 700, .5), .12)
+both(dry, coll, sweep(WM - coll + .3, 600, 6500, .5), .2)
 def ir(sec=2.6):
     n = int(SR * sec); t = np.arange(n) / SR; out = []
     for _ in range(2):
