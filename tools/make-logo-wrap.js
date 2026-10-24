@@ -3,7 +3,7 @@
 // Renders brand/wrap/*.svg to 2000x2000 PNGs (transparent ones keep their transparency).  Run after tools/make-logo-wrap.py.
 const fs = require('fs'), path = require('path');
 let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
-const dir = path.join(__dirname, '..', 'brand', 'wrap');
+const dir = path.join(__dirname, '..', 'brand', process.argv[2] || 'wrap');
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const p = await b.newPage({ viewport: { width: 2000, height: 2000 } });
