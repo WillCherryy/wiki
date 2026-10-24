@@ -31,6 +31,7 @@
  <div id="plane"><div id="page"></div><canvas id="fx"></canvas></div>
  <div id="haze"></div><div id="vig"></div><div id="flash"></div><canvas id="end" width="1080" height="1920"></canvas>
 </div>
+<script src="race-logo.js"></script>
 <script>
 const $ = s => document.querySelector(s), W = 1080, H = 1920, C = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'];
 const L = t => `<span class="l">${t}</span>`;
@@ -127,17 +128,14 @@ let samples = [];
 const camAt = t => { const f = clamp(t * 120, 0, cam.length - 1), i = Math.floor(f), u = f - i, a = cam[i], b = cam[Math.min(cam.length - 1, i + 1)]; return [lerp(a[0], b[0], u), lerp(a[1], b[1], u)]; };
 function render(t) {
   t = Math.min(t, DUR - 1e-3); const fx = $('#fx'), g = fx.getContext('2d'); g.clearRect(0, 0, fx.width, fx.height); const i = Math.floor(t * FPS), TS = Math.min(t, window.LASTT + 1);
-  // scorch: the whole history of every dot burns into the paper; the recent part glows
-  for (let k = 0; k < NDOT; k++) { const sm = samples[k]; g.lineCap = 'round'; g.lineJoin = 'round';
-    g.strokeStyle = 'rgba(70,40,15,.22)'; g.lineWidth = 9 + k * 1.5; g.beginPath(); let on = false; for (let j = 0; j <= i; j += 2) { const q = sm[j]; if (q.v && q.s > .5 && q.h < 40) { if (!on) { g.moveTo(q.x, q.y); on = true; } else g.lineTo(q.x, q.y); } else on = false; } g.stroke();
-    const c = rgb(C[k]); for (let j = Math.max(0, i - 60); j < i; j++) { const q = sm[j], q2 = sm[j + 1]; if (!q.v || !q2.v || q.s < .5 || q2.s < .5 || q.h > 40 || q2.h > 40) continue; const a = (j - (i - 60)) / 60; g.strokeStyle = rgba(c, a * .85); g.lineWidth = 5 + a * DR[k] * 1.2; g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q2.x, q2.y); g.stroke(); g.strokeStyle = rgba([255, 230, 190], a * .5); g.lineWidth = 2 + a * 5; g.stroke(); } }
+  // a short, fading tail behind each dot (about a third of a second), nothing permanent
+  for (let k = 0; k < NDOT; k++) { const sm = samples[k], c = rgb(C[k]); g.lineCap = 'round'; g.lineJoin = 'round';
+    for (let j = Math.max(0, i - 20); j < i; j++) { const q = sm[j], q2 = sm[j + 1]; if (!q.v || !q2.v || q.s < .5 || q2.s < .5 || q.h > 40 || q2.h > 40) continue; const a = (j - (i - 20)) / 20; g.strokeStyle = rgba(c, a * a * .8); g.lineWidth = 3 + a * DR[k] * 1.5; g.beginPath(); g.moveTo(q.x, q.y); g.lineTo(q2.x, q2.y); g.stroke(); } }
   // link highlights
   LK.forEach((l, idx) => { }); const route = window.ROUTE || []; 
   Object.keys(window.HITS || {}).forEach(ix => { const ht = window.HITS[ix], l = window.ROUTEL[ix]; if (t < ht) return; const u = t - ht, pop = p(u, 0, .22, E.back), a = .55 * (1 - clamp(u / 1.4)) + .24, col = ramp(ix / (window.ROUTEL.length - 1)); g.fillStyle = rgba(col, a); const w = l.w + 22, h = l.h + 12; g.beginPath(); g.roundRect(l.x - w / 2 * pop, l.y - h / 2 * pop, w * pop, h * pop, 10); g.fill(); g.strokeStyle = rgba(col, .6 * (1 - clamp(u / .9))); g.lineWidth = 5; g.beginPath(); g.arc(l.x, l.y, 20 + u * 150, 0, 7); g.stroke(); });
-  // holes in the paper
-  Object.values(hole).forEach(h => { const open = p(t, h.in, h.in + .35, E.back), shut = 1 - p(t, h.out, h.out + .5, E.io); const r = HOLE_R * (h === hole.F ? 1.5 : 1) * open * shut; if (r < 2) return; const gr = g.createRadialGradient(h.x, h.y, 0, h.x, h.y, r); gr.addColorStop(0, '#050302'); gr.addColorStop(.62, '#120b07'); gr.addColorStop(1, '#2a1a10'); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y, r, 0, 7); g.fill();
-    const heat = clamp(Math.sin((t - h.in) * 3) * .5 + .6); g.strokeStyle = rgba(ramp(.55 + .4 * heat), .9); g.lineWidth = 7; g.beginPath(); g.arc(h.x, h.y, r + 3, 0, 7); g.stroke(); g.strokeStyle = 'rgba(40,24,12,.55)'; g.lineWidth = 16; g.beginPath(); g.arc(h.x, h.y, r + 14, 0, 7); g.stroke();
-    if (h === hole.F && t > h.in) for (let a = 0; a < 4; a++) { g.strokeStyle = rgba(ramp(.3 + a * .2), .35); g.lineWidth = 5; g.beginPath(); for (let q = 0; q < 60; q++) { const u = q / 60, ang = a * Math.PI / 2 + t * 3.5 + u * 7, rr = r + 160 * (1 - u) * (1 - u); const xx = h.x + rr * Math.cos(ang), yy = h.y + rr * Math.sin(ang); q ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); } });
+  // holes in the paper: plain black circles
+  Object.values(hole).forEach(h => { const open = p(t, h.in, h.in + .35, E.back), shut = 1 - p(t, h.out, h.out + .5, E.io); const r = HOLE_R * (h === hole.F ? 1.5 : 1) * open * shut; if (r < 2) return; g.fillStyle = '#000'; g.beginPath(); g.arc(h.x, h.y, r, 0, 7); g.fill(); });
   // the dots, each with a shadow on the paper and a lift for the jumps
   const order = [...Array(NDOT).keys()].sort((a, b) => samples[a][i].y - samples[b][i].y);
   order.forEach(k => { const q = samples[k][i]; if (!q.v || q.s < .02) return; const r = DR[k] * q.s * (1 + Math.max(0, q.h) / 520), c = rgb(C[k]), by = q.y - q.h * .85;
@@ -150,20 +148,21 @@ function render(t) {
     zoom = lerp(1.12, 1.5, p(t, 0, window.LASTT)) + .3 * p(t, window.LASTT, DUR, E.io);
   window.setCam(cx + shake, cy + shake * .6, Math.max(0, pitch), roll * (1 - .8 * p(t, window.LASTT, DUR - 1, E.io)), zoom);
   const fl = Math.exp(-Math.abs(t - window.LASTT) * 14) * .5; $('#flash').style.opacity = fl;
-  // end card
+  // end card: dots fly out of the hole and settle into the real logo, the word fades in underneath
   const e = $('#end'), x = e.getContext('2d'); x.clearRect(0, 0, W, H); const eo = p(t, window.LASTT + .1, window.LASTT + 1.4, E.io); e.style.opacity = 1;
-  if (eo > 0) { x.fillStyle = `rgba(14,11,9,${.93 * eo})`; x.fillRect(0, 0, W, H); const M = [[9, 47, 3.2], [21, 42, 4.2], [33, 34, 5.4], [44, 24, 6.8], [54, 12, 8.4]]; M.forEach(([mx, my, mr], k2) => {
-      const t0 = window.LASTT + .12 + k2 * .11, u = p(t, t0, t0 + 1.15, E.io), bx = 540 + (mx - 34) * 11, by2 = 760 + (my - 27) * 11, S = [540 + (k2 - 2) * 20, 1010], Cc = [540 + (k2 - 2) * 330, 560 - k2 * 40];
-      const qx = (1 - u) * (1 - u) * S[0] + 2 * (1 - u) * u * Cc[0] + u * u * bx, qy = (1 - u) * (1 - u) * S[1] + 2 * (1 - u) * u * Cc[1] + u * u * by2, rr = lerp(DR[k2] * 1.2, mr * 11, E.out3(u)) * clamp((t - t0) * 6 + .02, 0, 1) * (1 + .06 * Math.sin(clamp(u, 0, 1) * Math.PI)); if (rr < 1 || t < t0) return;
-      const c = rgb(C[k2]), land = clamp((t - (t0 + 1.15)) / .5), bob = Math.sin(t * 2.4 + k2) * 3 * land;
-      for (let tr = 6; tr > 0; tr--) { const ut = Math.max(0, u - tr * .03), tx = (1 - ut) * (1 - ut) * S[0] + 2 * (1 - ut) * ut * Cc[0] + ut * ut * bx, ty = (1 - ut) * (1 - ut) * S[1] + 2 * (1 - ut) * ut * Cc[1] + ut * ut * by2; x.fillStyle = rgba(c, .1 * (7 - tr) / 6 * (1 - land)); x.beginPath(); x.arc(tx, ty, rr * (1 - tr * .07), 0, 7); x.fill(); }
-      const gl = x.createRadialGradient(qx, qy + bob, rr * .8, qx, qy + bob, rr * 2.3); gl.addColorStop(0, rgba(c, .34)); gl.addColorStop(1, rgba(c, 0)); x.fillStyle = gl; x.beginPath(); x.arc(qx, qy + bob, rr * 2.3, 0, 7); x.fill(); x.fillStyle = rgba(c, 1); x.beginPath(); x.arc(qx, qy + bob, rr, 0, 7); x.fill(); });
-
-    const w = p(t, window.LASTT + 1.7, window.LASTT + 2.5, E.out3); x.textAlign = 'center'; x.save(); x.globalAlpha = w; x.fillStyle = '#f3eee4'; x.font = '400 250px EB'; const a = 'Scorch', b = 'er', wa = x.measureText(a).width; x.font = 'italic 400 250px EB'; const wb = x.measureText(b).width; const x0 = 540 - (wa + wb) / 2, yy = 1130 + (1 - w) * 40; x.textAlign = 'left'; x.font = '400 250px EB'; x.fillText(a, x0, yy); x.fillStyle = '#ff6a45'; x.font = 'italic 400 250px EB'; x.fillText(b, x0 + wa, yy); x.restore();
-    const f2 = (a2, b2) => p(t, window.LASTT + a2, window.LASTT + b2, E.out3); x.textAlign = 'center'; x.globalAlpha = f2(2.8, 3.5); x.fillStyle = '#a1978a'; x.font = '600 28px IS'; try { x.letterSpacing = '7px'; } catch {} x.fillText('THE DAILY WIKIPEDIA LINK RACE', 540, 1220); x.globalAlpha = f2(3.2, 3.9); x.fillStyle = '#f3eee4'; x.font = '500 56px IS'; try { x.letterSpacing = '0px'; } catch {} x.fillText('playscorcher.com', 540, 1330); x.globalAlpha = 1; }
+  if (eo > 0) { x.fillStyle = `rgba(14,11,9,${eo})`; x.fillRect(0, 0, W, H);
+    const SC = 1.5, LW = LOGO.vb[0] * SC, LH = LOGO.vb[1] * SC, LX = (W - LW) / 2, LY = 600;
+    const w = p(t, window.LASTT + 1.7, window.LASTT + 2.5, E.out3); if (w > 0 && LOGO.img && LOGO.img.complete) { x.globalAlpha = w; x.drawImage(LOGO.img, LX, LY + (1 - w) * 30, LW, LH); x.globalAlpha = 1; }
+    LOGO.dots.forEach((d, k2) => {
+      const t0 = window.LASTT + .12 + k2 * .11, u = p(t, t0, t0 + 1.15, E.io); if (t < t0) return;
+      const bx = LX + d.x * SC, by2 = LY + d.y * SC, S = [540 + (k2 - 2) * 20, 1010], Cc = [540 + (k2 - 2) * 330, 560 - k2 * 40];
+      const qx = (1 - u) * (1 - u) * S[0] + 2 * (1 - u) * u * Cc[0] + u * u * bx, qy = (1 - u) * (1 - u) * S[1] + 2 * (1 - u) * u * Cc[1] + u * u * by2;
+      const rr = lerp(DR[k2] * 1.2, d.r * SC, E.out3(u)) * clamp((t - t0) * 6 + .02, 0, 1), c = mixc(rgb(C[k2]), rgb(d.c), E.out3(u)), land = clamp((t - (t0 + 1.15)) / .5), bob = Math.sin(t * 2.4 + k2) * 2 * land;
+      if (rr < 1) return; x.fillStyle = rgba(c, 1); x.beginPath(); x.arc(qx, qy + bob, rr, 0, 7); x.fill(); });
+    const f2 = (a2, b2) => p(t, window.LASTT + a2, window.LASTT + b2, E.out3); x.textAlign = 'center'; x.globalAlpha = f2(2.6, 3.3); x.fillStyle = '#a1978a'; x.font = '600 28px IS'; try { x.letterSpacing = '7px'; } catch {} x.fillText('THE DAILY WIKIPEDIA LINK RACE', 540, LY + LH + 56); x.globalAlpha = f2(3.0, 3.7); x.fillStyle = '#f3eee4'; x.font = '500 56px IS'; try { x.letterSpacing = '0px'; } catch {} x.fillText('playscorcher.com', 540, LY + LH + 160); x.globalAlpha = 1; }
 }
 window.render = render;
-document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('500 26px IS'), document.fonts.load('400 250px EB'), document.fonts.load('italic 400 250px EB')])).then(() => { init(); window.ROUTEL = []; window.HITS = hit; window.ROUTEL = ROUTEL_FN(); render(0); });
+document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('500 26px IS'), document.fonts.load('600 28px IS'), new Promise(r => { LOGO.img = new Image(); LOGO.img.onload = r; LOGO.img.src = LOGO.word; })])).then(() => { init(); window.ROUTEL = []; window.HITS = hit; window.ROUTEL = ROUTEL_FN(); render(0); });
 function ROUTEL_FN() { const by = n => LK.filter(l => l.t === n)[0]; return ['Cycling', 'bicycle', 'world', 'Tour de France', 'Olympic Games', 'Great Britain', 'London', 'Sydney', 'Europe', 'Australia', 'BBC', 'British Broadcasting Corporation', 'Australian Broadcasting Corporation'].map(by); }
 function setCam(cx, cy, pitch, roll, zoom) { $('#plane').style.transform = `rotateX(${pitch}deg) rotateZ(${roll}deg) scale(${zoom}) translate(${-cx}px,${-cy}px)`; }
 window.setCam = setCam;
