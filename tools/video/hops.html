@@ -7,6 +7,7 @@
 html,body{margin:0;background:#000}canvas{display:block}
 </style></head><body><canvas id="c" width="1080" height="1920"></canvas>
 <script src="race-logo.js"></script>
+<script src="hops-beats.js"></script>
 <script>
 const W = 1080, H = 1920, cv = document.getElementById('c'); let g = cv.getContext('2d'); const mainG = g, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const ocg = oc.getContext('2d');
 window.EVENTS = []; window.__ready = false;
@@ -17,8 +18,10 @@ const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
 const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 const note = (t, kind, a = 0, b = 1) => window.EVENTS.push({ t: +t.toFixed(4), kind, a, b });
 const BG = '#14100c', CREAM = '#efe6d2', INK = '#1c1812', LINE = 'rgba(239,230,210,.92)', FAINT = 'rgba(239,230,210,.28)';
-const HOP = 5.1, EN = .45, D0 = 1.9125, BT = HOP / 8;
-const D = h => D0 + h * HOP;
+const EN = .45;
+// beat grid of the soundtrack (video time): hop h starts on beat d0 + 16 h; kb(h, n) = seconds from the start of hop h to its n-th beat
+const D = h => HB.b[HB.d0 + 16 * h], D0 = D(0), WMT = HB.b[HB.wm];
+const kb = (h, n) => { const i0 = HB.d0 + 16 * h, i = Math.floor(n), f = n - i; return HB.b[i0 + i] * (1 - f) + HB.b[i0 + i + 1] * f - HB.b[i0]; };
 const PAGES = [
   { title: 'Isaac Newton', link: 'gravity', oth: ['mathematician', 'physicist'], dia: 'orbit', eq: 'F = G m₁ m₂ / r²', text: 'Sir Isaac Newton (1643–1727) was an English mathematician, physicist and astronomer. In the Principia (1687) he formulated the three laws of motion and the law of universal gravity, laying the foundations of classical mechanics.' },
   { title: 'Gravity', link: 'light', oth: ['spacetime', 'general relativity'], dia: 'wave', eq: 'c = λ f', text: 'Gravity is the attraction between objects that have mass or energy. In general relativity it appears as the curvature of spacetime, which bends the path of light passing near a massive body.' },
@@ -32,7 +35,6 @@ const PAGES = [
 const PW = 900, PX = 90, FS = 58, LH2 = 86;
 const LS = 1.5, LW = 611.95 * LS, LH = 419 * LS, LX = (W - LW) / 2, LY = 600;
 const logoDot = i => { const d = LOGO.dots[i]; return [LX + d.x * LS, LY + d.y * LS, d.r * LS]; };
-const ENDX = () => D(7) + 7.1;
 let END = 0, NET = [];
 function layoutPage(pg) {
   g.font = `400 ${FS}px EB`; const words = pg.text.split(' '), lines = []; let cur = [], w = 0; const sp = g.measureText(' ').width;
@@ -44,19 +46,19 @@ function layoutPage(pg) {
   pg.target = target; pg.endY = y;
 }
 function init() {
-  PAGES.forEach(layoutPage); END = ENDX() + 1.6; window.DURATION = END;
+  PAGES.forEach(layoutPage); END = HB.end; window.DURATION = END;
   const r = (n => () => hash(n++))(5);
   for (let i = 0; i < 24; i++) NET.push({ x: 150 + r() * 780, y: 760 + r() * 680, ap: i / 24 * .5 });
   // designated nodes: pick five that are spread out
   NET.forEach((n, i) => { n.des = -1; }); [3, 8, 13, 17, 21].forEach((ix, d) => NET[ix].des = d);
-  PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + .3, 'mark', h); note(d + 2 * BT, 'zoom', h); note(d + 3 * BT, 'iris', h); });
-  note(D(7) + 3.8, 'collapse', 0); note(D(7) + 5.1, 'reveal', 0); note(D(7) + 5.95, 'tag', 0);
+  PAGES.forEach((pg, h) => { const d = D(h); if (h > 0) note(d - EN, 'whip', h); else note(.5, 'start', 0); note(d + kb(h, 1.5), 'mark', h); note(d + kb(h, 7), 'zoom', h); note(d + kb(h, 9), 'iris', h); });
+  note(D(7) + kb(7, 17), 'collapse', 0); note(WMT, 'reveal', 0); note(D(7) + kb(7, 22.5), 'tag', 0);
   window.__ready = true;
 }
 // ------------------------------------------------------------------ paper page
 function pageScene(h, k) {
   const pg = PAGES[h], T = pg.target, cx = T.x + T.w / 2, cy = T.y - FS * .3;
-  const kz = clamp((k - 2 * BT) / BT), slow = E.ss(clamp(k / 1.15)), zEnd = 860 / (T.w + 24), zmid = lerp(1.0, 1.3, slow);
+  const kz = clamp((k - kb(h, 7)) / (kb(h, 9) - kb(h, 7))), slow = E.ss(clamp(k / kb(h, 7))), zEnd = 860 / (T.w + 24), zmid = lerp(1.0, 1.3, slow);
   const samples = kz > 0 && kz < 1 ? 4 : 1;
   for (let s = 0; s < samples; s++) {
     const kk = clamp(kz - s * .025), zz = zmid * Math.pow(zEnd / zmid, Math.pow(kk, 2.2)), fk = .38 * slow + .62 * Math.pow(kk, 1.6), fx = lerp(540, cx, fk), fy = lerp(900, cy, fk), rot = .014 * Math.sin(k * 1.1 + h) * (1 - kz);
@@ -65,7 +67,7 @@ function pageScene(h, k) {
     g.fillStyle = INK; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
     g.font = '400 128px EB'; g.fillText(pg.title, PX, 330); g.fillStyle = 'rgba(28,24,18,.55)'; g.fillRect(PX, 372, PW * p(k, -.3, .3), 3);
     g.font = 'italic 400 36px EB'; g.fillStyle = 'rgba(28,24,18,.6)'; g.fillText('From Wikipedia, the free encyclopedia', PX, 446);
-    const mk = p(k, .25, .85, E.io); if (mk > 0) { g.fillStyle = '#ffe14d'; g.save(); g.translate(T.x - 10, T.y - FS * .86); g.transform(1, 0, -.06, 1, 0, 0); g.fillRect(0, 0, (T.w + 20) * mk, FS * 1.12); g.restore(); }
+    const mk = p(k, kb(h, 1.5), kb(h, 3.2), E.io); if (mk > 0) { g.fillStyle = '#ffe14d'; g.save(); g.translate(T.x - 10, T.y - FS * .86); g.transform(1, 0, -.06, 1, 0, 0); g.fillRect(0, 0, (T.w + 20) * mk, FS * 1.12); g.restore(); }
     g.font = `400 ${FS}px EB`;
     pg.tokens.forEach(tk => { const a = clamp((k + .3 - tk.li * .08) / .35); if (a <= 0) return; g.globalAlpha = (samples > 1 ? (s === 0 ? 1 : .22) : 1) * a; g.fillStyle = tk.link && !tk.target ? '#2a4f8a' : INK; g.fillText(tk.txt, tk.x, tk.y + (1 - a) * 14); if (tk.link && !tk.target) g.fillRect(tk.x, tk.y + 8 + (1 - a) * 14, tk.w, 2.5); else if (tk.target) { g.fillStyle = INK; g.fillRect(tk.x, tk.y + 8, tk.w, 3); } });
     g.globalAlpha = samples > 1 ? (s === 0 ? 1 : .22) : 1;
@@ -164,16 +166,16 @@ function dLinks(u, tt, col) {
 }
 function darkScene(h, k) {
   const pg = PAGES[h]; g.fillStyle = BG; g.fillRect(0, 0, W, H); const vg = g.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1200); vg.addColorStop(0, 'rgba(60,45,30,.35)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, e = E.io(clamp((k - 3 * BT - .1) / .85));
-  const last = h === 7, tt = Math.max(0, k - 2.0), u = clamp(tt / (last ? 2.2 : 1.9)), col = last ? clamp((k - 3.8) / 1.3) : 0;
-  g.save(); g.globalAlpha = p(k, 2.3, 2.95) * (last ? 1 - clamp((k - 3.8) / .3) : 1);
-  g.translate(540, CY); g.rotate(.018 * Math.sin(tt * .9 + h)); const zs = (1 + .03 * tt) * (.92 + .08 * p(k, 2.2, 3.0)); g.scale(zs, zs); g.translate(-540, -CY);
+  const word = pg.link.charAt(0).toUpperCase() + pg.link.slice(1), T = pg.target, zEnd = 860 / (T.w + 24), sz0 = FS * zEnd, sz1 = 132, ds = kb(h, 9.25), e = E.io(clamp((k - ds) / .85));
+  const last = h === 7, tt = Math.max(0, k - ds), u = clamp(tt / (last ? 2.2 : 1.9)), c0 = kb(7, 17), c1 = kb(7, 20), col = last ? clamp((k - c0) / (c1 - c0)) : 0;
+  g.save(); g.globalAlpha = p(k, ds + .3, ds + .95) * (last ? 1 - clamp((k - c0) / .3) : 1);
+  g.translate(540, CY); g.rotate(.018 * Math.sin(tt * .9 + h)); const zs = (1 + .03 * tt) * (.92 + .08 * p(k, ds + .2, ds + 1.0)); g.scale(zs, zs); g.translate(-540, -CY);
   const dg = { orbit: dOrbit, wave: dWave, atom: dAtom, benzene: dBenzene, helix: dHelix, tree: dTree, universe: dUniverse }[pg.dia]; if (dg) dg(u, tt); g.restore();
-  if (last) { g.save(); g.globalAlpha = p(k, 2.3, 2.95); dLinks(u, tt, col); g.restore(); }
-  const ta = last ? 1 - clamp((k - 3.5) / .4) : 1; const tyOf = ee => lerp(H / 2 + sz0 * .3, 300, ee), szOf = ee => lerp(sz0, sz1, ee);
-  g.save(); for (let gI = 3; gI >= 1; gI--) { const ee = E.io(clamp((k - 2.0 - gI * .05) / .85)); if (ee > .02 && ee < .98) { g.globalAlpha = ta * .09 * (4 - gI); g.fillStyle = CREAM; g.textAlign = 'center'; g.font = `400 ${szOf(ee)}px EB`; g.fillText(word, W / 2, tyOf(ee)); } } g.restore();
+  if (last) { g.save(); g.globalAlpha = p(k, ds + .3, ds + .95); dLinks(u, tt, col); g.restore(); }
+  const ta = last ? 1 - clamp((k - kb(7, 16.5)) / .4) : 1; const tyOf = ee => lerp(H / 2 + sz0 * .3, 300, ee), szOf = ee => lerp(sz0, sz1, ee);
+  g.save(); for (let gI = 3; gI >= 1; gI--) { const ee = E.io(clamp((k - ds - gI * .05) / .85)); if (ee > .02 && ee < .98) { g.globalAlpha = ta * .09 * (4 - gI); g.fillStyle = CREAM; g.textAlign = 'center'; g.font = `400 ${szOf(ee)}px EB`; g.fillText(word, W / 2, tyOf(ee)); } } g.restore();
   g.save(); g.globalAlpha = ta; g.fillStyle = CREAM; g.textAlign = 'center'; const sz = lerp(sz0, sz1, e), ty = lerp(H / 2 + sz0 * .3, 300, e); g.font = `400 ${sz}px EB`; g.fillText(word, W / 2, ty); const tw = g.measureText(word).width; g.fillStyle = '#d63a1f'; const ug = clamp(e * 1.5 + .0); g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw * Math.max(ug, e < .01 ? 1 : 0), Math.max(4, sz * .04)); if (e < .01) g.fillRect(W / 2 - tw / 2, ty + sz * .1, tw, Math.max(4, sz * .04)); g.restore();
-  if (pg.eq && !last) { g.save(); const a = p(k, 2.7, 3.3); g.globalAlpha = a; g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1670 + (1 - a) * 20); g.restore(); }
+  if (pg.eq && !last) { g.save(); const a = p(k, ds + .7, ds + 1.3); g.globalAlpha = a; g.fillStyle = 'rgba(239,230,210,.85)'; g.textAlign = 'center'; g.font = 'italic 400 64px EB'; g.fillText(pg.eq, W / 2, 1670 + (1 - a) * 20); g.restore(); }
 }
 // ------------------------------------------------------------------ the logo card (start and end are identical, so the video loops)
 function card(opt = {}) {
@@ -185,7 +187,7 @@ function card(opt = {}) {
   if (dm > 0) { g.globalAlpha = dm; g.fillStyle = CREAM; g.font = 'italic 400 54px EB'; g.fillText('playscorcher.com', W / 2, LY + LH + 190 - (1 - dm) * 14); } g.globalAlpha = 1;
 }
 function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
-  const irisA = 3 * BT - .3, irisB = 3 * BT + .3;
+  const irisA = kb(h, 8.5), irisB = kb(h, 9.5);
   if (k < irisA) { pageScene(h, k); return; }
   if (k < irisB) {
     pageScene(h, k); const f = E.io(clamp((k - irisA) / (irisB - irisA))), R = 1700 * f + 8, saved = g;
@@ -195,7 +197,7 @@ function sceneAt(h, k) { // hop h at local time k (relative to its dwell start)
     g.save(); g.strokeStyle = `rgba(255,232,190,${.5 * (1 - f)})`; g.lineWidth = 3 + 7 * (1 - f); g.shadowColor = 'rgba(255,200,140,.8)'; g.shadowBlur = 30; g.beginPath(); g.arc(W / 2, H / 2, R + 6, 0, 7); g.stroke(); g.restore(); return;
   }
   darkScene(h, k);
-  if (h === 7) { const col = clamp((k - 3.8) / 1.3); if (col > 0) { const dd = p(k, 4.4, 5.1), wp = p(k, 5.1, 5.95, E.io), tg = p(k, 5.95, 6.7), dm = p(k, 6.35, 7.1); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
+  if (h === 7) { const c0 = kb(7, 17), c1 = kb(7, 20), col = clamp((k - c0) / (c1 - c0)); if (col > 0) { const dd = p(k, kb(7, 18.5), kb(7, 20)), wp = p(k, kb(7, 20), kb(7, 22.5), E.io), tg = p(k, kb(7, 22.5), kb(7, 25)), dm = p(k, kb(7, 24), kb(7, 26.5)); const gl = g.createRadialGradient(W / 2, LY + LH * .38, 20, W / 2, LY + LH * .38, 800); gl.addColorStop(0, `rgba(245,154,98,${.2 * col})`); gl.addColorStop(1, 'rgba(245,154,98,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); if (col >= 1) { for (let i = 0; i < 5; i++) { const T = logoDot(i); g.save(); g.shadowColor = CD[i]; g.shadowBlur = 26 * dd; dot(T[0], T[1], T[2], CD[i]); g.restore(); } } card({ dots: false, bg: false, wipe: wp, tag: tg, dom: dm }); } }
 }
 function renderBase(t) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.textAlign = 'left'; const E0 = .5;
@@ -212,15 +214,16 @@ function renderBase(t) {
 
 // ------------------------------------------------------------------ beat effects: punch-in, judder and flashes locked to the music grid (build with the hops)
 function render(t) {
-  const s = clamp((t - D0) / (D(7) - D0)), on = t >= D0 - BT && t < D(7) + 5.1 + .2, ph = ((t / BT) % 1 + 1) % 1, beat = Math.floor(t / BT + 1e-6), pulse = Math.exp(-ph * 6.5), down = beat % 4 === 0 ? 1 : .5, amp = on ? .25 + .75 * s : 0, step = Math.floor(t * 30);
+  let bi = 0; { let lo = 0, hi = HB.b.length - 2; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (HB.b[m] <= t) lo = m; else hi = m - 1; } bi = lo; }
+  const s = clamp((t - D0) / (D(7) - D0)), on = t >= D0 - .4 && t < WMT + .2, ph = clamp((t - HB.b[bi]) / (HB.b[bi + 1] - HB.b[bi])), pulse = Math.exp(-ph * 6.5), down = (bi - HB.d0) % 4 === 0 ? 1 : .5, amp = on ? .25 + .75 * s : 0, step = Math.floor(t * 30);
   g.save();
   if (on && amp > 0) { const z = 1 + .02 * amp * pulse * down, jx = (hash(step * 1.3) - .5) * 2 * 7 * amp * pulse * down, jy = (hash(step * 2.7 + 5) - .5) * 2 * 7 * amp * pulse * down; g.translate(W / 2 + jx, H / 2 + jy); g.scale(z, z); g.translate(-W / 2, -H / 2); }
   renderBase(t); g.restore();
   if (on) {
-    let fl = .1 * amp * pulse * down * (beat % 4 === 0 ? 1.6 : 1);
-    const hh = Math.floor((t - D0 + 1e-6) / HOP); if (hh >= 0 && hh <= 7) { const ki = t - D(hh) - 3 * BT; if (ki >= 0 && ki < .3) fl = Math.max(fl, .45 * Math.exp(-ki * 9)); }
+    let fl = .1 * amp * pulse * down * ((bi - HB.d0) % 4 === 0 ? 1.6 : 1);
+    for (let hh = 0; hh < 8; hh++) { const ki = t - D(hh) - kb(hh, 9); if (ki >= 0 && ki < .3) fl = Math.max(fl, .45 * Math.exp(-ki * 9)); }
     if (fl > .01) { g.fillStyle = `rgba(255,244,225,${Math.min(.6, fl)})`; g.fillRect(0, 0, W, H); }
-    if (amp > .5 && pulse > .5 && beat % 2 === 1) { g.fillStyle = `rgba(255,255,255,${.05 * pulse})`; for (let i = 0; i < 6; i++) g.fillRect(0, hash(step * 3.1 + i) * H, W, 3 + hash(i + step) * 8); }
+    if (amp > .5 && pulse > .5 && (bi - HB.d0) % 2 === 1) { g.fillStyle = `rgba(255,255,255,${.05 * pulse})`; for (let i = 0; i < 6; i++) g.fillRect(0, hash(step * 3.1 + i) * H, W, 3 + hash(i + step) * 8); }
   }
 }
 window.render = render;
