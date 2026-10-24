@@ -64,7 +64,7 @@ for e in EV:
     t, kd = e['t'], e['kind']
     if kd == 'whip': both(dry, t, sweep(.45, 400, 6500, .6), .35)
     elif kd == 'zoom': i = zoom.index(t); d = max(.2, iris[i] - t); both(dry, t, riser(d, 300, 5200), .32)
-    elif kd == 'iris': both(dry, t, thud(hz(34)), .75); both(dry, t, ns['impact'](), .18); both(dry, t, hat(True), .35); both(send, t, bell(hz(86), .6), .1)
+    elif kd == 'iris': both(dry, t, thud(hz(34)), .75); both(dry, t, ns['impact'](), .18); both(dry, t, hat(True), .35)
 both(dry, coll, riser(WM - coll, 200, 5200), .45)
 both(dry, WM, thud(hz(31)), 1.0); both(dry, WM, ns['impact'](), .45); both(dry, WM, hat(True), .5)
 for j, mm in enumerate((86, 90, 93, 98, 93, 90)): bl = bell(hz(mm), .6); tt = WM + .25 + j * .2; both(dry, tt, bl, .1); both(send, tt, bl, .2)
