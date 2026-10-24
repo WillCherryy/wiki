@@ -11,7 +11,7 @@ src = open(os.path.join(HERE, 'make-ad-audio.py')).read().split('ROOT = [33, 29,
 ns = {'__name__': 'instruments'}; exec(src, ns)
 SR, put, hz, t_, saw, bandpass = (ns[k] for k in ('SR', 'put', 'hz', 't_', 'saw', 'bandpass'))
 kick, clap, hat, snare, riser, pluck = (ns[k] for k in ('kick', 'clap', 'hat', 'snare', 'riser', 'pluck'))
-D = json.load(open(os.path.join(HERE, 'video', '.race-events.json'))); DUR, EV, T0, ENDT, LASTT = D['duration'], D['events'], D['t0'], D['endT'], D['lastT']
+D = json.load(open(os.path.join(HERE, 'video', '.race-events.json'))); DUR, EV, T0, ENDT, LASTT = D['duration'], D['events'], D['t0'], D['endT'], D['lastT']; SUF = D.get('suffix', '')
 BPM = 140; B = 60 / BPM; rng = np.random.default_rng(9)
 N = int(SR * (DUR + 4)); z = lambda: np.zeros(N, np.float32)
 dry = [z(), z()]; send = [z(), z()]; mus = [z(), z()]; kicks = []
@@ -104,6 +104,6 @@ mix = np.stack([dry[c] + mus[c] * duck + wet[c] for c in range(2)], 1)[:int(SR *
 fade = np.ones(len(mix), np.float32); f0 = int(SR * 2.0); fade[-f0:] = np.linspace(1, 0, f0) ** 1.5; mix *= fade[:, None]
 mix *= .55 / np.percentile(np.abs(mix), 97); mix = np.tanh(mix * 1.6) / np.tanh(1.6); mix *= .93 / np.max(np.abs(mix))
 out = os.path.join(HERE, '..', 'brand', 'video'); os.makedirs(out, exist_ok=True)
-with wave.open(os.path.join(out, 'scorcher-race.wav'), 'wb') as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((mix * 32767).astype(np.int16).tobytes())
+with wave.open(os.path.join(out, f'scorcher-race{SUF}.wav'), 'wb') as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((mix * 32767).astype(np.int16).tobytes())
 rms = [float(np.sqrt(np.mean(mix[int(i * SR):int((i + 1) * SR)] ** 2))) for i in range(int(DUR))]
-print(f'scorcher-race.wav: {DUR:.1f}s, {len(EV)} cues, peak {np.max(np.abs(mix)):.2f}; rms/s', ' '.join(f'{r:.2f}' for r in rms))
+print(f'scorcher-race{SUF}.wav: {DUR:.1f}s, {len(EV)} cues, peak {np.max(np.abs(mix)):.2f}; rms/s', ' '.join(f'{r:.2f}' for r in rms))
