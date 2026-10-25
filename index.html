@@ -149,7 +149,7 @@ function loadP() {
   let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
-let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic' }, P.cos || {});
+let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic', buddy: 'none' }, P.cos || {});
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
@@ -450,7 +450,7 @@ async function go0(title, initial, resume, kind = 'go') {
   art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
   art.querySelectorAll('a[data-t]').forEach(a => { const n = norm(a.dataset.t); if (n === norm(G.toTitle) || n === norm(G.to)) a.classList.add('goal'); });
   $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1; buildContents();
-  window.scrollTo(0, 0);
+  window.scrollTo(0, 0); Buddy.hop();
   updateHud();
   persistCur();
   if (G.mode === 'live' && !win) Live.move(page.title, G.sig, clicks());
@@ -989,8 +989,57 @@ const COS = {
     { id: 'hex', name: 'Hexagon', sw: 'linear-gradient(#d63a1f,#d63a1f)', clip: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'star', name: 'Star', sw: 'linear-gradient(#e8a317,#e8a317)', clip: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'plus', name: 'Cross', sw: 'linear-gradient(#2a64c4,#2a64c4)', clip: 'polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%)', need: { t: 'supporter' }, label: 'Supporter pack' }
+  ],
+  buddy: [
+    { id: 'none', name: 'None', sw: 'linear-gradient(135deg,var(--paper) 46%,var(--rule) 46%,var(--rule) 54%,var(--paper) 54%)' },
+    { id: 'blob', name: 'Blob', sw: '', buddy: 1 },
+    { id: 'spark', name: 'Spark', sw: '', buddy: 1, need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
+    { id: 'planet', name: 'Planet', sw: '', buddy: 1, need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' },
+    { id: 'ghost', name: 'Ghost', sw: '', buddy: 1, need: { t: 'streak', v: 7 }, label: '7-day streak' },
+    { id: 'fox', name: 'Fox', sw: '', buddy: 1, need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'robot', name: 'Robot', sw: '', buddy: 1, need: { t: 'supporter' }, label: 'Supporter pack' }
   ]
 };
+/* ---- buddies: a small character that trails the mouse on computers. One fixed element moved with transform only, a frame loop that runs
+   only while it is catching up (zero cost when still), and nothing at all on touch screens, with reduced motion, or in calm mode. */
+const eyes = (y = 15, c = '#fff', p = '#16130f') => `<circle cx="12" cy="${y}" r="3.2" fill="${c}"/><circle cx="21" cy="${y}" r="3.2" fill="${c}"/><circle cx="12.8" cy="${y + .4}" r="1.5" fill="${p}"/><circle cx="21.8" cy="${y + .4}" r="1.5" fill="${p}"/>`;
+const BUDDY = {
+  blob: `<path d="M16 4c7 0 12 5 12 12 0 7-4 12-12 12S4 23 4 16C4 9 9 4 16 4z" fill="#ff6a45"/>${eyes()}<path d="M13 21q3.5 3 7 0" fill="none" stroke="#16130f" stroke-width="1.6" stroke-linecap="round"/>`,
+  spark: `<path d="M16 2l3.6 9.4L29 15l-9.4 3.6L16 28l-3.6-9.4L3 15l9.4-3.6z" fill="#f5b52e"/>${eyes(15, '#fff')}`,
+  planet: `<ellipse cx="16" cy="16" rx="15" ry="4.5" fill="none" stroke="#9aa7d8" stroke-width="2" transform="rotate(-18 16 16)"/><circle cx="16" cy="16" r="9" fill="#6a82d8"/>${eyes(15)}`,
+  ghost: `<path d="M5 28V15C5 8 10 4 16 4s11 4 11 11v13l-3.7-3-3.8 3-3.5-3-3.5 3-3.8-3z" fill="#f4f1ea" stroke="#c9c2b3" stroke-width="1.2"/>${eyes(14, '#2a2e48', '#fff')}`,
+  fox: `<path d="M3 5l8 5h10l8-5-1 14c0 6-5 9-12 9S4 25 4 19z" fill="#f08c50"/><path d="M9 20c3 5 11 5 14 0-3 1-11 1-14 0z" fill="#fff6e8"/>${eyes(15, '#fff6e8')}<circle cx="16" cy="21" r="1.6" fill="#16130f"/>`,
+  robot: `<rect x="6" y="9" width="20" height="17" rx="5" fill="#8d97a8"/><path d="M16 9V4" stroke="#8d97a8" stroke-width="2"/><circle cx="16" cy="3.5" r="2" fill="#d63a1f"/><rect x="9" y="13" width="14" height="7" rx="3.5" fill="#16130f"/><circle cx="13" cy="16.5" r="1.8" fill="#3ed2c0"/><circle cx="19" cy="16.5" r="1.8" fill="#3ed2c0"/>`
+};
+const buddySvg = id => BUDDY[id] ? `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">${BUDDY[id]}</svg>` : '';
+const buddyUri = id => "url('data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${BUDDY[id] || ''}</svg>`) + "') center/contain no-repeat";
+const Buddy = (() => {
+  const ok = matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let el = null, inner = null, tx = -99, ty = -99, x = -99, y = -99, run = false, last = 0, id = 'none';
+  const tick = now => {
+    const k = Math.min(3, (now - last) / 16.7); last = now;
+    const dx = tx - x, dy = ty - y, f = 1 - Math.pow(.82, k);
+    x += dx * f; y += dy * f;
+    el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
+    inner.style.transform = `rotate(${Math.max(-18, Math.min(18, dx * .35)).toFixed(1)}deg)`;
+    if (Math.abs(dx) + Math.abs(dy) > .4) requestAnimationFrame(tick); else { run = false; inner.style.transform = ''; }
+  };
+  const wake = () => { if (!run) { run = true; last = performance.now(); requestAnimationFrame(tick); } };
+  const move = e => { if (!el) return; if (x < -50) { x = e.clientX; y = e.clientY; } tx = e.clientX + 10; ty = e.clientY + 10; el.style.opacity = 1; wake(); };
+  const hop = () => { if (!el || id === 'none') return; inner.classList.remove('hop'); void inner.offsetWidth; inner.classList.add('hop'); };
+  const set = nid => {
+    id = BUDDY[nid] ? nid : 'none';
+    if (!ok || document.documentElement.dataset.calm === '1') id = 'none';
+    if (id === 'none') { if (el) el.style.display = 'none'; return; }
+    if (!el) {
+      el = document.createElement('div'); el.id = 'buddy'; inner = document.createElement('div'); el.appendChild(inner); document.body.appendChild(el);
+      addEventListener('pointermove', move, { passive: true }); addEventListener('pointerdown', hop, { passive: true });
+      document.addEventListener('mouseleave', () => { el.style.opacity = 0; });
+    }
+    el.style.display = ''; inner.innerHTML = buddySvg(id);
+  };
+  return { set, hop, ok };
+})();
 const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'], prism: ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'], lava: ['#fde047', '#f97316', '#b91c1c'], lagoon: ['#a5f3fc', '#0ea5e9', '#1e3a8a'], blossom: ['#fbcfe8', '#f472b6', '#be185d'], galaxy: ['#38bdf8', '#6366f1', '#c026d3'] };
 const CLASSIC_STOPS = ['rgb(42,79,138)', 'rgb(108,143,184)', 'rgb(216,200,168)', 'rgb(238,154,84)', 'rgb(214,58,31)'];
 const tempCss = sg => lerpStops(CLASSIC_STOPS, sg);
@@ -1010,7 +1059,7 @@ function checkCos() {
 }
 if (!P.cosSeen.length) { P.cosSeen = allCos().filter(i => isUnlocked(i)).map(i => i.cat + ':' + i.id); saveP(); }
 fetch('build.txt', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(b => { if (b && b.commit) window.BUILD = b; }).catch(() => {});
-const applyCos = () => { document.documentElement.dataset.skin = P.cos.theme; document.documentElement.dataset.dots = P.cos.dots || 'classic'; };
+const applyCos = () => { document.documentElement.dataset.skin = P.cos.theme; document.documentElement.dataset.dots = P.cos.dots || 'classic'; Buddy.set(P.cos.buddy); };
 function drawTrailPreview(cv, id) {
   const x = cv.getContext('2d'), W = cv.width, H = cv.height, st = trailStops(id); x.clearRect(0, 0, W, H);
   const g = x.createLinearGradient(0, 0, W, 0); st.forEach((c, i) => g.addColorStop(i / (st.length - 1), c));
@@ -1025,10 +1074,11 @@ function openLocker(tab = 'theme') {
   const restore = () => { cancelAnimationFrame(raf); applyCos(); };
   openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. Tap any style to preview it. ${open}/${total} unlocked. <button class="linkbtn" id="lkStudio">Open the Studio for fonts and colours →</button></p>
     <canvas id="lkCv" width="680" height="190" style="width:100%;border-radius:16px;background:#14110d;display:block"></canvas>
-    <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti'], ['dots', 'Markers']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
+    <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti'], ['dots', 'Markers'], ['buddy', 'Buddies']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
   const preview = () => {
     const cv = $('#lkCv'), x = cv.getContext('2d'); cancelAnimationFrame(raf); applyCos();
     if (tab === 'trail') drawTrailPreview(cv, sel);
+    else if (tab === 'buddy') { x.clearRect(0, 0, cv.width, cv.height); x.fillStyle = '#8a8372'; x.font = '17px sans-serif'; x.fillText(sel === 'none' ? 'No buddy: the pointer stays on its own.' : 'A little friend follows your mouse on computers.', 28, 40); if (BUDDY[sel]) { const im = new Image(); im.onload = () => { x.drawImage(im, 300, 70, 90, 90); x.save(); x.globalAlpha = .35; x.drawImage(im, 250, 90, 54, 54); x.globalAlpha = .18; x.drawImage(im, 215, 105, 34, 34); x.restore(); }; im.src = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${BUDDY[sel]}</svg>`); } }
     else if (tab === 'dots') { x.clearRect(0, 0, cv.width, cv.height); const it = COS.dots.find(i => i.id === sel) || COS.dots[0], names = ['Start', 'Link', 'Link', 'Target'], pts = [[70, 130], [250, 80], [430, 110], [610, 50]], st = CLASSIC_STOPS; x.lineCap = 'round'; x.strokeStyle = 'rgba(255,255,255,.28)'; x.lineWidth = 4; x.beginPath(); pts.forEach((q, k) => k ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); x.stroke();
       pts.forEach((q, k) => { const col = lerpStops(st, k / 3), r = k === 3 ? 22 : 16; x.save(); x.translate(q[0], q[1]); x.fillStyle = col; x.strokeStyle = col; x.lineWidth = 5; x.beginPath();
         if (sel === 'ring') { x.arc(0, 0, r - 2.5, 0, 7); x.stroke(); } else if (sel === 'diamond') { x.rotate(Math.PI / 4); x.rect(-r * .75, -r * .75, r * 1.5, r * 1.5); x.fill(); } else if (it.clip) { const pp = it.clip.replace('polygon(', '').replace(')', '').split(',').map(t => t.trim().split(' ').map(v => (parseFloat(v) / 100 - .5) * r * 2)); pp.forEach((v, n) => n ? x.lineTo(v[0], v[1]) : x.moveTo(v[0], v[1])); x.closePath(); x.fill(); } else { x.arc(0, 0, r, 0, 7); x.fill(); } x.restore(); x.fillStyle = 'rgba(255,255,255,.7)'; x.font = '600 12px sans-serif'; x.textAlign = 'center'; x.fillText(names[k], q[0], q[1] + 40); });
@@ -1041,7 +1091,7 @@ function openLocker(tab = 'theme') {
   $('#lkStudio').onclick = () => { restore(); openStudio(); };
   const draw = () => {
     document.querySelectorAll('#lkTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-    $('#lkBody').innerHTML = `<div class="lkgrid">${COS[tab].map(i => { const u = isUnlocked(i), on = P.cos[tab] === i.id, pv = sel === i.id; return `<button class="item ${on ? 'on' : ''} ${u ? '' : 'lock'}" ${pv ? 'style="outline:2px solid var(--accent);outline-offset:2px"' : ''} data-id="${i.id}"><div class="sw" style="background:${i.sw}"></div>${esc(i.name)}<small>${on ? 'worn' : u ? 'unlocked' : '🔒 ' + esc(i.label)}</small></button>`; }).join('')}</div>`;
+    $('#lkBody').innerHTML = `<div class="lkgrid">${COS[tab].map(i => { const u = isUnlocked(i), on = P.cos[tab] === i.id, pv = sel === i.id; return `<button class="item ${on ? 'on' : ''} ${u ? '' : 'lock'}" ${pv ? 'style="outline:2px solid var(--accent);outline-offset:2px"' : ''} data-id="${i.id}"><div class="sw" style="background:${i.buddy ? buddyUri(i.id) : i.sw}"></div>${esc(i.name)}<small>${on ? 'worn' : u ? 'unlocked' : '🔒 ' + esc(i.label)}</small></button>`; }).join('')}</div>`;
     const it = COS[tab].find(i => i.id === sel) || COS[tab][0], u = isUnlocked(it), on = P.cos[tab] === it.id;
     $('#lkAct').innerHTML = on ? `<button class="btn ghost" disabled>Wearing ${esc(it.name)}</button>` : u ? `<button class="btn" id="lkWear">Wear ${esc(it.name)}</button>` : it.need && it.need.t === 'supporter' ? `<button class="btn" id="lkSupp">Get the Supporter pack</button>` : `<button class="btn ghost" disabled>🔒 ${esc(it.label)}</button>`;
     if ($('#lkWear')) $('#lkWear').onclick = () => { P.cos[tab] = it.id; saveP(); applyCos(); toast(`Now wearing ${it.name}`); draw(); preview(); if (tab === 'confetti') confetti(it.id); };
