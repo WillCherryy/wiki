@@ -158,7 +158,7 @@ kbd { font: 600 11px var(--sans); padding: 2px 6px; border: 1px solid var(--rule
 .finder input::placeholder { color: var(--mute); }
 .finder span { font: 600 11px var(--sans); letter-spacing: .06em; color: var(--mute); white-space: nowrap; }
 .mainc { min-width: 0; }
-.found { display: none; margin: 0 0 14px; padding: 13px 18px; background: var(--ink); color: var(--paper); border-left: 4px solid var(--accent); border-radius: 2px; font: 600 14px var(--sans); animation: rise .4s; }
+.found { display: none; margin: 0 0 14px; padding: 13px 18px; background: var(--ink); color: var(--paper); border-left: 4px solid var(--accent); border-radius: 2px; font: 600 14px var(--sans); animation: rise .2s; }
 .found.on { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .found button { border: 0; background: var(--accent); color: #fff; padding: 6px 14px; border-radius: 3px; font: 600 12.5px var(--sans); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
@@ -202,9 +202,9 @@ kbd { font: 600 11px var(--sans); padding: 2px 6px; border: 1px solid var(--rule
 .dots5 { display: inline-flex; align-items: center; gap: 8px; } .dots5.sm { gap: 4px; margin-right: 10px; vertical-align: middle; } .dots5.sm i { width: 6px; height: 6px; }
 .empty { text-align: center; } .empty .dots5 { margin: 6px 0 10px; } .empty p { margin: 0; font: italic 400 18px var(--serif); color: var(--mute); }
 .routedots { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 0; margin: 14px 0 4px; }
-.routedots i { width: var(--d); height: var(--d); border-radius: 50%; background: var(--sc); flex: none; animation: rise .5s both; }
+.routedots i { width: var(--d); height: var(--d); border-radius: 50%; background: var(--sc); flex: none; animation: rise .25s both; }
 .routedots .rtl { width: 18px; border-top: 2px dotted var(--rule); }
-.pdots { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 10px auto 14px; max-width: 320px; } .pdots i { width: 13px; height: 13px; animation: rise .4s both; }
+.pdots { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 10px auto 14px; max-width: 320px; } .pdots i { width: 13px; height: 13px; animation: rise .2s both; }
 @keyframes sp { to { transform: rotate(360deg); } }
 
 /* route */
@@ -212,7 +212,7 @@ kbd { font: 600 11px var(--sans); padding: 2px 6px; border: 1px solid var(--rule
 .routecard h4 { margin: 0 0 16px; font: 600 11px var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); }
 .trail { display: flex; flex-direction: column; }
 .trail .sep { display: none; }
-.step { position: relative; padding: 0 0 18px 24px; font: 400 18.5px/1.25 var(--serif); animation: rise .4s; }
+.step { position: relative; padding: 0 0 18px 24px; font: 400 18.5px/1.25 var(--serif); animation: rise .2s; }
 .step::before { content: ""; position: absolute; left: 0; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--sc, var(--temp)); box-shadow: 0 0 0 3px var(--paper); z-index: 1; }
 .step::after { content: ""; position: absolute; left: 5.2px; top: 18px; bottom: -4px; border-left: 2px dotted var(--rule); }
 .step:last-child::after { display: none; }
@@ -266,7 +266,7 @@ details.route summary { cursor: pointer; font: 600 12px var(--sans); letter-spac
 .grid3 div { text-align: center; padding: 14px 6px; border-left: 1px solid var(--rule); } .grid3 div:first-child { border-left: 0; }
 .grid3 b { display: block; font: 400 34px/1 var(--display); letter-spacing: -.01em; } .grid3 span { display: block; margin-top: 4px; font: 600 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
 .xpbar { margin: 4px 0; } .xpmeta { display: flex; justify-content: space-between; font: 600 12px var(--sans); letter-spacing: .04em; color: var(--mute); margin-bottom: 8px; }
-.unlock { display: flex; gap: 14px; align-items: center; padding: 12px 14px; margin: 10px 0; border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--accent-soft); animation: rise .5s; }
+.unlock { display: flex; gap: 14px; align-items: center; padding: 12px 14px; margin: 10px 0; border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--accent-soft); animation: rise .25s; }
 .unlock b { display: block; font: 600 15px var(--sans); } .unlock small { color: var(--mute); font-size: 12.5px; }
 .medal { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; flex: none; background: var(--sheet); border: 2px solid var(--mc, var(--rule)); }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; } .actions .btn { flex: 1; padding: 13px 16px; }
@@ -472,8 +472,8 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .rcard + .rcard { margin-top: 14px; }
 
 /* ---- the whole page reacts to the heat: an edge glow, a tint across the paper, a warmer rule under the header, a pulse when scorching */
-#heatfx { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: none; contain: strict; will-change: opacity; opacity: calc(.35 + .65 * var(--heat)); transition: opacity .6s;
-  background: radial-gradient(130% 110% at 50% 45%, transparent 52%, color-mix(in srgb, var(--temp) calc(10% + 44% * var(--heat)), transparent) 100%), linear-gradient(180deg, color-mix(in srgb, var(--temp) calc(var(--heat) * 9%), transparent), transparent 40%); }
+#heatfx { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: none; contain: strict; will-change: opacity; opacity: calc(.45 + .55 * var(--heat)); transition: opacity .6s;
+  background: radial-gradient(130% 110% at 50% 45%, transparent 40%, color-mix(in srgb, var(--temp) calc(14% + 62% * var(--heat)), transparent) 100%), linear-gradient(180deg, color-mix(in srgb, var(--temp) calc(var(--heat) * 9%), transparent), transparent 40%); }
 body.ingame #heatfx { display: block; }
 html[data-heat="scorching"] #heatfx { animation: heatPulse 1.9s ease-in-out infinite; }
 html[data-heat="sight"] #heatfx { animation: heatPulse 1.05s ease-in-out infinite; }
@@ -690,3 +690,13 @@ html[data-dots="plus"] .rl .d, html[data-dots="plus"] .step::before { border-rad
 .article { contain: layout style; }
 .article.out { transition-duration: .12s; } .article.in { animation-duration: .25s; }
 @media (prefers-reduced-motion: reduce) { #heatfx { transition: none; } }
+
+/* scorching: a breathing ember ring on its own GPU layer (transform + opacity only) */
+#heatfx::after { content: ""; position: absolute; inset: -4%; opacity: 0; will-change: transform, opacity; background: radial-gradient(ellipse at 50% 50%, transparent 46%, color-mix(in srgb, var(--temp) 70%, transparent) 100%); }
+html[data-heat="scorching"] #heatfx::after { animation: ember 1.7s ease-in-out infinite; }
+html[data-heat="sight"] #heatfx::after { animation: ember .85s ease-in-out infinite; }
+html[data-heat="scorching"] #heatfx, html[data-heat="sight"] #heatfx { animation: none; opacity: 1; }
+@keyframes ember { 0%, 100% { opacity: .25; transform: scale(1.06); } 50% { opacity: 1; transform: scale(1); } }
+html[data-calm="1"] #heatfx::after { animation: none !important; opacity: .4; }
+@media (prefers-reduced-motion: reduce) { #heatfx::after { animation: none !important; opacity: .4; } }
+@keyframes rise { from { opacity: 0; transform: translateY(5px); } }
