@@ -172,6 +172,18 @@ async function getSummary(title) {
   const s = { title: j.title, desc: j.description || '', extract: j.extract || '', thumb: j.thumbnail && j.thumbnail.source };
   sums.set(title, s); return s;
 }
+const backC = new Map();
+async function getBacklinks(title, cap = 2000) {   // pages that link TO the target: one click from the goal
+  const k = norm(title); if (backC.has(k)) return backC.get(k);
+  const out = new Set(); let cont = {};
+  for (let i = 0; i < 4 && cont; i++) {
+    const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'linkshere', titles: title, lhlimit: 'max', lhnamespace: '0', lhprop: 'title|redirect', redirects: '1', ...cont });
+    const r = await fetch(`${API}?${q}`); if (!r.ok) throw new Error('net'); const j = await r.json(), pg = ((j.query || {}).pages || [])[0] || {};
+    for (const l of pg.linkshere || []) if (!l.redirect) out.add(norm(l.title));
+    cont = out.size < cap ? j.continue : null;
+  }
+  backC.set(k, out); return out;
+}
 const inflight = new Map();
 function getPage(title) {
   const k = norm(title); if (pages.has(k)) return Promise.resolve(pages.get(k));
@@ -257,7 +269,11 @@ const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
 function show(view) { document.body.classList.toggle('ingame', view === 'game'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
-function setTemp(sg) { document.documentElement.style.setProperty('--temp', tempCss(sg)); }
+function setTemp(sg) {
+  const r = document.documentElement; r.style.setProperty('--temp', tempCss(sg)); r.style.setProperty('--heat', String(Math.max(0, Math.min(1, sg))));
+  r.dataset.heat = sg >= .97 ? 'sight' : sg > .72 ? 'scorching' : sg > .5 ? 'hot' : sg > .32 ? 'warm' : sg > .15 ? 'cool' : 'cold';
+}
+{ const fx = document.createElement('div'); fx.id = 'heatfx'; fx.setAttribute('aria-hidden', 'true'); document.body.appendChild(fx); }
 function sigLabel(s) { return s >= .97 ? 'In sight!' : s > .72 ? 'Scorching' : s > .5 ? 'Hot' : s > .32 ? 'Warm' : s > .15 ? 'Cool' : 'Cold'; }
 const SQ = ['⬜', '🟦', '🟩', '🟨', '🟧', '🟥'];
 const sigSquare = s => SQ[Math.min(5, Math.floor(s * 5.99))];
@@ -352,15 +368,35 @@ async function startGame(mode, resume, extra) {
     G.keywords = new Set([...(s.title + ' ' + s.extract).toLowerCase().match(/[a-z]{4,}/g) || []].filter(w => !STOP.has(w)).slice(0, 80));
     G.summary = s;
   } catch { G.keywords = new Set(norm(G.to).match(/[a-z]{4,}/g) || []); }
+  G.back1 = new Set(); G.fwd = new Set(); const gref = G;
+  getBacklinks(G.toTitle || G.to).then(b => { if (G === gref) { G.back1 = b; recomputeHeat(); } }).catch(() => {});
+  getPage(G.toTitle || G.to).then(pg => { if (G === gref) { G.fwd = pg.links; recomputeHeat(); } }).catch(() => {});
   const target = resume ? resume.path[resume.path.length - 1] : G.from;
   G.t0 = Date.now(); Ping.start(mode);
   clearInterval(tick); tick = setInterval(() => { $('#mTime').textContent = fmt(elapsed()); }, 500);
   await go(target, true, resume);
 }
 function signalFor(page) {
-  if (page.links.has(norm(G.toTitle)) || page.links.has(norm(G.to))) return 1;
+  const tg = [norm(G.toTitle), norm(G.to)];
+  if (tg.some(t => page.links.has(t))) return 1;                                           // one click away: in sight
+  // 1. exact: pages on a verified route know how far from the goal they are
+  const key = norm(page.title); let on = null;
+  for (const r of [G.route, ...(G.alts || [])]) if (Array.isArray(r)) { const i = r.findIndex(t => norm(t) === key); if (i >= 0) { const d = r.length - 1 - i; on = on === null ? d : Math.min(on, d); } }
+  let s = on === null ? 0 : on <= 1 ? 1 : on === 2 ? .86 : on === 3 ? .66 : .5;
+  // 2. two clicks away: this page links to a page that links to the goal (backlinks), or to a page the goal links to (weaker evidence)
+  let strong = 0, weak = 0; const back = G.back1 || new Set(), fwd = G.fwd || new Set();
+  page.links.forEach(l => { if (back.has(l)) strong++; else if (fwd.has(l)) weak++; });
+  const two = strong >= 2 ? .82 + Math.min(.13, .02 * (strong - 2)) : strong === 1 ? .7 : weak ? .52 + Math.min(.14, .03 * weak) : 0;
+  // 3. otherwise: shared vocabulary and shared neighbours, capped so a far-away page can never look close
   let hit = 0; G.keywords.forEach(k => { if (page.tokens.has(k)) hit++; });
-  return Math.min(.95, Math.pow(hit / Math.max(10, G.keywords.size * .7), .8));
+  const kw = Math.pow(hit / Math.max(10, G.keywords.size * .7), .8) * .6; let sh = 0; if (fwd.size) page.links.forEach(l => { if (fwd.has(l)) sh++; });
+  const far = Math.min(.6, kw * .8 + .3 * Math.min(1, sh / 15));
+  return Math.min(.95, Math.max(s, two, far));
+}
+function recomputeHeat() {   // the backlink data arrives a moment after the first page: refresh the reading
+  if (!G || G.done || !G.cur || !G.toTitle) return;
+  const win = norm(G.cur.title) === norm(G.toTitle), sg = win ? 1 : signalFor(G.cur);
+  G.sig = sg; if (G.steps.length) G.steps[G.steps.length - 1].sig = sg; updateHud();
 }
 async function go(...a) { if (G) G.nav = true; try { return await go0(...a); } finally { if (G) G.nav = false; } }
 async function go0(title, initial, resume, kind = 'go') {
