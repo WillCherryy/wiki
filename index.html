@@ -547,6 +547,21 @@ async function fillCrowd(r) {
   });
   if (dev) dev.innerHTML = left ? `You left the crowd at step ${left.step}: ${left.topPct}% went via <b>${esc(left.top)}</b>, you chose <b>${esc(left.mine)}</b> (${left.pct}%).` : 'You followed the crowd favourite all the way.';
 }
+// The heat of your route: a clean curve of temperature per click, with a heat-map ribbon underneath
+function heatChart(r) {
+  const path = r.path || [], steps = r.steps || [], n = path.length; if (n < 2) return '';
+  const sig = i => r.won && i === n - 1 ? 1 : steps[i] && steps[i].sig != null ? Math.max(0, Math.min(1, steps[i].sig)) : 0;
+  const W = 340, H = 128, L = 10, R = 10, T = 16, B = 26, X = i => L + (W - L - R) * i / (n - 1), Y = v => T + (1 - v) * (H - T - B), col = i => dotCss(sig(i), i / (n - 1));
+  const pts = path.map((_, i) => [X(i), Y(sig(i))]); let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) { const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c, t = .18; d += ` C${(b[0] + (c[0] - a[0]) * t).toFixed(1)} ${(b[1] + (c[1] - a[1]) * t).toFixed(1)},${(c[0] - (e[0] - b[0]) * t).toFixed(1)} ${(c[1] - (e[1] - b[1]) * t).toFixed(1)},${c[0].toFixed(1)} ${c[1].toFixed(1)}`; }
+  const base = Y(0), area = `${d} L${pts[n - 1][0].toFixed(1)} ${base} L${pts[0][0].toFixed(1)} ${base} Z`, stops = path.map((_, i) => `<stop offset="${(i / (n - 1) * 100).toFixed(1)}%" stop-color="${col(i)}"/>`).join('');
+  const dots = pts.map(([x, y], i) => i === n - 1 ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${col(i)}" opacity=".18"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${col(i)}" stroke="var(--paper)" stroke-width="2.5"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${col(i)}" stroke="var(--paper)" stroke-width="2"/>`).join('');
+  const every = n > 10 ? 2 : 1, ticks = pts.map(([x], i) => i % every === 0 || i === n - 1 ? `<text x="${x.toFixed(1)}" y="${H - 7}" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--mute)" font-family="inherit">${i === 0 ? 'start' : i === n - 1 && r.won ? 'goal' : i}</text>` : '').join('');
+  const grid = [0, .5, 1].map(v => `<path d="M${L} ${Y(v).toFixed(1)}H${W - R}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="${v === 0 ? '0' : '2 5'}" opacity="${v === 0 ? .9 : .7}"/>`).join('') + `<text x="${W - R}" y="${(Y(1) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" letter-spacing=".12em" fill="var(--mute)" font-family="inherit">HOT</text><text x="${W - R}" y="${(Y(0) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" letter-spacing=".12em" fill="var(--mute)" font-family="inherit">COLD</text>`;
+  const rid = 'hc' + Math.random().toString(36).slice(2, 6);
+  return `<div class="hchart"><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="${rid}l" x1="0" x2="1">${stops}</linearGradient><linearGradient id="${rid}a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".1"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#${rid}a)"/><path d="${d}" fill="none" stroke="url(#${rid}l)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${ticks}</svg>
+    <div class="hstrip" style="background:linear-gradient(90deg,${path.map((_, i) => col(i)).join(',')})"></div></div>`;
+}
 function routesCard(r) {
   const yours = r.path || [], steps = r.steps || [], key = k => k.map(norm).join('>'), sigOf = i => r.won && i === yours.length - 1 ? 1 : steps[i] && steps[i].sig != null ? steps[i].sig : 0;
   const known = [r.route, ...(r.alts || [])].filter(a => Array.isArray(a) && a.length > 1);
@@ -560,7 +575,7 @@ function routesCard(r) {
   const tag = i => r.won ? (mineOptimal ? (others.length > 1 ? `Also fastest ${i + 1}` : 'Also fastest') : (others.length > 1 ? `Fastest route ${i + 1}` : 'Fastest route')) : (others.length > 1 ? `A way through ${i + 1}` : 'A way through');
   let verdict = '';
   if (known.length && r.won) verdict = r.clicks < shortest ? 'Shorter than our shortest known route. Nice find.' : r.clicks === shortest ? (mineOptimal ? 'You found one of the shortest routes.' : 'As short as the shortest route.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
-  return `<section class="rcard routes"><h4>Routes <small>${known.length ? `fastest possible: ${clk(shortest)}` : ''}</small></h4>${mine}
+  return `<section class="rcard routes"><h4>Routes <small>${known.length ? `fastest possible: ${clk(shortest)}` : ''}</small></h4>${heatChart(r)}${mine}
     ${others.map((k, i) => sec(tag(i), clk(k.length - 1), list(k, ramp(k.length), false))).join('')}
     ${mineOptimal && !others.length ? '<p class="rtf">That is the only shortest route we found.</p>' : ''}
     ${verdict ? `<p class="rtv rsum">${verdict}</p>` : ''}

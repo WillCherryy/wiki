@@ -581,3 +581,6 @@ html[data-dots="diamond"] .rl .d, html[data-dots="diamond"] .step::before { bord
 html[data-dots="hex"] .rl .d, html[data-dots="hex"] .step::before { border-radius: 0; clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); box-shadow: none; }
 html[data-dots="star"] .rl .d, html[data-dots="star"] .step::before { border-radius: 0; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); box-shadow: none; transform: scale(1.25); }
 html[data-dots="plus"] .rl .d, html[data-dots="plus"] .step::before { border-radius: 0; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); box-shadow: none; }
+
+.hchart { margin: 6px 0 4px; } .hstrip { height: 8px; border-radius: 4px; margin: 4px 10px 2px; opacity: .92; }
+.hchart + .rsec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule-2); }
