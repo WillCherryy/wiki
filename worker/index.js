@@ -50,10 +50,11 @@ export default {
       if (path === '/api/delete') return await postDelete(env, b, reply);
       if (path === '/api/report') return await postReport(env, b, now(), reply);
       if (path === '/api/event') return await postEvent(env, b, request, now(), reply);
+      if (path === '/api/restore') return await postRestore(env, b, now(), reply);
       if (path === '/api/admin/daily') return await postOverride(env, b, request, now(), reply);
       if (path === '/api/admin/exclude') return await postExclude(env, b, request, reply);
       return reply({ error: 'not found' }, 404);
-    } catch (e) { return reply({ error: 'server error' }, 500); }
+    } catch (e) { if (env.DEBUG_ERR) console.error(e); return reply({ error: 'server error' }, 500); }
   }
 };
 
@@ -155,6 +156,26 @@ async function recordOrder(env, provider, id, pid, t) {
   if (!id || !PID.test(pid || '')) return false;
   await env.DB.prepare('INSERT OR IGNORE INTO orders (id, provider, pid, created_at) VALUES (?, ?, ?, ?)').bind(String(id), provider, pid, t).run(); return true;
 }
+// ---- buyers without an account: a purchase is tied to the anonymous Player ID, so it is also tied to a hash of the checkout email.
+// If the browser is cleared, the buyer can restore it with that email (at most three extra devices per purchase). Only a hash is stored.
+const emailHash = async e => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('scorcher-restore:' + String(e).trim().toLowerCase())); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); };
+async function rememberEmail(env, provider, id, email) {
+  if (!id || !email || !/^[^@\s]+@[^@\s]+$/.test(String(email))) return;
+  await ensureAnalytics(env); await env.DB.prepare('INSERT OR IGNORE INTO order_email (provider, id, eh) VALUES (?, ?, ?)').bind(provider, String(id), await emailHash(email)).run();
+}
+const dropOrder = async (env, provider, id) => { await ensureAnalytics(env); return env.DB.batch([env.DB.prepare('DELETE FROM orders WHERE provider = ? AND (id = ? OR id LIKE ?)').bind(provider, String(id), String(id) + '#%'), env.DB.prepare('DELETE FROM order_email WHERE provider = ? AND id = ?').bind(provider, String(id))]); };
+async function postRestore(env, b, t, reply) {
+  if (!PID.test(b.pid || '') || typeof b.email !== 'string' || !/^[^@\s]+@[^@\s]+$/.test(b.email.trim()) || b.email.length > 200) return reply({ error: 'invalid' }, 400);
+  await ensureAnalytics(env);
+  const row = await env.DB.prepare('SELECT provider, id FROM order_email WHERE eh = ? LIMIT 1').bind(await emailHash(b.email)).first();
+  const order = row && await env.DB.prepare('SELECT pid FROM orders WHERE provider = ? AND id = ?').bind(row.provider, row.id).first();
+  if (!order) return reply({ error: 'no purchase found' }, 404);
+  if (await isSupporter(env, b.pid)) return reply({ ok: true, supporter: true });
+  const used = (await env.DB.prepare('SELECT COUNT(*) AS n FROM orders WHERE provider = ? AND id LIKE ?').bind(row.provider, row.id + '#%').first()).n;
+  if (used >= 3) return reply({ error: 'too many devices' }, 429);
+  await env.DB.prepare('INSERT OR IGNORE INTO orders (id, provider, pid, created_at) VALUES (?, ?, ?, ?)').bind(row.id + '#' + b.pid, row.provider, b.pid, t).run();
+  return reply({ ok: true, supporter: true });
+}
 async function webhook(provider, raw, request, env, t, reply) {
   if (raw.length > 200000) return reply({ error: 'too large' }, 413);
   let evt;
@@ -164,8 +185,8 @@ async function webhook(provider, raw, request, env, t, reply) {
     if (!safeEqual(sig, await hmacHex(env.LS_SIGNING_SECRET, raw))) return reply({ error: 'bad signature' }, 401);
     try { evt = JSON.parse(raw); } catch { return reply({ error: 'bad json' }, 400); }
     const name = evt.meta && evt.meta.event_name, pid = evt.meta && evt.meta.custom_data && evt.meta.custom_data.pid, d = evt.data || {};
-    if (name === 'order_created' && d.attributes && d.attributes.status === 'paid') await recordOrder(env, provider, d.id, pid, t);
-    if (name === 'order_refunded') await env.DB.prepare('DELETE FROM orders WHERE provider = ? AND id = ?').bind(provider, String(d.id)).run();
+    if (name === 'order_created' && d.attributes && d.attributes.status === 'paid' && await recordOrder(env, provider, d.id, pid, t)) await rememberEmail(env, provider, d.id, d.attributes.user_email);
+    if (name === 'order_refunded') await dropOrder(env, provider, d.id);
     return reply({ ok: true });
   }
   if (provider === 'stripe') {
@@ -176,8 +197,8 @@ async function webhook(provider, raw, request, env, t, reply) {
     try { evt = JSON.parse(raw); } catch { return reply({ error: 'bad json' }, 400); }
     const o = evt.data && evt.data.object || {};
     // the order id is the PaymentIntent, so a later refund event (which carries the same id) can find and remove it
-    if (evt.type === 'checkout.session.completed' && o.payment_status === 'paid') await recordOrder(env, provider, o.payment_intent || o.id, o.client_reference_id, t);
-    if (evt.type === 'charge.refunded' && o.refunded && o.payment_intent) await env.DB.prepare('DELETE FROM orders WHERE provider = ? AND id = ?').bind(provider, String(o.payment_intent)).run();
+    if (evt.type === 'checkout.session.completed' && o.payment_status === 'paid' && await recordOrder(env, provider, o.payment_intent || o.id, o.client_reference_id, t)) await rememberEmail(env, provider, o.payment_intent || o.id, (o.customer_details && o.customer_details.email) || o.customer_email);
+    if (evt.type === 'charge.refunded' && o.refunded && o.payment_intent) await dropOrder(env, provider, o.payment_intent);
     return reply({ ok: true });
   }
   return reply({ error: 'not found' }, 404);
@@ -232,8 +253,9 @@ const SRC_OK = /^[a-z0-9._:-]{1,40}$/i, DEV_OK = ['mobile', 'desktop'];
 let ensured = null;   // tables for traffic sources and excluded players are created on first use, so no manual migration is needed
 const ensureAnalytics = env => ensured || (ensured = env.DB.batch([
   env.DB.prepare('CREATE TABLE IF NOT EXISTS acq (pid TEXT PRIMARY KEY, src TEXT NOT NULL, camp TEXT NOT NULL DEFAULT \'\', first_day TEXT NOT NULL)'),
-  env.DB.prepare('CREATE TABLE IF NOT EXISTS excluded (pid TEXT PRIMARY KEY, created_at INTEGER NOT NULL)')
-]).catch(e => { ensured = null; throw e; }));
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS excluded (pid TEXT PRIMARY KEY, created_at INTEGER NOT NULL)'),
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS order_email (provider TEXT NOT NULL, id TEXT NOT NULL, eh TEXT NOT NULL, PRIMARY KEY (provider, id))')
+]).then(() => env.DB.prepare('CREATE INDEX IF NOT EXISTS order_email_eh ON order_email (eh)').run()).catch(e => { ensured = null; throw e; }));
 async function postEvent(env, b, request, t, reply) {
   const day = new Date(t).toISOString().slice(0, 10);
   await ensureAnalytics(env);

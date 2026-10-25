@@ -10,7 +10,7 @@ const noon = day => Date.parse(day + 'T12:00:00Z');
 
 (async () => {
   const worker = (await import(path.join(__dirname, '..', 'worker', 'index.js'))).default;
-  const env = makeEnv({ LS_SIGNING_SECRET: 'ls-secret', STRIPE_WEBHOOK_SECRET: 'whsec_test', TEST_NOW: String(noon('2026-03-10')) });
+  const env = makeEnv({ DEBUG_ERR: '1', LS_SIGNING_SECRET: 'ls-secret', STRIPE_WEBHOOK_SECRET: 'whsec_test', TEST_NOW: String(noon('2026-03-10')) });
   const call = async (method, p, body, headers = {}) => {
     const init = { method, headers: { 'content-type': 'application/json', ...headers } };
     if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
@@ -42,6 +42,17 @@ const noon = day => Date.parse(day + 'T12:00:00Z');
   assert.strictEqual((await stripe(session('cs_1'), Math.floor(Number(env.TEST_NOW) / 1000) - 3600)).status, 401, 'Stripe: stale timestamp rejected');
   assert.strictEqual((await stripe(session('cs_1', 'stripebuyer1', 'unpaid'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, false, 'Stripe: unpaid session grants nothing');
   assert.strictEqual((await stripe(session('cs_1'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, true, 'Stripe: paid session grants supporter');
+  // ---- restoring a purchase with the checkout email (a buyer whose browser data was cleared has a new Player ID)
+  const withMail = (id, pid, email) => JSON.stringify({ id: 'evt_' + id, type: 'checkout.session.completed', data: { object: { id, payment_intent: 'pi_' + id, client_reference_id: pid, payment_status: 'paid', customer_details: { email } } } });
+  assert.strictEqual((await stripe(withMail('cs_m1', 'mailbuyer01', 'Buyer@Example.com'))).status, 200);
+  assert.strictEqual((await call('GET', '/api/entitlements?pid=newdevice01')).body.supporter, false, 'restore: a new Player ID starts without the pack');
+  assert.strictEqual((await call('POST', '/api/restore', { pid: 'newdevice01', email: 'someone@else.com' })).status, 404, 'restore: unknown email finds nothing');
+  assert.strictEqual((await call('POST', '/api/restore', { pid: 'newdevice01', email: 'not an email' })).status, 400, 'restore: bad email rejected');
+  assert.strictEqual((await call('POST', '/api/restore', { pid: 'newdevice01', email: '  buyer@example.COM ' })).body.supporter, true, 'restore: the checkout email (any case) restores the pack');
+  assert.strictEqual((await call('GET', '/api/entitlements?pid=newdevice01')).body.supporter, true, 'restore: the new Player ID is now a supporter');
+  for (const x of ['dev2device1', 'dev3device1']) assert.strictEqual((await call('POST', '/api/restore', { pid: x, email: 'buyer@example.com' })).body.supporter, true);
+  assert.strictEqual((await call('POST', '/api/restore', { pid: 'dev4device1', email: 'buyer@example.com' })).status, 429, 'restore: at most three extra devices per purchase');
+  assert.strictEqual((await stripe(refund('cs_m1'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=newdevice01')).body.supporter, false, 'restore: a refund removes restored copies too');
   assert.strictEqual((await call('POST', '/api/webhook/paddle', '{}')).status, 404, 'unknown provider');
   assert.strictEqual((await stripe(refund('cs_1', false))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, true, 'Stripe: a partial refund keeps the pack');
   assert.strictEqual((await stripe(refund('cs_1'))).status, 200); assert.strictEqual((await call('GET', '/api/entitlements?pid=stripebuyer1')).body.supporter, false, 'Stripe: a full refund removes the pack');
