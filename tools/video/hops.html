@@ -18,7 +18,7 @@ const p = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
 const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 const note = (t, kind, a = 0, b = 1) => window.EVENTS.push({ t: +t.toFixed(4), kind, a, b });
 const BG = '#14100c', CREAM = '#efe6d2', INK = '#1c1812', LINE = 'rgba(239,230,210,.92)', FAINT = 'rgba(239,230,210,.28)';
-const EN = .45;
+const EN = .6;
 // beat grid of the soundtrack (video time): hop h starts on beat d0 + 16 h; kb(h, n) = seconds from the start of hop h to its n-th beat
 const D = h => HB.b[HB.d0 + 12 * h], D0 = D(0), WMT = HB.b[HB.wm];
 const kb = (h, n) => { const i0 = HB.d0 + 12 * h, i = Math.floor(n), f = n - i; return HB.b[i0 + i] * (1 - f) + HB.b[i0 + i + 1] * f - HB.b[i0]; };
@@ -240,9 +240,10 @@ function renderBase(t) {
   if (t < D(0)) { card(); const rd = [LX + 365.98 * LS, LY + 86 * LS]; const R = 1700 * E.in3(clamp((t - E0) / (D(0) - E0))) + 4; g.save(); g.beginPath(); g.arc(rd[0], rd[1], R, 0, 7); g.clip(); pageScene(0, (t - D(0))); g.restore(); return; }
   let h = 0; for (let i = 0; i < NH; i++) if (t >= D(i) - (i > 0 ? EN : 0)) h = i;
   const k = t - D(h);
-  if (h > 0 && k < 0) {
-    const s = E.io(clamp((t - (D(h) - EN)) / EN)); g.save(); g.translate(-s * W, 0); sceneAt(h - 1, t - D(h - 1)); g.restore(); g.save(); g.beginPath(); g.rect((1 - s) * W, 0, W, H); g.clip(); g.translate((1 - s) * W, 0); pageScene(h, k); g.restore();
-    g.save(); g.lineCap = 'round'; for (let i = 0; i < 14; i++) { const y = hash(i * 3.3) * H, l = 200 + 500 * hash(i); g.strokeStyle = `rgba(255,248,230,${.35 * Math.sin(s * Math.PI)})`; g.lineWidth = 3 + 5 * hash(i * 2); g.beginPath(); g.moveTo(W * (1 - s) - l * .3 + hash(i) * 200, y); g.lineTo(W * (1 - s) + l, y); g.stroke(); } g.restore(); return;
+  if (h > 0 && k < 0) { // a soft cross-fade with a slight drift instead of a hard slide
+    const s = E.io(clamp((t - (D(h) - EN)) / EN)); g.save(); g.translate(-s * 70, 0); sceneAt(h - 1, t - D(h - 1)); g.restore();
+    const saved = g; g = ocg; ocg.setTransform(1, 0, 0, 1, 0, 0); ocg.globalCompositeOperation = 'source-over'; ocg.globalAlpha = 1; ocg.clearRect(0, 0, W, H); pageScene(h, k); g = saved;
+    g.save(); g.globalAlpha = s; g.drawImage(oc, (1 - s) * 70, 0); g.restore(); return;
   }
   sceneAt(h, k);
 }
@@ -253,24 +254,25 @@ function render(t) {
   let bi = 0; { let lo = 0, hi = HB.b.length - 2; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (HB.b[m] <= t) lo = m; else hi = m - 1; } bi = lo; }
   const s = clamp((t - D0) / (D(LASTH) - D0)), on = t >= D0 - .4 && t < WMT + .2, ph = clamp((t - HB.b[bi]) / (HB.b[bi + 1] - HB.b[bi])), pulse = Math.exp(-ph * 6.5), downb = (bi - HB.d0) % 4 === 0, down = downb ? 1 : .55, amp = on ? .35 + .65 * s : 0, step = Math.floor(t * 30);
   g.save();
-  if (on && amp > 0) { const z = 1 + .026 * amp * pulse * down, A = 11 * amp * pulse * down, jx = (hash(step * 1.3) - .5) * 2 * A, jy = (hash(step * 2.7 + 5) - .5) * 2 * A, jr = (hash(step * 4.1 + 2) - .5) * .012 * amp * pulse * down; g.translate(W / 2 + jx, H / 2 + jy); g.rotate(jr); g.scale(z, z); g.translate(-W / 2, -H / 2); }
+  if (on && amp > 0) { const z = 1 + .011 * amp * pulse * down, A = 4.5 * amp * pulse * down, jx = (hash(step * 1.3) - .5) * 2 * A, jy = (hash(step * 2.7 + 5) - .5) * 2 * A, jr = (hash(step * 4.1 + 2) - .5) * .005 * amp * pulse * down; g.translate(W / 2 + jx, H / 2 + jy); g.rotate(jr); g.scale(z, z); g.translate(-W / 2, -H / 2); }
   BPG = on ? pulse * amp * down : 0; renderBase(t); BPG = 0; g.restore();
   if (on && amp > 0 && pulse > .12) {
     // phase split: the red and blue channels drift apart on every beat, plus a few torn horizontal strips
     ocg.setTransform(1, 0, 0, 1, 0, 0); ocg.globalCompositeOperation = 'source-over'; ocg.globalAlpha = 1; ocg.clearRect(0, 0, W, H); ocg.drawImage(cv, 0, 0);
-    const d = 16 * amp * pulse * down, strips = downb || pulse > .55 ? 4 : 1;
-    for (let q = 0; q < strips; q++) { const y0 = Math.floor(hash(step * 3.7 + q * 9.1) * (H - 80)), hh = 14 + Math.floor(hash(step + q * 1.9) * 50), dx = (hash(step * 5.3 + q) - .5) * 2 * 46 * amp * pulse; ocg.drawImage(oc, 0, y0, W, hh, dx, y0, W, hh); }
+    const d = 6 * amp * pulse * down, strips = downb ? 2 : 0;
+    for (let q = 0; q < strips; q++) { const y0 = Math.floor(hash(step * 3.7 + q * 9.1) * (H - 80)), hh = 14 + Math.floor(hash(step + q * 1.9) * 50), dx = (hash(step * 5.3 + q) - .5) * 2 * 20 * amp * pulse; ocg.drawImage(oc, 0, y0, W, hh, dx, y0, W, hh); }
     g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
     [['#ff0000', d, d * .25], ['#00ff00', 0, 0], ['#0000ff', -d, -d * .25]].forEach(([col, dx, dy]) => { tcg.globalCompositeOperation = 'source-over'; tcg.clearRect(0, 0, W, H); tcg.drawImage(oc, 0, 0); tcg.globalCompositeOperation = 'multiply'; tcg.fillStyle = col; tcg.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter'; g.drawImage(tcv, dx, dy); });
     g.globalCompositeOperation = 'source-over';
   }
   if (on) {
-    let fl = .1 * amp * pulse * down * (downb ? 1.6 : 1);
-    for (let hh = 0; hh < NH; hh++) { const ki = t - D(hh) - kb(hh, 3); if (ki >= 0 && ki < .3) fl = Math.max(fl, .45 * Math.exp(-ki * 9)); }
+    let fl = .045 * amp * pulse * down * (downb ? 1.6 : 1);
+    for (let hh = 0; hh < NH; hh++) { const ki = t - D(hh) - kb(hh, 3); if (ki >= 0 && ki < .3) fl = Math.max(fl, .16 * Math.exp(-ki * 8)); }
     if (fl > .01) { g.fillStyle = `rgba(255,244,225,${Math.min(.6, fl)})`; g.fillRect(0, 0, W, H); }
-    if (amp > .5 && pulse > .5 && (bi - HB.d0) % 2 === 1) { g.fillStyle = `rgba(255,255,255,${.05 * pulse})`; for (let i = 0; i < 6; i++) g.fillRect(0, hash(step * 3.1 + i) * H, W, 3 + hash(i + step) * 8); }
+    if (false) { g.fillStyle = `rgba(255,255,255,${.05 * pulse})`; for (let i = 0; i < 6; i++) g.fillRect(0, hash(step * 3.1 + i) * H, W, 3 + hash(i + step) * 8); }
   }
 }
+const renderFx = render; render = function (t) { renderFx(t); const a = Math.max(1 - clamp(t / .5), clamp((t - (END - .7)) / .7)); if (a > 0) { g.fillStyle = `rgba(20,16,12,${a})`; g.fillRect(0, 0, W, H); } };
 window.render = render;
 document.fonts.ready.then(() => Promise.all([document.fonts.load('400 38px EB'), document.fonts.load('italic 400 36px EB'), document.fonts.load('600 28px IS'), new Promise(r => { LOGO.img = new Image(); LOGO.img.onload = r; LOGO.img.src = LOGO.word; })])).then(() => { init(); render(0); });
 </script></body></html>

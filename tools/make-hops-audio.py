@@ -63,9 +63,9 @@ WM = [e['t'] for e in EV if e['kind'] == 'reveal'][0]; coll = [e['t'] for e in E
 # only subtle air: a soft swish into each page and a softer one as each screen goes dark, a long airy swell into the logo (no hits, thuds or bells)
 for e in EV:
     t, kd = e['t'], e['kind']
-    if kd == 'whip': both(dry, t, sweep(.6, 1200, 5500, .5), .14)
-    elif kd == 'iris': both(dry, t - .15, sweep(.7, 3500, 700, .5), .12)
-both(dry, coll, sweep(WM - coll + .3, 600, 6500, .5), .2)
+    if kd == 'whip': both(dry, t, sweep(.9, 1000, 4500, .5), .05)
+    elif kd == 'iris': both(dry, t - .15, sweep(.9, 2500, 600, .5), .04)
+both(dry, coll, sweep(WM - coll + .3, 600, 6500, .5), .1)
 def ir(sec=2.6):
     n = int(SR * sec); t = np.arange(n) / SR; out = []
     for _ in range(2):
