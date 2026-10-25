@@ -700,3 +700,11 @@ html[data-heat="scorching"] #heatfx, html[data-heat="sight"] #heatfx { animation
 html[data-calm="1"] #heatfx::after { animation: none !important; opacity: .4; }
 @media (prefers-reduced-motion: reduce) { #heatfx::after { animation: none !important; opacity: .4; } }
 @keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+
+/* the ember ring grows smoothly with the heat bar: invisible until warm, then stronger and faster the hotter you get */
+#heatfx::after { --e: clamp(0, calc((var(--heat) - .22) * 1.3), 1); }
+html[data-heat="warm"] #heatfx::after, html[data-heat="hot"] #heatfx::after, html[data-heat="scorching"] #heatfx::after, html[data-heat="sight"] #heatfx::after { animation-name: ember; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+html[data-heat="warm"] #heatfx::after { animation-duration: 3.4s; } html[data-heat="hot"] #heatfx::after { animation-duration: 2.5s; }
+html[data-heat="scorching"] #heatfx::after { animation-duration: 1.7s; } html[data-heat="sight"] #heatfx::after { animation-duration: .85s; }
+html[data-heat="cool"] #heatfx::after, html[data-heat="cold"] #heatfx::after { animation: none; opacity: 0; }
+@keyframes ember { 0%, 100% { opacity: calc(var(--e) * .2); transform: scale(calc(1 + .07 * var(--e))); } 50% { opacity: calc(var(--e) * .95); transform: scale(1); } }

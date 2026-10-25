@@ -897,23 +897,25 @@ async function showTarget() {
 const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'], candy: ['#ffb3d9', '#b3e0ff', '#fff2b3', '#c8f7c5', '#e0c3ff'], stars: ['#fff7d6', '#fde68a', '#fbbf24', '#ffffff', '#f59e0b'], petals: ['#fbcfe8', '#f9a8d4', '#f472b6', '#fff1f2', '#fda4af'], coins: ['#fde68a', '#f59e0b', '#d97706', '#fef3c7'] };
 const CONF_SHAPE = { pixel: 'sq', stars: 'star', petals: 'petal', coins: 'coin' };
 function confPiece(x, q, shape) {
-  x.save(); x.translate(q.x, q.y); x.rotate(q.r); x.fillStyle = q.c;
+  const cs = Math.cos(q.r), sn = Math.sin(q.r); x.setTransform(cs, sn, -sn, cs, q.x, q.y); x.fillStyle = q.c;
   if (shape === 'sq') x.fillRect(-5, -5, 10, 10);
   else if (shape === 'star') { x.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 - Math.PI / 2, rr = (k % 2 ? .45 : 1) * q.s * .95; k ? x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : x.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fill(); }
   else if (shape === 'petal') { x.beginPath(); x.ellipse(0, 0, q.s * .85, q.s * .42, 0, 0, 7); x.fill(); }
   else if (shape === 'coin') { x.beginPath(); x.ellipse(0, 0, q.s * .6, q.s * .6 * Math.abs(Math.cos(q.r * 2)) + 1, 0, 0, 7); x.fill(); x.strokeStyle = 'rgba(120,60,0,.55)'; x.lineWidth = 1.5; x.stroke(); }
   else x.fillRect(-q.s / 2, -q.s / 3, q.s, q.s * .6);
-  x.restore();
+  x.setTransform(1, 0, 0, 1, 0, 0);
 }
 function confetti(id) {
-  const c = $('#fx'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-    const cid = id || P.cos.confetti, cols = CONF[cid] || CONF.classic, shape = CONF_SHAPE[cid];
-  const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
-  let f = 0; (function loop() {
-    x.clearRect(0, 0, c.width, c.height);
-    ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr; confPiece(x, p, shape); });
-    if (++f < 150) requestAnimationFrame(loop); else x.clearRect(0, 0, c.width, c.height);
-  })();
+  const c = $('#fx'), x = c.getContext('2d', { alpha: true }); c.width = innerWidth; c.height = innerHeight;
+  const cid = id || P.cos.confetti, cols = CONF[cid] || CONF.classic, shape = CONF_SHAPE[cid], W = c.width, H = c.height;
+  const ps = Array.from({ length: 90 }, () => ({ x: W / 2, y: H * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
+  let last = performance.now(), age = 0;   // time-based, so it lasts the same on 60 Hz and 120 Hz screens and never lags behind
+  (function loop(now) {
+    const k = Math.min(2.5, (now - last) / 16.7); last = now; age += k;
+    x.clearRect(0, 0, W, H);
+    for (const p of ps) { if (p.y > H + 20) continue; p.vy += .35 * k; p.x += p.vx * k; p.y += p.vy * k; p.r += p.vr * k; confPiece(x, p, shape); }
+    if (age < 130) requestAnimationFrame(loop); else x.clearRect(0, 0, W, H);
+  })(last);
 }
 
 /* ------------------------------------------------------------------- wiring */
