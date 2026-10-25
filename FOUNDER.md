@@ -101,3 +101,8 @@ The picture lands in `posters\` (for example `posters\2026-10-24.png`). Useful v
 - By hand, if the puzzle is not set yet: `node tools/make-poster.js --from "Bradley Wiggins" --to "Tour de France" --par 3`
 
 `--today` asks your site for the puzzle, then falls back to `puzzles.json` (run `git pull` first so you have the latest one).
+
+## Analytics: sources, bots and your own visits
+- **Where people come from:** the site records the channel of each visit (referrer, `?utm_source=` or `?ref=`, or the in-app browser for Instagram, TikTok, LinkedIn and Facebook) and keeps it for each new player. See the "Where players come from" card on `/admin.html`. Put tagged links in your bios, e.g. `https://playscorcher.com/?utm_source=instagram&utm_campaign=bio`, because in-app browsers often hide the referrer.
+- **Your own visits:** open `/admin.html` and sign in once on each device. It marks that browser as yours, stops it sending analytics and removes what was already counted for it. Or visit the site once with `?owner=1` on the end (`?owner=0` undoes it). Visits counted before this can't be separated (visits carry no player id), but your player activity is removed.
+- **Bots:** known crawlers, headless browsers and anything without a browser user agent are ignored and counted separately. A "player" only counts after starting a puzzle.

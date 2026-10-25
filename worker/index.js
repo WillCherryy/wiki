@@ -51,6 +51,7 @@ export default {
       if (path === '/api/report') return await postReport(env, b, now(), reply);
       if (path === '/api/event') return await postEvent(env, b, request, now(), reply);
       if (path === '/api/admin/daily') return await postOverride(env, b, request, now(), reply);
+      if (path === '/api/admin/exclude') return await postExclude(env, b, request, reply);
       return reply({ error: 'not found' }, 404);
     } catch (e) { return reply({ error: 'server error' }, 500); }
   }
@@ -126,7 +127,8 @@ async function postLeague(env, b, t, reply) {
 }
 async function postDelete(env, b, reply) {
   if (!PID.test(b.pid)) return reply({ error: 'invalid' }, 400);
-  await env.DB.batch([env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
+  await ensureAnalytics(env);
+  await env.DB.batch([env.DB.prepare('DELETE FROM acq WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
   return reply({ ok: true });
 }
 
@@ -225,34 +227,58 @@ async function getReports(env, request, reply) {
 
 // ---- anonymous usage events + founder stats ----------------------------------------------------------------------
 const bump = (env, day, k) => env.DB.prepare('INSERT INTO counters (day, k, n) VALUES (?, ?, 1) ON CONFLICT(day, k) DO UPDATE SET n = n + 1').bind(day, k);
+const BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|bingpreview|yandex|duckduck|pingdom|uptime|monitor|python|curl|wget|scrapy|axios|node-fetch|go-http|java\/|okhttp|libwww|httpclient|phantom|selenium|puppeteer/i;
+const SRC_OK = /^[a-z0-9._:-]{1,40}$/i, DEV_OK = ['mobile', 'desktop'];
+let ensured = null;   // tables for traffic sources and excluded players are created on first use, so no manual migration is needed
+const ensureAnalytics = env => ensured || (ensured = env.DB.batch([
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS acq (pid TEXT PRIMARY KEY, src TEXT NOT NULL, camp TEXT NOT NULL DEFAULT \'\', first_day TEXT NOT NULL)'),
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS excluded (pid TEXT PRIMARY KEY, created_at INTEGER NOT NULL)')
+]).catch(e => { ensured = null; throw e; }));
 async function postEvent(env, b, request, t, reply) {
   const day = new Date(t).toISOString().slice(0, 10);
+  await ensureAnalytics(env);
+  if (BOT_UA.test(request.headers.get('user-agent') || '') || !(request.headers.get('user-agent') || '')) { await bump(env, day, 'bot').run(); return reply({ ok: true }); }   // counted, never treated as players
+  const src = SRC_OK.test(b.src || '') ? String(b.src).toLowerCase() : '', camp = SRC_OK.test(b.camp || '') ? String(b.camp).toLowerCase() : '';
   if (b.e === 'visit') {
     const cc = String(request.headers.get('cf-ipcountry') || '').toUpperCase();
-    await env.DB.batch([bump(env, day, 'visit'), ...(/^[A-Z]{2}$/.test(cc) ? [bump(env, day, 'c:' + cc)] : [])]);   // aggregate only: no IP, no player id
+    await env.DB.batch([bump(env, day, 'visit'), bump(env, day, 's:' + (src || 'direct')), bump(env, day, b.ret ? 'vr' : 'vn'),
+      ...(camp ? [bump(env, day, 'm:' + camp)] : []), ...(DEV_OK.includes(b.dev) ? [bump(env, day, 'd:' + b.dev)] : []), ...(/^[A-Z]{2}$/.test(cc) ? [bump(env, day, 'c:' + cc)] : [])]);   // aggregate only: no IP, no player id
     return reply({ ok: true });
   }
   if (!PID.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !MODES.includes(b.mode))) return reply({ error: 'invalid' }, 400);
+  if (await env.DB.prepare('SELECT 1 FROM excluded WHERE pid = ?').bind(b.pid).first()) return reply({ ok: true, excluded: true });   // the founder's own devices
   const daily = b.mode === 'daily' ? 1 : 0, f = { started: b.e === 'start' || b.e === 'finish' ? 1 : 0, finished: b.e === 'finish' ? 1 : 0, daily_started: daily && b.e !== 'share' ? 1 : 0, daily_won: daily && b.e === 'finish' ? 1 : 0, shared: b.e === 'share' ? 1 : 0 };
-  await env.DB.prepare('INSERT INTO activity (day, pid, started, finished, daily_started, daily_won, shared) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(day, pid) DO UPDATE SET started = MAX(started, excluded.started), finished = MAX(finished, excluded.finished), daily_started = MAX(daily_started, excluded.daily_started), daily_won = MAX(daily_won, excluded.daily_won), shared = MAX(shared, excluded.shared)')
-    .bind(day, b.pid, f.started, f.finished, f.daily_started, f.daily_won, f.shared).run();
+  await env.DB.batch([
+    env.DB.prepare('INSERT OR IGNORE INTO acq (pid, src, camp, first_day) VALUES (?, ?, ?, ?)').bind(b.pid, src || 'direct', camp, day),
+    env.DB.prepare('INSERT INTO activity (day, pid, started, finished, daily_started, daily_won, shared) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(day, pid) DO UPDATE SET started = MAX(started, excluded.started), finished = MAX(finished, excluded.finished), daily_started = MAX(daily_started, excluded.daily_started), daily_won = MAX(daily_won, excluded.daily_won), shared = MAX(shared, excluded.shared)')
+      .bind(day, b.pid, f.started, f.finished, f.daily_started, f.daily_won, f.shared)]);
   return reply({ ok: true });
+}
+// Founder only: stop counting a player id (their own devices) and wipe what was already counted for it.
+async function postExclude(env, b, request, reply) {
+  if (!isAdmin(env, request)) return reply({ error: 'unauthorised' }, 401);
+  if (!PID.test(b.pid)) return reply({ error: 'invalid' }, 400);
+  await ensureAnalytics(env);
+  await env.DB.batch(b.on === false ? [env.DB.prepare('DELETE FROM excluded WHERE pid = ?').bind(b.pid)] : [env.DB.prepare('INSERT OR IGNORE INTO excluded (pid, created_at) VALUES (?, ?)').bind(b.pid, Date.now()), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM acq WHERE pid = ?').bind(b.pid)]);
+  return reply({ ok: true, excluded: b.on !== false });
 }
 async function adminStats(env, request, q, t, reply) {
   if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
   if (!safeEqual((request.headers.get('authorization') || '').replace(/^Bearer /, ''), env.ADMIN_KEY)) return reply({ error: 'unauthorised' }, 401);
   const today = new Date(t).toISOString().slice(0, 10), days = Math.max(1, Math.min(120, parseInt(q.get('days'), 10) || 30));
   const since = new Date(Date.parse(today + 'T00:00:00Z') - (days + 40) * 864e5).toISOString().slice(0, 10);
+  await ensureAnalytics(env);
   const all = async (sql, ...a) => (await env.DB.prepare(sql).bind(...a).all()).results;
-  const [activity, firstRows, counters, scores, orders, reports] = await Promise.all([
+  const [activity, firstRows, counters, scores, orders, reports, acq] = await Promise.all([
     all('SELECT day, pid, started, finished, daily_started, daily_won, shared FROM activity WHERE day >= ?', since),
     all('SELECT pid, MIN(day) AS first FROM activity GROUP BY pid'),
     all('SELECT day, k, n FROM counters WHERE day >= ?', since),
     all('SELECT day, clicks, secs FROM scores WHERE day >= ?', since),
     all('SELECT created_at FROM orders WHERE created_at >= ?', Date.parse(since + 'T00:00:00Z')),
-    all('SELECT created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 200')
+    all('SELECT created_at, day, mode, from_title, to_title, reason, note FROM reports ORDER BY id DESC LIMIT 200'),
+    all('SELECT pid, src, camp, first_day FROM acq')
   ]);
-  return reply(computeStats({ today, days, activity, firsts: new Map(firstRows.map(r => [r.pid, r.first])), counters, scores, orders, reports }));
+  return reply(computeStats({ today, days, activity, firsts: new Map(firstRows.map(r => [r.pid, r.first])), counters, scores, orders, reports, acq }));
 }
 
 // ---- hand-picked daily puzzles -------------------------------------------------------------------------------------

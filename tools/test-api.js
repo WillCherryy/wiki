@@ -62,13 +62,23 @@ async function scenario(call, label) {
   ok(await ev({ e: 'visit' }, { 'cf-ipcountry': 'GB' }), 'visit event'); ok(await ev({ e: 'visit' }, { 'cf-ipcountry': 'US' }), 'visit event 2');
   ok(await ev({ e: 'start', pid: A, mode: 'daily' }), 'start A'); ok(await ev({ e: 'finish', pid: A, mode: 'daily' }), 'finish A'); ok(await ev({ e: 'share', pid: A }), 'share A'); ok(await ev({ e: 'start', pid: B, mode: 'practice' }), 'start B'); ok(await ev({ e: 'start', pid: A, mode: 'daily' }), 'repeat start is harmless');
   for (const bad of [{ e: 'nope', pid: A }, { e: 'start', pid: 'x!' }, { e: 'start', pid: A, mode: 'x' }]) assert.strictEqual((await ev(bad)).status, 400, `${label}: event rejects ${JSON.stringify(bad)}`);
+  // sources, bots and the founder's own devices
+  ok(await ev({ e: 'visit', src: 'instagram', camp: 'poster-test', dev: 'mobile', ret: 0 }), 'visit with a source');
+  ok(await ev({ e: 'visit' }, { 'user-agent': 'Googlebot/2.1' }), 'bot visit is accepted but not counted as a player');
+  const SRCP = 'srcplayer01', OWN = 'ownerpid01';
+  ok(await ev({ e: 'start', pid: SRCP, mode: 'practice', src: 'tiktok' }), 'start with a source'); ok(await ev({ e: 'start', pid: OWN, mode: 'practice', src: 'direct' }), 'start by the founder');
+  assert.strictEqual((await call('POST', '/api/admin/exclude', { pid: OWN })).status, 401, `${label}: excluding needs the admin key`);
+  ok(await call('POST', '/api/admin/exclude', { pid: OWN }, { authorization: 'Bearer adminkey' }), 'exclude the founder pid'); ok(await ev({ e: 'start', pid: OWN, mode: 'practice' }), 'founder events are ignored from now on');
+  const st2 = (await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body, bySrc = Object.fromEntries(st2.sources.map(x => [x.src, x]));
+  assert.ok(bySrc.instagram && bySrc.instagram.visits === 1, `${label}: instagram visit counted`); assert.ok(bySrc.tiktok && bySrc.tiktok.newPlayers === 1 && bySrc.tiktok.started === 1, `${label}: tiktok player attributed`);
+  assert.strictEqual(st2.mix.bots, 1, `${label}: bot counted separately`); assert.strictEqual(st2.kpis.playersToday, 3, `${label}: the founder is not counted as a player`); assert.deepStrictEqual(st2.campaigns, [{ name: 'poster-test', visits: 1 }], `${label}: campaign counted`);
   assert.strictEqual((await call('GET', '/api/admin/stats')).status, 401, `${label}: stats need the admin key`);
   const st = (await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body;
-  assert.deepStrictEqual([st.kpis.playersToday, st.kpis.newToday, st.kpis.finishedToday, st.kpis.sharedToday], [2, 2, 1, 1], `${label}: stats today`);
-  assert.deepStrictEqual(st.funnel.map(f => f[1]), [2, 2, 1, 1], `${label}: funnel`);
+  assert.deepStrictEqual([st.kpis.playersToday, st.kpis.newToday, st.kpis.finishedToday, st.kpis.sharedToday], [3, 3, 1, 1], `${label}: stats today`);
+  assert.deepStrictEqual(st.funnel.map(f => f[1]), [3, 3, 1, 1], `${label}: funnel`);
   assert.deepStrictEqual([st.puzzles[0].started, st.puzzles[0].won, st.puzzles[0].winRate], [1, 1, 100], `${label}: daily puzzle health`);
   assert.deepStrictEqual(st.countries.map(c => [c.code, c.n]).sort(), [['GB', 1], ['US', 1]], `${label}: countries are aggregate counts`);
-  assert.strictEqual(st.series[st.series.length - 1].visits, 2, `${label}: visits`);
+  assert.strictEqual(st.series[st.series.length - 1].visits, 3, `${label}: visits`);
   // hand-picked daily puzzles (admin) and the public lookup
   const adm = { authorization: 'Bearer adminkey' }, pz = { day: shiftDay(1), from: 'Tour de France', to: 'India', route: ['Tour de France', 'France', 'British Empire', 'India'], alts: [['Tour de France', 'Cycling', 'Colonialism', 'India']] };
   assert.strictEqual((await call('POST', '/api/admin/daily', pz)).status, 401, `${label}: setting a puzzle needs the admin key`);
@@ -85,14 +95,14 @@ async function scenario(call, label) {
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');
   assert.deepStrictEqual((await call('GET', `/api/leaderboard?mode=day&day=${today}`)).body.map(r => r.name), ['Bob', 'Carol'], `${label}: board after delete`);
   assert.strictEqual((await call('GET', '/api/league?code=FRIEND')).body.members, 1, `${label}: league after delete`);
-  assert.strictEqual((await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body.kpis.playersToday, 1, `${label}: delete removes the player's activity`);
+  assert.strictEqual((await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body.kpis.playersToday, 2, `${label}: delete removes the player's activity`);
   assert.strictEqual((await call('OPTIONS', '/api/score')).status, 204, `${label}: CORS preflight`);
 }
 
 async function viaWorker() {
   const worker = (await import(path.join(__dirname, '..', 'worker', 'index.js'))).default, env = makeEnv({ ADMIN_KEY: 'adminkey' });
   await scenario(async (method, p, body, headers = {}) => {
-    const r = await worker.fetch(new Request('http://api.test' + p, { method, headers: { 'content-type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined }), env);
+    const r = await worker.fetch(new Request('http://api.test' + p, { method, headers: { 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (test browser)', ...headers }, body: body ? JSON.stringify(body) : undefined }), env);
     return { status: r.status, body: r.status === 204 ? null : await r.json() };
   }, 'worker');
 }
@@ -103,7 +113,7 @@ async function viaServer() {
   await new Promise(r => setTimeout(r, 700));
   try {
     await scenario((method, p, body, headers = {}) => new Promise((resolve, reject) => {
-      const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: { 'content-type': 'application/json', ...headers } }, res => {
+      const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: { 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0 (test browser)', ...headers } }, res => {
         let d = ''; res.on('data', c => d += c); res.on('end', () => resolve({ status: res.statusCode, body: d ? JSON.parse(d) : null }));
       });
       req.on('error', reject); if (body) req.write(JSON.stringify(body)); req.end();

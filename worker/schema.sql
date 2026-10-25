@@ -84,3 +84,7 @@ CREATE TABLE IF NOT EXISTS daily_override (
   alts TEXT NOT NULL DEFAULT '[]',
   created_at INTEGER NOT NULL
 );
+
+-- Where players come from (first touch: referrer or ?utm_source / ?ref) and the founder's own devices (ignored). Created automatically by the Worker too.
+CREATE TABLE IF NOT EXISTS acq (pid TEXT PRIMARY KEY, src TEXT NOT NULL, camp TEXT NOT NULL DEFAULT '', first_day TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS excluded (pid TEXT PRIMARY KEY, created_at INTEGER NOT NULL);

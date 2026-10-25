@@ -18,6 +18,7 @@ function save() {
 let stats = null; import('./worker/stats.js').then(m => { stats = m; });
 let puzzleCheck = null; import('./worker/puzzle.js').then(m => { puzzleCheck = m; });
 const utcDay = () => new Date().toISOString().slice(0, 10);
+const BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|bingpreview|yandex|duckduck|pingdom|uptime|monitor|python|curl|wget|scrapy|axios|node-fetch|go-http|java\/|okhttp|libwww|httpclient|phantom|selenium|puppeteer/i, SRC_OK = /^[a-z0-9._:-]{1,40}$/i;
 const bumpC = (day, k) => { db.counters = db.counters || {}; const key = day + '|' + k; db.counters[key] = (db.counters[key] || 0) + 1; };
 const hits = new Map();
 function limited(ip) {
@@ -162,15 +163,28 @@ const server = http.createServer((req, res) => {
     if (!stats) return json(res, 503, { error: 'starting' });
     const days = Math.max(1, Math.min(120, parseInt(q.get('days'), 10) || 30)), act = Object.values(db.activity || {}), firsts = new Map();
     for (const r of act) if (!firsts.has(r.pid) || r.day < firsts.get(r.pid)) firsts.set(r.pid, r.day);
-    return json(res, 200, stats.computeStats({ today: utcDay(), days, activity: act, firsts, counters: Object.entries(db.counters || {}).map(([k, n]) => { const [day, ...rest] = k.split('|'); return { day, k: rest.join('|'), n }; }), scores: Object.values(db.scores), orders: [], reports: (db.reports || []).slice().reverse() }));
+    return json(res, 200, stats.computeStats({ today: utcDay(), days, activity: act, firsts, acq: Object.entries(db.acq || {}).map(([pid, a]) => ({ pid, ...a })), counters: Object.entries(db.counters || {}).map(([k, n]) => { const [day, ...rest] = k.split('|'); return { day, k: rest.join('|'), n }; }), scores: Object.values(db.scores), orders: [], reports: (db.reports || []).slice().reverse() }));
+  }
+  if (url.pathname === '/api/admin/exclude' && req.method === 'POST') {
+    const key = process.env.ADMIN_KEY; if (!key || (req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });
+    return readBody(req, b => {
+      if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' });
+      db.excluded = db.excluded || {}; db.acq = db.acq || {};
+      if (b.on === false) delete db.excluded[b.pid]; else { db.excluded[b.pid] = Date.now(); delete db.acq[b.pid]; for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k]; }
+      save(); json(res, 200, { ok: true, excluded: b.on !== false });
+    });
   }
   if (url.pathname === '/api/event' && req.method === 'POST') {
     if (limited(req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
     return readBody(req, b => {
       if (!b) return json(res, 400, { error: 'invalid' });
       const day = utcDay();
-      if (b.e === 'visit') { bumpC(day, 'visit'); const cc = String(req.headers['cf-ipcountry'] || '').toUpperCase(); if (/^[A-Z]{2}$/.test(cc)) bumpC(day, 'c:' + cc); save(); return json(res, 200, { ok: true }); }
+      const ua = req.headers['user-agent'] || '', src = SRC_OK.test(b.src || '') ? String(b.src).toLowerCase() : '', camp = SRC_OK.test(b.camp || '') ? String(b.camp).toLowerCase() : '';
+      if (BOT_UA.test(ua) || !ua) { bumpC(day, 'bot'); save(); return json(res, 200, { ok: true }); }
+      if (b.e === 'visit') { bumpC(day, 'visit'); bumpC(day, 's:' + (src || 'direct')); bumpC(day, b.ret ? 'vr' : 'vn'); if (camp) bumpC(day, 'm:' + camp); if (['mobile', 'desktop'].includes(b.dev)) bumpC(day, 'd:' + b.dev); const cc = String(req.headers['cf-ipcountry'] || '').toUpperCase(); if (/^[A-Z]{2}$/.test(cc)) bumpC(day, 'c:' + cc); save(); return json(res, 200, { ok: true }); }
       if (!/^[a-z0-9]{6,16}$/.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !['daily', 'practice', 'pack', 'challenge', 'live'].includes(b.mode))) return json(res, 400, { error: 'invalid' });
+      if ((db.excluded || {})[b.pid]) return json(res, 200, { ok: true, excluded: true });
+      db.acq = db.acq || {}; if (!db.acq[b.pid]) db.acq[b.pid] = { src: src || 'direct', camp, first_day: day };
       db.activity = db.activity || {}; const key = day + ':' + b.pid, r = db.activity[key] || (db.activity[key] = { day, pid: b.pid, started: 0, finished: 0, daily_started: 0, daily_won: 0, shared: 0 }), daily = b.mode === 'daily';
       if (b.e === 'start' || b.e === 'finish') r.started = 1; if (b.e === 'finish') r.finished = 1; if (daily && b.e !== 'share') r.daily_started = 1; if (daily && b.e === 'finish') r.daily_won = 1; if (b.e === 'share') r.shared = 1;
       save(); json(res, 200, { ok: true });
@@ -204,7 +218,7 @@ const server = http.createServer((req, res) => {
     return readBody(req, b => {
       if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' });
       for (const k of Object.keys(db.scores)) if (db.scores[k].pid === b.pid) delete db.scores[k];
-      delete db.players[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid); for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k];
+      delete db.players[b.pid]; if (db.acq) delete db.acq[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid); for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k];
       for (const L of Object.values(db.leagues)) L.members = L.members.filter(m => m !== b.pid);
       save(); json(res, 200, { ok: true });
     });

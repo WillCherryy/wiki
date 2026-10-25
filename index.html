@@ -621,12 +621,34 @@ function showResult() {
 const API_BASE = ((window.WIKIIO && WIKIIO.api) || '').replace(/\/$/, '');
 const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
 /* anonymous usage counts: one flag per player per day, no names or IPs. Players can switch it off in Settings. */
+/* ---- anonymous analytics: where visitors come from, never who they are. The founder's own devices and bots send nothing. */
+const Traffic = (() => {
+  const q = new URLSearchParams(location.search), ua = navigator.userAgent || '', LSK = { owner: 'scorcher:owner', acq: 'scorcher:acq' };
+  const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } }, lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
+  if (q.has('owner')) { lsSet(LSK.owner, q.get('owner') === '0' ? null : '1'); q.delete('owner'); try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch {} }
+  const owner = lsGet(LSK.owner) === '1', bot = !!navigator.webdriver || /bot|crawl|spider|headless|lighthouse|pagespeed|preview|facebookexternalhit|slurp|yandex|duckduck|pingdom|uptime|monitor|python|curl|wget|scrapy|axios|node-fetch|go-http|java\/|okhttp|phantom|selenium|puppeteer/i.test(ua);
+  const clean = v => String(v || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 32), ALIAS = { ig: 'instagram', insta: 'instagram', li: 'linkedin', tt: 'tiktok', yt: 'youtube', fb: 'facebook', twitter: 'x', hn: 'hackernews', gg: 'google' };
+  const HOSTS = [[/instagram\.com$/, 'instagram'], [/(tiktok|musical\.ly)/, 'tiktok'], [/(linkedin\.com|lnkd\.in)$/, 'linkedin'], [/(reddit\.com|redd\.it)$/, 'reddit'], [/(^t\.co$|twitter\.com$|^x\.com$)/, 'x'], [/(facebook\.com|fb\.com|fb\.me|messenger\.com)$/, 'facebook'], [/(youtube\.com|youtu\.be)$/, 'youtube'], [/google\./, 'google'], [/bing\.com$/, 'bing'], [/duckduckgo\.com$/, 'duckduckgo'], [/ycombinator\.com$/, 'hackernews'], [/producthunt\.com$/, 'producthunt'], [/wikipedia\.org$/, 'wikipedia'], [/(whatsapp\.com|wa\.me)$/, 'whatsapp'], [/(discord\.com|discord\.gg)$/, 'discord'], [/(t\.me|telegram\.org)$/, 'telegram'], [/pinterest\./, 'pinterest']];
+  function classify() {   // ?utm_source / ?ref wins, then the referrer, then the in-app browser, otherwise direct
+    const raw = new URLSearchParams(location.search); let src = clean(raw.get('utm_source') || raw.get('src') || raw.get('ref')), camp = clean(raw.get('utm_campaign') || raw.get('campaign'));
+    if (!src) {
+      let host = ''; try { host = new URL(document.referrer).hostname.replace(/^(www|m|l|lm|out|mobile)\./, ''); } catch {}
+      if (host && (host === location.hostname.replace(/^www\./, '') || host.endsWith('.' + location.hostname.replace(/^www\./, '')))) host = '';
+      const m = host && HOSTS.find(h => h[0].test(host)); src = m ? m[1] : host ? 'ref:' + clean(host).slice(0, 30) : /Instagram/i.test(ua) ? 'instagram' : /musical_ly|BytedanceWebview|TikTok/i.test(ua) ? 'tiktok' : /LinkedInApp/i.test(ua) ? 'linkedin' : /FBAN|FBAV/i.test(ua) ? 'facebook' : 'direct';
+    }
+    return { src: ALIAS[src] || src, camp };
+  }
+  const now = classify(); let acq = null; try { acq = JSON.parse(lsGet(LSK.acq)); } catch {}
+  if (!acq || !acq.src) { const existing = (typeof P !== 'undefined') && (P.played || P.xp > 0 || Object.keys(P.days || {}).length); acq = existing ? { src: 'earlier', camp: '' } : now; lsSet(LSK.acq, JSON.stringify(acq)); }
+  const dev = matchMedia('(max-width:759px)').matches || /Mobi|Android|iPhone|iPad/i.test(ua) ? 'mobile' : 'desktop';
+  return { owner, bot, now, acq, dev, off: owner || bot };
+})();
 const Ping = {
-  send(o) { if (P.stats === false) return; try { fetch(API_BASE + '/api/event', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(o), keepalive: true }).catch(() => {}); } catch {} },
-  visit() { try { if (sessionStorage.getItem('warmer:v')) return; sessionStorage.setItem('warmer:v', '1'); } catch {} this.send({ e: 'visit' }); },
-  start(mode) { this.send({ e: 'start', pid: P.pid, mode }); },
-  finish(mode) { this.send({ e: 'finish', pid: P.pid, mode }); },
-  share() { this.send({ e: 'share', pid: P.pid }); }
+  send(o) { if (P.stats === false || Traffic.off) return; try { fetch(API_BASE + '/api/event', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(o), keepalive: true }).catch(() => {}); } catch {} },
+  visit() { try { if (sessionStorage.getItem('warmer:v')) return; sessionStorage.setItem('warmer:v', '1'); } catch {} this.send({ e: 'visit', src: Traffic.now.src, camp: Traffic.now.camp, dev: Traffic.dev, ret: Traffic.acq.src === 'earlier' || P.played ? 1 : (Object.keys(P.days || {}).length ? 1 : 0) }); },
+  start(mode) { this.send({ e: 'start', pid: P.pid, mode, src: Traffic.acq.src, camp: Traffic.acq.camp }); },
+  finish(mode) { this.send({ e: 'finish', pid: P.pid, mode, src: Traffic.acq.src, camp: Traffic.acq.camp }); },
+  share() { this.send({ e: 'share', pid: P.pid, src: Traffic.acq.src, camp: Traffic.acq.camp }); }
 };
 const rankDot = xp => { const r = RANKS[rankOf(xp || 0)]; return `<i class="rd" style="background:${r.c}" title="${r.n}"></i>`; };
 async function fetchBoard(mode, league, purist) {
