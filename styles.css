@@ -565,3 +565,19 @@ html[data-links="plain"] .stu-sample a { border-bottom: 1px dotted color-mix(in 
 .tile.pk em { font-style: normal; color: hsl(var(--ph, 200) 65% 46%); } .stars3 { color: #e8a317; letter-spacing: 1px; } .stars3 i { font-style: normal; color: var(--rule); }
 @media (max-width: 380px) { .pkcards { grid-template-columns: 1fr; } }
 .tile.pk .badge { display: block; margin: 0 0 6px; }
+
+/* ---- supporter-only themes (they change the whole palette, light or dark) */
+:root[data-skin="sunset"] { --paper: #2a1a2e; --sheet: #38233b; --ink: #fde9d8; --ink-2: #e8c6b4; --mute: #b58f9a; --rule: #54304f; --rule-2: #44263f; --accent: #ff7a59; --accent-ink: #ffa88f; --accent-soft: rgba(255, 122, 89, .16); }
+:root[data-skin="ocean"] { --paper: #0c2233; --sheet: #123149; --ink: #e6f4fb; --ink-2: #b8d6e6; --mute: #7fa5bb; --rule: #1f4560; --rule-2: #173a52; --accent: #2dd4bf; --accent-ink: #6ee7d6; --accent-soft: rgba(45, 212, 191, .15); }
+:root[data-skin="sakura"] { --paper: #fbeff1; --sheet: #fff8f9; --ink: #3a2229; --ink-2: #6b4650; --mute: #9a7680; --rule: #ecd0d6; --rule-2: #f4e1e5; --accent: #d6457a; --accent-ink: #a92f5c; --accent-soft: rgba(214, 69, 122, .1); }
+:root[data-skin="terminal"] { --paper: #07120a; --sheet: #0b1a0f; --ink: #b9f5c4; --ink-2: #8fd69d; --mute: #5f9a6b; --rule: #164024; --rule-2: #0f2d19; --accent: #39ff88; --accent-ink: #7dffb0; --accent-soft: rgba(57, 255, 136, .14); --serif: ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace; --display: ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace; --sans: ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace; }
+:root[data-skin="royal"] { --paper: #1b1433; --sheet: #251c45; --ink: #f3ecff; --ink-2: #cfc2ee; --mute: #9a8cc4; --rule: #3b2f68; --rule-2: #2e2454; --accent: #f2c14e; --accent-ink: #f7d682; --accent-soft: rgba(242, 193, 78, .15); }
+:root[data-skin="blueprint"] { --paper: #0b3d91; --sheet: #0f4aa8; --ink: #eaf3ff; --ink-2: #c3d9fb; --mute: #8db3ec; --rule: #2a63bf; --rule-2: #1f55ad; --accent: #ffe14d; --accent-ink: #fff0a0; --accent-soft: rgba(255, 225, 77, .16); --grain: 0; }
+:root[data-skin="blueprint"] body { background-image: linear-gradient(rgba(255, 255, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .07) 1px, transparent 1px); background-size: 28px 28px; background-attachment: fixed; }
+:root[data-skin="terminal"] .article { text-shadow: 0 0 6px rgba(57, 255, 136, .25); }
+/* ---- route markers: the shape of the dots on your trail and in the routes card */
+html[data-dots="ring"] .rl .d, html[data-dots="ring"] .step::before { background: var(--paper) !important; border: 3px solid var(--c, var(--sc, var(--temp))); box-sizing: border-box; }
+html[data-dots="diamond"] .rl .d, html[data-dots="diamond"] .step::before { border-radius: 2px; transform: rotate(45deg) scale(.82); }
+html[data-dots="hex"] .rl .d, html[data-dots="hex"] .step::before { border-radius: 0; clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); box-shadow: none; }
+html[data-dots="star"] .rl .d, html[data-dots="star"] .step::before { border-radius: 0; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); box-shadow: none; transform: scale(1.25); }
+html[data-dots="plus"] .rl .d, html[data-dots="plus"] .step::before { border-radius: 0; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); box-shadow: none; }

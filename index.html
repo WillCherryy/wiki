@@ -145,7 +145,7 @@ function loadP() {
   let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
-let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {};
+let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic' }, P.cos || {});
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
@@ -807,7 +807,7 @@ async function refreshEntitlement(announce) {
   } catch { if (announce) toast('Could not check right now. Try again shortly.'); return !!P.supporter; }
 }
 function openSupport() {
-  const perks = [['Exclusive cosmetics', 'Comet and Ink trails, the Noir theme and Candy confetti'], ['Free, unlimited rewinds', Ads.enabled() ? 'No video to watch, as many as you like' : 'As many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
+  const perks = [['Exclusive cosmetics', 'Six premium themes (Sunset, Deep ocean, Sakura, Terminal, Royal, Blueprint), seven trails, four confetti styles and three marker shapes'], ['Free, unlimited rewinds', Ads.enabled() ? 'No video to watch, as many as you like' : 'As many as you like'], ['HD replay videos', '1080p exports without the watermark'], ['Streak shield', 'Miss one day a month without losing your streak']];
   const live = !!(CFG.checkoutUrl);
   if (P.supporter) { openModal(`<h2>Thank you ◆</h2><p>You are a Scorcher supporter. Your pack is tied to this Player ID, so it moves with your backup code.</p><div class="menu">${perks.map(x => `<div class="supp-perk"><b>${x[0]}</b><small>${x[1]}</small></div>`).join('')}</div>`); return; }
   openModal(`<h2>Support Scorcher</h2><p>One payment, no subscription, no account. It keeps the daily puzzle free.</p>
@@ -841,14 +841,24 @@ async function showTarget() {
 }
 
 /* ------------------------------------------------------------------- confetti */
-const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'], candy: ['#ffb3d9', '#b3e0ff', '#fff2b3', '#c8f7c5', '#e0c3ff'] };
+const CONF = { classic: ['#d63a1f', '#16130f', '#ee9a54', '#2a4f8a', '#d8c8a8', '#ff6a45'], pixel: ['#ff004d', '#ffec27', '#00e436', '#29adff', '#ff77a8'], gold: ['#fff7d6', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'], candy: ['#ffb3d9', '#b3e0ff', '#fff2b3', '#c8f7c5', '#e0c3ff'], stars: ['#fff7d6', '#fde68a', '#fbbf24', '#ffffff', '#f59e0b'], petals: ['#fbcfe8', '#f9a8d4', '#f472b6', '#fff1f2', '#fda4af'], coins: ['#fde68a', '#f59e0b', '#d97706', '#fef3c7'] };
+const CONF_SHAPE = { pixel: 'sq', stars: 'star', petals: 'petal', coins: 'coin' };
+function confPiece(x, q, shape) {
+  x.save(); x.translate(q.x, q.y); x.rotate(q.r); x.fillStyle = q.c;
+  if (shape === 'sq') x.fillRect(-5, -5, 10, 10);
+  else if (shape === 'star') { x.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 - Math.PI / 2, rr = (k % 2 ? .45 : 1) * q.s * .95; k ? x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : x.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fill(); }
+  else if (shape === 'petal') { x.beginPath(); x.ellipse(0, 0, q.s * .85, q.s * .42, 0, 0, 7); x.fill(); }
+  else if (shape === 'coin') { x.beginPath(); x.ellipse(0, 0, q.s * .6, q.s * .6 * Math.abs(Math.cos(q.r * 2)) + 1, 0, 0, 7); x.fill(); x.strokeStyle = 'rgba(120,60,0,.55)'; x.lineWidth = 1.5; x.stroke(); }
+  else x.fillRect(-q.s / 2, -q.s / 3, q.s, q.s * .6);
+  x.restore();
+}
 function confetti(id) {
   const c = $('#fx'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-    const cid = id || P.cos.confetti, cols = CONF[cid] || CONF.classic, sq = cid === 'pixel';
+    const cid = id || P.cos.confetti, cols = CONF[cid] || CONF.classic, shape = CONF_SHAPE[cid];
   const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .35, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 3, s: 5 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] }));
   let f = 0; (function loop() {
     x.clearRect(0, 0, c.width, c.height);
-    ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; if (sq) x.fillRect(-5, -5, 10, 10); else x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore(); });
+    ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr; confPiece(x, p, shape); });
     if (++f < 150) requestAnimationFrame(loop); else x.clearRect(0, 0, c.width, c.height);
   })();
 }
@@ -885,7 +895,13 @@ const COS = {
     { id: 'paper', name: 'Newsprint', sw: 'linear-gradient(135deg,#f6f5f1 50%,#cfccc4 50%)', need: { t: 'rank', v: 1 }, label: 'Reach Reader rank' },
     { id: 'midnight', name: 'Midnight', sw: 'linear-gradient(135deg,#090a11 50%,#2a2e48 50%)', need: { t: 'rank', v: 2 }, label: 'Reach Scholar rank' },
     { id: 'noir', name: 'Noir', sw: 'linear-gradient(135deg,#ffffff 50%,#000000 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
-    { id: 'aurora', name: 'Verdigris', sw: 'linear-gradient(135deg,#0f8b7e 50%,#3ed2c0 50%)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' }
+    { id: 'aurora', name: 'Verdigris', sw: 'linear-gradient(135deg,#0f8b7e 50%,#3ed2c0 50%)', need: { t: 'rank', v: 3 }, label: 'Reach Navigator rank' },
+    { id: 'sunset', name: 'Sunset', sw: 'linear-gradient(135deg,#2a1a2e 50%,#ff7a59 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'ocean', name: 'Deep ocean', sw: 'linear-gradient(135deg,#0c2233 50%,#2dd4bf 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'sakura', name: 'Sakura', sw: 'linear-gradient(135deg,#fbeff1 50%,#d6457a 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'terminal', name: 'Terminal', sw: 'linear-gradient(135deg,#07120a 50%,#39ff88 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'royal', name: 'Royal', sw: 'linear-gradient(135deg,#1b1433 50%,#f2c14e 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'blueprint', name: 'Blueprint', sw: 'linear-gradient(135deg,#0b3d91 50%,#ffe14d 50%)', need: { t: 'supporter' }, label: 'Supporter pack' }
   ],
   trail: [
     { id: 'classic', name: 'Warmth', sw: 'linear-gradient(135deg,#2a4f8a,#d8c8a8,#d63a1f)' },
@@ -895,16 +911,32 @@ const COS = {
     { id: 'gilded', name: 'Gilded', sw: 'linear-gradient(135deg,#fde68a,#f59e0b)', need: { t: 'rank', v: 5 }, label: 'Reach Archivist rank' },
     { id: 'frost', name: 'Frost', sw: 'linear-gradient(135deg,#bae6fd,#38bdf8)', need: { t: 'streak', v: 30 }, label: '30-day streak' },
     { id: 'comet', name: 'Comet', sw: 'linear-gradient(135deg,#ec4899,#8b5cf6)', need: { t: 'supporter' }, label: 'Supporter pack' },
-    { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter pack' }
+    { id: 'ink', name: 'Ink', sw: 'linear-gradient(135deg,#9ca3af,#374151)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'prism', name: 'Prism', sw: 'linear-gradient(135deg,#ef4444,#eab308,#22c55e,#3b82f6,#8b5cf6)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'lava', name: 'Lava', sw: 'linear-gradient(135deg,#fde047,#f97316,#b91c1c)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'lagoon', name: 'Lagoon', sw: 'linear-gradient(135deg,#a5f3fc,#0ea5e9,#1e3a8a)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'blossom', name: 'Blossom', sw: 'linear-gradient(135deg,#fbcfe8,#f472b6,#be185d)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'galaxy', name: 'Galaxy', sw: 'linear-gradient(135deg,#38bdf8,#6366f1,#c026d3)', need: { t: 'supporter' }, label: 'Supporter pack' }
   ],
   confetti: [
     { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#d63a1f,#16130f,#ee9a54)' },
     { id: 'pixel', name: 'Pixel burst', sw: 'linear-gradient(135deg,#ff004d,#ffec27,#00e436,#29adff)', need: { t: 'par', v: 3 }, label: '3 solves at or under par' },
     { id: 'gold', name: 'Gold rush', sw: 'linear-gradient(135deg,#fff7d6,#f59e0b)', need: { t: 'rank', v: 4 }, label: 'Reach Cartographer rank' },
-    { id: 'candy', name: 'Candy', sw: 'linear-gradient(135deg,#ffb3d9,#b3e0ff,#fff2b3)', need: { t: 'supporter' }, label: 'Supporter pack' }
+    { id: 'candy', name: 'Candy', sw: 'linear-gradient(135deg,#ffb3d9,#b3e0ff,#fff2b3)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'stars', name: 'Starfall', sw: 'linear-gradient(135deg,#fff7d6,#fbbf24,#ffffff)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'petals', name: 'Petal storm', sw: 'linear-gradient(135deg,#fbcfe8,#f472b6,#fff1f2)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'coins', name: 'Gold coins', sw: 'linear-gradient(135deg,#fde68a,#f59e0b,#b45309)', need: { t: 'supporter' }, label: 'Supporter pack' }
+  ],
+  dots: [
+    { id: 'classic', name: 'Round', sw: 'radial-gradient(circle,#d63a1f 55%,transparent 56%)' },
+    { id: 'ring', name: 'Ring', sw: 'radial-gradient(circle,transparent 38%,#d63a1f 40%,#d63a1f 62%,transparent 64%)', need: { t: 'streak', v: 3 }, label: '3-day streak' },
+    { id: 'diamond', name: 'Diamond', sw: 'linear-gradient(135deg,transparent 22%,#d63a1f 22%,#d63a1f 78%,transparent 78%)', need: { t: 'chal', v: 1 }, label: 'Win a challenge' },
+    { id: 'hex', name: 'Hexagon', sw: 'linear-gradient(#d63a1f,#d63a1f)', clip: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'star', name: 'Star', sw: 'linear-gradient(#e8a317,#e8a317)', clip: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'plus', name: 'Cross', sw: 'linear-gradient(#2a64c4,#2a64c4)', clip: 'polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%)', need: { t: 'supporter' }, label: 'Supporter pack' }
   ]
 };
-const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'] };
+const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'], prism: ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'], lava: ['#fde047', '#f97316', '#b91c1c'], lagoon: ['#a5f3fc', '#0ea5e9', '#1e3a8a'], blossom: ['#fbcfe8', '#f472b6', '#be185d'], galaxy: ['#38bdf8', '#6366f1', '#c026d3'] };
 const CLASSIC_STOPS = ['rgb(42,79,138)', 'rgb(108,143,184)', 'rgb(216,200,168)', 'rgb(238,154,84)', 'rgb(214,58,31)'];
 const tempCss = sg => lerpStops(CLASSIC_STOPS, sg);
 const trailStops = id => TRAILS[id === undefined ? P.cos.trail : id] || CLASSIC_STOPS;
@@ -923,7 +955,7 @@ function checkCos() {
 }
 if (!P.cosSeen.length) { P.cosSeen = allCos().filter(i => isUnlocked(i)).map(i => i.cat + ':' + i.id); saveP(); }
 fetch('build.txt', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(b => { if (b && b.commit) window.BUILD = b; }).catch(() => {});
-const applyCos = () => { document.documentElement.dataset.skin = P.cos.theme; };
+const applyCos = () => { document.documentElement.dataset.skin = P.cos.theme; document.documentElement.dataset.dots = P.cos.dots || 'classic'; };
 function drawTrailPreview(cv, id) {
   const x = cv.getContext('2d'), W = cv.width, H = cv.height, st = trailStops(id); x.clearRect(0, 0, W, H);
   const g = x.createLinearGradient(0, 0, W, 0); st.forEach((c, i) => g.addColorStop(i / (st.length - 1), c));
@@ -938,14 +970,18 @@ function openLocker(tab = 'theme') {
   const restore = () => { cancelAnimationFrame(raf); applyCos(); };
   openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. Tap any style to preview it. ${open}/${total} unlocked. <button class="linkbtn" id="lkStudio">Open the Studio for fonts and colours →</button></p>
     <canvas id="lkCv" width="680" height="190" style="width:100%;border-radius:16px;background:#14110d;display:block"></canvas>
-    <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
+    <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti'], ['dots', 'Markers']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
   const preview = () => {
     const cv = $('#lkCv'), x = cv.getContext('2d'); cancelAnimationFrame(raf); applyCos();
     if (tab === 'trail') drawTrailPreview(cv, sel);
+    else if (tab === 'dots') { x.clearRect(0, 0, cv.width, cv.height); const it = COS.dots.find(i => i.id === sel) || COS.dots[0], names = ['Start', 'Link', 'Link', 'Target'], pts = [[70, 130], [250, 80], [430, 110], [610, 50]], st = CLASSIC_STOPS; x.lineCap = 'round'; x.strokeStyle = 'rgba(255,255,255,.28)'; x.lineWidth = 4; x.beginPath(); pts.forEach((q, k) => k ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); x.stroke();
+      pts.forEach((q, k) => { const col = lerpStops(st, k / 3), r = k === 3 ? 22 : 16; x.save(); x.translate(q[0], q[1]); x.fillStyle = col; x.strokeStyle = col; x.lineWidth = 5; x.beginPath();
+        if (sel === 'ring') { x.arc(0, 0, r - 2.5, 0, 7); x.stroke(); } else if (sel === 'diamond') { x.rotate(Math.PI / 4); x.rect(-r * .75, -r * .75, r * 1.5, r * 1.5); x.fill(); } else if (it.clip) { const pp = it.clip.replace('polygon(', '').replace(')', '').split(',').map(t => t.trim().split(' ').map(v => (parseFloat(v) / 100 - .5) * r * 2)); pp.forEach((v, n) => n ? x.lineTo(v[0], v[1]) : x.moveTo(v[0], v[1])); x.closePath(); x.fill(); } else { x.arc(0, 0, r, 0, 7); x.fill(); } x.restore(); x.fillStyle = 'rgba(255,255,255,.7)'; x.font = '600 12px sans-serif'; x.textAlign = 'center'; x.fillText(names[k], q[0], q[1] + 40); });
+    }
     else if (tab === 'theme') { document.documentElement.dataset.skin = sel; const cs = getComputedStyle(document.documentElement), pap = cs.getPropertyValue('--paper').trim() || '#f3eee4', ink = cs.getPropertyValue('--ink').trim() || '#16130f', acc = cs.getPropertyValue('--accent').trim() || '#d63a1f', mute = cs.getPropertyValue('--mute').trim() || '#7a7265';
       x.clearRect(0, 0, cv.width, cv.height); x.fillStyle = pap; x.fillRect(0, 0, cv.width, cv.height); x.fillStyle = ink; x.font = '600 40px Georgia, serif'; x.fillText('Eiffel Tower', 28, 62); x.fillStyle = acc; x.fillRect(28, 76, 150, 5); x.fillStyle = mute; x.font = '17px sans-serif'; x.fillText('Wrought-iron lattice tower on the Champ de Mars in Paris', 28, 112); x.fillStyle = acc; x.fillText('Gustave Eiffel', 28, 140); x.fillStyle = mute; x.fillText(' · Paris · France', 142, 140); [0, 1, 2, 3, 4].forEach(k => { x.beginPath(); x.arc(520 + k * 28, 150 - k * 12, 5 + k * 2, 0, 7); x.fillStyle = k === 4 ? acc : mute; x.globalAlpha = .35 + k * .16; x.fill(); x.globalAlpha = 1; }); }
-    else { const cols = CONF[sel] || CONF.classic, sq = sel === 'pixel', ps = Array.from({ length: 70 }, () => ({ x: cv.width / 2, y: cv.height * .9, vx: (Math.random() - .5) * 11, vy: -Math.random() * 9 - 4, s: 5 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] })); let f = 0;
-      (function loop() { x.clearRect(0, 0, cv.width, cv.height); ps.forEach(q => { q.vy += .3; q.x += q.vx; q.y += q.vy; q.r += q.vr; x.save(); x.translate(q.x, q.y); x.rotate(q.r); x.fillStyle = q.c; if (sq) x.fillRect(-5, -5, 10, 10); else x.fillRect(-q.s / 2, -q.s / 3, q.s, q.s * .6); x.restore(); }); if (++f < 110) raf = requestAnimationFrame(loop); else { f = 0; ps.forEach(q => { q.x = cv.width / 2; q.y = cv.height * .9; q.vx = (Math.random() - .5) * 11; q.vy = -Math.random() * 9 - 4; }); raf = requestAnimationFrame(loop); } })(); }
+    else { const cols = CONF[sel] || CONF.classic, shape = CONF_SHAPE[sel], ps = Array.from({ length: 70 }, () => ({ x: cv.width / 2, y: cv.height * .9, vx: (Math.random() - .5) * 11, vy: -Math.random() * 9 - 4, s: 5 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] })); let f = 0;
+      (function loop() { x.clearRect(0, 0, cv.width, cv.height); ps.forEach(q => { q.vy += .3; q.x += q.vx; q.y += q.vy; q.r += q.vr; confPiece(x, q, shape); }); if (++f < 110) raf = requestAnimationFrame(loop); else { f = 0; ps.forEach(q => { q.x = cv.width / 2; q.y = cv.height * .9; q.vx = (Math.random() - .5) * 11; q.vy = -Math.random() * 9 - 4; }); raf = requestAnimationFrame(loop); } })(); }
   };
   $('#lkStudio').onclick = () => { restore(); openStudio(); };
   const draw = () => {
