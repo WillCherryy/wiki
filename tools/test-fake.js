@@ -75,9 +75,9 @@ server.listen(0, async () => {
   days.forEach(d => { const e = doc.days[d]; assert.strictEqual(e.route.length - 1, e.par); assert(e.par >= 2 && e.par <= 4); e.route.forEach((x, k) => k && assert(body[e.route[k - 1]].has(x))); });
   const { build } = require('./build-packs');
   const pk = await build([{ id: 't', puzzles: [{ from: names[1], to: names[2] }, { from: names[3], to: names[3] }] }], { maxPar: 4 });
-  assert.strictEqual(pk.t.length, 2); assert.strictEqual(pk.t[1], null);
-  if (pk.t[0]) { assert.strictEqual(pk.t[0].route.length - 1, pk.t[0].par); }
-  console.log('ok: build-packs returned', pk.t.map(x => x ? 'par ' + x.par : 'null').join(', '));
+  assert.strictEqual(pk.t.length, 2); assert.ok(pk.t[1] && pk.t[1].fail === 1 && !pk.t[1].route);
+  if (pk.t[0] && !pk.t[0].fail) { assert.strictEqual(pk.t[0].route.length - 1, pk.t[0].par); }
+  console.log('ok: build-packs returned', pk.t.map(x => x && !x.fail ? 'par ' + x.par : 'unsolved').join(', '));
   console.log('ok: build-puzzles wrote', days.length, 'days:', days.map(d => `${d} par ${doc.days[d].par}`).join(', '));
   server.close();
 });
