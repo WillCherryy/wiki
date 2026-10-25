@@ -71,7 +71,7 @@
           <button class="target" id="targetBtn" title="Show target summary (T)"><span><small id="reachLab">Reach</small><strong id="tName">…</strong></span></button>
           <div class="metric"><b id="mClicks">0</b><span>Clicks</span></div>
           <div class="metric"><b id="mTime">0:00</b><span>Time</span></div>
-          <div class="signal"><div class="lab"><span>Temperature</span><b id="sigLab">Cold</b></div><div class="dotmeter" id="sigDots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+          <div class="signal"><div class="lab"><span>Temperature</span><b id="sigLab">Cold</b></div><div class="hbar" id="sigBar" aria-hidden="true"><i id="sigMark"></i></div><span class="dotmeter" id="sigDots" hidden data-lit="1"></span></div>
         </div>
         <div class="trail trailM" id="trailM"></div>
       </div>
@@ -460,7 +460,7 @@ function updateHud() {
   const s = G.sig;
   setTemp(s);
   $('#mClicks').textContent = clicks();
-  $('#sigDots').dataset.lit = s >= 1 ? 5 : 1 + Math.floor(s * 4.99); $('#sigLab').textContent = sigLabel(s);
+  $('#sigDots').dataset.lit = s >= 1 ? 5 : 1 + Math.floor(s * 4.99); $('#sigMark').style.left = Math.max(0, Math.min(1, s)) * 100 + '%'; $('#sigLab').textContent = sigLabel(s);
   $('#found').classList.toggle('on', s >= 1 && !G.done);
   if (s > .72 && s < 1 && !G.scorched && !G.done) { G.scorched = true; toast("You're scorching!"); }
   const tr = $('#trail');

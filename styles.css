@@ -648,3 +648,41 @@ html[data-dots="plus"] .rl .d, html[data-dots="plus"] .step::before { border-rad
 .pkhead { background: var(--sheet); border: 0; box-shadow: var(--shadow-c); border-radius: var(--rad); }
 .tile.pk { border-left-width: 1px; border-radius: var(--rad); } .tile.pk.done { background: var(--paper); }
 .tile.pk .badge { color: var(--mute); } .tile.pk em, .pkex em { color: var(--accent); }
+
+/* ======================================================================================================
+   Redesign, stage 2: the puzzle screen. Cards with a soft shadow, a heat bar with a marker, a floating dock on phones.
+   ====================================================================================================== */
+.hud { background: var(--sheet); border-radius: var(--rad); box-shadow: var(--shadow-c); padding: 18px 18px 16px; }
+.target { padding-bottom: 14px; }
+.hud-row { gap: 16px 14px; }
+.metric b { font-size: clamp(40px, 3.6vw, 54px); }
+.signal .lab { margin-bottom: 11px; }
+.hbar { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #2a4f8a, #5c8cbe 28%, #d6be8c 52%, #f08c50 76%, #d63a1f); }
+.hbar i { position: absolute; top: 50%; left: 0; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--sheet); border: 3px solid var(--temp); box-shadow: 0 2px 8px rgba(0, 0, 0, .28); transition: left .8s cubic-bezier(.3, 1.3, .4, 1), border-color .8s; }
+.tools { border: 0; background: var(--sheet); border-radius: var(--rad); box-shadow: var(--shadow-c); padding: 4px 16px; }
+.tools > :last-child { border-bottom: 0; }
+.routecard { background: var(--sheet); border-radius: var(--rad); box-shadow: var(--shadow-c); padding: 16px 18px; border: 0; }
+.article { border: 0; border-radius: var(--rad); box-shadow: var(--shadow-c); }
+.found { border-radius: var(--rad-s); }
+@media (min-width: 760px) { .rail { gap: 16px; } }
+@media (max-width: 759px) {
+  .hud { border-radius: 0 0 var(--rad) var(--rad); box-shadow: 0 8px 20px -14px rgba(40, 28, 10, .4); border-bottom: 0; padding-top: 10px; }
+  .signal .hbar { flex: 1; }
+  .tools .chip, .tools .finder { border-radius: var(--rad-s); box-shadow: none; }
+  .tools { padding: 0; background: none; box-shadow: none; }
+  body.ingame .dock { left: 12px; right: 12px; bottom: calc(12px + var(--safe)); padding: 4px; border: 0; border-radius: 16px; background: #1d1b18; box-shadow: 0 12px 30px -8px rgba(0, 0, 0, .55); }
+  body.ingame .dock button { color: #cfc9bd; } body.ingame .dock button:active { background: rgba(255, 255, 255, .1); color: #fff; }
+  body.ingame { padding-bottom: calc(var(--dock-h) + var(--safe) + 34px); }
+  body.ingame .live-pill { bottom: calc(var(--dock-h) + 24px); }
+}
+
+/* ---- stage 3: segmented tabs in every sheet, calmer result and locker cards */
+.tabs { display: flex; gap: 3px; padding: 3px; margin: 14px 0; border: 0; border-radius: var(--rad); background: var(--paper); }
+.tabs button { flex: 1; border: 0; border-bottom: 0; border-radius: var(--rad-s); background: none; padding: 9px 6px; margin: 0; font: 600 11.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); cursor: pointer; }
+.tabs button.on, .tabs button[aria-selected="true"] { background: var(--sheet); color: var(--ink); box-shadow: 0 1px 3px rgba(40, 28, 10, .14); }
+.modal { box-shadow: 0 30px 70px -20px rgba(30, 20, 5, .55); border: 0; }
+.rcard { padding: 16px 18px; margin: 14px 0; }
+.win-top .big { font-family: var(--display); }
+.unlock, .xpbar, .grid3 > div, .vs > div, .namebox input { border-radius: var(--rad-s); }
+.grid3 > div { background: var(--paper); border: 0; padding: 12px 8px; }
+.actions .btn { border-radius: var(--rad-s); }
