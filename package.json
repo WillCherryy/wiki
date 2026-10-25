@@ -10,7 +10,8 @@
     "build:site": "node tools/build-site.js",
     "test": "node tools/test-fake.js && node tools/test-solver.js && node tools/test-api.js && node tools/test-worker.js && node tools/test-stats.js && node tools/test-lobby.js && node tools/test-setpuzzle.js",
     "set-puzzle": "node tools/set-puzzle.js",
-    "stats": "node tools/stats.js"
+    "stats": "node tools/stats.js",
+    "deploy": "node tools/deploy.js"
   },
   "dependencies": {},
   "devDependencies": {

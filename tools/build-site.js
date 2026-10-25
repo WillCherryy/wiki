@@ -11,4 +11,7 @@ for (const f of required) fs.copyFileSync(path.join(root, f), path.join(out, f))
 for (const f of optional) if (fs.existsSync(path.join(root, f))) fs.copyFileSync(path.join(root, f), path.join(out, f));
 fs.cpSync(path.join(root, 'fonts'), path.join(out, 'fonts'), { recursive: true });
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
+// a stamp so you can check what is live: open /build.txt on the site (also shown in Settings)
+let commit = 'unknown'; try { commit = require('child_process').execSync('git rev-parse --short HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch {}
+fs.writeFileSync(path.join(out, 'build.txt'), JSON.stringify({ commit, builtAt: new Date().toISOString() }));
 console.log('dist/ ready:', fs.readdirSync(out).length, 'entries');

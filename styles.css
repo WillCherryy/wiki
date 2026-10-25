@@ -37,7 +37,7 @@
 }
 /* cosmetic themes */
 :root[data-skin="paper"]:not([data-theme="dark"]) { --paper: #ebe9e4; --sheet: #f6f5f1; --rule: #d1cec6; --rule-2: #e3e1db; }
-:root[data-skin="midnight"][data-theme="dark"] { --paper: #090a11; --sheet: #10121c; --rule: #232638; --rule-2: #181a28; --ink: #e9ebf6; --ink-2: #b9bdd2; --mute: #7f849d; }
+:root[data-skin="midnight"] { --paper: #090a11; --sheet: #10121c; --rule: #232638; --rule-2: #181a28; --ink: #e9ebf6; --ink-2: #b9bdd2; --mute: #7f849d; }
 :root[data-skin="noir"]:not([data-theme="dark"]) { --paper: #ffffff; --sheet: #ffffff; --ink: #000000; --ink-2: #222222; --mute: #555555; --rule: #000000; --rule-2: #dddddd; }
 :root[data-skin="noir"][data-theme="dark"] { --paper: #000000; --sheet: #0a0a0a; --ink: #ffffff; --ink-2: #dddddd; --mute: #aaaaaa; --rule: #555555; --rule-2: #222222; }
 :root[data-skin="aurora"]:not([data-theme="dark"]) { --accent: #0f8b7e; --accent-ink: #0b6c62; --accent-soft: rgba(15, 139, 126, .1); }
