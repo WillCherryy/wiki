@@ -207,6 +207,7 @@ async function loadPage(title) {
   const doc = new DOMParser().parseFromString(j.parse.text, 'text/html');
   const root = doc.querySelector('.mw-parser-output') || doc.body;
   WikiClean.clean(root);
+  root.querySelectorAll('img').forEach(i => { i.loading = 'lazy'; i.decoding = 'async'; });
   const text = root.textContent.toLowerCase();
   const out = { title: j.parse.title, html: root.innerHTML, tokens: new Set(text.match(/[a-z]{4,}/g) || []),
     links: new Set([...root.querySelectorAll('a[data-t]')].map(a => norm(a.dataset.t))) };
@@ -433,9 +434,9 @@ function recomputeHeat() {   // the backlink data arrives a moment after the fir
 async function go(...a) { if (G) G.nav = true; try { return await go0(...a); } finally { if (G) G.nav = false; } }
 async function go0(title, initial, resume, kind = 'go') {
   const art = $('#article');
-  if (!initial) { art.classList.add('out'); await sleep(180); }
+  if (!initial) art.classList.add('out');
   let page;
-  try { page = await getPage(title); }
+  try { const pp = getPage(title); if (!initial) await Promise.all([pp, sleep(70)]); page = await pp; }
   catch (e) { art.classList.remove('out'); toast('Could not load that article — check your connection'); if (initial) art.innerHTML = '<div class="loading">Failed to load. <button class="btn ghost" onclick="location.reload()">Retry</button></div>'; return; }
   if (!initial || !resume) G.path.push(page.title);
   if (!initial) G.moves = (G.moves || 0) + 1;
@@ -449,7 +450,7 @@ async function go0(title, initial, resume, kind = 'go') {
   art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
   art.querySelectorAll('a[data-t]').forEach(a => { const n = norm(a.dataset.t); if (n === norm(G.toTitle) || n === norm(G.to)) a.classList.add('goal'); });
   $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1; buildContents();
-  window.scrollTo({ top: 0, behavior: initial ? 'auto' : 'smooth' });
+  window.scrollTo(0, 0);
   updateHud();
   persistCur();
   if (G.mode === 'live' && !win) Live.move(page.title, G.sig, clicks());
@@ -1814,7 +1815,7 @@ $('#fsUp').onclick = () => { P.fs = Math.min(4, P.fs + 1); saveP(); applyFs(); }
 applyFs();
 let hoverT;
 const prefetch = e => { const a = e.target.closest && e.target.closest('a[data-t]'); if (!a) return; clearTimeout(hoverT); hoverT = setTimeout(() => getPage(a.dataset.t).catch(() => {}), 90); };
-$('#article').addEventListener('mouseover', prefetch); $('#article').addEventListener('touchstart', prefetch, { passive: true });
+$('#article').addEventListener('mouseover', prefetch); $('#article').addEventListener('pointerdown', e => { const a = e.target.closest && e.target.closest('a[data-t]'); if (a) getPage(a.dataset.t).catch(() => {}); }, { passive: true }); $('#article').addEventListener('touchstart', prefetch, { passive: true });
 document.addEventListener('keydown', e => {
   if (/INPUT|TEXTAREA/.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || $('#scrim').classList.contains('on')) return;
   const inGame = $('#game').classList.contains('on') && G && !G.done, k = e.key.toLowerCase();

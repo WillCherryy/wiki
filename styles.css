@@ -28,7 +28,6 @@
   --serif: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --grain: .05;
-  transition: --temp .9s cubic-bezier(.2, .7, .2, 1), --heat .9s cubic-bezier(.2, .7, .2, 1);
 }
 :root[data-theme="dark"] {
   --paper: #12100d; --sheet: #1a1713; --ink: #f3eee3; --ink-2: #cbc3b3; --mute: #8f8777;
@@ -473,18 +472,16 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .rcard + .rcard { margin-top: 14px; }
 
 /* ---- the whole page reacts to the heat: an edge glow, a tint across the paper, a warmer rule under the header, a pulse when scorching */
-#heatfx { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: none; opacity: 1;
-  box-shadow: inset 0 0 calc(70px + 150px * var(--heat)) calc(-10px + 24px * var(--heat)) color-mix(in srgb, var(--temp) calc(8% + 46% * var(--heat)), transparent);
-  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--temp) calc(var(--heat) * 11%), transparent), transparent 62%); }
+#heatfx { position: fixed; inset: 0; z-index: 90; pointer-events: none; display: none; contain: strict; will-change: opacity; opacity: calc(.35 + .65 * var(--heat)); transition: opacity .6s;
+  background: radial-gradient(130% 110% at 50% 45%, transparent 52%, color-mix(in srgb, var(--temp) calc(10% + 44% * var(--heat)), transparent) 100%), linear-gradient(180deg, color-mix(in srgb, var(--temp) calc(var(--heat) * 9%), transparent), transparent 40%); }
 body.ingame #heatfx { display: block; }
 html[data-heat="scorching"] #heatfx { animation: heatPulse 1.9s ease-in-out infinite; }
 html[data-heat="sight"] #heatfx { animation: heatPulse 1.05s ease-in-out infinite; }
-@keyframes heatPulse { 0%, 100% { opacity: .62; } 50% { opacity: 1; } }
-body.ingame { background-image: linear-gradient(180deg, color-mix(in srgb, var(--temp) calc(var(--heat) * 7%), transparent), transparent 46%); background-attachment: fixed; }
+@keyframes heatPulse { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
 body.ingame .article a[data-t]:hover { color: var(--temp); text-decoration-color: var(--temp); }
-body.ingame .hud { border-bottom-color: color-mix(in srgb, var(--temp) calc(30% + 50% * var(--heat)), var(--rule)); transition: border-color .9s; }
-html[data-heat="sight"] .article a.goal { animation: goalGlow 1s ease-in-out infinite; }
-@keyframes goalGlow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); } }
+
+html[data-heat="sight"] .article a.goal { outline: 5px solid transparent; animation: goalGlow 1s ease-in-out infinite; }
+@keyframes goalGlow { 0%, 100% { outline-color: transparent; } 50% { outline-color: color-mix(in srgb, var(--accent) 24%, transparent); } }
 @media (prefers-reduced-motion: reduce) { html[data-heat] #heatfx { animation: none; } }
 
 /* ---- results: one calm routes card with small dots (replaces the chart and the big circles) */
@@ -515,7 +512,7 @@ html[data-links="highlight"] .article a[data-t] { border-bottom: 0; background: 
 html[data-links="bold"] .article a[data-t] { border-bottom: 0; font-weight: 700; color: var(--accent-ink); }
 html[data-links="plain"] .article a[data-t] { border-bottom: 1px dotted color-mix(in srgb, var(--ink) 35%, transparent); }
 :root { --heatk: 1; }
-#heatfx { opacity: calc(var(--heatk, 1) * 1); }
+#heatfx { opacity: calc((.35 + .65 * var(--heat)) * var(--heatk, 1)); }
 html[data-calm="1"] #heatfx { animation: none !important; }
 html[data-calm="1"] .article a.goal, html[data-calm="1"] * { animation-duration: 0s !important; }
 .stu-sample { border: 1px solid var(--rule); background: var(--sheet); padding: 14px 18px; margin: 4px 0 12px; }
@@ -686,3 +683,10 @@ html[data-dots="plus"] .rl .d, html[data-dots="plus"] .step::before { border-rad
 .unlock, .xpbar, .grid3 > div, .vs > div, .namebox input { border-radius: var(--rad-s); }
 .grid3 > div { background: var(--paper); border: 0; padding: 12px 8px; }
 .actions .btn { border-radius: var(--rad-s); }
+
+/* ---- snappiness: no blur behind the tab bar or scrim, calmer repaint, instant taps */
+.scrim { backdrop-filter: none; } .tabbar, body:not(.ingame) .tabbar { backdrop-filter: none !important; }
+.article a, button, .kcard, .pkcard, .tile { touch-action: manipulation; }
+.article { contain: layout style; }
+.article.out { transition-duration: .12s; } .article.in { animation-duration: .25s; }
+@media (prefers-reduced-motion: reduce) { #heatfx { transition: none; } }
