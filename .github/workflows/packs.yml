@@ -1,0 +1,39 @@
+name: Build packs
+# Checks every companion-pack puzzle (tools/build-packs.js) against real Wikipedia and keeps the ones that can be solved in four clicks or fewer.
+# Incremental: only pairs that have not been checked yet are computed, so adding puzzles to packs.js is cheap. Run it by hand from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: 'Re-check pairs that failed before (true/false)'
+        default: 'false'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      WIKI_UA: warmer-pack-builder/0.1 (https://github.com/${{ github.repository }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: tools/.cache
+          key: wikicache-packs-${{ github.run_id }}
+          restore-keys: wikicache-
+      - name: Verify packs
+        run: node tools/build-packs.js ${{ github.event.inputs.retry == 'true' && '--retry' || '' }}
+      - name: Commit results
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add packs.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update packs'
+          for i in 1 2 3 4 5 6; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 10; done
+          exit 1

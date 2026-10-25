@@ -39,11 +39,16 @@
 
 <main class="wrap">
   <section id="home">
+    <div class="lede"><span class="eyebrow">A game played inside Wikipedia</span>
+      <p>Start on one real <b>Wikipedia article</b> and reach another using <b>only the links on the page</b>. Fewest clicks wins. A new puzzle every day.</p>
+      <ol class="steps3"><li><i style="background:#2a4f8a"></i>Start on a Wikipedia article</li><li><i style="background:#d6be8c"></i>Click links to travel</li><li><i style="background:#d63a1f"></i>Reach the target in fewer clicks</li></ol></div>
     <div class="plate">
       <div class="plate-meta"><span id="plateDate">Today</span><span id="plateNo"></span></div>
+      <small class="plate-lab">Start on the Wikipedia article</small>
       <h1 class="plate-from" id="fromTitle">&nbsp;</h1>
       <p class="plate-cap" id="fromDesc"></p>
       <div class="plate-route" aria-hidden="true"><i></i><span>to</span><i></i></div>
+      <small class="plate-lab">Reach the Wikipedia article</small>
       <div class="plate-to" id="toTitle" role="heading" aria-level="2">&nbsp;</div>
       <p class="plate-cap" id="toDesc"></p>
       <div class="plate-facts" id="plateFacts"></div>
@@ -140,7 +145,7 @@ function loadP() {
   let p = {}; try { p = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
-let P = loadP();
+let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {};
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
@@ -777,6 +782,7 @@ function openMenu() {
   const items = [
     ['Leaderboards', 'Today · week · all-time', () => openLeaderboard('day')],
     ['Companion packs', `${sv} of ${pt} solved`, openPacks],
+    ['Studio', 'Fonts, colours and layout', () => openStudio()],
     ['Locker', `${open} of ${tot} unlocked`, () => openLocker()],
     ['Leagues', 'Race your friends', () => leagueModal()],
     ['Live races', 'Join a lobby or host one', liveMenu],
@@ -930,7 +936,7 @@ function drawTrailPreview(cv, id) {
 function openLocker(tab = 'theme') {
   const open = allCos().filter(isUnlocked).length, total = allCos().length; let sel = P.cos[tab], raf = 0;
   const restore = () => { cancelAnimationFrame(raf); applyCos(); };
-  openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. Tap any style to preview it${''}. ${open}/${total} unlocked.</p>
+  openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. Tap any style to preview it. ${open}/${total} unlocked. <button class="linkbtn" id="lkStudio">Open the Studio for fonts and colours →</button></p>
     <canvas id="lkCv" width="680" height="190" style="width:100%;border-radius:16px;background:#14110d;display:block"></canvas>
     <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
   const preview = () => {
@@ -941,6 +947,7 @@ function openLocker(tab = 'theme') {
     else { const cols = CONF[sel] || CONF.classic, sq = sel === 'pixel', ps = Array.from({ length: 70 }, () => ({ x: cv.width / 2, y: cv.height * .9, vx: (Math.random() - .5) * 11, vy: -Math.random() * 9 - 4, s: 5 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0] })); let f = 0;
       (function loop() { x.clearRect(0, 0, cv.width, cv.height); ps.forEach(q => { q.vy += .3; q.x += q.vx; q.y += q.vy; q.r += q.vr; x.save(); x.translate(q.x, q.y); x.rotate(q.r); x.fillStyle = q.c; if (sq) x.fillRect(-5, -5, 10, 10); else x.fillRect(-q.s / 2, -q.s / 3, q.s, q.s * .6); x.restore(); }); if (++f < 110) raf = requestAnimationFrame(loop); else { f = 0; ps.forEach(q => { q.x = cv.width / 2; q.y = cv.height * .9; q.vx = (Math.random() - .5) * 11; q.vy = -Math.random() * 9 - 4; }); raf = requestAnimationFrame(loop); } })(); }
   };
+  $('#lkStudio').onclick = () => { restore(); openStudio(); };
   const draw = () => {
     document.querySelectorAll('#lkTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     $('#lkBody').innerHTML = `<div class="lkgrid">${COS[tab].map(i => { const u = isUnlocked(i), on = P.cos[tab] === i.id, pv = sel === i.id; return `<button class="item ${on ? 'on' : ''} ${u ? '' : 'lock'}" ${pv ? 'style="outline:2px solid var(--accent);outline-offset:2px"' : ''} data-id="${i.id}"><div class="sw" style="background:${i.sw}"></div>${esc(i.name)}<small>${on ? 'worn' : u ? 'unlocked' : '🔒 ' + esc(i.label)}</small></button>`; }).join('')}</div>`;
@@ -952,6 +959,84 @@ function openLocker(tab = 'theme') {
   };
   document.querySelectorAll('#lkTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; sel = P.cos[tab]; draw(); preview(); });
   draw(); preview();
+}
+
+/* ----------------------------------------------------------------------- studio: fonts, colours and layout, all optional */
+const FONT_OPTS = [
+  { id: 'garamond', n: 'Garamond', css: "'EB Garamond','Iowan Old Style','Palatino Linotype',Georgia,serif" },
+  { id: 'georgia', n: 'Georgia', css: "Georgia,'Times New Roman',serif" },
+  { id: 'palatino', n: 'Palatino', css: "'Palatino Linotype',Palatino,'Book Antiqua',serif" },
+  { id: 'times', n: 'Times', css: "'Times New Roman',Times,serif" },
+  { id: 'sans', n: 'Instrument', css: "'Instrument Sans',ui-sans-serif,system-ui,sans-serif" },
+  { id: 'system', n: 'System', css: "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" },
+  { id: 'humanist', n: 'Humanist', css: "'Gill Sans','Gill Sans MT',Seravek,Candara,'Trebuchet MS',sans-serif" },
+  { id: 'rounded', n: 'Rounded', css: "ui-rounded,'SF Pro Rounded','Hiragino Maru Gothic ProN',Nunito,'Trebuchet MS',sans-serif" },
+  { id: 'slab', n: 'Slab', css: "Rockwell,'Roboto Slab','Courier New',serif" },
+  { id: 'mono', n: 'Typewriter', css: "ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace" },
+  { id: 'easy', n: 'Easy read', css: "Verdana,Tahoma,'DejaVu Sans',sans-serif" }
+];
+const ACCENTS = ['#d63a1f', '#e0702a', '#c99a1a', '#2f8f5b', '#0f8b7e', '#2a64c4', '#6a45c8', '#c43d8c', '#374151'];
+const TONES = [
+  { id: 'paper', n: 'Paper', p: '#f3eee4' }, { id: 'cream', n: 'Cream', p: '#f7efd9' }, { id: 'snow', n: 'Snow', p: '#fbfbfa' }, { id: 'mint', n: 'Mint', p: '#e8f1ea' }, { id: 'sky', n: 'Sky', p: '#e6eef6' }, { id: 'rose', n: 'Rose', p: '#f6e8e6' },
+  { id: 'slate', n: 'Slate', p: '#252a33' }, { id: 'ink', n: 'Ink', p: '#12100d' }, { id: 'forest', n: 'Forest', p: '#14211b' }, { id: 'black', n: 'Black', p: '#000000' }
+];
+const LINKSTYLES = [['underline', 'Underline'], ['highlight', 'Highlight'], ['bold', 'Bold'], ['plain', 'Subtle']];
+const hx = h => { h = (h || '#000').replace('#', ''); if (h.length === 3) h = h.replace(/./g, c => c + c); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) || 0); };
+const toHex = c => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const mixHex = (a, b, k) => { const A = hx(a), B = hx(b); return toHex(A.map((v, i) => v + (B[i] - v) * k)); };
+const lumOf = h => { const [r, g, b] = hx(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
+function applyLook() {
+  const L = P.look || {}, r = document.documentElement, set = (k, v) => { if (v == null || v === '') r.style.removeProperty(k); else r.style.setProperty(k, v); }, fo = id => (FONT_OPTS.find(f => f.id === id) || {}).css;
+  set('--serif', fo(L.body)); set('--display', fo(L.head)); set('--sans', fo(L.ui));
+  let dark = r.dataset.theme === 'dark';
+  if (L.paper) {
+    const pap = L.paper; dark = lumOf(pap) < .3; const ink = dark ? '#f1ece2' : '#16130f';
+    set('--paper', pap); set('--sheet', dark ? mixHex(pap, '#ffffff', .05) : mixHex(pap, '#ffffff', .45)); set('--ink', ink); set('--ink-2', mixHex(ink, pap, .28)); set('--mute', mixHex(ink, pap, .5)); set('--rule', mixHex(pap, ink, .17)); set('--rule-2', mixHex(pap, ink, .09));
+  } else ['--paper', '--sheet', '--ink', '--ink-2', '--mute', '--rule', '--rule-2'].forEach(k => set(k, null));
+  if (L.accent) { const a = L.accent; set('--accent', a); set('--accent-ink', dark ? mixHex(a, '#ffffff', .35) : mixHex(a, '#000000', .22)); const c = hx(a); set('--accent-soft', `rgba(${c[0]},${c[1]},${c[2]},${dark ? .16 : .1})`); } else ['--accent', '--accent-ink', '--accent-soft'].forEach(k => set(k, null));
+  set('--alh', L.lh ? String(L.lh) : null); set('--aw', L.width ? L.width + 'ch' : null); set('--heatk', L.heat == null ? null : String(L.heat));
+  r.dataset.links = L.links || ''; r.dataset.calm = L.calm ? '1' : ''; set('--grain', L.grain === 0 ? '0' : null);
+  document.querySelector('meta[name="theme-color"]') && L.paper && document.querySelector('meta[name="theme-color"]').setAttribute('content', L.paper);
+}
+function openStudio() {
+  const L = P.look; let tab = 'type';
+  const code = () => 'LOOK1:' + btoa(unescape(encodeURIComponent(JSON.stringify(L))));
+  const chip = (on, attrs, inner, style = '') => `<button class="stu-c${on ? ' on' : ''}" ${attrs} style="${style}">${inner}</button>`;
+  const fontRow = (role, label) => `<div class="stu-g"><h5>${label}</h5><div class="stu-fonts">${FONT_OPTS.map(f => chip((L[role] || (role === 'ui' ? 'sans' : 'garamond')) === f.id && (L[role] || role === 'body' || role === 'head' || role === 'ui'), `data-font="${role}:${f.id}"`, `<span style="font-family:${f.css}">Aa</span><small>${f.n}</small>`)).join('')}</div></div>`;
+  const slider = (key, label, min, max, step, val, fmt) => `<div class="stu-g"><h5>${label} <b>${fmt(val)}</b></h5><input type="range" class="stu-r" data-s="${key}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
+  const body = () => {
+    if (tab === 'type') return fontRow('body', 'Article text') + fontRow('head', 'Headings') + fontRow('ui', 'Buttons and labels') + slider('fs', 'Text size', -3, 4, 1, P.fs, v => v === 0 ? 'default' : (v > 0 ? '+' : '') + v) + slider('lh', 'Line spacing', 1.3, 2.1, .05, L.lh || 1.62, v => (+v).toFixed(2)) + slider('width', 'Column width', 40, 100, 2, L.width || 66, v => v + ' chars');
+    if (tab === 'colour') return `<div class="stu-g"><h5>Accent colour</h5><div class="stu-sw">${ACCENTS.map(c => chip((L.accent || '').toLowerCase() === c, `data-acc="${c}" aria-label="${c}"`, '', `background:${c}`)).join('')}<label class="stu-pick" title="Pick any colour"><input type="color" id="stuAcc" value="${L.accent || '#d63a1f'}"><span>Custom</span></label><button class="stu-c txt" data-acc="">Default</button></div></div>
+      <div class="stu-g"><h5>Page tone</h5><div class="stu-sw">${TONES.map(t => chip((L.paper || '').toLowerCase() === t.p, `data-tone="${t.p}" aria-label="${t.n}" title="${t.n}"`, `<small style="color:${lumOf(t.p) < .3 ? '#fff' : '#16130f'}">${t.n}</small>`, `background:${t.p}`)).join('')}<label class="stu-pick" title="Pick any colour"><input type="color" id="stuTone" value="${L.paper || '#f3eee4'}"><span>Custom</span></label><button class="stu-c txt" data-tone="">Default</button></div></div>
+      <div class="stu-g"><h5>Links in articles</h5><div class="stu-fonts four">${LINKSTYLES.map(([id, n]) => chip((L.links || 'underline') === id, `data-link="${id}"`, `<span class="lk-${id}">link</span><small>${n}</small>`)).join('')}</div></div>`;
+    return slider('heat', 'Heat glow around the page', 0, 1.6, .1, L.heat == null ? 1 : L.heat, v => v == 0 ? 'off' : Math.round(v * 100) + '%') + `<div class="stu-g"><label class="stu-tog"><input type="checkbox" id="stuCalm" ${L.calm ? 'checked' : ''}><span><b>Calm mode</b><small>No pulsing, fewer animations</small></span></label><label class="stu-tog"><input type="checkbox" id="stuGrain" ${L.grain === 0 ? '' : 'checked'}><span><b>Paper grain</b><small>The faint texture behind pages</small></span></label></div>
+      <div class="stu-g"><h5>Share or restore your look</h5><div class="actions" style="margin:0"><button class="btn ghost" id="stuCopy">Copy code</button><button class="btn ghost" id="stuPaste">Paste a code</button></div></div>`;
+  };
+  const draw = () => {
+    $('#stuBody').innerHTML = body();
+    document.querySelectorAll('#stuTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    document.querySelectorAll('[data-font]').forEach(b => b.onclick = () => { const [role, id] = b.dataset.font.split(':'); L[role] = id; commit(); });
+    document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (b.dataset.acc) L.accent = b.dataset.acc; else delete L.accent; commit(); });
+    document.querySelectorAll('[data-tone]').forEach(b => b.onclick = () => { if (b.dataset.tone) L.paper = b.dataset.tone; else delete L.paper; commit(); });
+    document.querySelectorAll('[data-link]').forEach(b => b.onclick = () => { L.links = b.dataset.link; commit(); });
+    const ac = $('#stuAcc'); if (ac) ac.oninput = () => { L.accent = ac.value; applyLook(); saveP(); sample(); };
+    const tn = $('#stuTone'); if (tn) tn.oninput = () => { L.paper = tn.value; applyLook(); saveP(); sample(); };
+    document.querySelectorAll('[data-s]').forEach(r => r.oninput = () => { const k = r.dataset.s, v = +r.value; if (k === 'fs') { P.fs = v; applyFs(); } else L[k] = v; applyLook(); saveP(); sample(); r.parentNode.querySelector('h5 b').textContent = ({ fs: v === 0 ? 'default' : (v > 0 ? '+' : '') + v, lh: v.toFixed(2), width: v + ' chars', heat: v == 0 ? 'off' : Math.round(v * 100) + '%' })[k]; });
+    const calm = $('#stuCalm'); if (calm) calm.onchange = () => { L.calm = calm.checked ? 1 : 0; applyLook(); saveP(); };
+    const gr = $('#stuGrain'); if (gr) gr.onchange = () => { if (gr.checked) delete L.grain; else L.grain = 0; applyLook(); saveP(); };
+    if ($('#stuCopy')) $('#stuCopy').onclick = async () => { try { await navigator.clipboard.writeText(code()); toast('Look code copied'); } catch { prompt('Your look code:', code()); } };
+    if ($('#stuPaste')) $('#stuPaste').onclick = () => { const v = (prompt('Paste a look code:') || '').trim(); if (!v) return; try { const o = JSON.parse(decodeURIComponent(escape(atob(v.replace(/^LOOK1:/, ''))))); Object.keys(L).forEach(k => delete L[k]); Object.assign(L, o); commit(); toast('Look applied'); } catch { toast('That look code is not valid'); } };
+  };
+  const sample = () => { const sp = $('#stuSample'); if (sp) sp.style.fontSize = (17 + P.fs * 1.4) + 'px'; };
+  const commit = () => { applyLook(); saveP(); draw(); sample(); };
+  openModal(`<h2>Studio</h2><p>Make Scorcher yours: fonts, colours and layout. Changes apply to the whole page straight away and are saved on this device.</p>
+    <div class="stu-sample" id="stuSample"><h3>Eiffel Tower</h3><p>The tower is a wrought-iron lattice on the Champ de Mars in <a href="#" onclick="return false">Paris</a>, named after the engineer <a href="#" onclick="return false">Gustave Eiffel</a>. It was built for the 1889 World's Fair.</p></div>
+    <div class="tabs" id="stuTabs">${[['type', 'Fonts & layout'], ['colour', 'Colours'], ['more', 'More']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="stuBody"></div>
+    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="stuSurprise">✦ Surprise me</button><button class="btn ghost" id="stuReset">Reset all</button></div>`);
+  document.querySelectorAll('#stuTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
+  $('#stuReset').onclick = () => { Object.keys(L).forEach(k => delete L[k]); P.fs = 0; applyFs(); commit(); toast('Back to the default look'); };
+  $('#stuSurprise').onclick = () => { const pick = a => a[Math.random() * a.length | 0], t = pick(TONES); Object.assign(L, { body: pick(FONT_OPTS.slice(0, 5)).id, head: pick(FONT_OPTS).id, accent: pick(ACCENTS), paper: t.p }); commit(); };
+  draw(); sample();
 }
 
 /* the five-dot motif: logo, loader, meter, route, empty states */
@@ -1343,22 +1428,31 @@ function handleLive() {
 
 /* --------------------------------------------------------------- companion packs */
 const packsOf = id => PACKS.find(p => p.id === id).puzzles;
+// Which puzzles of a pack are playable: once the verified data has loaded, only pairs that really have a route of four clicks or fewer. Progress stays keyed by the position in packs.js.
+function packVisible(id) { const all = packsOf(id).map((_, i) => i), d = PACKDATA && PACKDATA[id]; if (!d || !d.some(v => v && v.par)) return all; return all.filter(i => d[i] && d[i].par); }
 function packPuzzle(id, idx) {
   const base = packsOf(id)[idx], v = PACKDATA && PACKDATA[id] && PACKDATA[id][idx];
   return v && v.par ? { from: v.from, to: v.to, par: v.par, route: v.route, goal: v.par + 1 } : { from: base.from, to: base.to, goal: base.goal };
 }
-const packStats = id => { const pk = P.packs[id] || {}, v = Object.values(pk); return { solved: v.length, stars: v.reduce((a, b) => a + (b.stars || 0), 0), total: packsOf(id).length }; };
+const packStats = id => { const pk = P.packs[id] || {}, vis = packVisible(id), sol = vis.filter(i => pk[i]); return { solved: sol.length, stars: sol.reduce((a, i) => a + (pk[i].stars || 0), 0), total: vis.length }; };
 function openPacks() {
-  openModal(`<h2>Companion packs</h2><p>Themed puzzles with a click goal. Solve them in order.</p>${PACKS.map(p => { const st = packStats(p.id); return `<button class="card packcard" data-p="${p.id}" style="--ph:${p.hue}"><span style="flex:1;text-align:left"><b>${p.name}</b><small>${st.total} puzzles · ★ ${st.stars}/${st.total * 3}</small><div class="bar" style="height:6px;margin-top:8px"><i style="width:${st.solved / st.total * 100}%;--c:${p.hue}"></i></div></span></button>`; }).join('')}`);
-  document.querySelectorAll('.packcard').forEach(b => b.onclick = () => openPack(b.dataset.p));
+  const day = Math.floor(Date.now() / 864e5), tot = PACKS.reduce((a, p) => a + packStats(p.id).total, 0), done = PACKS.reduce((a, p) => a + packStats(p.id).solved, 0), feat = PACKS[day % PACKS.length].id;
+  openModal(`<h2>Companion packs</h2><p>Themed Wikipedia puzzles, each checked so it can be solved. Every pack unlocks in order. <b>${done}</b> of <b>${tot}</b> solved.</p>
+    <div class="pkcards">${PACKS.map(p => { const st = packStats(p.id), pct = st.total ? Math.round(st.solved / st.total * 100) : 0, isF = p.id === feat, first = packsOf(p.id)[packVisible(p.id)[0]] || packsOf(p.id)[0];
+      return `<button class="pkcard" data-p="${p.id}" style="--ph:${p.hue}"><span class="pke">${p.emoji}</span>${isF ? '<i class="pkrib">Featured</i>' : p.new ? '<i class="pkrib new">New</i>' : ''}<b>${esc(p.name)}</b><small>${esc(p.tag || '')}</small>
+        <span class="pkex">${esc(first.from)} <em>→</em> ${esc(first.to)}</span><span class="pkbar"><i style="width:${Math.max(pct, st.solved ? 6 : 0)}%"></i></span><span class="pkmeta"><span>${st.solved}/${st.total}</span><span>★ ${st.stars}/${st.total * 3}</span></span></button>`; }).join('')}</div>`);
+  document.querySelectorAll('.pkcard').forEach(b => b.onclick = () => openPack(b.dataset.p));
 }
 function openPack(id) {
-  const p = PACKS.find(x => x.id === id), pk = P.packs[id] || {}, st = packStats(id), next = p.puzzles.findIndex((_, i) => !pk[i]);
+  const p = PACKS.find(x => x.id === id), pk = P.packs[id] || {}, st = packStats(id), vis = packVisible(id), next = vis.find(i => !pk[i]), nextN = vis.indexOf(next);
   openModal(`<button class="chip" id="pkBack">← Packs</button>
-    <div class="packhead" style="--ph:${p.hue}"><span class="pill">Companion pack</span><h2>${p.name}</h2><div class="s mute">${st.solved}/${st.total} solved · ★ ${st.stars}/${st.total * 3}</div></div>
-    <div class="pkgrid">${p.puzzles.map((_, i) => { const z = packPuzzle(id, i), r = pk[i], locked = next !== -1 && i > next;
-      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">Under ${z.goal}</span><div class="s mute b">#${i + 1}${locked ? ' 🔒' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} → ${esc(z.to)}</div><div class="s">${r ? '★'.repeat(r.stars) + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? `<span class="mute">Solve #${next + 1} to unlock</span>` : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
+    <div class="pkhead" style="--ph:${p.hue}"><span class="pke big">${p.emoji}</span><div><span class="pill">Companion pack</span><h2>${esc(p.name)}</h2><div class="s mute">${esc(p.tag || '')} · ${st.solved}/${st.total} solved · ★ ${st.stars}/${st.total * 3}</div></div></div>
+    <div class="pkbar wide" style="--ph:${p.hue}"><i style="width:${st.total ? Math.round(st.solved / st.total * 100) : 0}%"></i></div>
+    ${next !== undefined ? `<button class="btn" id="pkPlay" style="width:100%;margin:12px 0 4px">${st.solved ? 'Play next' : 'Start the pack'} · #${nextN + 1}</button>` : '<p class="rtv" style="text-align:center">Pack complete. Every puzzle solved.</p>'}
+    <div class="pkgrid">${vis.map((i, n) => { const z = packPuzzle(id, i), r = pk[i], locked = next !== undefined && vis.indexOf(i) > nextN;
+      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''} ${r ? 'done' : ''}" style="--ph:${p.hue}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">${z.par ? 'Fastest ' + z.par + ' · ' : ''}goal ${z.goal}</span><div class="s mute b">#${n + 1}${locked ? ' 🔒' : r ? ' ✓' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} <em>→</em> ${esc(z.to)}</div><div class="s">${r ? '<span class="stars3">' + '★'.repeat(r.stars) + '<i>' + '★'.repeat(3 - r.stars) + '</i></span>' + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? '<span class="mute">Solve the one before</span>' : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
   $('#pkBack').onclick = openPacks;
+  if ($('#pkPlay')) $('#pkPlay').onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: next }); };
   document.querySelectorAll('.pk').forEach(b => b.onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: +b.dataset.i }); });
 }
 
@@ -1651,7 +1745,7 @@ setInterval(tickNext, 1000); tickNext();
 handleInvite();
 
 applyTheme();
-applyCos();
+applyCos(); applyLook();
 loadData().then(() => { renderHome(); handleChallenge(); handleLive(); refreshEntitlement(false); Ping.visit(); });
 const viaLink = /^#[cl]=/.test(location.hash) || /[?&]league=/.test(location.search);
 if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }

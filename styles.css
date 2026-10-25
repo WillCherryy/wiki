@@ -507,3 +507,61 @@ html[data-heat="sight"] .article a.goal { animation: goalGlow 1s ease-in-out inf
 .rl .pcrowd { margin: 0 0 0 auto; min-height: 0; display: flex; align-items: center; gap: 7px; font: 600 11px var(--sans); white-space: nowrap; }
 .rl .pcrowd .pb { margin: 0; width: 44px; max-width: none; height: 4px; }
 .routes .rsum { margin-top: 14px; font-size: 18px; }
+
+/* ---- Studio (custom fonts, colours, layout) */
+.article { line-height: var(--alh, inherit); }
+.article > * { max-width: var(--aw, 66ch); }
+html[data-links="highlight"] .article a[data-t] { border-bottom: 0; background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 3px; padding: 0 .12em; }
+html[data-links="bold"] .article a[data-t] { border-bottom: 0; font-weight: 700; color: var(--accent-ink); }
+html[data-links="plain"] .article a[data-t] { border-bottom: 1px dotted color-mix(in srgb, var(--ink) 35%, transparent); }
+:root { --heatk: 1; }
+#heatfx { opacity: calc(var(--heatk, 1) * 1); }
+html[data-calm="1"] #heatfx { animation: none !important; }
+html[data-calm="1"] .article a.goal, html[data-calm="1"] * { animation-duration: 0s !important; }
+.stu-sample { border: 1px solid var(--rule); background: var(--sheet); padding: 14px 18px; margin: 4px 0 12px; }
+.stu-sample h3 { margin: 0 0 6px; font: 400 26px/1.1 var(--display); } .stu-sample p { margin: 0; font: 400 1em/var(--alh, 1.6) var(--serif); color: var(--ink); }
+.stu-sample a { color: var(--ink); border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent); }
+html[data-links="highlight"] .stu-sample a { border-bottom: 0; background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 3px; padding: 0 .12em; }
+html[data-links="bold"] .stu-sample a { border-bottom: 0; font-weight: 700; color: var(--accent-ink); }
+html[data-links="plain"] .stu-sample a { border-bottom: 1px dotted color-mix(in srgb, var(--ink) 35%, transparent); }
+.stu-g { margin: 14px 0; } .stu-g h5 { margin: 0 0 8px; display: flex; justify-content: space-between; font: 700 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); } .stu-g h5 b { font-weight: 500; letter-spacing: .02em; text-transform: none; color: var(--mute); }
+.stu-fonts { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 7px; } .stu-fonts.four { grid-template-columns: repeat(4, 1fr); }
+.stu-c { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 4px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); cursor: pointer; font: inherit; }
+.stu-c span { font-size: 22px; line-height: 1; } .stu-c small { font: 600 10px var(--sans); letter-spacing: .04em; color: var(--mute); }
+.stu-c:hover { border-color: var(--accent); } .stu-c.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.stu-sw { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .stu-sw .stu-c { width: 38px; min-height: 38px; height: 38px; border-radius: 50%; padding: 0; } .stu-sw .stu-c small { font-size: 9px; }
+.stu-sw .stu-c.txt { width: auto; padding: 0 12px; border-radius: 999px; font: 600 12px var(--sans); }
+.stu-sw [data-tone] { width: 52px; border-radius: 9px; }
+.stu-pick { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border: 1px dashed var(--mute); border-radius: 999px; font: 600 12px var(--sans); color: var(--ink-2); cursor: pointer; } .stu-pick input { width: 22px; height: 22px; border: 0; padding: 0; background: none; cursor: pointer; }
+.stu-r { width: 100%; accent-color: var(--accent); }
+.stu-tog { display: flex; align-items: center; gap: 12px; padding: 8px 0; } .stu-tog input { width: 20px; height: 20px; accent-color: var(--accent); } .stu-tog span { display: flex; flex-direction: column; } .stu-tog b { font: 600 14px var(--sans); } .stu-tog small { font: 500 12px var(--sans); color: var(--mute); }
+.lk-underline { border-bottom: 1.5px solid var(--accent); } .lk-highlight { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 3px; padding: 0 3px; } .lk-bold { font-weight: 700; color: var(--accent-ink); } .lk-plain { border-bottom: 1px dotted var(--mute); }
+
+/* ---- home: say plainly that this is a Wikipedia game */
+.lede { max-width: 640px; margin: 4px auto clamp(18px, 3vw, 34px); text-align: center; }
+.lede .eyebrow { display: inline-block; font: 700 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 5px 12px; background: var(--accent-soft); }
+.lede p { margin: 12px 0 14px; font: 400 clamp(19px, 2.2vw, 24px)/1.4 var(--serif); color: var(--ink); } .lede p b { font-weight: 600; }
+.steps3 { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font: 600 12.5px var(--sans); color: var(--ink-2); }
+.steps3 li { display: inline-flex; align-items: center; gap: 8px; } .steps3 i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.plate-lab { display: block; font: 600 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--mute); margin: 4px 0 -4px; }
+
+/* ---- companion packs, redesigned: gradient cards with progress, a day's featured pack, a path of puzzle tiles */
+.pkcards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+.pkcard { position: relative; text-align: left; cursor: pointer; font: inherit; color: var(--ink); padding: 14px 14px 12px; border: 1px solid color-mix(in srgb, hsl(var(--ph) 65% 50%) 35%, var(--rule)); border-radius: 14px; overflow: hidden;
+  background: linear-gradient(155deg, color-mix(in srgb, hsl(var(--ph) 75% 55%) 17%, var(--sheet)), var(--sheet) 62%); transition: transform .15s, box-shadow .15s; }
+.pkcard:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -14px hsl(var(--ph) 70% 40% / .55); }
+.pkcard .pke { font-size: 30px; line-height: 1; display: block; margin-bottom: 8px; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .18)); }
+.pkcard b { display: block; font: 400 23px/1.05 var(--display); } .pkcard small { display: block; margin: 3px 0 8px; font: 500 12px/1.3 var(--sans); color: var(--mute); min-height: 2.6em; }
+.pkex { display: block; font: italic 400 14px/1.25 var(--serif); color: var(--ink-2); margin-bottom: 10px; } .pkex em { color: hsl(var(--ph) 65% 46%); font-style: normal; }
+.pkbar { display: block; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; } .pkbar i { display: block; height: 100%; border-radius: 3px; background: hsl(var(--ph) 70% 52%); transition: width .6s; }
+.pkbar.wide { height: 8px; margin: 12px 0 2px; }
+.pkmeta { display: flex; justify-content: space-between; margin-top: 7px; font: 600 11px var(--sans); letter-spacing: .06em; color: var(--mute); }
+.pkrib { position: absolute; top: 10px; right: -30px; transform: rotate(35deg); width: 120px; text-align: center; font: 700 9px var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 3px 0; background: var(--accent); color: #fff; font-style: normal; }
+.pkrib.new { background: hsl(var(--ph) 65% 46%); }
+.pkhead { display: flex; align-items: center; gap: 14px; margin: 14px 0 0; padding: 16px; border-radius: 14px; background: linear-gradient(155deg, color-mix(in srgb, hsl(var(--ph) 75% 55%) 22%, var(--sheet)), var(--sheet)); border: 1px solid color-mix(in srgb, hsl(var(--ph) 65% 50%) 35%, var(--rule)); }
+.pkhead h2 { margin: 6px 0 2px; } .pkhead .pke.big { font-size: 46px; line-height: 1; }
+.tile.pk { border-radius: 12px; border-left: 4px solid hsl(var(--ph, 200) 65% 52%); } .tile.pk.done { background: color-mix(in srgb, hsl(var(--ph, 200) 70% 55%) 9%, var(--sheet)); }
+.tile.pk .badge { display: inline-block; font: 700 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--ph, 200) 60% 42%); margin-bottom: 4px; }
+.tile.pk em { font-style: normal; color: hsl(var(--ph, 200) 65% 46%); } .stars3 { color: #e8a317; letter-spacing: 1px; } .stars3 i { font-style: normal; color: var(--rule); }
+@media (max-width: 380px) { .pkcards { grid-template-columns: 1fr; } }
+.tile.pk .badge { display: block; margin: 0 0 6px; }
