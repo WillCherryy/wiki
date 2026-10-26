@@ -800,3 +800,6 @@ html[data-calm="1"] #buddy { display: none !important; }
 .meprog { height: 8px; border-radius: 6px; background: var(--rule-2); margin: 10px 0; overflow: hidden; } .meprog i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #d070a8, #f57a34, #ffc83a, #6fa4ff, #5fe0ff); }
 .rd { box-shadow: 0 0 8px currentColor; }
 .lbrow { display: flex; align-items: center; gap: 12px; background: var(--paper); border-radius: var(--rad-s); padding: 10px 14px; margin: 6px 0; font: 600 15px var(--sans); } .lbrow .v { margin-left: auto; font: 500 13px var(--sans); color: var(--mute); } .lbrow .dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 10px currentColor; flex: none; }
+
+.cloudcode { margin: 12px 0; padding: 16px 12px; border-radius: var(--rad); background: var(--paper); text-align: center; font: 600 clamp(18px, 5.4vw, 26px)/1 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; letter-spacing: .08em; user-select: all; }
+.cloudstat { margin: 10px 2px; font: 500 13px var(--sans); color: var(--mute); }

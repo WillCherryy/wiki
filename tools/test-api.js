@@ -92,7 +92,19 @@ async function scenario(call, label) {
   ok(await call('POST', '/api/admin/daily', { ...pz, day: shiftDay(4) }, adm), 'set a far-future pick'); assert.strictEqual((await call('GET', `/api/daily?day=${shiftDay(4)}`)).status, 404, `${label}: picks stay secret until the day before`); assert.strictEqual((await call('GET', '/api/admin/daily', null, adm)).body.length, 2, `${label}: but the founder still sees them`); ok(await call('POST', '/api/admin/daily', { day: shiftDay(4), remove: true }, adm), 'remove far-future pick');
   ok(await call('POST', '/api/admin/daily', { day: pz.day, remove: true }, adm), 'remove pick'); assert.strictEqual((await call('GET', `/api/daily?day=${pz.day}`)).status, 404, `${label}: removed`);
   // delete removes scores, league membership and the player
+  // ---- anonymous cloud save: a recovery code locks a copy of the player's progress; same behaviour on both servers
+  const CODE = 'ABCD-EFGH-JKLM-NPQR', blob = JSON.stringify({ pid: A, name: 'Alice', xp: 3, sky: { cat: { Betelgeuse: 2 } } });
+  assert.strictEqual((await call('POST', '/api/save', { code: 'short', blob })).status, 400, `${label}: bad code rejected`);
+  assert.strictEqual((await call('POST', '/api/save', { code: CODE, blob: 'not json' })).status, 400, `${label}: bad blob rejected`);
+  assert.strictEqual((await call('POST', '/api/save', { code: CODE, blob: JSON.stringify({ pid: 'BAD PID!' }) })).status, 400, `${label}: blob without a valid pid rejected`);
+  assert.strictEqual((await call('POST', '/api/load', { code: CODE })).status, 404, `${label}: nothing saved yet`);
+  ok(await call('POST', '/api/save', { code: CODE, blob }), 'save');
+  let ld = await call('POST', '/api/load', { code: 'abcd efgh jklm npqr' }); ok(ld, 'load with different punctuation and case'); assert.deepStrictEqual(JSON.parse(ld.body.blob).sky.cat, { Betelgeuse: 2 }, `${label}: saved progress comes back`);
+  const blob2 = JSON.stringify({ pid: A, name: 'Alice', xp: 9, sky: { cat: { Betelgeuse: 2, Crab: 1 } } }); ok(await call('POST', '/api/save', { code: CODE, blob: blob2 }), 'save again');
+  assert.strictEqual(JSON.parse((await call('POST', '/api/load', { code: CODE })).body.blob).xp, 9, `${label}: a new save replaces the old one`);
+  assert.strictEqual((await call('POST', '/api/load', { code: 'ABCD-EFGH-JKLM-NPQS' })).status, 404, `${label}: a different code finds nothing`);
   ok(await call('POST', '/api/delete', { pid: A }), 'delete A');
+  assert.strictEqual((await call('POST', '/api/load', { code: CODE })).status, 404, `${label}: deleting online data removes the cloud copy`);
   assert.deepStrictEqual((await call('GET', `/api/leaderboard?mode=day&day=${today}`)).body.map(r => r.name), ['Bob', 'Carol'], `${label}: board after delete`);
   assert.strictEqual((await call('GET', '/api/league?code=FRIEND')).body.members, 1, `${label}: league after delete`);
   assert.strictEqual((await call('GET', '/api/admin/stats?days=7', null, { authorization: 'Bearer adminkey' })).body.kpis.playersToday, 2, `${label}: delete removes the player's activity`);

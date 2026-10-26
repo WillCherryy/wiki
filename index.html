@@ -152,9 +152,11 @@ function loadP() {
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
 let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic', buddy: 'none' }, P.cos || {});
+function cloudNewCode() { const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = new Uint8Array(16); (self.crypto || window.crypto).getRandomValues(r); return Array.from(r, v => abc[v % 32]).join(''); }   // 80 bits, the recovery code for the cloud save
+P.cloud = Object.assign({ code: '', on: true, at: 0 }, P.cloud || {}); if (!/^[A-HJ-NP-Z2-9]{16}$/.test(P.cloud.code)) P.cloud.code = cloudNewCode();
 P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {}, cat: {}, runs: {} }, P.sky || {}); P.sky.runs = P.sky.runs || {}; P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {}; P.sky.cat = P.sky.cat || {};
 for (const id in P.sky.found) if (!SKY.POOL[id].some(q => P.sky.cat[q.n])) P.sky.cat[SKY.POOL[id][0].n] = P.sky.found[id];   // objects found before names existed take the first famous name
-const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
+const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} cloudSoon(); };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
 const TIERS = [{ n: 'Bronze', c: '#c8793c' }, { n: 'Silver', c: '#9aa6b8' }, { n: 'Gold', c: '#f2b01e' }, { n: 'Diamond', c: '#4cc9f0' }];
@@ -787,6 +789,50 @@ function showResult() {
   });
 }
 const API_BASE = ((window.WIKIIO && WIKIIO.api) || '').replace(/\/$/, '');
+/* ---- anonymous cloud save: progress is copied to our server a few seconds after it changes, locked by P.cloud.code (the server keeps only a hash of it).
+   Nothing to sign up for. If the browser is cleared or the player changes device, the code restores everything. */
+const cloudFmt = c => String(c || '').replace(/(.{4})(?=.)/g, '$1-'), cloudNorm = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+let cloudTimer = 0, cloudLast = '', cloudBusy = false;
+function slimP() {   // everything except the code itself; the heaviest per-day detail goes first if it ever gets large
+  const o = JSON.parse(JSON.stringify(P)); delete o.cloud; let s = JSON.stringify(o);
+  if (s.length > 190000) { for (const d of Object.values(o.days || {})) { delete d.timeline; delete d.path; } s = JSON.stringify(o); }
+  if (s.length > 190000) { delete o.days; s = JSON.stringify(o); } return s;
+}
+function cloudSoon(ms = 5000) { try { if (!P.cloud || P.cloud.on === false || !P.played || Traffic.bot) return; clearTimeout(cloudTimer); cloudTimer = setTimeout(() => cloudPush(), ms); } catch {} }
+async function cloudPush(force) {
+  if (cloudBusy || !P.cloud || (P.cloud.on === false && !force) || !P.played) return; const blob = slimP(); if (!force && blob === cloudLast) return; cloudBusy = true;
+  try { const r = await fetch(API_BASE + '/api/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: P.cloud.code, blob }), keepalive: blob.length < 60000 });
+    if (r.ok) { cloudLast = blob; P.cloud.at = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} return true; } } catch {} finally { cloudBusy = false; }
+  return false;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudPush(); });
+setTimeout(() => cloudSoon(100), 4000);   // players who already have progress get their first save soon after opening
+const agoText = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
+async function cloudRestore(codeIn, silent) {
+  const code = cloudNorm(codeIn); if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) return toast('That code is not valid');
+  let j; try { const r = await fetch(API_BASE + '/api/load', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) }); if (r.status === 404) return toast('No saved progress found for that code'); if (!r.ok) throw 0; j = await r.json(); } catch { return toast('Could not reach the server. Try again in a moment.'); }
+  let o; try { o = JSON.parse(j.blob); if (!o || !o.pid) throw 0; } catch { return toast('That save could not be read'); }
+  const go = () => { o.cloud = { code, on: true, at: j.at }; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch { return toast('Could not save on this device'); } history.replaceState(null, '', location.pathname + location.search); location.reload(); };
+  if (P.played > 0 && !silent) ask('Restore saved progress?', `This replaces the progress on this device with the copy saved ${agoText(j.at)} (${o.sky && o.sky.cat ? Object.keys(o.sky.cat).length : 0} sky objects, ${o.streak || 0}-day streak).`, 'Restore', go); else go();
+}
+function openCloud() {
+  const c = P.cloud;
+  openModal(`<h2>Cloud save</h2><p>Your progress is copied to our server automatically, locked by this recovery code. No account, no email. <b>Keep the code somewhere safe</b>: it is the only way to get your progress back on another device or after clearing your browser, and anyone who has it can load your progress.</p>
+    <div class="cloudcode" id="cdCode">${cloudFmt(c.code)}</div>
+    <div class="namebox" style="margin:0"><button class="btn" id="cdCopy">Copy code</button><button class="btn ghost" id="cdLink">Copy restore link</button></div>
+    <div class="cloudstat" id="cdStat"></div>
+    <label class="srow"><span>Save automatically</span><input type="checkbox" id="cdOn" ${c.on !== false ? 'checked' : ''}></label>
+    <div class="sgroup" style="margin-top:14px"><div class="sl">Restore on this device</div><div class="namebox" style="margin:0"><input id="cdIn" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.12em"><button class="btn" id="cdGo">Restore</button></div>
+      <div class="s mute" style="margin-top:8px;font-size:12.5px">Restoring replaces the progress on this device. To remove your cloud copy, use Delete my online data in Settings.</div></div>`);
+  const stat = () => { $('#cdStat').textContent = !P.played ? 'Saving starts after your first solve.' : c.on === false ? 'Automatic saving is off.' : c.at ? 'Last saved ' + agoText(c.at) + '.' : 'Saving…'; }; stat();
+  $('#cdCopy').onclick = async () => { try { await navigator.clipboard.writeText(cloudFmt(c.code)); toast('Recovery code copied'); } catch { prompt('Your recovery code:', cloudFmt(c.code)); } };
+  $('#cdLink').onclick = async () => { const u = SITE_URL + '#restore=' + c.code; try { await navigator.clipboard.writeText(u); toast('Restore link copied'); } catch { prompt('Restore link:', u); } };
+  $('#cdOn').onchange = e => { c.on = e.target.checked; saveP(); if (c.on) cloudPush(true).then(stat); stat(); toast(c.on ? 'Automatic saving is on' : 'Automatic saving is off'); };
+  $('#cdGo').onclick = () => cloudRestore($('#cdIn').value);
+  if (P.played && c.on !== false) cloudPush(true).then(stat);
+}
+{ const m = /^#restore=([A-Za-z0-9-]{16,24})$/.exec(location.hash); if (m) setTimeout(() => { history.replaceState(null, '', location.pathname + location.search); cloudRestore(m[1]); }, 900); }   // a restore link opened on a new device
+
 const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
 /* anonymous usage counts: one flag per player per day, no names or IPs. Players can switch it off in Settings. */
 /* ---- anonymous analytics: where visitors come from, never who they are. The founder's own devices and bots send nothing. */
@@ -909,13 +955,13 @@ function paintMeSky() {
   const L = skyList(), top = L[0], t0 = performance.now(); if (!top) { drawSkyCell(cv, null, 0); return; }
   (function f(now) { if (!cv.isConnected) return; drawSkyCell(cv, top.id, (now - t0) / 1000, 1); requestAnimationFrame(f); })(t0);
 }
-function openProfile() { openModal(`<h2>You</h2>${statsHTML()}<button class="btn ghost" id="meSet" style="width:100%;margin-top:18px">Settings &amp; data</button>`); paintMeSky(); $('#meSet').onclick = () => openSettings(); }
+function openProfile() { openModal(`<h2>You</h2>${statsHTML()}<button class="btn ghost" id="meCloud" style="width:100%;margin-top:18px">Cloud save</button><button class="btn ghost" id="meSet" style="width:100%;margin-top:8px">Settings &amp; data</button>`); paintMeSky(); $('#meCloud').onclick = openCloud; $('#meSet').onclick = () => openSettings(); }
 function bindSettings() {
   const i = $('#meName'); if (i) i.onchange = () => { P.name = i.value.trim().slice(0, 20); saveP(); toast('Name saved'); };
   $('#delOnline').onclick = () => ask('Delete online data?', 'This removes your name, scores, routes and leagues from the leaderboard server. Progress on this device is kept.', 'Delete', async () => {
     try { const r = await fetch(API_BASE + '/api/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pid: P.pid }) }); if (!r.ok) throw 0; P.leagues = []; saveP(); toast('Online data deleted'); } catch { toast('Could not reach the server — try again later'); }
   });
-  $('#bkBuy').onclick = restorePurchase;
+  $('#bkBuy').onclick = restorePurchase; $('#cloudBtn').onclick = openCloud;
   $('#bkCopy').onclick = async () => { const code = 'WIKIIO1:' + btoa(unescape(encodeURIComponent(JSON.stringify(P)))); try { await navigator.clipboard.writeText(code); toast('Backup code copied'); } catch { prompt('Your backup code:', code); } };
   $('#bkRestore').onclick = () => {
     const v = (prompt('Paste your backup code:') || '').trim(); if (!v) return;
@@ -939,6 +985,7 @@ function openSettings() {
     <div class="sgroup"><div class="sl">Your data</div>
       <label class="srow"><span>Anonymous usage statistics<small class="mute" style="display:block;font-weight:500;font-size:12.5px">Counts that help us improve the game. No name, no IP address.</small></span><input type="checkbox" id="stStats" ${P.stats === false ? '' : 'checked'}></label>
       <div class="namebox" style="margin:0"><button class="btn ghost" id="bkCopy">Copy backup code</button><button class="btn ghost" id="bkRestore">Restore…</button><button class="btn ghost" id="bkBuy">Restore purchase</button></div>
+      <div class="namebox" style="margin:8px 0 0"><button class="btn" id="cloudBtn" style="width:100%">Cloud save and recovery code</button></div>
       <div class="namebox" style="margin:8px 0 0"><button class="btn ghost" id="delOnline" style="width:100%">Delete my online data</button></div>
       <div class="s mute" style="margin-top:8px;font-size:12.5px">No account needed. Your backup code moves your progress to another device. Player ID <code>${esc(P.pid)}</code>.${window.BUILD ? ` Version <code>${esc(window.BUILD.commit)}</code>.` : ''}</div></div>
     <div class="sgroup"><div class="sl">About</div><div class="slinks"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia (CC BY-SA 4.0)</a></div>
@@ -956,6 +1003,7 @@ function openMenu() {
     ['Leaderboards', 'Today · week · all-time', () => openLeaderboard('day')],
     ['Companion packs', `${sv} of ${pt} solved`, openPacks],
     ['Studio', 'Fonts, colours and layout', () => openStudio()],
+    ['Cloud save', 'Keep your progress safe', openCloud],
     ['Locker', `${open} of ${tot} unlocked`, () => openLocker()],
     ['Leagues', 'Race your friends', () => leagueModal()],
     ['Live races', 'Join a lobby or host one', liveMenu],

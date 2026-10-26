@@ -42,7 +42,7 @@ export default {
       if (path.startsWith('/api/webhook/')) return await webhook(path.split('/').pop(), raw, request, env, now(), reply);
       const ip = request.headers.get('cf-connecting-ip') || 'x', t = now(), list = (hits.get(ip) || []).filter(x => t - x < 60000); list.push(t); hits.set(ip, list);
       if (list.length > 60) return reply({ error: 'slow down' }, 429);
-      if (raw.length > 8000) return reply({ error: 'too large' }, 413);
+      if (raw.length > (path === '/api/save' ? 220000 : 8000)) return reply({ error: 'too large' }, 413);
       let b; try { b = JSON.parse(raw); } catch { return reply({ error: 'bad json' }, 400); }
       if (!b || typeof b !== 'object') return reply({ error: 'bad json' }, 400);
       if (path === '/api/score') return await postScore(env, b, now(), reply);
@@ -51,6 +51,8 @@ export default {
       if (path === '/api/report') return await postReport(env, b, now(), reply);
       if (path === '/api/event') return await postEvent(env, b, request, now(), reply);
       if (path === '/api/restore') return await postRestore(env, b, now(), reply);
+      if (path === '/api/save') return await postSave(env, b, now(), reply);
+      if (path === '/api/load') return await postLoad(env, b, reply);
       if (path === '/api/admin/daily') return await postOverride(env, b, request, now(), reply);
       if (path === '/api/admin/exclude') return await postExclude(env, b, request, reply);
       return reply({ error: 'not found' }, 404);
@@ -126,10 +128,27 @@ async function postLeague(env, b, t, reply) {
   await env.DB.prepare('INSERT OR IGNORE INTO league_members (code, pid) VALUES (?, ?)').bind(code, b.pid).run();
   const after = await league(env, code); return reply({ code, name: after.name, members: after.members });
 }
+
+// ---- anonymous cloud save: a player's progress, locked by a 16-character recovery code that only they hold. We store a hash of the code, never the code.
+const SAVE_CODE = /^[A-HJ-NP-Z2-9]{16}$/;
+const normCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+async function codeHash(code) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('scorcher-save:' + code)); return [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+async function postSave(env, b, t, reply) {
+  const code = normCode(b.code); if (!SAVE_CODE.test(code) || typeof b.blob !== 'string' || b.blob.length > 200000) return reply({ error: 'invalid' }, 400);
+  let o; try { o = JSON.parse(b.blob); } catch { return reply({ error: 'invalid' }, 400); } if (!o || typeof o !== 'object' || !PID.test(o.pid)) return reply({ error: 'invalid' }, 400);
+  await ensureAnalytics(env);
+  await env.DB.prepare('INSERT INTO saves (kh, pid, blob, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(kh) DO UPDATE SET pid = excluded.pid, blob = excluded.blob, updated_at = excluded.updated_at').bind(await codeHash(code), o.pid, b.blob, t).run();
+  return reply({ ok: true, at: t });
+}
+async function postLoad(env, b, reply) {
+  const code = normCode(b.code); if (!SAVE_CODE.test(code)) return reply({ error: 'invalid' }, 400);
+  await ensureAnalytics(env); const row = await env.DB.prepare('SELECT blob, updated_at FROM saves WHERE kh = ?').bind(await codeHash(code)).first();
+  return row ? reply({ blob: row.blob, at: row.updated_at }) : reply({ error: 'no such save' }, 404);
+}
 async function postDelete(env, b, reply) {
   if (!PID.test(b.pid)) return reply({ error: 'invalid' }, 400);
   await ensureAnalytics(env);
-  await env.DB.batch([env.DB.prepare('DELETE FROM acq WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
+  await env.DB.batch([env.DB.prepare('DELETE FROM saves WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM acq WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM scores WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM reports WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM activity WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM league_members WHERE pid = ?').bind(b.pid), env.DB.prepare('DELETE FROM players WHERE pid = ?').bind(b.pid)]);
   return reply({ ok: true });
 }
 
@@ -254,8 +273,9 @@ let ensured = null;   // tables for traffic sources and excluded players are cre
 const ensureAnalytics = env => ensured || (ensured = env.DB.batch([
   env.DB.prepare('CREATE TABLE IF NOT EXISTS acq (pid TEXT PRIMARY KEY, src TEXT NOT NULL, camp TEXT NOT NULL DEFAULT \'\', first_day TEXT NOT NULL)'),
   env.DB.prepare('CREATE TABLE IF NOT EXISTS excluded (pid TEXT PRIMARY KEY, created_at INTEGER NOT NULL)'),
-  env.DB.prepare('CREATE TABLE IF NOT EXISTS order_email (provider TEXT NOT NULL, id TEXT NOT NULL, eh TEXT NOT NULL, PRIMARY KEY (provider, id))')
-]).then(() => env.DB.prepare('CREATE INDEX IF NOT EXISTS order_email_eh ON order_email (eh)').run()).catch(e => { ensured = null; throw e; }));
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS order_email (provider TEXT NOT NULL, id TEXT NOT NULL, eh TEXT NOT NULL, PRIMARY KEY (provider, id))'),
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS saves (kh TEXT PRIMARY KEY, pid TEXT NOT NULL, blob TEXT NOT NULL, updated_at INTEGER NOT NULL)')
+]).then(() => env.DB.batch([env.DB.prepare('CREATE INDEX IF NOT EXISTS order_email_eh ON order_email (eh)'), env.DB.prepare('CREATE INDEX IF NOT EXISTS saves_pid ON saves (pid)')])).catch(e => { ensured = null; throw e; }));
 async function postEvent(env, b, request, t, reply) {
   const day = new Date(t).toISOString().slice(0, 10);
   await ensureAnalytics(env);

@@ -26,7 +26,7 @@ function limited(ip) {
   a.push(now); hits.set(ip, a); return a.length > 40;
 }
 const json = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
-const readBody = (req, cb) => { let raw = ''; req.on('data', c => { raw += c; if (raw.length > 8000) req.destroy(); }); req.on('end', () => { try { cb(JSON.parse(raw)); } catch { cb(null); } }); };
+const readBody = (req, cb, cap = 8000) => { let raw = ''; req.on('data', c => { raw += c; if (raw.length > cap) req.destroy(); }); req.on('end', () => { try { cb(JSON.parse(raw)); } catch { cb(null); } }); };
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20);
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 function shift(day, n) { const [y, m, d] = day.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
@@ -213,12 +213,22 @@ const server = http.createServer((req, res) => {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
     return json(res, 200, pathTree(day));
   }
+  if ((url.pathname === '/api/save' || url.pathname === '/api/load') && req.method === 'POST') {   // anonymous cloud save, same contract as worker/index.js
+    if (limited('save:' + req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
+    return readBody(req, b => {
+      const code = String((b && b.code) || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) return json(res, 400, { error: 'invalid' });
+      const kh = require('crypto').createHash('sha256').update('scorcher-save:' + code).digest('hex'); db.saves = db.saves || {};
+      if (url.pathname === '/api/load') return db.saves[kh] ? json(res, 200, { blob: db.saves[kh].blob, at: db.saves[kh].at }) : json(res, 404, { error: 'no such save' });
+      let o; try { o = JSON.parse(b.blob); } catch { o = null; } if (typeof b.blob !== 'string' || b.blob.length > 200000 || !o || typeof o !== 'object' || !/^[a-z0-9]{6,16}$/.test(o.pid)) return json(res, 400, { error: 'invalid' });
+      db.saves[kh] = { pid: o.pid, blob: b.blob, at: Date.now() }; save(); json(res, 200, { ok: true, at: db.saves[kh].at });
+    }, 220000);
+  }
   if (url.pathname === '/api/delete' && req.method === 'POST') {
     if (limited(req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
     return readBody(req, b => {
       if (!b || !/^[a-z0-9]{6,16}$/.test(b.pid)) return json(res, 400, { error: 'invalid' });
       for (const k of Object.keys(db.scores)) if (db.scores[k].pid === b.pid) delete db.scores[k];
-      delete db.players[b.pid]; if (db.acq) delete db.acq[b.pid]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid); for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k];
+      delete db.players[b.pid]; if (db.acq) delete db.acq[b.pid]; for (const k of Object.keys(db.saves || {})) if (db.saves[k].pid === b.pid) delete db.saves[k]; db.reports = (db.reports || []).filter(r => r.pid !== b.pid); for (const k of Object.keys(db.activity || {})) if (db.activity[k].pid === b.pid) delete db.activity[k];
       for (const L of Object.values(db.leagues)) L.members = L.members.filter(m => m !== b.pid);
       save(); json(res, 200, { ok: true });
     });
@@ -267,7 +277,7 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.txt': 'text/plain', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/ads.txt'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/skyobjects.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/ads.txt'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {
