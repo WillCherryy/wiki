@@ -99,28 +99,86 @@
     const fl = clamp(1 - (t - .38) / .4); if (t >= .38 && fl > 0) { const fg = g.createRadialGradient(cx, cy, 0, cx, cy, h * (.5 + .5 * pow)); fg.addColorStop(0, `rgba(255,255,255,${fl * (.3 + .55 * pow)})`); fg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = fg; g.fillRect(-10, -10, w + 20, h + 20); }
     g.restore(); fade(g, w, h);
   }
-  // a system: Kepler orbits (T^2 ~ a^3, ellipses with the primary at a focus, faster at periapsis), a barycentre wobble, moons for duplicates
+  // real objects: four famous examples of each type. n = display name, a = Wikipedia article, f = a fact
+  const POOL = {
+    brown: [
+      { n: 'Gliese 229 B', a: 'Gliese 229', kind: 'T-dwarf brown dwarf', t: '≈ 900 K', f: 'The first brown dwarf ever confirmed (1995). In 2024 it turned out to be two brown dwarfs orbiting each other.' },
+      { n: 'Luhman 16', a: 'Luhman 16', kind: 'Binary brown dwarf', t: '≈ 1,300 K', f: 'A pair of brown dwarfs 6.5 light-years away, the third-closest system to the Sun.' },
+      { n: 'WISE 0855−0714', a: 'WISE_0855−0714', kind: 'Y-dwarf brown dwarf', t: '≈ 285 K', f: 'The coldest brown dwarf known, about as cool as Earth’s polar regions, 7.4 light-years away.' },
+      { n: 'Epsilon Indi B', a: 'Epsilon Indi', kind: 'Binary brown dwarf', t: '≈ 1,000 K', f: 'Two brown dwarfs orbiting each other, only about 12 light-years from the Sun.' }],
+    reddwarf: [
+      { n: 'Proxima Centauri', a: 'Proxima Centauri', kind: 'M-type red dwarf', t: '≈ 3,000 K', f: 'The closest star to the Sun, 4.25 light-years away, with a planet about Earth’s mass in its habitable zone.' },
+      { n: 'Barnard’s Star', a: 'Barnard%27s_Star', kind: 'M-type red dwarf', t: '≈ 3,200 K', f: 'A red dwarf 6 light-years away with the fastest apparent motion of any star across our sky.' },
+      { n: 'TRAPPIST-1', a: 'TRAPPIST-1', kind: 'Ultracool red dwarf', t: '≈ 2,600 K', f: 'A small, cool star 40 light-years away with seven Earth-sized planets.' },
+      { n: 'Wolf 359', a: 'Wolf_359', kind: 'M-type red dwarf', t: '≈ 2,800 K', f: 'A faint, flare-prone red dwarf about 7.9 light-years away, one of our nearest neighbours.' }],
+    redgiant: [
+      { n: 'Betelgeuse', a: 'Betelgeuse', kind: 'Red supergiant', t: '≈ 3,600 K', f: 'Orion’s shoulder. Placed where the Sun is, it would swallow the orbit of Mars. It will end as a supernova.' },
+      { n: 'Arcturus', a: 'Arcturus', kind: 'Orange giant', t: '≈ 4,300 K', f: 'The brightest star of the northern sky, an ageing giant 37 light-years away.' },
+      { n: 'Aldebaran', a: 'Aldebaran', kind: 'Orange giant', t: '≈ 3,900 K', f: 'The glowing eye of Taurus, a giant about 65 light-years away.' },
+      { n: 'Antares', a: 'Antares', kind: 'Red supergiant', t: '≈ 3,600 K', f: 'The red heart of Scorpius, hundreds of times wider than the Sun.' }],
+    sun: [
+      { n: 'The Sun', a: 'Sun', kind: 'G-type main-sequence star', t: '≈ 5,800 K', f: 'Hydrogen fuses to helium in its core. It is about 4.6 billion years old, roughly halfway through its life.' },
+      { n: 'Alpha Centauri A', a: 'Alpha_Centauri', kind: 'G-type main-sequence star', t: '≈ 5,800 K', f: 'A near twin of the Sun, 4.37 light-years away, in a triple system with Proxima.' },
+      { n: 'Tau Ceti', a: 'Tau_Ceti', kind: 'G-type main-sequence star', t: '≈ 5,300 K', f: 'A Sun-like star only 12 light-years away, long a favourite target in the search for other worlds.' },
+      { n: '51 Pegasi', a: '51_Pegasi', kind: 'G-type main-sequence star', t: '≈ 5,800 K', f: 'Where the first planet around a Sun-like star, 51 Pegasi b, was found in 1995.' }],
+    bluewhite: [
+      { n: 'Sirius A', a: 'Sirius', kind: 'A-type main-sequence star', t: '≈ 9,900 K', f: 'The brightest star in the night sky, 8.6 light-years away and twice the Sun’s mass.' },
+      { n: 'Vega', a: 'Vega', kind: 'A-type main-sequence star', t: '≈ 9,600 K', f: 'A bright summer star 25 light-years away, once used as the zero point of the magnitude scale.' },
+      { n: 'Regulus', a: 'Regulus', kind: 'B-type main-sequence star', t: '≈ 12,000 K', f: 'The heart of Leo, 79 light-years away, spinning so fast it is visibly flattened.' },
+      { n: 'Fomalhaut', a: 'Fomalhaut', kind: 'A-type main-sequence star', t: '≈ 8,600 K', f: 'A young star 25 light-years away, ringed by a vast belt of dust.' }],
+    bluegiant: [
+      { n: 'Spica', a: 'Spica', kind: 'Blue giant', t: '≈ 22,000 K', f: 'The brightest star in Virgo, a close pair of blue stars about 250 light-years away.' },
+      { n: 'Bellatrix', a: 'Bellatrix', kind: 'Blue giant', t: '≈ 22,000 K', f: 'Orion’s other shoulder, a blue giant about 250 light-years away.' },
+      { n: 'Mimosa', a: 'Beta_Crucis', kind: 'Blue giant', t: '≈ 27,000 K', f: 'One of the stars of the Southern Cross, a blue giant about 280 light-years away.' },
+      { n: 'Rigel', a: 'Rigel', kind: 'Blue supergiant', t: '≈ 12,000 K', f: 'Orion’s bright foot, tens of thousands of times more luminous than the Sun.' }],
+    whitedwarf: [
+      { n: 'Sirius B', a: 'Sirius_B', kind: 'White dwarf', t: '≈ 25,000 K', f: 'The first white dwarf discovered (1862): a star of about one Sun-mass packed into Earth’s size.' },
+      { n: 'Procyon B', a: 'Procyon', kind: 'White dwarf', t: '≈ 7,700 K', f: 'The faint white dwarf companion of bright Procyon, 11.5 light-years away.' },
+      { n: '40 Eridani B', a: '40_Eridani', kind: 'White dwarf', t: '≈ 16,500 K', f: 'One of the first white dwarfs ever identified, in a triple system 16 light-years away.' },
+      { n: 'van Maanen’s Star', a: 'Van_Maanen%27s_Star', kind: 'White dwarf', t: '≈ 6,000 K', f: 'The nearest solitary white dwarf, 14 light-years away, its surface dusted with rocky debris.' }],
+    neutron: [
+      { n: 'Crab Pulsar', a: 'Crab_Pulsar', kind: 'Pulsar', t: '≈ 1,000,000 K', f: 'The core left by the supernova seen from Earth in 1054. It spins about 30 times a second.' },
+      { n: 'Vela Pulsar', a: 'Vela_Pulsar', kind: 'Pulsar', t: '≈ 1,000,000 K', f: 'A neutron star spinning about 11 times a second inside the Vela supernova remnant.' },
+      { n: 'Geminga', a: 'Geminga', kind: 'Gamma-ray pulsar', t: '≈ 500,000 K', f: 'A pulsar about 800 light-years away that shines mostly in gamma rays and spins every 0.24 seconds.' },
+      { n: 'PSR B1919+21', a: 'PSR_B1919%2B21', kind: 'Pulsar', t: '≈ 1,000,000 K', f: 'The first pulsar ever found, spotted by Jocelyn Bell Burnell in 1967.' }],
+    quasar: [
+      { n: '3C 273', a: '3C_273', kind: 'Quasar', t: 'millions of K', f: 'The first quasar to have its distance measured (1963), about 2.4 billion light-years away.' },
+      { n: 'TON 618', a: 'TON_618', kind: 'Quasar', t: 'millions of K', f: 'Powered by one of the most massive black holes known, tens of billions of times the mass of the Sun.' },
+      { n: '3C 48', a: '3C_48', kind: 'Quasar', t: 'millions of K', f: 'Among the first quasars found, in 1960, when it looked like an odd star that was loud in radio waves.' },
+      { n: 'APM 08279+5255', a: 'APM_08279%2B5255', kind: 'Lensed quasar', t: 'millions of K', f: 'A quasar magnified by a gravitational lens, with signs of an enormous reservoir of water vapour.' }]
+  };
+  const hs = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h; };
+  // a system: Kepler orbits (T^2 ~ a^3, ellipses with the primary at a focus, faster at periapsis), a barycentre wobble, moons for duplicates.
+  // The map is far larger than the view: pan with opt.cam = {x, y, z}; positions are world units with the primary at the origin.
   function kepler(M, e) { let E = M; for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
-  function orbits(w, list) {   // list is sorted hottest first: [{id, idx, count}]
-    const m = list.length - 1, maxA = w * .44; return list.slice(1).map((b, i) => { const a = m === 1 ? maxA * .6 : maxA * (.3 + .7 * i / (m - 1)), T = 8 * Math.pow(a / (w * .2), 1.5); return { ...b, a, T, e: .06 + .32 * hash(b.idx + 3.1), om: hash(b.idx + 7.7) * TAU, M0: hash(b.idx + 1.3) * TAU }; });
+  function orbits(w, list) {   // list sorted hottest first: [{n, id, idx, count}]; every body after the first orbits the primary
+    return list.slice(1).map((b, i) => { const k = hs(b.n), a = w * .3 + i * w * .33 + (hash(k) - .5) * w * .08, T = 9 * Math.pow(a / (w * .44), 1.5); return { ...b, a, T, e: .05 + .3 * hash(k + 3.1), om: hash(k + 7.7) * TAU, M0: hash(k + 1.3) * TAU }; });
   }
   function system(g, w, h, t, list, opt = {}) {
-    g.clearRect(0, 0, w, h); starfield(g, w, h, t * .3, Math.round(w * h / 4500), 9); if (!list.length) return [];
-    const cx = w / 2, cy = h * .5, SY = .56, U = Math.min(w, h), prim = list[0], orb = orbits(w, list), pos = [];
+    g.clearRect(0, 0, w, h); const cam = opt.cam || { x: 0, y: 0, z: 1 }, Z = cam.z, SY = .56, U = Math.min(w, h); if (!list.length) { starfield(g, w, h, t * .3, 60, 9); return []; }
+    const ox = ((cam.x * .12) % w + w) % w, oy = ((cam.y * .12) % h + h) % h; g.save(); g.translate(-ox, -oy); for (const [dx, dy] of [[0, 0], [w, 0], [0, h], [w, h]]) { g.save(); g.translate(dx, dy); starfield(g, w, h, t * .3, Math.round(w * h / 9000), 9); g.restore(); } g.restore();
+    const prim = list[0], orb = orbits(w, list), pos = [], toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2];
     const at = (b, tt) => { const E = kepler(b.M0 + tt * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; };
-    let bx = 0, by = 0, mt = 1; orb.forEach(b => { const q = at(b, t), mass = .012 * (b.idx + 1); bx += q[0] * mass; by += q[1] * mass; mt += mass; }); bx = -bx / mt; by = -by / mt;
-    const items = [];
-    orb.forEach(b => { const foc = opt.focus === b.id; g.strokeStyle = foc ? 'rgba(255,255,255,.4)' : 'rgba(255,255,255,.12)'; g.lineWidth = foc ? 2 : 1; g.beginPath(); for (let i = 0; i <= 120; i++) { const E = i / 120 * TAU, x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om), px = cx + bx + x * c - y * s, py = cy + by + (x * s + y * c) * SY; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke();
-      if (foc) { g.fillStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.moveTo(cx + bx, cy + by); for (let i = 0; i <= 14; i++) { const q = at(b, t - 1.4 + i * .1); g.lineTo(cx + bx + q[0], cy + by + q[1] * SY); } g.fill(); }
-      const q = at(b, t); items.push({ b, x: cx + bx + q[0], y: cy + by + q[1] * SY, z: q[1] }); });
-    items.push({ b: prim, x: cx + bx, y: cy + by, z: 0, prim: true }); items.sort((a, b) => a.z - b.z);
-    items.forEach(it => { const b = it.b, base = (FR[b.id] || .2) * U * (it.prim ? .62 : .4); let r = base; const born = opt.newId === b.id ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1; r *= Math.max(.01, easeBack(born));
-      if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, t - i * .07); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(cx + bx + q[0], cy + by + q[1] * SY, Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
+    let bx = 0, by = 0, mt = 1; orb.forEach(b => { const q = at(b, t), mass = .012 * (b.idx + 1); bx += q[0] * mass; by += q[1] * mass; mt += mass; }); bx = -bx / mt * .35; by = -by / mt * .35;
+    const items = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m;
+    orb.forEach(b => { const foc = opt.focus === b.n; g.strokeStyle = foc ? 'rgba(255,255,255,.45)' : 'rgba(255,255,255,.1)'; g.lineWidth = foc ? 2 : 1; g.beginPath(); for (let i = 0; i <= 120; i++) { const E = i / 120 * TAU, x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om), p = toS(bx + x * c - y * s, by + (x * s + y * c) * SY); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke();
+      const q = at(b, t), wx = bx + q[0], wy = by + q[1] * SY, p = toS(wx, wy);
+      if (foc) { g.fillStyle = 'rgba(255,255,255,.06)'; g.beginPath(); const c0 = toS(bx, by); g.moveTo(c0[0], c0[1]); for (let i = 0; i <= 14; i++) { const qq = at(b, t - 1.4 + i * .1), pp = toS(bx + qq[0], by + qq[1] * SY); g.lineTo(pp[0], pp[1]); } g.fill(); }
+      items.push({ b, x: p[0], y: p[1], z: q[1], wx, wy }); });
+    const pp = toS(bx, by); items.push({ b: prim, x: pp[0], y: pp[1], z: 0, wx: bx, wy: by, prim: true }); items.sort((a, b) => a.z - b.z);
+    items.forEach(it => { const b = it.b, base = (FR[b.id] || .2) * U * (it.prim ? .62 : .4) * Z; if (!vis(it.x, it.y, base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: 0 }); return; }
+      let r = base; const born = opt.newId === b.n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1; r *= Math.max(.01, easeBack(born));
+      if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, t - i * .07), p = toS(bx + q[0], by + q[1] * SY); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(p[0], p[1], Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
       if (born < 1) ring(g, it.x, it.y, base * (.6 + 3 * born), OBJ[b.idx].c, .7 * (1 - born), 3);
-      g.save(); g.translate(it.x, it.y); const sc = it.prim ? 1 : .55 + .25 * ((it.z / (w * .44)) * .5 + .5); DRAW[b.id](g, 0, 0, Math.max(.5, r * sc), t + b.idx); g.restore();
-      for (let k = 0; k < Math.min(5, b.count - 1); k++) { const rs = r * sc * (1.9 + .4 * k) + 8, th = t * (2.3 - .25 * k) + hash(b.idx * 9 + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.ellipse(it.x, it.y, rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(OBJ[b.idx].c, .95); g.beginPath(); g.arc(it.x + Math.cos(th) * rs, it.y + Math.sin(th) * rs * SY, 2.6 + (it.prim ? 1 : 0), 0, TAU); g.fill(); }
-      pos.push({ id: b.id, x: it.x, y: it.y, r: Math.max(r * sc, 14) }); });
+      g.save(); g.translate(it.x, it.y); const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / (w * 2) * .5 + .5, 0, 1); DRAW[b.id](g, 0, 0, Math.max(.5, r * sc), t + b.idx); g.restore();
+      for (let k = 0; k < Math.min(5, b.count - 1); k++) { const rs = r * sc * (1.9 + .4 * k) + 8, th = t * (2.3 - .25 * k) + hash(hs(b.n) + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.ellipse(it.x, it.y, rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(OBJ[b.idx].c, .95); g.beginPath(); g.arc(it.x + Math.cos(th) * rs, it.y + Math.sin(th) * rs * SY, 2.6 + (it.prim ? 1 : 0), 0, TAU); g.fill(); }
+      if (Z > .45 || opt.focus === b.n) { g.font = `italic 400 ${Math.round(clamp(40 * Math.sqrt(Z), 28, 52))}px "EB Garamond", Georgia, serif`; g.textAlign = 'center'; g.lineWidth = 7; g.strokeStyle = 'rgba(8,6,16,.9)'; g.strokeText(b.n, it.x, it.y + r * sc * 1.25 + 44); g.fillStyle = opt.focus === b.n ? '#ffffff' : OBJ[b.idx].c; g.fillText(b.n, it.x, it.y + r * sc * 1.25 + 44); }
+      pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: Math.max(r * sc, 18) }); });
+    // minimap: the whole system with the current view as a box
+    const big = Math.max(w * .5, ...orb.map(b => b.a * (1 + b.e))), R = 58, mx = 18 + R, my = h - 18 - R, k = R / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, R + 2, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, R, 0, TAU); g.clip();
+    orb.forEach(b => { g.strokeStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.ellipse(mx + bx * k, my + by * k * 1, b.a * k, b.a * k * SY, b.om, 0, TAU); g.stroke(); }); pos.forEach(p => { g.fillStyle = p.n === opt.focus ? '#fff' : rgba(OBJ[(list.find(l => l.n === p.n) || prim).idx].c, .95); g.beginPath(); g.arc(mx + p.wx * k, my + p.wy * k, p.n === opt.focus ? 3.4 : 2.2, 0, TAU); g.fill(); });
+    g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
     return pos;
   }
-  window.SKY = { OBJ, FR, draw: (g, id, x, y, r, t = 0) => (DRAW[id] || DRAW.sun)(g, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { OBJ, FR, POOL, draw: (g, id, x, y, r, t = 0) => (DRAW[id] || DRAW.sun)(g, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();

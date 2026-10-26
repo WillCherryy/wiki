@@ -152,7 +152,8 @@ function loadP() {
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
 let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic', buddy: 'none' }, P.cos || {});
-P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {} }, P.sky || {}); P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {};
+P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {}, cat: {} }, P.sky || {}); P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {}; P.sky.cat = P.sky.cat || {};
+for (const id in P.sky.found) if (!SKY.POOL[id].some(q => P.sky.cat[q.n])) P.sky.cat[SKY.POOL[id][0].n] = P.sky.found[id];   // objects found before names existed take the first famous name
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
@@ -498,8 +499,8 @@ function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" st
 function skyReveal(k) {
   const o = SKY.OBJ[k.idx];
   return `<div class="skyr"><div class="skyc"><canvas id="skyCv" width="760" height="520"></canvas><span class="small">${k.first ? 'New in your sky' : 'You earned'}</span></div>
-    <h3 class="skyn" style="color:${o.c}">${o.name}</h3><div class="small">${o.kind} · ${o.temp}</div>${skyLadder(k.idx)}
-    <div class="small skyw">Tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(o.fact)}</p></div>`;
+    <h3 class="skyn" style="color:${o.c}">${esc(k.name)}</h3><div class="small">${esc(k.kind)} · ${esc(k.temp)}</div>${skyLadder(k.idx)}
+    <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a></div>`;
 }
 function drawSkyCell(cv, id, t, k = 1) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
@@ -510,33 +511,52 @@ function mountSky(id, idx) {   // the landing animation on the results card, the
   const cv = $('#skyCv'); if (!cv) return; const t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t); requestAnimationFrame(f); })(t0);
 }
-function skyList() { return SKY.OBJ.map((o, i) => ({ id: o.id, idx: i, count: P.sky.found[o.id] || 0 })).filter(b => b.count).sort((a, b) => b.idx - a.idx); }
+function skyList() {   // every named object you own, hottest first
+  const out = []; SKY.OBJ.forEach((o, i) => SKY.POOL[o.id].forEach(q => { const c = P.sky.cat[q.n]; if (c) out.push({ ...q, id: o.id, idx: i, count: c }); }));
+  return out.sort((x, y) => y.idx - x.idx || y.count - x.count || x.n.localeCompare(y.n));
+}
 function openSky(opt = {}) {
-  const f = P.sky.found, n = SKY.OBJ.filter(o => f[o.id]).length; let sel = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky';
+  const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length; let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns an object. The better your route, the hotter it burns. <b>${n} of 9</b> found · <b>${P.sky.total}</b> earned in all.</p>
+  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of 36</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
     <div class="tabs" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your system</button></div>
     <div id="skyPane"></div><div class="rcard skyd" id="skyD"></div>`);
   let raf = 0, t0 = performance.now(), pos = [];
-  const detail = () => { const o = SKY.OBJ.find(x => x.id === sel); $('#skyD').innerHTML = !o ? '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>' : f[o.id] ? `<div class="small">${o.kind} · ${o.temp}</div><h3 class="skyn" style="color:${o.c};margin:4px 0 6px;font-size:34px">${o.name}</h3><p class="skyf" style="margin:0">${esc(o.fact)}</p><div class="small" style="margin-top:8px">Earned ${f[o.id]} time${f[o.id] > 1 ? 's' : ''}</div>` : `<p class="mute" style="margin:0">Tier ${SKY.OBJ.indexOf(o) + 1}: ${o.name}. Play cleaner, faster routes to reach it.</p>`; };
+  const named = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
+  const link = q => `<a class="skyl" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read about ${esc(q.n)} on Wikipedia ↗</a>`;
+  const detail = () => {
+    const box = $('#skyD');
+    if (tab === 'sys') { const q = selN && cat[selN] ? named(selN) : null; box.innerHTML = !q ? '<p class="mute" style="margin:0">Tap an object on the map, or a name below, to fly to it.</p>' : `<div class="small">${esc(q.kind)} · ${esc(q.t)} · ${q.o.name}</div><h3 class="skyn" style="color:${q.o.c};margin:4px 0 6px;font-size:34px">${esc(q.n)}</h3><p class="skyf" style="margin:0 0 8px">${esc(q.f)}</p>${link(q)}<div class="small" style="margin-top:8px">Earned ${cat[q.n]} time${cat[q.n] > 1 ? 's' : ''}</div>`; return; }
+    const o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; }
+    box.innerHTML = `<div class="small">${o.kind} · ${o.temp} · tier ${SKY.OBJ.indexOf(o) + 1} of 9</div><h3 class="skyn" style="color:${o.c};margin:4px 0 8px;font-size:34px">${o.name}</h3>
+      <div class="catl">${SKY.POOL[o.id].map(q => cat[q.n] ? `<div class="catr"><b>${esc(q.n)}</b><span>${esc(q.kind)}</span><em>×${cat[q.n]}</em><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener" aria-label="${esc(q.n)} on Wikipedia">↗</a></div>` : `<div class="catr lock"><b>???</b><span>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</span></div>`).join('')}</div>`;
+  };
   const stop = () => cancelAnimationFrame(raf);
   const draw = () => {
     stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     if (tab === 'sky') {
-      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => `<button class="skycell ${f[o.id] ? '' : 'lock'} ${sel === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? o.temp : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`).join('')}</div>
+      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? have + ' of 4 named' : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`; }).join('')}</div>
         <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
-      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { sel = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
+      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
       t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1); }); raf = requestAnimationFrame(loop); })(t0);
     } else {
-      const L = skyList(), orb = SKY.orbits(760, L), cnv = orb.length ? '' : '';
-      $('#skyPane').innerHTML = `<div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas><span class="small sysnote">${L.length ? 'Kepler orbits: faster when close, T² ∝ a³' : ''}</span>${L.length ? '' : '<p class="mute sysempty">Solve a puzzle and your first object starts your system.</p>'}</div>
-        <div class="syslegend">${L.map((b, i) => { const o = SKY.OBJ[b.idx], ob = orb.find(q => q.id === b.id), au = ob ? (ob.a / 760 * 8.2).toFixed(2) : '', yr = ob ? Math.pow(ob.a / 760 * 8.2, 1.5).toFixed(2) : ''; return `<button class="sysrow ${sel === b.id ? 'sel' : ''}" data-id="${b.id}"><i style="background:${o.c}"></i><b>${o.name}</b><span>${i === 0 ? 'primary' : 'a = ' + au + ' AU · T = ' + yr + ' yr'}</span><em>×${b.count}</em></button>`; }).join('')}</div>
-        <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Your hottest object is the primary, the rest orbit it on ellipses; duplicates become moons.</p>`;
+      const L = skyList(); if (!selN && L.length) selN = L[0].n;
+      const orb = SKY.orbits(760, L);
+      $('#skyPane').innerHTML = `<div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas>${L.length ? `<span class="small sysnote">Drag to explore · + / − to zoom</span><div class="syszoom"><button id="zIn" aria-label="Zoom in">+</button><button id="zOut" aria-label="Zoom out">−</button><button id="zHome" aria-label="Back to the primary">⌖</button></div>` : '<p class="mute sysempty">Solve a puzzle and your first object starts your system.</p>'}</div>
+        <div class="syslegend">${L.map((b, i) => { const o = SKY.OBJ[b.idx], ob = orb.find(q => q.n === b.n), au = ob ? (ob.a / 760 * 8.2).toFixed(1) : '', yr = ob ? Math.pow(ob.a / 760 * 8.2, 1.5).toFixed(1) : ''; return `<button class="sysrow ${selN === b.n ? 'sel' : ''}" data-n="${esc(b.n)}"><i style="background:${o.c}"></i><b>${esc(b.n)}</b><span>${i === 0 ? 'primary' : au + ' AU · ' + yr + ' yr'}</span><em>×${b.count}</em></button>`; }).join('')}</div>
+        <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Your hottest object is the primary; everything else orbits it on a Keplerian ellipse (faster when close, T² ∝ a³), and duplicates become moons. Each new object widens the system.</p>`;
       const cv = $('#sysCv'), g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now();
-      const frame = now => { if (!cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, 760, 760, t, L, { focus: sel, newId: opt.newId, tNew: (now - born) / 1000 }); raf = requestAnimationFrame(frame); };
-      t0 = performance.now(); frame(t0);
-      cv.onclick = e => { const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 760, y = (e.clientY - r.top) / r.height * 760, hit = pos.slice().reverse().find(p => Math.hypot(p.x - x, p.y - y) < p.r); if (hit) { sel = hit.id; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.id === sel)); detail(); } };
-      document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { sel = b.dataset.id; document.querySelectorAll('.sysrow').forEach(c => c.classList.toggle('sel', c === b)); detail(); });
+      const cam = { x: 0, y: 0, z: .85, follow: opt.newId || (L[0] && L[0].n) };
+      const frame = now => { if (!cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, 760, 760, t, L, { cam, focus: selN, newId: opt.newId, tNew: (now - born) / 1000 }); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .1); cam.y += (p.wy - cam.y) * (calm ? 1 : .1); } } raf = requestAnimationFrame(frame); };
+      t0 = performance.now(); if (L.length) frame(t0);
+      const pick = n => { selN = n; cam.follow = n; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); };
+      let drag = null;
+      cv.onpointerdown = e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; try { cv.setPointerCapture(e.pointerId); } catch {} };
+      cv.onpointermove = e => { if (!drag) return; const r = cv.getBoundingClientRect(), dx = (e.clientX - drag.x) / r.width * 760, dy = (e.clientY - drag.y) / r.height * 760; if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; cam.follow = null; } if (drag.moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; } };
+      cv.onpointerup = e => { const d = drag; drag = null; if (!d || d.moved) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 760, y = (e.clientY - r.top) / r.height * 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < p.r); if (hit) pick(hit.n); };
+      cv.addEventListener('wheel', e => { e.preventDefault(); cam.z = Math.max(.35, Math.min(1.8, cam.z * Math.exp(-e.deltaY * .0012))); }, { passive: false });
+      if ($('#zIn')) { $('#zIn').onclick = () => { cam.z = Math.min(1.8, cam.z * 1.3); }; $('#zOut').onclick = () => { cam.z = Math.max(.35, cam.z / 1.3); }; $('#zHome').onclick = () => { cam.follow = L[0].n; selN = L[0].n; pick(L[0].n); }; }
+      document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
     }
     detail();
   };
@@ -548,6 +568,11 @@ function burnOf(steps) {   // a click "burns" when it lands warmer than the page
   for (let i = 1; i < steps.length; i++) { n++; if (steps[i].sig > steps[i - 1].sig + .01 || steps[i].sig >= .99) { chain++; warm++; best = Math.max(best, chain); } else chain = 0; }
   return { chain, best, warm, n };
 }
+function pickNamed(typeId) {   // a real, famous object of that type: the first ever is the most famous, then ones you do not have yet
+  const pool = SKY.POOL[typeId], cat = P.sky.cat, fresh = pool.filter(p => !cat[p.n]); if (!pool.some(p => cat[p.n])) return pool[0];
+  const list = fresh.length ? fresh : pool; return list[Math.floor(Math.random() * list.length)];
+}
+const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .9, .96];
 function skyTier(r) {
   const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (240 - r.secs) / 210));
@@ -581,7 +606,7 @@ function finish(won) {
     G.result.chal = { ...ch, outcome: win ? 'win' : tie ? 'tie' : 'lose' };
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
-  if (won && !repeatDaily) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], first = !P.sky.found[o.id]; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; G.result.sky = { idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn }; }
+  if (won && !repeatDaily) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; G.result.sky = { idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -720,7 +745,7 @@ function showResult() {
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.id } : {});
+  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && r.sky.id });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
@@ -1283,7 +1308,7 @@ async function shareCardCanvas(r) {
   x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
   x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}${r.purist ? ' · purist' : ''}` : 'Gave up on this one', M, y);
   if (r.sky) { const o = SKY.byId(r.sky.id), cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.draw(x, o.id, 98, 100, (SKY.FR[o.id] || .2) * 196 * .95, 1.4); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
-    x.font = `italic 400 34px ${DISP}`; x.fillStyle = o.c === '#cfe2ff' || o.c === '#e6f1ff' ? '#6a86b8' : o.c; x.textAlign = 'left'; x.fillText(o.name, M, y + 44); caps(o.temp, M, y + 82, 20, MUTE, 'left', 3); }
+    x.font = `italic 400 34px ${DISP}`; x.fillStyle = o.c === '#cfe2ff' || o.c === '#e6f1ff' ? '#6a86b8' : o.c; x.textAlign = 'left'; x.fillText(r.sky.name || o.name, M, y + 44); caps((r.sky.temp || o.temp), M, y + 82, 20, MUTE, 'left', 3); }
   // the route, drawn as a temperature curve
   let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));
   if (pts.length > 7) pts = [...pts.slice(0, 3), ...pts.slice(-4)];
