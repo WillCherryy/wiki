@@ -778,3 +778,6 @@ html[data-calm="1"] #buddy { display: none !important; }
 .skysys .sysnote { bottom: auto; top: 12px; }
 .syslegend { max-height: 300px; overflow: auto; padding-right: 2px; }
 .catl { display: grid; gap: 6px; } .catr { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: var(--rad-s); padding: 9px 12px; font-family: var(--sans); } .catr b { font: italic 400 19px var(--display); } .catr span { margin-left: auto; font: 500 11.5px var(--sans); color: var(--mute); text-align: right; } .catr em { font: 600 12px var(--sans); font-style: normal; color: var(--ink-2); } .catr a { color: var(--accent-ink); font-weight: 700; text-decoration: none; padding: 0 2px; } .catr.lock { opacity: .6; }
+
+.runbox { margin-top: 12px; padding: 12px 14px; border-radius: var(--rad-s); background: var(--paper); display: grid; gap: 12px; } .runbox .runr { font: 500 14px/1.45 var(--sans); } .runbox b { display: block; font: italic 400 20px/1.2 var(--display); margin: 2px 0 4px; } .runbox .runr + .runr { padding-top: 10px; border-top: 1px solid var(--rule-2); }
+.skynote { margin: 4px 0 12px; padding: 10px 14px; border-radius: var(--rad-s); background: var(--paper); font: 500 13px/1.4 var(--sans); color: var(--mute); text-align: center; }

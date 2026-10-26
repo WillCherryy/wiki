@@ -152,7 +152,7 @@ function loadP() {
   return Object.assign({ pid: Math.random().toString(36).slice(2, 12), name: '', xp: 0, streak: 0, lastDay: '', days: {}, played: 0, won: 0, best: 0, theme: '', maxStreak: 0, clicksTotal: 0, fastWins: 0, lowWins: 0, ach: {}, leagues: [], fs: 0, parWins: 0, puristWins: 0, supporter: false, shieldMonth: '', checkoutAt: 0, packs: {}, packSolves: 0, challengeWins: 0, cos: { theme: 'classic', trail: 'classic', confetti: 'classic' }, cosSeen: [] }, p);
 }
 let P = loadP(); if (!P.look || typeof P.look !== 'object') P.look = {}; P.cos = Object.assign({ theme: 'classic', trail: 'classic', confetti: 'classic', dots: 'classic', buddy: 'none' }, P.cos || {});
-P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {}, cat: {} }, P.sky || {}); P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {}; P.sky.cat = P.sky.cat || {};
+P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {}, cat: {}, runs: {} }, P.sky || {}); P.sky.runs = P.sky.runs || {}; P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {}; P.sky.cat = P.sky.cat || {};
 for (const id in P.sky.found) if (!SKY.POOL[id].some(q => P.sky.cat[q.n])) P.sky.cat[SKY.POOL[id][0].n] = P.sky.found[id];   // objects found before names existed take the first famous name
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
@@ -518,15 +518,16 @@ function skyList() {   // every named object you own, hottest first
 function openSky(opt = {}) {
   const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length; let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of 36</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
+  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of ${SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0)}</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
     <div class="tabs" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your system</button></div>
     <div id="skyPane"></div><div class="rcard skyd" id="skyD"></div>`);
   let raf = 0, t0 = performance.now(), pos = [];
   const named = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
+  const runBox = n => { const rn = (P.sky.runs || {})[n]; if (!rn) return '<div class="runbox"><div class="small">The run that earned it</div><p class="mute" style="margin:6px 0 0">Earned before runs were recorded.</p></div>'; const one = (x, lab) => `<div class="runr"><div class="small">${lab}</div><b>${esc(x.from || '?')} → ${esc(x.to || '?')}</b><div>${x.mode === 'daily' ? 'Daily #' + x.num : x.mode === 'pack' ? 'Companion pack' : 'Puzzle'} · ${new Date(x.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div><div>${x.clicks} click${x.clicks === 1 ? '' : 's'}${x.par ? ' (par ' + x.par + ')' : ''} · ${fmt(x.secs)}</div>${x.why ? `<div class="mute">${esc(x.why)}</div>` : ''}</div>`; return `<div class="runbox">${one(rn.first, 'The run that earned it')}${rn.last && rn.last.at !== rn.first.at ? one(rn.last, 'Most recent') : ''}</div>`; };
   const link = q => `<a class="skyl" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read about ${esc(q.n)} on Wikipedia ↗</a>`;
   const detail = () => {
     const box = $('#skyD');
-    if (tab === 'sys') { const q = selN && cat[selN] ? named(selN) : null; box.innerHTML = !q ? '<p class="mute" style="margin:0">Tap an object on the map, or a name below, to fly to it.</p>' : `<div class="small">${esc(q.kind)} · ${esc(q.t)} · ${q.o.name}</div><h3 class="skyn" style="color:${q.o.c};margin:4px 0 6px;font-size:34px">${esc(q.n)}</h3><p class="skyf" style="margin:0 0 8px">${esc(q.f)}</p>${link(q)}<div class="small" style="margin-top:8px">Earned ${cat[q.n]} time${cat[q.n] > 1 ? 's' : ''}</div>`; return; }
+    if (tab === 'sys') { const q = selN && cat[selN] ? named(selN) : null; box.innerHTML = !q ? '<p class="mute" style="margin:0">Tap an object on the map, or a name below, to fly to it.</p>' : `<div class="small">${esc(q.kind)} · ${esc(q.t)} · ${q.o.name}</div><h3 class="skyn" style="color:${q.o.c};margin:4px 0 6px;font-size:34px">${esc(q.n)}</h3><p class="skyf" style="margin:0 0 8px">${esc(q.f)}</p>${link(q)}${runBox(q.n)}<div class="small" style="margin-top:8px">Earned ${cat[q.n]} time${cat[q.n] > 1 ? 's' : ''}</div>`; return; }
     const o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; }
     box.innerHTML = `<div class="small">${o.kind} · ${o.temp} · tier ${SKY.OBJ.indexOf(o) + 1} of 9</div><h3 class="skyn" style="color:${o.c};margin:4px 0 8px;font-size:34px">${o.name}</h3>
       <div class="catl">${SKY.POOL[o.id].map(q => cat[q.n] ? `<div class="catr"><b>${esc(q.n)}</b><span>${esc(q.kind)}</span><em>×${cat[q.n]}</em><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener" aria-label="${esc(q.n)} on Wikipedia">↗</a></div>` : `<div class="catr lock"><b>???</b><span>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</span></div>`).join('')}</div>`;
@@ -535,7 +536,8 @@ function openSky(opt = {}) {
   const draw = () => {
     stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     if (tab === 'sky') {
-      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? have + ' of 4 named' : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`; }).join('')}</div>
+      $('#skyPane').after($('#skyD'));
+      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? have + ' of ' + SKY.POOL[o.id].length + ' named' : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`; }).join('')}</div>
         <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
       const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
       t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1); }); raf = requestAnimationFrame(loop); })(t0);
@@ -545,17 +547,18 @@ function openSky(opt = {}) {
       $('#skyPane').innerHTML = `<div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas>${L.length ? `<span class="small sysnote">Drag to explore · + / − to zoom</span><div class="syszoom"><button id="zIn" aria-label="Zoom in">+</button><button id="zOut" aria-label="Zoom out">−</button><button id="zHome" aria-label="Back to the primary">⌖</button></div>` : '<p class="mute sysempty">Solve a puzzle and your first object starts your system.</p>'}</div>
         <div class="syslegend">${L.map((b, i) => { const o = SKY.OBJ[b.idx], ob = orb.find(q => q.n === b.n), au = ob ? (ob.a / 760 * 8.2).toFixed(1) : '', yr = ob ? Math.pow(ob.a / 760 * 8.2, 1.5).toFixed(1) : ''; return `<button class="sysrow ${selN === b.n ? 'sel' : ''}" data-n="${esc(b.n)}"><i style="background:${o.c}"></i><b>${esc(b.n)}</b><span>${i === 0 ? 'primary' : au + ' AU · ' + yr + ' yr'}</span><em>×${b.count}</em></button>`; }).join('')}</div>
         <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Your hottest object is the primary; everything else orbits it on a Keplerian ellipse (faster when close, T² ∝ a³), and duplicates become moons. Each new object widens the system.</p>`;
+      $('.skysys').after($('#skyD'));
       const cv = $('#sysCv'), g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now();
-      const cam = { x: 0, y: 0, z: .85, follow: opt.newId || (L[0] && L[0].n) };
-      const frame = now => { if (!cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, 760, 760, t, L, { cam, focus: selN, newId: opt.newId, tNew: (now - born) / 1000 }); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .1); cam.y += (p.wy - cam.y) * (calm ? 1 : .1); } } raf = requestAnimationFrame(frame); };
+      const cam = { x: 0, y: 0, z: .85, tz: .85, follow: opt.newId || (L[0] && L[0].n) };
+      const frame = now => { if (!cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, 760, 760, t, L, { cam, focus: selN, newId: opt.newId, tNew: (now - born) / 1000 }); cam.z += (cam.tz - cam.z) * (calm ? 1 : .09); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .1); cam.y += (p.wy - cam.y) * (calm ? 1 : .1); } } raf = requestAnimationFrame(frame); };
       t0 = performance.now(); if (L.length) frame(t0);
-      const pick = n => { selN = n; cam.follow = n; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); };
+      const pick = n => { selN = n; cam.follow = n; cam.tz = Math.max(cam.tz, 1.25); document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); };
       let drag = null;
       cv.onpointerdown = e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; try { cv.setPointerCapture(e.pointerId); } catch {} };
       cv.onpointermove = e => { if (!drag) return; const r = cv.getBoundingClientRect(), dx = (e.clientX - drag.x) / r.width * 760, dy = (e.clientY - drag.y) / r.height * 760; if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; cam.follow = null; } if (drag.moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; } };
-      cv.onpointerup = e => { const d = drag; drag = null; if (!d || d.moved) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 760, y = (e.clientY - r.top) / r.height * 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < p.r); if (hit) pick(hit.n); };
-      cv.addEventListener('wheel', e => { e.preventDefault(); cam.z = Math.max(.35, Math.min(1.8, cam.z * Math.exp(-e.deltaY * .0012))); }, { passive: false });
-      if ($('#zIn')) { $('#zIn').onclick = () => { cam.z = Math.min(1.8, cam.z * 1.3); }; $('#zOut').onclick = () => { cam.z = Math.max(.35, cam.z / 1.3); }; $('#zHome').onclick = () => { cam.follow = L[0].n; selN = L[0].n; pick(L[0].n); }; }
+      cv.onpointerup = e => { const d = drag; drag = null; if (!d || d.moved) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 760, y = (e.clientY - r.top) / r.height * 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < Math.max(p.r, 34)); if (hit) pick(hit.n); };
+      cv.addEventListener('wheel', e => { e.preventDefault(); cam.tz = Math.max(.35, Math.min(1.8, cam.tz * Math.exp(-e.deltaY * .0012))); }, { passive: false });
+      if ($('#zIn')) { $('#zIn').onclick = () => { cam.tz = Math.min(1.8, cam.tz * 1.3); }; $('#zOut').onclick = () => { cam.tz = Math.max(.35, cam.tz / 1.3); }; $('#zHome').onclick = () => { pick(L[0].n); cam.tz = .85; }; }
       document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
     }
     detail();
@@ -573,10 +576,11 @@ function pickNamed(typeId) {   // a real, famous object of that type: the first 
   const list = fresh.length ? fresh : pool; return list[Math.floor(Math.random() * list.length)];
 }
 const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
-const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .9, .96];
+const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
 function skyTier(r) {
   const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (240 - r.secs) / 210));
   const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0); let idx = 0; SKY_CUT.forEach((c, i) => { if (q >= c) idx = i; });
+  idx = Math.min(idx, ref <= 1 ? 4 : ref === 2 ? 6 : 8);   // very short puzzles cannot reach the top tiers
   const why = [r.clicks <= ref ? (r.clicks < ref ? 'beat par' : 'par route') : `${r.clicks - ref} over par`, bn.n && bn.warm === bn.n ? 'every click warmer' : bn.best >= 2 ? `burn ×${bn.best}` : '', r.purist ? 'no search or rewind' : ''].filter(Boolean).join(' · ');
   return { idx, q, why, burn: bn.best };
 }
@@ -587,7 +591,7 @@ function finish(won) {
   const score = won ? Math.max(100, 1000 - 90 * Math.max(0, c - par) - Math.floor(secs / 3)) : 0;
   const stars = !won || !ref ? 0 : c <= ref ? 3 : c === ref + 1 ? 2 : c <= ref + 2 ? 1 : 0;
   G.result = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.slice(), par: G.par, goal: G.goal, stars, route: G.route, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, mode: G.mode, purist: !G.usedFind && !G.rewinds, alts: G.alts || [] };
-  let gain = 0, streakBonus = 0; const repeatDaily = G.mode === 'daily' && !!P.days[G.day];
+  let gain = 0, streakBonus = 0; const repeatDaily = G.mode === 'daily' && !!P.days[G.day], packPrev = G.mode === 'pack' ? (P.packs[G.extra.pack] || {})[G.extra.idx] : null, skyOK = won && ((G.mode === 'daily' && !repeatDaily) || (G.mode === 'pack' && !packPrev));   // practice, live and challenge runs never earn objects
   P.played++; P.clicksTotal += c;
   if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; if (!G.usedFind && !G.rewinds) P.puristWins++; gain = Math.round(score / 10); }
   else gain = 5;
@@ -606,7 +610,8 @@ function finish(won) {
     G.result.chal = { ...ch, outcome: win ? 'win' : tie ? 'tie' : 'lose' };
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
-  if (won && !repeatDaily) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; G.result.sky = { idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
+  if (skyOK) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
+  G.result.sky = { idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -725,7 +730,7 @@ function showResult() {
   const rankUp = ri > prevRi, daily = r.mode === 'daily', ref = r.par || r.goal, ch = r.chal;
   const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
   openModal(`
-    ${r.sky ? skyReveal(r.sky) : ''}
+    ${r.sky ? skyReveal(r.sky) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
     <div class="win-top">
       <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
       <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '—'}</div>

@@ -161,6 +161,53 @@
       { n: '3C 48', a: '3C_48', kind: 'Quasar', t: 'millions of K', f: 'Among the first quasars found, in 1960, when it looked like an odd star that was loud in radio waves.' },
       { n: 'APM 08279+5255', a: 'APM_08279%2B5255', kind: 'Lensed quasar', t: 'millions of K', f: 'A quasar magnified by a gravitational lens, with signs of an enormous reservoir of water vapour.' }]
   };
+
+  // more famous examples, so each type has 6 to 8
+  const MORE = {
+    brown: [
+      { n: 'Teide 1', a: 'Teide_1', kind: 'M-type brown dwarf', t: '≈ 2,600 K', f: 'One of the first brown dwarfs confirmed, found in the Pleiades star cluster in 1995.' },
+      { n: 'Gliese 570 D', a: 'Gliese_570', kind: 'T-dwarf brown dwarf', t: '≈ 800 K', f: 'A cool brown dwarf in a four-body system about 19 light-years away, with methane in its atmosphere.' }],
+    reddwarf: [
+      { n: 'Ross 128', a: 'Ross_128', kind: 'M-type red dwarf', t: '≈ 3,200 K', f: 'A quiet red dwarf 11 light-years away with a temperate Earth-sized planet.' },
+      { n: 'Lalande 21185', a: 'Lalande_21185', kind: 'M-type red dwarf', t: '≈ 3,600 K', f: 'The fourth-nearest star system to the Sun, about 8.3 light-years away.' },
+      { n: 'Teegarden’s Star', a: 'Teegarden%27s_Star', kind: 'M-type red dwarf', t: '≈ 2,900 K', f: 'A small red dwarf 12.5 light-years away with two Earth-mass planets.' },
+      { n: 'AU Microscopii', a: 'AU_Microscopii', kind: 'M-type red dwarf', t: '≈ 3,700 K', f: 'A young, flaring red dwarf 32 light-years away, circled by a dusty disc and planets.' }],
+    redgiant: [
+      { n: 'Pollux', a: 'Pollux_(star)', kind: 'Orange giant', t: '≈ 4,600 K', f: 'The brightest star in Gemini, an orange giant 34 light-years away with a known planet.' },
+      { n: 'Mira', a: 'Mira', kind: 'Red giant, variable', t: '≈ 3,000 K', f: 'A pulsating red giant that swells and fades over about 11 months. The first variable star of its kind found.' },
+      { n: 'Gacrux', a: 'Gamma_Crucis', kind: 'Red giant', t: '≈ 3,600 K', f: 'The nearest red giant to the Sun, at the top of the Southern Cross, 88 light-years away.' },
+      { n: 'VY Canis Majoris', a: 'VY_Canis_Majoris', kind: 'Red hypergiant', t: '≈ 3,500 K', f: 'One of the largest stars known, over a thousand times wider than the Sun.' }],
+    sun: [
+      { n: 'Beta Hydri', a: 'Beta_Hydri', kind: 'G-type subgiant', t: '≈ 5,900 K', f: 'An old, Sun-like star 24 light-years away, a glimpse of what the Sun may look like in the future.' },
+      { n: '18 Scorpii', a: '18_Scorpii', kind: 'G-type main-sequence star', t: '≈ 5,800 K', f: 'One of the best-known solar twins, almost identical to the Sun in mass, age and composition.' },
+      { n: 'HD 209458', a: 'HD_209458', kind: 'G-type main-sequence star', t: '≈ 6,100 K', f: 'The star where an exoplanet was first seen crossing in front of its star, in 1999.' },
+      { n: 'Kepler-452', a: 'Kepler-452', kind: 'G-type main-sequence star', t: '≈ 5,700 K', f: 'A Sun-like star about 1,800 light-years away, host of the “Earth cousin” planet Kepler-452b.' }],
+    bluewhite: [
+      { n: 'Altair', a: 'Altair', kind: 'A-type main-sequence star', t: '≈ 7,700 K', f: 'A bright star 17 light-years away that spins once in about 9 hours, bulging at its equator.' },
+      { n: 'Castor', a: 'Castor_(star)', kind: 'A-type star system', t: '≈ 10,000 K', f: 'The twin of Gemini, a system of six stars about 51 light-years away.' },
+      { n: 'Denebola', a: 'Denebola', kind: 'A-type main-sequence star', t: '≈ 8,500 K', f: 'The tail of Leo, 36 light-years away, surrounded by a disc of dust.' },
+      { n: 'Achernar', a: 'Achernar', kind: 'B-type main-sequence star', t: '≈ 15,000 K', f: 'A star so fast-spinning that it is squashed into a flattened shape, about 140 light-years away.' }],
+    bluegiant: [
+      { n: 'Alnilam', a: 'Alnilam', kind: 'Blue supergiant', t: '≈ 27,000 K', f: 'The middle star of Orion’s Belt, about 2,000 light-years away and over 100,000 times brighter than the Sun.' },
+      { n: 'Alnitak', a: 'Alnitak', kind: 'Blue supergiant system', t: '≈ 29,000 K', f: 'The eastern star of Orion’s Belt, near the Flame Nebula, and a multiple star system.' },
+      { n: 'Mintaka', a: 'Mintaka', kind: 'Blue giant system', t: '≈ 30,000 K', f: 'The western star of Orion’s Belt, a multiple system lying almost on the celestial equator.' },
+      { n: 'Adhara', a: 'Epsilon_Canis_Majoris', kind: 'Blue supergiant', t: '≈ 22,000 K', f: 'The brightest source of extreme ultraviolet light in our sky, about 400 light-years away.' }],
+    whitedwarf: [
+      { n: 'Gliese 440', a: 'Gliese_440', kind: 'White dwarf', t: '≈ 8,000 K', f: 'A lone white dwarf about 15 light-years away, among the closest to the Sun.' },
+      { n: 'Stein 2051 B', a: 'Stein_2051', kind: 'White dwarf', t: '≈ 7,100 K', f: 'Its passage in front of a distant star let astronomers weigh it by gravitational lensing, in 2017.' },
+      { n: 'G 29-38', a: 'G_29-38', kind: 'Pulsating white dwarf', t: '≈ 11,500 K', f: 'A white dwarf that pulses in brightness and is ringed by dust from shattered rocky bodies.' }],
+    neutron: [
+      { n: 'PSR B1913+16', a: 'PSR_B1913%2B16', kind: 'Binary pulsar', t: '≈ 1,000,000 K', f: 'The first pulsar found in a binary. Its slowly shrinking orbit confirmed that gravitational waves exist.' },
+      { n: 'PSR J0737−3039', a: 'PSR_J0737%E2%88%923039', kind: 'Double pulsar', t: '≈ 1,000,000 K', f: 'The only known system of two pulsars orbiting each other, about 2,000 light-years away.' },
+      { n: 'SGR 1806−20', a: 'SGR_1806-20', kind: 'Magnetar', t: '≈ 1,000,000 K', f: 'A magnetar whose 2004 flare briefly outshone the whole galaxy in gamma rays.' },
+      { n: 'PSR J0348+0432', a: 'PSR_J0348%2B0432', kind: 'Heavy pulsar', t: '≈ 1,000,000 K', f: 'A neutron star about twice the mass of the Sun, orbited by a white dwarf.' }],
+    quasar: [
+      { n: 'Markarian 231', a: 'Markarian_231', kind: 'Quasar', t: 'millions of K', f: 'The closest known quasar, about 600 million light-years away, in a merging galaxy.' },
+      { n: 'Twin Quasar', a: 'Twin_Quasar', kind: 'Lensed quasar', t: 'millions of K', f: 'One quasar seen twice, split by a gravitational lens. It was the first lens ever found, in 1979.' },
+      { n: '3C 279', a: '3C_279', kind: 'Blazar', t: 'millions of K', f: 'A quasar whose jet points almost straight at us, flaring in gamma rays, about 5 billion light-years away.' },
+      { n: 'J0313−1806', a: 'J0313%E2%88%921806', kind: 'Distant quasar', t: 'millions of K', f: 'Seen as it was about 670 million years after the Big Bang, among the most distant quasars known.' }]
+  };
+  Object.keys(MORE).forEach(k => POOL[k].push(...MORE[k]));
   const hs = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h; };
   // a system: Kepler orbits (T^2 ~ a^3, ellipses with the primary at a focus, faster at periapsis), a barycentre wobble, moons for duplicates.
   // The map is far larger than the view: pan with opt.cam = {x, y, z}; positions are world units with the primary at the origin.
