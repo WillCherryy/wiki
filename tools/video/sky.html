@@ -97,10 +97,10 @@ const tsOf = z => 1.5 * clamp(Math.pow(.42 / z, 1.6), .07, 1); let TAU_ARR = [];
 function buildTau() { const dt = 1 / 60, n = Math.ceil((window.DURATION + 2) / dt); B1 = (SBb[40] - SBb[10]) / 30; TAU_ARR = new Float64Array(n + 1); for (let i = 0; i < n; i++) TAU_ARR[i + 1] = TAU_ARR[i] + dt * tsOf(zFor(beatAt(i * dt))); }
 const tauAt = t => { const x = clamp(t, 0, window.DURATION + 1.9) * 60, i = Math.floor(x); return lerp(TAU_ARR[i], TAU_ARR[Math.min(i + 1, TAU_ARR.length - 1)], x - i); };
 const ageMap = (list, t) => { const m = {}; list.forEach((q, i) => { if (i > 0) m[q.n] = t - bt(SPAWN + i / 1.7); }); return m; };
-function sysDraw(ctx, t, list, cam, focus, primScale, noLabels) { ctx.clearRect(0, 0, W, H); return SKY.system(ctx, W, H, t + 40, list, { cam, focus, primScale, tau: tauAt(t) + 40 * 1.5, ts: tsOf(cam.z), noLabels, wobble: 0, ages: ageMap(list, t) }); }
+function sysDraw(ctx, t, list, cam, focus, primScale, noLabels) { ctx.clearRect(0, 0, W, H); return SKY.system(ctx, W, H, t + 40, list, { cam, focus, primScale, tau: tauAt(t) + 40 * 1.5, ts: tsOf(cam.z), noLabels, wobble: 0, ages: ageMap(list, t), base: .3 }); }
 function sysScene(b, t) {
   const RATE = 1.7, n = clamp(1 + Math.floor((b - SPAWN) * RATE), 1, VL.length), list = b < SPAWN ? VL.slice(0, 1) : VL.slice(0, n);
-  const pos = SKY.system(pg, 64, 64, t + 40, list, { cam: { x: 0, y: 0, z: 1 }, tau: tauAt(t) + 40 * 1.5, wobble: 0, noLabels: true }), cam = camFor(b, pos), q = t - bt(QB), tl = q * 1.2, grow = tl < .4 ? 0 : Math.min(1.15, E.back(clamp((tl - .4) / .85)));
+  const pos = SKY.system(pg, 64, 64, t + 40, list, { cam: { x: 0, y: 0, z: 1 }, tau: tauAt(t) + 40 * 1.5, wobble: 0, noLabels: true, base: .3 }), cam = camFor(b, pos), q = t - bt(QB), tl = q * 1.2, grow = tl < .4 ? 0 : Math.min(1.15, E.back(clamp((tl - .4) / .85)));
   const fo = FOC.find(f => b >= f.a && b < f.z), focus = fo ? fo.n : null;
   g.fillStyle = DARK; g.fillRect(0, 0, W, H); { const k = clamp(.9 - (b - DROP) / 22 * .7, .2, .9), gr = g.createRadialGradient(W / 2, H * .44, 60, W / 2, H * .44, 1250); gr.addColorStop(0, `rgba(255,120,60,${.30 * k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
   // three samples a few milliseconds apart so motion is smooth; labels are drawn once afterwards so they stay sharp

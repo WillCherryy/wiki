@@ -519,9 +519,11 @@ function skyList() {   // every named object you own, hottest first
 }
 
 // the pannable system map: drag to pan, wheel / buttons to zoom, tap a body (or call pick) to fly to it and follow it. Used inline and full screen.
+const clamp2 = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 function sysMap(cv, L, o) {
   const g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now(), t0 = born;
-  const cam = { x: 0, y: 0, z: o.z || .7, tz: o.z || .7, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false;
+  const orb0 = SKY.orbits(760, L), R0 = Math.max(1, ...orb0.map(b => b.a * (1 + b.e))), Zd = o.z || .7, Z0 = L.length > 1 ? clamp2(Math.min(cv.width * .4 / R0, cv.height * .4 / (R0 * .56)), .07, Zd) : Zd;   // open with the whole system in view
+  const cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false;
   const frame = now => { if (dead || !cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, cv.width, cv.height, t, L, { cam, focus: sel, newId: o.newId, tNew: (now - born) / 1000, mini: o.mini });
     cam.z += (cam.tz - cam.z) * (calm ? 1 : .09); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .1); cam.y += (p.wy - cam.y) * (calm ? 1 : .1); } } raf = requestAnimationFrame(frame); };
   if (L.length) frame(t0);
@@ -530,7 +532,7 @@ function sysMap(cv, L, o) {
   cv.onpointermove = e => { if (!drag) return; const r = cv.getBoundingClientRect(), dx = (e.clientX - drag.x) / r.width * cv.width, dy = (e.clientY - drag.y) / r.height * cv.height; if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; cam.follow = null; } if (drag.moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; } };
   cv.onpointerup = e => { const d = drag; drag = null; if (!d || d.moved) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * cv.width, y = (e.clientY - r.top) / r.height * cv.height, k = cv.width / 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < Math.max(p.r, 34 * k)); if (hit) pick(hit.n); };
   cv.addEventListener('wheel', e => { e.preventDefault(); cam.tz = Math.max(.07, Math.min(2.2, cam.tz * Math.exp(-e.deltaY * .0012))); }, { passive: false });
-  return { pick, stop: () => { dead = true; cancelAnimationFrame(raf); }, zoom: f => { cam.tz = Math.max(.07, Math.min(2.2, cam.tz * f)); }, home: n => { pick(n); cam.tz = .7; }, setSel: n => { sel = n; } };
+  return { pick, stop: () => { dead = true; cancelAnimationFrame(raf); }, zoom: f => { cam.tz = Math.max(.07, Math.min(2.2, cam.tz * f)); }, home: n => { pick(n); cam.tz = Z0; }, setSel: n => { sel = n; } };
 }
 function openSkyFull(opt = {}) {   // the system on the whole screen, with a floating card for the object you tap
   closeModal(); const L = skyList(), cat = P.sky.cat; let host = document.createElement('div'); host.id = 'skyfull';
