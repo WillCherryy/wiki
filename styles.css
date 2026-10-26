@@ -781,3 +781,5 @@ html[data-calm="1"] #buddy { display: none !important; }
 
 .runbox { margin-top: 12px; padding: 12px 14px; border-radius: var(--rad-s); background: var(--paper); display: grid; gap: 12px; } .runbox .runr { font: 500 14px/1.45 var(--sans); } .runbox b { display: block; font: italic 400 20px/1.2 var(--display); margin: 2px 0 4px; } .runbox .runr + .runr { padding-top: 10px; border-top: 1px solid var(--rule-2); }
 .skynote { margin: 4px 0 12px; padding: 10px 14px; border-radius: var(--rad-s); background: var(--paper); font: 500 13px/1.4 var(--sans); color: var(--mute); text-align: center; }
+
+.skytag { margin: -4px 0 8px; font: italic 400 22px var(--display); color: var(--accent); } .skytag.sm { margin: 14px 0 2px; font-size: 17px; color: var(--mute); }

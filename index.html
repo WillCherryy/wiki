@@ -500,7 +500,7 @@ function skyReveal(k) {
   const o = SKY.OBJ[k.idx];
   return `<div class="skyr"><div class="skyc"><canvas id="skyCv" width="760" height="520"></canvas><span class="small">${k.first ? 'New in your sky' : 'You earned'}</span></div>
     <h3 class="skyn" style="color:${o.c}">${esc(k.name)}</h3><div class="small">${esc(k.kind)} · ${esc(k.temp)}</div>${skyLadder(k.idx)}
-    <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a></div>`;
+    <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a><div class="skytag sm">Space is cold. Warm it up.</div></div>`;
 }
 function drawSkyCell(cv, id, t, k = 1) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
@@ -518,7 +518,7 @@ function skyList() {   // every named object you own, hottest first
 function openSky(opt = {}) {
   const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length; let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of ${SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0)}</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
+  openModal(`<h2>Your sky</h2><p class="skytag">Space is cold. Warm it up.</p><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of ${SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0)}</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
     <div class="tabs" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your system</button></div>
     <div id="skyPane"></div><div class="rcard skyd" id="skyD"></div>`);
   let raf = 0, t0 = performance.now(), pos = [];
