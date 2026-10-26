@@ -501,28 +501,46 @@ function skyReveal(k) {
     <h3 class="skyn" style="color:${o.c}">${o.name}</h3><div class="small">${o.kind} · ${o.temp}</div>${skyLadder(k.idx)}
     <div class="small skyw">Tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(o.fact)}</p></div>`;
 }
-const skyLoops = new Set();
 function drawSkyCell(cv, id, t, k = 1) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
-  if (id) SKY.draw(g, id, w / 2, h * .52, (SKY.FR[id] || .2) * h * (.2 + .8 * k), t); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
+  if (id) SKY.draw(g, id, w / 2, h * .52, (SKY.FR[id] || .2) * h * (.2 + .8 * k) * .85, t); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
+  SKY.fade(g, w, h);
 }
-function mountSky(id) {
-  const cv = $('#skyCv'); if (!cv) return; const t0 = performance.now();
-  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000, k = 1 - Math.pow(1 - Math.min(1, t / 1.1), 3); drawSkyCell(cv, id, t, k); requestAnimationFrame(f); })(t0);
+function mountSky(id, idx) {   // the landing animation on the results card, then it idles
+  const cv = $('#skyCv'); if (!cv) return; const t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t); requestAnimationFrame(f); })(t0);
 }
-function openSky(focus) {
-  const f = P.sky.found, n = SKY.OBJ.filter(o => f[o.id]).length; let sel = focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null);
+function skyList() { return SKY.OBJ.map((o, i) => ({ id: o.id, idx: i, count: P.sky.found[o.id] || 0 })).filter(b => b.count).sort((a, b) => b.idx - a.idx); }
+function openSky(opt = {}) {
+  const f = P.sky.found, n = SKY.OBJ.filter(o => f[o.id]).length; let sel = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky';
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns an object. The better your route, the hotter it burns. <b>${n} of 9</b> found.</p>
-    <div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => `<button class="skycell ${f[o.id] ? '' : 'lock'} ${sel === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas><small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? o.temp : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`).join('')}</div>
-    <div class="rcard skyd" id="skyD"></div>
-    <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>
-    <div class="actions" style="margin-top:14px"><button class="btn" id="skyPlay">Earn another</button></div>`);
+  openModal(`<h2>Your sky</h2><p>Every solved puzzle earns an object. The better your route, the hotter it burns. <b>${n} of 9</b> found · <b>${P.sky.total}</b> earned in all.</p>
+    <div class="tabs" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your system</button></div>
+    <div id="skyPane"></div><div class="rcard skyd" id="skyD"></div>`);
+  let raf = 0, t0 = performance.now(), pos = [];
   const detail = () => { const o = SKY.OBJ.find(x => x.id === sel); $('#skyD').innerHTML = !o ? '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>' : f[o.id] ? `<div class="small">${o.kind} · ${o.temp}</div><h3 class="skyn" style="color:${o.c};margin:4px 0 6px;font-size:34px">${o.name}</h3><p class="skyf" style="margin:0">${esc(o.fact)}</p><div class="small" style="margin-top:8px">Earned ${f[o.id]} time${f[o.id] > 1 ? 's' : ''}</div>` : `<p class="mute" style="margin:0">Tier ${SKY.OBJ.indexOf(o) + 1}: ${o.name}. Play cleaner, faster routes to reach it.</p>`; };
-  detail();
-  const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { sel = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
-  const t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1); }); requestAnimationFrame(loop); })(t0);
-  $('#skyPlay').onclick = () => { closeModal(); startGame(P.days[dayKey()] ? 'practice' : 'daily'); };
+  const stop = () => cancelAnimationFrame(raf);
+  const draw = () => {
+    stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    if (tab === 'sky') {
+      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => `<button class="skycell ${f[o.id] ? '' : 'lock'} ${sel === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? o.temp : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`).join('')}</div>
+        <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
+      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { sel = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
+      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1); }); raf = requestAnimationFrame(loop); })(t0);
+    } else {
+      const L = skyList(), orb = SKY.orbits(760, L), cnv = orb.length ? '' : '';
+      $('#skyPane').innerHTML = `<div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas><span class="small sysnote">${L.length ? 'Kepler orbits: faster when close, T² ∝ a³' : ''}</span>${L.length ? '' : '<p class="mute sysempty">Solve a puzzle and your first object starts your system.</p>'}</div>
+        <div class="syslegend">${L.map((b, i) => { const o = SKY.OBJ[b.idx], ob = orb.find(q => q.id === b.id), au = ob ? (ob.a / 760 * 8.2).toFixed(2) : '', yr = ob ? Math.pow(ob.a / 760 * 8.2, 1.5).toFixed(2) : ''; return `<button class="sysrow ${sel === b.id ? 'sel' : ''}" data-id="${b.id}"><i style="background:${o.c}"></i><b>${o.name}</b><span>${i === 0 ? 'primary' : 'a = ' + au + ' AU · T = ' + yr + ' yr'}</span><em>×${b.count}</em></button>`; }).join('')}</div>
+        <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Your hottest object is the primary, the rest orbit it on ellipses; duplicates become moons.</p>`;
+      const cv = $('#sysCv'), g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now();
+      const frame = now => { if (!cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.system(g, 760, 760, t, L, { focus: sel, newId: opt.newId, tNew: (now - born) / 1000 }); raf = requestAnimationFrame(frame); };
+      t0 = performance.now(); frame(t0);
+      cv.onclick = e => { const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 760, y = (e.clientY - r.top) / r.height * 760, hit = pos.slice().reverse().find(p => Math.hypot(p.x - x, p.y - y) < p.r); if (hit) { sel = hit.id; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.id === sel)); detail(); } };
+      document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { sel = b.dataset.id; document.querySelectorAll('.sysrow').forEach(c => c.classList.toggle('sel', c === b)); detail(); });
+    }
+    detail();
+  };
+  document.querySelectorAll('#skyTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); draw();
 }
 /* ---- the sky: how well you played decides which astronomical object you earn (coolest brown dwarf to the quasar) */
 function burnOf(steps) {   // a click "burns" when it lands warmer than the page before
@@ -699,10 +717,10 @@ function showResult() {
     ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
     ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${i.cat}</b><small>New cosmetic unlocked · tap to equip in the Locker</small></span></div>`).join('')}
     ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
-    <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? '<button class="btn ghost" id="skyBtn">Your sky</button>' : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
+    <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky();
+  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.id } : {});
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
