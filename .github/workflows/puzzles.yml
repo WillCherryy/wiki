@@ -9,6 +9,9 @@ on:
       days:
         description: 'Days to schedule ahead'
         default: '45'
+      rebuild_from:
+        description: 'Optional YYYY-MM-DD: throw away scheduled days from this date (never today or the past) and rebuild them with the current difficulty rules'
+        default: ''
 permissions:
   contents: write
 jobs:
@@ -31,7 +34,7 @@ jobs:
       - name: Article pools (first run only)
         run: '[ -f daily-pool.json ] || node tools/build-pool.js'
       - name: Daily puzzles
-        run: node tools/build-puzzles.js --days ${{ github.event.inputs.days || 45 }}
+        run: node tools/build-puzzles.js --days ${{ github.event.inputs.days || 45 }} ${{ github.event.inputs.rebuild_from && format('--rebuild-from {0}', github.event.inputs.rebuild_from) || '' }}
       - name: Companion packs
         run: node tools/build-packs.js
       - name: Commit results

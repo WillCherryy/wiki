@@ -602,9 +602,9 @@ function pickNamed(typeId) {   // a real, famous object of that type: the first 
 const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
 function skyTier(r) {
-  const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (240 - r.secs) / 210));
+  const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (10 * ref + 210 - r.secs) / 210));   // longer puzzles get proportionally more time for a full speed score
   const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0); let idx = 0; SKY_CUT.forEach((c, i) => { if (q >= c) idx = i; });
-  idx = Math.min(idx, ref <= 1 ? 4 : ref === 2 ? 6 : 8);   // very short puzzles cannot reach the top tiers
+  idx = Math.min(idx, ref <= 1 ? 4 : ref === 2 ? 7 : 8);   // a one-click puzzle tops out at a blue-white star, a two-click one at a neutron star; only puzzles of par 3 or more can give a quasar
   const why = [r.clicks <= ref ? (r.clicks < ref ? 'beat par' : 'par route') : `${r.clicks - ref} over par`, bn.n && bn.warm === bn.n ? 'every click warmer' : bn.best >= 2 ? `burn ×${bn.best}` : '', r.purist ? 'no search or rewind' : ''].filter(Boolean).join(' · ');
   return { idx, q, why, burn: bn.best };
 }
