@@ -1,0 +1,175 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher chase</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="race-logo.js"></script>
+<script>
+/* "Chase": a cold-open game edit with no branding until the logo at the very end. Pure function of time: render(t).
+   140 bpm. Beats: 0-4 hook, 4-8 title card, 8-32 four hops (6 beats each), 32-40 win, 40-48 logo. */
+const W = 1080, H = 1920, cv = document.getElementById('c'), g = cv.getContext('2d');
+const BPM = 140, B = 60 / BPM, bt = b => b * B, NB = 48;
+window.DURATION = NB * B; window.EVENTS = []; window.__ready = false;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, ss: k => k * k * (3 - 2 * k), back: k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); } };
+const p = (b, a, z, e = E.out3) => e(clamp((b - a) / (z - a)));
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const CD = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'];
+const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+const heatCol = (h, a = 1) => { const x = clamp(h) * 4, i = Math.min(3, Math.floor(x)), f = x - i, A = hex(CD[i]), Bc = hex(CD[i + 1]); return `rgba(${A.map((v, n) => Math.round(lerp(v, Bc[n], f))).join(',')},${a})`; };
+const PAPER = '#f3eee4', SHEET = '#fbf8f1', INK = '#16130f', ACC = '#d63a1f', MUTE = '#8a8372', DARK = '#14100c';
+const PAGES = [
+  { t: 'Pizza', heat: .08, link: ['italy'], oth: ['naples', 'tomatoes', 'cheese'], txt: 'Pizza is a dish of Italian origin: a flat base of dough topped with tomatoes and cheese. It was developed in Naples, Italy, and has since spread across the whole world.' },
+  { t: 'Italy', heat: .34, link: ['egypt'], oth: ['rome', 'mediterranean'], txt: 'Italy is a country in southern Europe. Its capital, Rome, was the centre of an empire that ruled the Mediterranean, including Egypt, for centuries.' },
+  { t: 'Egypt', heat: .62, link: ['nile'], oth: ['pyramids', 'pharaohs'], txt: 'Egypt is a country in north Africa, famous for its pyramids and pharaohs. Almost all of its people live along the banks of the Nile, a river flowing north to the sea.' },
+  { t: 'Nile', heat: .86, link: ['crocodile'], oth: ['hippopotamuses', 'birds'], txt: 'The Nile is a major river in Africa. Its waters are home to hippopotamuses, to many birds, and to the huge Nile crocodile.' },
+];
+const FS = 54, LHT = 82, TX = 120, TW = 840, AY = 470, AH = 1220;
+function layout(pg) {
+  g.font = `400 ${FS}px EB`; const sp = g.measureText(' ').width, words = pg.txt.split(' '), lines = []; let cur = [], w = 0;
+  words.forEach(wd => { const ww = g.measureText(wd).width; if (w + ww > TW && cur.length) { lines.push(cur); cur = []; w = 0; } cur.push(wd); w += ww + sp; }); lines.push(cur);
+  pg.tok = []; let y = AY + 330; pg.target = null;
+  lines.forEach(ln => { let x = TX; ln.forEach(wd => { const c = wd.replace(/[.,:]$/, '').toLowerCase(), ww = g.measureText(wd.replace(/[.,:]$/, '')).width, isT = pg.link.includes(c), isL = isT || pg.oth.includes(c);
+    pg.tok.push({ s: wd, x, y, w: ww, l: isL, t: isT }); if (isT) pg.target = { x: x + ww / 2, y: y - FS * .3, w: ww }; x += g.measureText(wd).width + sp; }); y += LHT; });
+}
+const winAt = [bt(8), bt(14), bt(20), bt(26)];   // hop starts; tap at +4.4 beats, transition 5.1-6
+const TAP = 4.4, TR0 = 5.05, TR1 = 5.95;
+function init() {
+  g.font = '400 54px EB'; PAGES.forEach(layout);
+  PAGES.forEach((_, h) => window.EVENTS.push({ t: +(winAt[h] + bt(TAP)).toFixed(4), kind: 'tap', a: h }, { t: +(winAt[h] + bt(TR0)).toFixed(4), kind: 'whip', a: h }));
+  window.EVENTS.push({ t: bt(32), kind: 'win' }, { t: bt(40), kind: 'logo' }, { t: bt(7.05), kind: 'whip', a: -1 });
+  window.__ready = true;
+}
+document.fonts.load('54px EB').then(() => document.fonts.load('italic 54px EB')).then(() => document.fonts.load('600 30px IS')).then(init);
+const kickAt = b => { const f = b - Math.floor(b); return Math.exp(-f * 6); };   // decays across each beat
+
+// ---------------------------------------------------------------- type helpers
+function slam(txt, x, y, size, col, a, opt = {}) {   // big text with an RGB split and overshoot, a = progress 0..1
+  if (a <= 0) return; const s = lerp(1.7, 1, E.back(clamp(a))), split = (1 - clamp(a * 1.4)) * 26 + (opt.glitch || 0);
+  g.save(); g.translate(x, y); g.scale(s, s); g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.font = `${opt.it ? 'italic ' : ''}400 ${size}px EB`; g.globalAlpha = clamp(a * 3);
+  if (split > 1) { g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,40,40,.7)'; g.fillText(txt, -split, 0); g.fillStyle = 'rgba(40,120,255,.7)'; g.fillText(txt, split, 0); g.globalCompositeOperation = 'source-over'; }
+  g.fillStyle = col; g.fillText(txt, 0, 0); g.restore();
+}
+function label(txt, x, y, size, col, align = 'left', sp = .16) { g.font = `600 ${size}px IS`; g.letterSpacing = (size * sp) + 'px'; g.textAlign = align; g.fillStyle = col; g.fillText(txt, x, y); g.letterSpacing = '0px'; }
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+
+// ---------------------------------------------------------------- the app, drawn by hand
+const HLAB = h => h >= .97 ? 'In sight!' : h > .72 ? 'Scorching' : h > .5 ? 'Hot' : h > .32 ? 'Warm' : h > .15 ? 'Cool' : 'Cold';
+function hud(heat, clicks, secs, mark) {
+  g.fillStyle = SHEET; g.shadowColor = 'rgba(60,40,10,.22)'; g.shadowBlur = 40; g.shadowOffsetY = 14; rr(60, 120, 960, 300, 28); g.fill(); g.shadowColor = 'transparent';
+  label('REACH', 100, 186, 26, MUTE); g.font = 'italic 400 88px EB'; g.fillStyle = ACC; g.textAlign = 'left'; g.fillText('Crocodile', 100, 280);
+  g.font = '400 100px EB'; g.fillStyle = INK; g.textAlign = 'center'; g.fillText(String(clicks), 700, 250); label('CLICKS', 700, 292, 22, MUTE, 'center');
+  const m = Math.floor(secs / 60), s = Math.floor(secs % 60); g.font = '400 100px EB'; g.fillStyle = INK; g.fillText(`${m}:${String(s).padStart(2, '0')}`, 890, 250); label('TIME', 890, 292, 22, MUTE, 'center');
+  label('TEMPERATURE', 100, 356, 22, MUTE); g.font = 'italic 400 40px EB'; g.fillStyle = heatCol(heat); g.textAlign = 'right'; g.fillText(HLAB(heat), 420, 360);
+  const bx = 450, bw = 520, by = 346, gr = g.createLinearGradient(bx, 0, bx + bw, 0); CD.forEach((c, i) => gr.addColorStop(i / 4, c)); g.fillStyle = gr; rr(bx, by - 6, bw, 14, 7); g.fill();
+  const mx = bx + bw * clamp(heat), r = 17 + mark * 6; g.fillStyle = SHEET; g.strokeStyle = heatCol(heat); g.lineWidth = 7; g.shadowColor = 'rgba(0,0,0,.3)'; g.shadowBlur = 12; g.beginPath(); g.arc(mx, by + 1, r, 0, 7); g.fill(); g.shadowColor = 'transparent'; g.stroke();
+}
+function dock() {
+  g.fillStyle = '#1d1b18'; g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 36; g.shadowOffsetY = 12; rr(60, 1738, 960, 120, 34); g.fill(); g.shadowColor = 'transparent';
+  ['Back', 'Find', 'Contents', 'Target', 'More'].forEach((n, i) => { const cx = 60 + 96 + i * 192; g.strokeStyle = '#cfc9bd'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath();
+    if (i === 0) { g.moveTo(cx + 8, 1778); g.lineTo(cx - 8, 1792); g.lineTo(cx + 8, 1806); } else if (i === 1) { g.arc(cx - 3, 1789, 13, 0, 7); g.moveTo(cx + 7, 1799); g.lineTo(cx + 18, 1810); } else if (i === 2) { [1778, 1792, 1806].forEach((y, k) => { g.moveTo(cx - 16, y); g.lineTo(cx + 16 - k * 5, y); }); } else if (i === 3) { g.arc(cx, 1792, 17, 0, 7); g.moveTo(cx + 5, 1792); g.arc(cx, 1792, 5, 0, 7); } else { [-14, 0, 14].forEach(d => { g.moveTo(cx + d + 2, 1792); g.arc(cx + d, 1792, 2, 0, 7); }); }
+    g.stroke(); label(n.toUpperCase(), cx, 1838, 17, '#cfc9bd', 'center', .08); });
+}
+function article(h, yOff, hit) {   // hit = 0..1 link flash
+  const pg = PAGES[h]; g.save(); g.beginPath(); g.rect(40, AY - 20, W - 80, AH + 40); g.clip(); g.translate(0, yOff);
+  g.fillStyle = SHEET; g.shadowColor = 'rgba(60,40,10,.2)'; g.shadowBlur = 40; g.shadowOffsetY = 14; rr(60, AY, 960, AH, 28); g.fill(); g.shadowColor = 'transparent';
+  g.font = '400 124px EB'; g.fillStyle = INK; g.textAlign = 'left'; g.fillText(pg.t, TX, AY + 190); g.fillStyle = ACC; g.fillRect(TX, AY + 230, 130, 9);
+  g.font = `400 ${FS}px EB`;
+  pg.tok.forEach(tk => { g.fillStyle = tk.l ? '#a02a14' : INK; g.fillText(tk.s, tk.x, tk.y);
+    if (tk.l) { g.fillStyle = tk.t ? ACC : 'rgba(160,42,20,.55)'; g.fillRect(tk.x, tk.y + 9, tk.w, tk.t ? 5 : 3); } });
+  if (hit > 0 && pg.target) { const T = pg.target; g.fillStyle = `rgba(214,58,31,${.35 * (1 - hit)})`; rr(T.x - T.w / 2 - 14, T.y - FS * .75, T.w + 28, FS * 1.2, 12); g.fill(); g.strokeStyle = `rgba(214,58,31,${1 - hit})`; g.lineWidth = 5; g.stroke(); }
+  g.restore();
+}
+function blob(x, y, s, look) {
+  g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#ff6a45'; g.shadowColor = 'rgba(0,0,0,.3)'; g.shadowBlur = 10; g.beginPath(); g.moveTo(0, -30); g.bezierCurveTo(26, -30, 40, -12, 40, 8); g.bezierCurveTo(40, 30, 22, 40, 0, 40); g.bezierCurveTo(-22, 40, -40, 30, -40, 8); g.bezierCurveTo(-40, -12, -26, -30, 0, -30); g.fill(); g.shadowColor = 'transparent';
+  [-14, 14].forEach(ex => { g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, -2, 11, 0, 7); g.fill(); g.fillStyle = INK; g.beginPath(); g.arc(ex + look[0] * 4, -2 + look[1] * 4, 5.2, 0, 7); g.fill(); });
+  g.strokeStyle = INK; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.arc(0, 14, 11, .15 * Math.PI, .85 * Math.PI); g.stroke(); g.restore();
+}
+function glow(heat, beatPulse, t) {   // the whole screen warms with the heat bar
+  if (heat < .12) return; const a = (.14 + .62 * heat) * (heat > .5 ? .72 + .28 * beatPulse : 1), gr = g.createRadialGradient(W / 2, H * .48, 330, W / 2, H * .48, 1250);
+  gr.addColorStop(0, heatCol(heat, 0)); gr.addColorStop(1, heatCol(heat, clamp(a))); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  if (heat > .55) { const e = clamp((heat - .5) * 2) * (.25 + .75 * beatPulse), gg = g.createRadialGradient(W / 2, H * .48, 500, W / 2, H * .48, 1180 + 60 * (1 - beatPulse)); gg.addColorStop(0, 'rgba(255,90,40,0)'); gg.addColorStop(1, `rgba(255,70,30,${.5 * e})`); g.fillStyle = gg; g.fillRect(0, 0, W, H); }
+}
+
+// ---------------------------------------------------------------- scenes
+function appScene(b) {   // b in beats, 7.0..33
+  const hp = clamp(Math.floor((b - 8) / 6), 0, 3), k = b - 8 - hp * 6, secs = Math.max(0, (b - 8) * B * 1.6);
+  const trans = hp < 4 ? p(k, TR0, TR1, E.io) : 0, nextH = Math.min(3, hp + 1);
+  const tapB = k - TAP, hit = clamp(tapB / .5);
+  let heat = lerp(PAGES[hp].heat, hp === 3 ? 1 : PAGES[nextH].heat, E.out3(clamp((k - TR0) / (TR1 - TR0))));
+  const clicks = hp + (k > TR0 ? 1 : 0), pulse = kickAt(b), shake = heat * heat * 9 * (.35 + .65 * pulse);
+  const punch = 1 + .035 * Math.exp(-Math.max(0, tapB) * 5) * (tapB > 0 && tapB < 1.2 ? 1 : 0);
+  const stage = (dx = 0, dy = 0, hOverride) => {
+    g.save(); g.translate(W / 2 + dx, H / 2 + dy); g.scale(punch, punch); g.translate(-W / 2, -H / 2);
+    g.fillStyle = '#e9e2d3'; g.fillRect(-100, -100, W + 200, H + 200);
+    const samples = trans > 0 && trans < 1 ? 4 : 1;
+    for (let s = 0; s < samples; s++) { const tt = clamp(trans - s * .035); g.globalAlpha = s === 0 ? 1 : .2;
+      if (trans > 0 && hp < 3) { article(hp, -tt * (AH + 120), 0); article(nextH, (1 - tt) * (AH + 120), 0); }
+      else if (hp === 3 && k > TR0) { article(3, -E.io(clamp((k - TR0) / (TR1 - TR0))) * 40, hit); }
+      else article(hp, 0, hit); }
+    g.globalAlpha = 1; hud(heat, clicks, secs, Math.exp(-Math.max(0, k - TR0) * 4) * (k > TR0 ? 1 : 0)); dock(); g.restore();
+  };
+  stage(Math.sin(b * 41) * shake, Math.cos(b * 37) * shake);
+  // finger + buddy
+  const pg = PAGES[hp], T = pg.target, from = hp === 0 ? { x: 900, y: 1500 } : { x: PAGES[hp - 1].target.x * .5 + 480, y: 1380 }, to = { x: T.x, y: T.y + AY * 0 - 6 };
+  const mv = E.io(clamp((k - 1.0) / (TAP - 1.0 - .6))), cx = lerp(from.x, to.x, mv) + Math.sin(mv * Math.PI) * 90, cy = lerp(from.y, to.y, mv) - Math.sin(mv * Math.PI) * 140;
+  if (k < TR0 + .2 && hp < 4) {
+    const press = tapB > 0 ? Math.exp(-tapB * 7) : 0, ring = clamp(tapB / .45);
+    if (tapB > 0 && ring < 1) { g.strokeStyle = `rgba(214,58,31,${1 - ring})`; g.lineWidth = 8; g.beginPath(); g.arc(cx, cy, 30 + ring * 150, 0, 7); g.stroke(); }
+    g.fillStyle = `rgba(22,19,15,${.22 + .1 * press})`; g.beginPath(); g.arc(cx, cy, 44 - 10 * press, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 5; g.stroke();
+    const bx = lerp(from.x, to.x, E.io(clamp((k - 1.25) / (TAP - 1.25 - .6)))) + Math.sin(mv * Math.PI) * 90 + 90, by = lerp(from.y, to.y, E.io(clamp((k - 1.25) / (TAP - 1.25 - .6)))) - Math.sin(mv * Math.PI) * 140 + 90;
+    blob(bx, by, .78 - .12 * press, [clamp((cx - bx) / 80, -1, 1), clamp((cy - by) / 80, -1, 1)]);
+  }
+  glow(heat, pulse, b);
+  // sparks on the tap
+  if (tapB > 0 && tapB < .7) for (let i = 0; i < 14; i++) { const a = hash(i + hp * 20) * 6.28, d = tapB * (160 + hash(i + 4) * 240); g.fillStyle = `rgba(255,${120 + hash(i) * 90 | 0},60,${1 - tapB / .7})`; g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 7 * (1 - tapB / .7) + 2, 0, 7); g.fill(); }
+}
+function hookScene(b) {
+  g.fillStyle = DARK; g.fillRect(0, 0, W, H); const glitch = b > 3 && b < 4 ? hash(Math.floor(b * 30)) * 30 : 0;
+  slam('Wikipedia', W / 2, 760, 210, '#efe6d2', p(b, 0, .6), { glitch }); slam('has a', W / 2, 960, 150, '#9b9381', p(b, 1, 1.6), { glitch });
+  slam('secret game.', W / 2, 1210, 230, '#ff6a45', p(b, 2, 2.7), { it: true, glitch });
+  if (b > 3 && b < 4) { for (let i = 0; i < 7; i++) { const y = hash(Math.floor(b * 20) + i) * H; g.fillStyle = `rgba(239,230,210,${.08 + hash(i) * .1})`; g.fillRect(0, y, W, 6 + hash(i + 3) * 24); } }
+}
+function titleScene(b) {
+  g.fillStyle = DARK; g.fillRect(0, 0, W, H); const u = b - 4;
+  label('START ON', W / 2, 540, 30, '#9b9381', 'center'); slam('Pizza', W / 2, 800, 260, '#efe6d2', p(u, 0, .6));
+  const ar = p(u, 1, 1.9); g.strokeStyle = '#ff6a45'; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath(); g.moveTo(W / 2, 880); g.lineTo(W / 2, lerp(880, 1060, ar)); g.stroke();
+  label('REACH', W / 2, 1110, 30, '#9b9381', 'center'); slam('Crocodile', W / 2, 1330, 230, '#ff6a45', p(u, 2, 2.7), { it: true });
+  const c = Math.min(4, Math.floor(clamp((u - 3) / .25) * 4 + .001)); if (u > 2.9) { label('4 CLICKS  ·  NO SEARCH', W / 2, 1560, 38, '#efe6d2', 'center', .22); }
+}
+function winScene(b) {
+  const u = b - 32; g.fillStyle = DARK; g.fillRect(0, 0, W, H);
+  const gr = g.createRadialGradient(W / 2, 900, 40, W / 2, 900, 1100); gr.addColorStop(0, `rgba(255,90,40,${.55 * Math.exp(-u * .35)})`); gr.addColorStop(1, 'rgba(255,90,40,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  slam('Crocodile', W / 2, 560, 170, '#ff6a45', p(u, 0, .5), { it: true }); label('REACHED', W / 2, 640, 34, '#9b9381', 'center', .3);
+  slam('4', W / 2, 1130, 560, '#efe6d2', p(u, .5, 1.1)); label('CLICKS', W / 2, 1230, 54, '#efe6d2', 'center', .4);
+  for (let i = 0; i < 3; i++) { const a = p(u, 1.6 + i * .5, 2.1 + i * .5); if (a > 0) { g.save(); g.translate(W / 2 + (i - 1) * 150, 1380); g.scale(a * 1.1, a * 1.1); g.fillStyle = '#f5b52e'; g.beginPath(); for (let n = 0; n < 10; n++) { const ang = n * Math.PI / 5 - Math.PI / 2, r = n % 2 ? 26 : 62; n ? g.lineTo(Math.cos(ang) * r, Math.sin(ang) * r) : g.moveTo(Math.cos(ang) * r, Math.sin(ang) * r); } g.fill(); g.restore(); } }
+  slam('Think you can beat it?', W / 2, 1640, 92, '#efe6d2', p(u, 4.2, 4.9), { it: true });
+  // confetti burst
+  const tc = u * B; if (tc < 2.6) for (let i = 0; i < 160; i++) { const a = -Math.PI / 2 + (hash(i) - .5) * 2.6, v = 500 + hash(i + 9) * 900, x = W / 2 + Math.cos(a) * v * tc * .8 + (hash(i + 3) - .5) * 60, y = 760 + Math.sin(a) * v * tc + 900 * tc * tc; if (y > H + 40) continue;
+    g.save(); g.translate(x, y); g.rotate(hash(i + 5) * 6 + tc * (3 + hash(i) * 8)); g.fillStyle = ['#ff6a45', '#efe6d2', '#f5b52e', '#5c8cbe', '#d63a1f'][i % 5]; g.fillRect(-9, -5, 18, 10); g.restore(); }
+  if (u < .35) { g.fillStyle = `rgba(255,255,255,${.85 * (1 - u / .35)})`; g.fillRect(0, 0, W, H); }
+}
+function logoScene(b) {
+  const u = b - 40; g.fillStyle = DARK; g.fillRect(0, 0, W, H); const LS = 1.5, LW = LOGO.vb[0] * LS, LX = (W - LW) / 2, LY = 560;
+  LOGO.dots.forEach((d, i) => { const a = p(u, .1 + i * .13, .5 + i * .13, E.back); if (a <= 0) return; g.fillStyle = d.c; g.beginPath(); g.arc(LX + d.x * LS, LY + d.y * LS, d.r * LS * a, 0, 7); g.fill(); });
+  const wa = p(u, 1.2, 2.2); g.save(); g.globalAlpha = wa; g.translate(0, (1 - wa) * 30); g.textAlign = 'center'; g.font = '400 210px EB'; g.fillStyle = '#efe6d2'; const w1 = g.measureText('Scorch').width; g.font = 'italic 400 210px EB'; const w2 = g.measureText('er').width, x0 = W / 2 - (w1 + w2) / 2;
+  g.textAlign = 'left'; g.font = '400 210px EB'; g.fillStyle = '#efe6d2'; g.fillText('Scorch', x0, 1210); g.font = 'italic 400 210px EB'; g.fillStyle = '#ff6a45'; g.fillText('er', x0 + w1, 1210); g.restore();
+  const ta = p(u, 2.4, 3.2); g.globalAlpha = ta; label('THE WIKIPEDIA LINK RACE', W / 2, 1330, 36, '#efe6d2', 'center', .26); g.font = '400 54px EB'; g.fillStyle = '#9b9381'; g.textAlign = 'center'; g.fillText('A new puzzle every day', W / 2, 1420); g.globalAlpha = 1;
+  const ua = p(u, 4, 4.8); g.globalAlpha = ua; g.fillStyle = '#ff6a45'; rr(W / 2 - 330, 1520, 660, 120, 60); g.fill(); g.fillStyle = '#fff'; g.font = '600 46px IS'; g.textAlign = 'center'; g.fillText('playscorcher.com', W / 2, 1596); g.globalAlpha = 1;
+}
+window.render = t => {
+  if (!window.__ready) return; const b = clamp(t / B, 0, NB - .001); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  if (b < 4) hookScene(b);
+  else if (b < 7.05) titleScene(b);
+  else if (b < 8) {   // whip from title card up into the app
+    const k = E.io(clamp((b - 7.05) / .95)); g.save(); g.translate(0, -k * H); titleScene(7.049); g.restore(); g.save(); g.translate(0, (1 - k) * H); appScene(8); g.restore();
+  }
+  else if (b < 32) appScene(b);
+  else if (b < 40) winScene(b);
+  else logoScene(b);
+  if (b > 39.7 && b < 40.35) { const f = 1 - Math.abs(b - 40) / .35; if (f > 0) { g.fillStyle = `rgba(255,106,69,${f * .55})`; g.fillRect(0, 0, W, H); } }
+};
+</script></body></html>
