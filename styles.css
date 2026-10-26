@@ -736,3 +736,30 @@ html[data-calm="1"] #buddy { display: none !important; }
 .unlock { background: var(--paper); border: 0; padding: 12px 14px; margin: 10px 0; cursor: pointer; }
 .actions .btn { min-height: 46px; }
 .grid3 { border: 0; background: none; box-shadow: none; padding: 0; margin: 14px 0; }
+
+/* ---- the sky */
+.skyr { text-align: center; margin: 0 0 6px; }
+.skyc { position: relative; border-radius: var(--rad); overflow: hidden; background: radial-gradient(120% 90% at 50% 40%, #1c1830, #0b0a14 70%); }
+.skyc canvas { display: block; width: 100%; height: auto; aspect-ratio: 760 / 520; }
+.skyc .small { position: absolute; top: 12px; left: 0; right: 0; color: #cfc8ff; font: 600 10.5px var(--sans); letter-spacing: .22em; text-transform: uppercase; }
+.skyn { margin: 12px 0 2px; font: italic 400 clamp(38px, 9vw, 52px)/1 var(--display); }
+.skyr .small, .skyd .small, .skyw { font: 600 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+.skyw { margin-top: 6px; font-size: 9.5px; }
+.skyf { margin: 10px 6px 0; font: 400 17px/1.4 var(--serif); color: var(--ink-2); }
+.ladder { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 12px; }
+.ladder i { width: 9px; height: 9px; border-radius: 50%; background: var(--rule); } .ladder i.on { background: var(--c); box-shadow: 0 0 10px var(--c); } .ladder i.cur { width: 15px; height: 15px; }
+.skygrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.skycell { position: relative; border: 0; padding: 0 0 8px; cursor: pointer; border-radius: var(--rad); overflow: hidden; background: radial-gradient(120% 90% at 50% 40%, #1c1830, #0b0a14 70%); text-align: center; color: #efe6d2; }
+.skycell.lock { background: #2a2740; } .skycell.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.skycell canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; }
+.skycell small { display: block; font: 600 8.5px var(--sans); letter-spacing: .1em; text-transform: uppercase; margin-top: -8px; }
+.skycell b { display: block; margin-top: 2px; font: italic 400 16px/1.1 var(--display); }
+.skyd { margin-top: 0; }
+.skycal { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; } .skycal i { aspect-ratio: 1; border-radius: 4px; background: var(--paper); } .skycal i.on { background: var(--c); box-shadow: 0 0 8px var(--c); }
+@media (min-width: 760px) { .skygrid { gap: 10px; } .skycell b { font-size: 19px; } }
+.burn { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule-2); --b: .3; }
+.burn[hidden] { display: none; }
+.burn svg { width: 24px; height: 24px; fill: color-mix(in srgb, #f08c50, var(--accent) calc(var(--b) * 100%)); filter: drop-shadow(0 0 calc(2px + 8px * var(--b)) color-mix(in srgb, #f08c50, var(--accent) 50%)); transform-origin: 50% 90%; animation: flame .7s ease-in-out infinite alternate; }
+@keyframes flame { to { transform: scale(1.12, 1.18) rotate(-4deg); } }
+.burn b { font: italic 400 24px var(--display); } .burn span { margin-left: auto; font: 600 10px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+@media (prefers-reduced-motion: reduce) { .burn svg { animation: none; } }

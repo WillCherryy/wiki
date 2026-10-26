@@ -43,5 +43,6 @@
       g.save(); g.translate(x, y); g.rotate(-.28); g.scale(1, .3); g.strokeStyle = 'rgba(255,240,220,.55)'; g.lineWidth = r * .03; g.beginPath(); g.arc(0, 0, r * .36, 0, Math.PI); g.stroke(); g.restore(); }
   };
   function starfield(g, w, h, t, n = 90, seed = 0) { g.save(); for (let i = 0; i < n; i++) { const x = hash(seed + i) * w, y = hash(seed + i + 500) * h, r = .4 + hash(seed + i + 900) * 1.3, a = .25 + .6 * hash(seed + i + 1300) * (.7 + .3 * Math.sin(t * (1 + hash(i) * 2) + i)); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.restore(); }
-  window.SKY = { OBJ, draw: (g, id, x, y, r, t = 0) => (DRAW[id] || DRAW.sun)(g, x, y, r, t), starfield, byId: id => OBJ.find(o => o.id === id) };
+  const FR = { brown: .24, reddwarf: .22, redgiant: .25, sun: .24, bluewhite: .17, bluegiant: .18, whitedwarf: .12, neutron: .13, quasar: .2 };
+  window.SKY = { OBJ, FR, draw: (g, id, x, y, r, t = 0) => (DRAW[id] || DRAW.sun)(g, x, y, r, t), starfield, byId: id => OBJ.find(o => o.id === id) };
 })();
