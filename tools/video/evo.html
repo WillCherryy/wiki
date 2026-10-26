@@ -1,0 +1,267 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher evo</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:600;src:url(../../fonts/instrument-sans-latin-600-normal.woff2)}
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="race-logo.js"></script>
+<script>
+/* "Evo": a lesson in animal evolution told through Wikipedia links. Every link opens its own animation. No branding until the logo.
+   140 bpm, 66 beats: 0-4 hook, then 8 hops of 6 beats (page, tap, animation), 52-58 the family tree, 58-66 logo. Pure function of time. */
+const W = 1080, H = 1920, cv = document.getElementById('c'), g = cv.getContext('2d');
+const BPM = 140, B = 60 / BPM, bt = b => b * B, HOP0 = 4, HL = 6, NH = 8, FIN = HOP0 + NH * HL, LOGOB = FIN + 6, NB = LOGOB + 8;
+window.DURATION = NB * B; window.EVENTS = []; window.__ready = false;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
+const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, ss: k => k * k * (3 - 2 * k), back: k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); }, out5: k => 1 - Math.pow(1 - k, 5) };
+const p = (b, a, z, e = E.out3) => e(clamp((b - a) / (z - a)));
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const DARK = '#14100c', CREAM = '#efe6d2', SHEET = '#fbf8f1', INK = '#16130f', ACC = '#d63a1f', ORG = '#ff6a45', MUTE = '#8a8372', GOLD = '#f5b52e', BLUE = '#5c8cbe', TEAL = '#3ed2c0';
+const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+function label(txt, x, y, size, col, align = 'left', sp = .16) { g.font = `600 ${size}px IS`; g.letterSpacing = (size * sp) + 'px'; g.textAlign = align; g.fillStyle = col; g.fillText(txt, x, y); g.letterSpacing = '0px'; }
+function slam(txt, x, y, size, col, a, opt = {}) {
+  if (a <= 0) return; const s = lerp(1.6, 1, E.back(clamp(a))), split = (1 - clamp(a * 1.4)) * 22 + (opt.glitch || 0);
+  g.save(); g.translate(x, y); g.scale(s, s); g.textAlign = 'center'; g.font = `${opt.it ? 'italic ' : ''}400 ${size}px EB`; g.globalAlpha = clamp(a * 3);
+  if (split > 1) { g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,40,40,.65)'; g.fillText(txt, -split, 0); g.fillStyle = 'rgba(40,120,255,.65)'; g.fillText(txt, split, 0); g.globalCompositeOperation = 'source-over'; }
+  g.fillStyle = col; g.fillText(txt, 0, 0); g.restore();
+}
+function wrap(txt, maxW, font) { g.font = font; const out = []; let cur = ''; txt.split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; }); out.push(cur); return out; }
+
+// ------------------------------------------------------------------ the lesson
+const PAGES = [
+  { t: 'Animal', link: ['choanoflagellates'], oth: ['multicellular', 'eukaryotic'], txt: 'Animals are multicellular, eukaryotic organisms that eat other organisms. Their closest living relatives are the choanoflagellates.' },
+  { t: 'Choanoflagellate', link: ['cambrian', 'explosion'], oth: ['single-celled', 'microvilli'], txt: 'Choanoflagellates are single-celled organisms with a collar of microvilli. Animals branched off from them long before the Cambrian explosion.' },
+  { t: 'Cambrian explosion', link: ['fish'], oth: ['body', 'plans'], txt: 'The Cambrian explosion is a rapid burst of new animal body plans, including the first vertebrates: fish.' },
+  { t: 'Fish', link: ['tiktaalik'], oth: ['gill-bearing', 'vertebrates'], txt: 'Fish are gill-bearing vertebrates. About 375 million years ago, lobe-finned fish like Tiktaalik began to crawl.' },
+  { t: 'Tiktaalik', link: ['amniotes'], oth: ['tetrapods', 'wrist'], txt: 'Tiktaalik had a neck and wrist-like fin bones. Its tetrapod descendants conquered land and evolved the amniotes.' },
+  { t: 'Amniote', link: ['dinosaurs'], oth: ['mammals', 'reptiles'], txt: 'Amniotes lay eggs that do not dry out. They split into the ancestors of mammals and of reptiles, including the dinosaurs.' },
+  { t: 'Dinosaur', link: ['mammals'], oth: ['asteroid', 'birds'], txt: 'An asteroid ended the non-avian dinosaurs 66 million years ago. Small mammals survived and spread across the empty world.' },
+  { t: 'Mammal', link: ['humans'], oth: ['primates', 'chimpanzees'], txt: 'Mammals include the primates. Chimpanzees and humans share a recent common ancestor.' },
+];
+// the animation each link opens: name, big date label (mya), lesson sentence, accent colour
+const SCN = [
+  { n: 'Choanoflagellate', mya: 600, d: '600+ million years ago', s: 'Our closest living relatives are single cells. Some live in colonies, a clue to how animals began.', c: '#7fe0ff', fn: aChoano },
+  { n: 'Cambrian explosion', mya: 539, d: '539 million years ago', s: 'In a geological blink of about 20 million years, most major animal body plans appear.', c: '#ff8f6b', fn: aCambrian },
+  { n: 'Fish', mya: 520, d: '520 million years ago', s: 'A stiffening backbone and a skull: the first vertebrates are fish, and they rule the seas.', c: '#8fb4ff', fn: aFish },
+  { n: 'Tiktaalik', mya: 375, d: '375 million years ago', s: 'A fish with a neck and a wrist. Fin rays become bones with digits.', c: '#ffd36b', fn: aTiktaalik },
+  { n: 'Amniotes', mya: 318, d: '318 million years ago', s: 'The egg leaves the water. Soon the line splits: mammals one way, reptiles and birds the other.', c: '#9be28a', fn: aAmniote },
+  { n: 'Birds', mya: 150, d: '150 million years ago', s: 'Feathers evolved in dinosaurs first. Birds are living dinosaurs.', c: '#ff7aa8', fn: aBird },
+  { n: 'Mammals', mya: 66, d: '66 million years ago', s: 'An asteroid ends the age of dinosaurs. Small mammals inherit the world and diversify.', c: '#ffb066', fn: aMammal },
+  { n: 'Humans', mya: 0.3, d: '300,000 years ago', s: 'We share a common ancestor with chimpanzees from about 6 to 7 million years ago.', c: '#ffe08a', fn: aHuman },
+];
+const FS = 54, LHT = 82, TX = 120, TW = 840, AY = 470, AH = 1160;
+function layout(pg) {
+  g.font = `400 ${FS}px EB`; const sp = g.measureText(' ').width, words = pg.txt.split(' '), lines = []; let cur = [], w = 0;
+  words.forEach(wd => { const ww = g.measureText(wd).width; if (w + ww > TW && cur.length) { lines.push(cur); cur = []; w = 0; } cur.push(wd); w += ww + sp; }); lines.push(cur);
+  pg.tok = []; let y = AY + 370; pg.target = null;
+  lines.forEach(ln => { let x = TX; ln.forEach(wd => { const c = wd.replace(/[.,:]$/, '').toLowerCase(), ww = g.measureText(wd.replace(/[.,:]$/, '')).width, isT = pg.link.includes(c), isL = isT || pg.oth.includes(c);
+    pg.tok.push({ s: wd, x, y, w: ww, l: isL, t: isT }); if (isT && !pg.target) pg.target = { x: x + ww / 2, y: y - FS * .3, w: ww }; x += g.measureText(wd).width + sp; }); y += LHT; });
+}
+function init() {
+  g.font = '400 54px EB'; PAGES.forEach(layout);
+  for (let h = 0; h < NH; h++) { const s = HOP0 + h * HL; window.EVENTS.push({ t: +bt(s + 1.6).toFixed(4), kind: 'tap', a: h }, { t: +bt(s + 2.1).toFixed(4), kind: 'open', a: h }, { t: +bt(s + 5.55).toFixed(4), kind: 'whip', a: h }); }
+  window.EVENTS.push({ t: bt(FIN), kind: 'tree' }, { t: bt(LOGOB), kind: 'logo' });
+  window.__ready = true;
+}
+Promise.all(['54px EB', 'italic 54px EB', '600 30px IS'].map(f => document.fonts.load(f))).then(init);
+const kickAt = b => Math.exp(-(b - Math.floor(b)) * 6);
+
+// ------------------------------------------------------------------ drawing kit for the animations
+function glowDot(x, y, r, col, a = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, col.replace('A', a)); gr.addColorStop(1, col.replace('A', 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+function cell(x, y, r, ang, T, ph, body = '#ffe3b0', col = '#7fe0ff', a = 1) {
+  g.save(); g.translate(x, y); g.rotate(ang); g.globalAlpha = a;
+  g.strokeStyle = col; g.lineWidth = Math.max(2, r * .05); g.lineCap = 'round';
+  for (let i = -5; i <= 5; i++) { const wob = Math.sin(T * 7 + i + ph) * r * .05; g.beginPath(); g.moveTo(i * r * .13, -r * .82); g.lineTo(i * r * .22 + wob, -r * 1.55); g.stroke(); }
+  g.lineWidth = Math.max(3, r * .075); g.beginPath(); g.moveTo(0, -r * .9); for (let i = 1; i <= 28; i++) { const q = i / 28; g.lineTo(Math.sin(q * 9 - T * 11 + ph) * r * .3 * q, -r * .9 - q * r * 2.9); } g.stroke();
+  const gr = g.createRadialGradient(-r * .25, -r * .25, r * .1, 0, 0, r); gr.addColorStop(0, '#fff6dc'); gr.addColorStop(1, body); g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, r, r * .92, 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(150,80,40,.55)'; g.beginPath(); g.arc(r * .15, r * .1, r * .3, 0, 7); g.fill(); g.restore();
+}
+function fish(x, y, len, col, T, ph, dir = 1, a = 1) {
+  g.save(); g.translate(x, y); g.scale(dir, 1); g.globalAlpha = a; const w = len * .17, s = Math.sin(T * 8 + ph) * len * .07;
+  g.fillStyle = col; g.beginPath(); g.moveTo(len / 2, 0); g.bezierCurveTo(len * .25, -w * 1.5, -len * .2, -w * 1.1, -len * .36 + s * .3, -w * .15); g.lineTo(-len * .56 + s, -w * 1.2); g.lineTo(-len * .5 + s, 0); g.lineTo(-len * .56 + s, w * 1.2); g.lineTo(-len * .36 + s * .3, w * .15); g.bezierCurveTo(-len * .2, w * 1.1, len * .25, w * 1.5, len / 2, 0); g.fill();
+  g.fillStyle = INK; g.beginPath(); g.arc(len * .33, -w * .25, len * .028, 0, 7); g.fill(); g.restore();
+}
+function timeline(mya, col, a = 1) {   // a thin timeline across the top: 600 million years ago on the left, today on the right
+  g.save(); g.globalAlpha = a; const x0 = 120, x1 = 960, y = 150; g.strokeStyle = 'rgba(239,230,210,.25)'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+  [[600, '600'], [400, '400'], [200, '200'], [0, 'NOW']].forEach(([m, l]) => { const x = lerp(x0, x1, 1 - m / 600); g.fillStyle = 'rgba(239,230,210,.5)'; g.fillRect(x - 1.5, y - 10, 3, 20); label(l, x, y + 48, 21, 'rgba(239,230,210,.55)', 'center', .1); });
+  const mx = lerp(x0, x1, 1 - mya / 600); g.strokeStyle = col; g.lineWidth = 7; g.beginPath(); g.moveTo(x0, y); g.lineTo(mx, y); g.stroke(); glowDot(mx, y, 46, col.startsWith('#') ? hexA(col) : col, .8); g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, y, 13, 0, 7); g.fill();
+  label('MILLIONS OF YEARS AGO', 540, 96, 22, 'rgba(239,230,210,.55)', 'center', .22); g.restore();
+}
+const hexA = c => `rgba(${parseInt(c.slice(1, 3), 16)},${parseInt(c.slice(3, 5), 16)},${parseInt(c.slice(5, 7), 16)},A)`;
+
+// ------------------------------------------------------------------ the eight animations: u = progress 0..1 inside the scene, T = seconds
+const CX = 540, CY = 840;
+function aChoano(u, T) {
+  const one = 1 - p(u, .32, .46), colony = p(u, .3, .75), fold = p(u, .72, 1);
+  if (one > .01) cell(CX, CY + 80, lerp(150, 120, 1 - one), -.12 * Math.sin(T * 2), T, 0, '#ffe3b0', '#7fe0ff', one);
+  const n = 12, R = lerp(0, 235, E.out3(colony));
+  for (let i = 0; i < n; i++) { const a0 = i / n * 6.283 + T * .25 * colony, rad = R * (1 - .12 * Math.sin(fold * Math.PI) * (Math.cos(a0 - 1.57) > .4 ? 1 : 0)), x = CX + Math.cos(a0) * rad, y = CY + 60 + Math.sin(a0) * rad;
+    const dentIn = fold * Math.max(0, Math.sin(a0)) * .5; cell(lerp(x, CX + Math.cos(a0) * rad * .7, dentIn), lerp(y, CY + 60 + Math.sin(a0) * rad * .55, dentIn), 54 * E.out3(colony), a0 + 1.5708, T, i, '#ffd9a0', '#7fe0ff', colony); }
+  if (colony > .5) { g.fillStyle = `rgba(127,224,255,${.08 * colony})`; g.beginPath(); g.arc(CX, CY + 60, R * .9, 0, 7); g.fill(); }
+  if (fold > .2) label('A HOLLOW BALL OF CELLS', CX, 1180, 26, 'rgba(127,224,255,' + clamp(fold) + ')', 'center', .22);
+}
+const BODY = [
+  (x, y, s, col, T) => { g.fillStyle = col; for (let i = -5; i <= 5; i++) { g.beginPath(); g.ellipse(x + i * 17 * s, y, 9 * s, (46 - Math.abs(i) * 3) * s, 0, 0, 7); g.fill(); } g.fillStyle = col; g.beginPath(); g.ellipse(x - 112 * s, y, 24 * s, 44 * s, 0, 0, 7); g.fill(); g.fillStyle = INK; g.beginPath(); g.arc(x - 118 * s, y - 14 * s, 6 * s, 0, 7); g.arc(x - 118 * s, y + 14 * s, 6 * s, 0, 7); g.fill(); },   // trilobite-like
+  (x, y, s, col, T) => { g.strokeStyle = col; g.lineWidth = 15 * s; g.lineCap = 'round'; g.beginPath(); for (let i = 0; i <= 24; i++) { const q = i / 24; g.lineTo(x - 130 * s + q * 260 * s, y + Math.sin(q * 6 + T * 5) * 22 * s); } g.stroke(); g.lineWidth = 6 * s; for (let i = 0; i < 9; i++) { const q = (i + 1) / 11, xx = x - 130 * s + q * 260 * s, yy = y + Math.sin(q * 6 + T * 5) * 22 * s; g.beginPath(); g.moveTo(xx, yy); g.lineTo(xx, yy + 38 * s); g.stroke(); } },   // worm with spines
+  (x, y, s, col, T) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y - 16 * s, 80 * s, 52 * s * (1 + Math.sin(T * 5) * .05), 0, Math.PI, 0); g.fill(); g.strokeStyle = col; g.lineWidth = 7 * s; g.lineCap = 'round'; for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(x + i * 20 * s, y - 14 * s); g.bezierCurveTo(x + i * 24 * s + Math.sin(T * 5 + i) * 10 * s, y + 30 * s, x + i * 16 * s, y + 70 * s, x + i * 22 * s + Math.sin(T * 4 + i) * 12 * s, y + 100 * s); g.stroke(); } },   // jellyfish
+  (x, y, s, col, T) => { g.fillStyle = col; g.beginPath(); g.moveTo(x - 30 * s, y + 60 * s); g.bezierCurveTo(x - 70 * s, y - 20 * s, x - 40 * s, y - 70 * s, x - 10 * s, y - 70 * s); g.lineTo(x + 10 * s, y - 70 * s); g.bezierCurveTo(x + 40 * s, y - 70 * s, x + 70 * s, y - 20 * s, x + 30 * s, y + 60 * s); g.fill(); g.fillStyle = INK; g.beginPath(); g.ellipse(x, y - 70 * s, 22 * s, 8 * s, 0, 0, 7); g.fill(); },   // sponge / vase
+  (x, y, s, col, T) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, 100 * s, 38 * s, 0, 0, 7); g.fill(); g.strokeStyle = col; g.lineWidth = 11 * s; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + 90 * s, y); g.quadraticCurveTo(x + 150 * s, y - 40 * s + Math.sin(T * 5) * 12 * s, x + 170 * s, y - 80 * s); g.moveTo(x + 90 * s, y + 8 * s); g.quadraticCurveTo(x + 150 * s, y + 40 * s - Math.sin(T * 5) * 12 * s, x + 170 * s, y + 70 * s); g.stroke(); g.fillStyle = INK; for (const o of [-18, 0, 18]) { g.beginPath(); g.arc(x + 70 * s, y + o * s * .7, 6 * s, 0, 7); g.fill(); } },   // swimmer with claws
+];
+function aCambrian(u, T) {
+  const cols = ['#ff8f6b', '#ffc36b', '#8fe0b0', '#8fb4ff', '#e79bff'];
+  const n = 18; for (let i = 0; i < n; i++) {
+    const a = p(u, .05 + i * .035, .22 + i * .035, E.back), ang = i * 2.399 + .4, rad = 110 + (i % 6) * 48 + i * 4, x = CX + Math.cos(ang) * rad * (.55 + .45 * a), y = CY + 40 + Math.sin(ang) * rad * 1.15 * (.55 + .45 * a);
+    if (a <= 0) continue; g.save(); g.globalAlpha = clamp(a * 1.3); BODY[i % 5](x, y, (.62 + (i % 3) * .1) * a, cols[i % 5], T + i); g.restore(); }
+  const f = Math.exp(-u * 9); if (f > .02) { glowDot(CX, CY + 40, 700 * (1 - f) + 100, 'rgba(255,200,140,A)', f * .9); }
+}
+function aFish(u, T) {
+  for (let i = 0; i < 14; i++) { const sp = 120 + hash(i) * 120, x = ((T * sp + i * 173) % 1500) - 200, y = 330 + hash(i + 3) * 900 + Math.sin(T * 2 + i) * 30; fish(x, y, 90 + hash(i + 9) * 70, `rgba(143,180,255,${.3 + hash(i + 5) * .3})`, T, i, 1, 1); }
+  const k = E.out3(clamp((u - .18) / .35)), x = lerp(-300, CX, k) + (u > .55 ? (u - .55) * 120 : 0), y = CY + 30 + Math.sin(T * 2) * 14, L = 620; fish(x, y, L, '#a9c6ff', T, 0, 1, 1);
+  const sp = p(u, .45, .8); if (sp > 0) { const w = L * .17; g.fillStyle = `rgba(255,255,255,${.9 * sp})`; const m = Math.floor(sp * 26); for (let i = 0; i < m; i++) { const q = i / 26, xx = x + L * .3 - q * L * .72, ss = Math.sin(T * 8) * L * .07 * Math.max(0, q - .5) * 1.8; g.beginPath(); g.ellipse(xx, y - w * .1 * (1 - q) + ss * .4, 9, 17 * (1 - q * .5), 0, 0, 7); g.fill(); }
+    g.strokeStyle = `rgba(255,255,255,${.85 * sp})`; g.lineWidth = 6; g.beginPath(); g.ellipse(x + L * .33, y - 16, 70, 46, 0, 0, 7); g.stroke(); label('SKULL', x + L * .33, y - 100, 24, `rgba(255,255,255,${sp})`, 'center', .2); label('BACKBONE', x - 40, y + 130, 24, `rgba(255,255,255,${sp})`, 'center', .2); }
+}
+function aTiktaalik(u, T) {
+  const m = E.io(clamp((u - .12) / .55)), plant = p(u, .72, .86, E.out3);
+  g.save(); g.fillStyle = `rgba(143,100,60,${.5 * m})`; g.fillRect(0, 1180, W, 260); g.fillStyle = `rgba(60,110,190,${.5 * (1 - m)})`; g.fillRect(0, 1180, W, 260); g.restore();
+  g.save(); g.translate(CX - 110, 520); g.rotate(lerp(-1.25, -.05, E.io(clamp((u - .1) / .6))));
+  const S = [0, 0], El = [90, 190], Wr = [60, 330]; const col = '#ffe3b0'; g.lineCap = 'round'; g.strokeStyle = col;
+  g.lineWidth = 36; g.beginPath(); g.moveTo(...S); g.lineTo(...El); g.stroke(); g.lineWidth = 24; g.beginPath(); g.moveTo(...El); g.lineTo(Wr[0] - 20, Wr[1]); g.moveTo(...El); g.lineTo(Wr[0] + 50, Wr[1] - 10); g.stroke();
+  if (m > .3) { g.fillStyle = col; g.globalAlpha = clamp((m - .3) * 2); rr(Wr[0] - 20, Wr[1] - 30, 110, 54, 22); g.fill(); g.globalAlpha = 1; }
+  for (let i = 0; i < 8; i++) { const fin = i < 1 || i > 5 ? 1 - m : 1, ang = lerp(-1.2 + i * .34, -.62 + (i - 1) * .31, m), len = lerp(300 + hash(i) * 120, 200, m), wd = lerp(7, 24, m); if (fin <= .02) continue;
+    const x0 = Wr[0] + 35, y0 = Wr[1], x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len; g.globalAlpha = fin; g.lineWidth = wd; g.strokeStyle = col; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); if (m > .6) { g.fillStyle = col; g.beginPath(); g.arc(x1, y1, wd * .75 * (m - .6) / .4, 0, 7); g.fill(); } g.globalAlpha = 1; }
+  g.restore();
+  if (plant > 0 && plant < 1) for (let i = 0; i < 12; i++) { const a = -Math.PI * (.1 + hash(i) * .8), d = plant * 120 * (.4 + hash(i + 2)); g.fillStyle = `rgba(200,160,110,${1 - plant})`; g.beginPath(); g.arc(CX + 10 + Math.cos(a) * d, 1175 + Math.sin(a) * d * .8, 8, 0, 7); g.fill(); }
+  label('FIN', 220, 640, 26, `rgba(255,255,255,${1 - m})`, 'center', .2); label('LIMB WITH WRIST + DIGITS', CX, 1130, 26, `rgba(255,255,255,${m > .6 ? 1 : 0})`, 'center', .2);
+}
+function aAmniote(u, T) {
+  const e = p(u, .02, .24, E.back), sp = p(u, .45, .85, E.out3);
+  g.save(); g.translate(CX, 600); g.scale(e, e); g.fillStyle = '#f6efdd'; g.beginPath(); g.ellipse(0, 0, 190, 245, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(150,110,70,.28)'; for (let i = 0; i < 26; i++) { g.beginPath(); g.arc((hash(i) - .5) * 250, (hash(i + 7) - .5) * 350, 4 + hash(i + 3) * 5, 0, 7); g.fill(); }
+  g.fillStyle = 'rgba(160,210,240,.7)'; g.beginPath(); g.ellipse(-8, -26, 120, 150, 0, 0, 7); g.fill(); g.strokeStyle = '#e36a50'; g.lineWidth = 22; g.lineCap = 'round'; g.beginPath(); for (let i = 0; i <= 40; i++) { const q = i / 40, a = q * 9.5, r = 20 + q * 70; g.lineTo(-8 + Math.cos(a) * r * (1 + .03 * Math.sin(T * 3)) * .9, -26 + Math.sin(a) * r * .9); } g.stroke();
+  g.fillStyle = '#ffc24a'; g.beginPath(); g.arc(70, 120, 58, 0, 7); g.fill(); g.restore();
+  if (e > .8) { label('SHELL', CX + 250, 530, 22, 'rgba(255,255,255,.8)', 'left', .2); label('AMNION', CX + 250, 620, 22, 'rgba(255,255,255,.8)', 'left', .2); label('YOLK', CX + 250, 715, 22, 'rgba(255,255,255,.8)', 'left', .2); }
+  if (sp > 0) { g.lineCap = 'round'; const A = [CX, 870], Bp = [CX - 250, 870 + 330 * sp], Cp = [CX + 250, 870 + 330 * sp]; g.lineWidth = 12; g.strokeStyle = '#9be28a'; g.beginPath(); g.moveTo(A[0], 845); g.lineTo(A[0], 960 * 1); g.stroke(); g.strokeStyle = '#9be28a'; g.beginPath(); g.moveTo(CX, 960); g.bezierCurveTo(CX, 1020, Bp[0], 1010 * 1, Bp[0], lerp(960, 1200, sp)); g.stroke(); g.beginPath(); g.moveTo(CX, 960); g.bezierCurveTo(CX, 1020, Cp[0], 1010, Cp[0], lerp(960, 1200, sp)); g.stroke();
+    if (sp > .85) { g.fillStyle = '#fff'; [Bp[0], Cp[0]].forEach(x => { g.beginPath(); g.arc(x, 1200, 17, 0, 7); g.fill(); }); label('SYNAPSIDS', Bp[0], 1262, 28, '#fff', 'center', .12); label('mammals', Bp[0], 1305, 28, '#bde7b0', 'center', .1); label('SAUROPSIDS', Cp[0], 1262, 28, '#fff', 'center', .12); label('reptiles + birds', Cp[0], 1305, 28, '#bde7b0', 'center', .1); } }
+}
+function dino(x, y, s, T, wing, feath) {   // a theropod in profile; wing 0..1 grows the arm into a wing; feath 0..1 grows feathers
+  g.save(); g.translate(x, y); g.scale(s, s); const bob = Math.sin(T * 8) * 6 * (1 - wing), sw = Math.sin(T * 8); g.translate(0, bob); g.fillStyle = CREAM; g.strokeStyle = CREAM; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.lineWidth = 22; g.beginPath(); g.moveTo(-90, 10); for (let i = 1; i <= 16; i++) { const q = i / 16; g.lineTo(-90 - q * 330, 10 - q * 60 * (1 - q) + Math.sin(T * 6 - q * 4) * 10 * q); } g.lineWidth = 34; g.stroke();   // tail
+  g.lineWidth = 26; g.beginPath(); g.moveTo(-90, 10); g.lineTo(-18 * (1 - wing) - 90 * wing * 0 + 0, 6); g.stroke();
+  g.beginPath(); g.ellipse(0, 0, 130, 82, -.1, 0, 7); g.fill();   // body
+  g.lineWidth = 36; g.beginPath(); g.moveTo(90, -30); g.quadraticCurveTo(150, -80, 150, -150); g.stroke(); g.beginPath(); g.moveTo(135, -165); g.lineTo(230, -150); g.lineTo(150, -118); g.closePath(); g.fill();   // neck + head
+  g.fillStyle = INK; g.beginPath(); g.arc(170, -156, 6, 0, 7); g.fill(); g.strokeStyle = CREAM;
+  g.lineWidth = 26; for (const o of [-1, 1]) { const ph = sw * o; g.beginPath(); g.moveTo(-10, 56); g.lineTo(30 + ph * 40, 130); g.lineTo(10 + ph * 70, 215); g.lineTo(60 + ph * 70, 225); g.stroke(); }   // legs
+  const ar = lerp(50, 330, wing), aa = lerp(.6, -.9, wing) + Math.sin(T * 9) * .35 * wing; g.lineWidth = lerp(12, 20, wing); g.beginPath(); g.moveTo(70, 5); g.lineTo(70 + Math.cos(aa) * ar * .6, 5 + Math.sin(aa + .8) * ar * .6); g.stroke();
+  if (feath > 0) { const cols = ['#ff7aa8', '#ff9ac4', '#ffc2d9', '#ffb15c']; for (let i = 0; i < 26; i++) { const q = i / 26; if (q > feath) break; const wx = 70 + Math.cos(aa) * ar * .6 * (.4 + q * .9), wy = 5 + Math.sin(aa + .8) * ar * .6 * (.4 + q * .9) - 4; g.strokeStyle = cols[i % 4]; g.lineWidth = 8; g.beginPath(); g.moveTo(wx - 40, wy); g.lineTo(wx - 40 - 70 - q * 80 * wing, wy + 20 + q * 60 * wing * Math.sin(T * 9 + 2) - q * 30); g.stroke(); }
+    for (let i = 0; i < 18; i++) { const q = i / 18; if (q > feath) break; const tx = -90 - q * 320, ty = 10 - q * 60 * (1 - q) + Math.sin(T * 6 - q * 4) * 10 * q; g.strokeStyle = cols[i % 4]; g.lineWidth = 7; g.beginPath(); g.moveTo(tx, ty - 10); g.lineTo(tx - 30, ty - 70); g.moveTo(tx, ty + 10); g.lineTo(tx - 30, ty + 60); g.stroke(); } }
+  g.restore();
+}
+function aBird(u, T) {
+  const feath = p(u, .22, .6), wing = p(u, .5, .9, E.io), lift = p(u, .62, 1, E.io);
+  dino(lerp(600, 640, lift), lerp(900, 640, lift) + Math.sin(T * 2) * 8 * lift, lerp(.9, .78, lift), T, wing, feath);
+  if (lift > .6) label('ARCHAEOPTERYX', CX, 1180, 26, `rgba(255,255,255,${clamp((lift - .6) * 3)})`, 'center', .22);
+}
+function mammal(x, y, s, col, T, kind) {
+  g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = col; g.strokeStyle = col; g.lineCap = 'round';
+  if (kind === 'whale') { g.beginPath(); g.ellipse(0, 0, 150, 60, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(-130, 0); g.quadraticCurveTo(-190, -20, -200, -70 + Math.sin(T * 4) * 10); g.lineTo(-165, -20); g.lineTo(-195, 40 - Math.sin(T * 4) * 10); g.closePath(); g.fill(); }
+  else if (kind === 'bat') { g.beginPath(); g.ellipse(0, 0, 38, 30, 0, 0, 7); g.fill(); const f = Math.sin(T * 12) * .4; for (const d of [-1, 1]) { g.beginPath(); g.moveTo(d * 25, -6); g.quadraticCurveTo(d * 120, -90 - f * 60, d * 170, -10 - f * 80); g.quadraticCurveTo(d * 120, -20, d * 90, 10); g.quadraticCurveTo(d * 60, -6, d * 30, 22); g.closePath(); g.fill(); } }
+  else { const L = kind === 'horse' ? 90 : kind === 'cat' ? 55 : 28, bl = kind === 'horse' ? 120 : kind === 'cat' ? 90 : 55, bh = kind === 'horse' ? 46 : 38; g.beginPath(); g.ellipse(0, 0, bl, bh, 0, 0, 7); g.fill(); g.beginPath(); g.ellipse(bl * .95, -bh * .3, bl * .38, bh * .7, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(bl * .9, -bh * .8); g.lineTo(bl * .83, -bh * 1.6); g.lineTo(bl * 1.08, -bh * 1); g.fill();
+    g.lineWidth = kind === 'horse' ? 12 : 9; for (const o of [-1, 1]) { g.beginPath(); g.moveTo(o * bl * .55, bh * .5); g.lineTo(o * bl * .55 + Math.sin(T * 9 + o) * 12, bh * .5 + L); g.stroke(); } g.lineWidth = 8; g.beginPath(); g.moveTo(-bl, -4); g.quadraticCurveTo(-bl - 70, -40 + Math.sin(T * 5) * 12, -bl - 90, -10); g.stroke(); }
+  g.restore();
+}
+function aMammal(u, T) {
+  const hit = .16, land = p(u, 0, hit, E.io), boom = clamp((u - hit) / .5), sky = clamp((u - hit) / .18);
+  g.save(); g.fillStyle = `rgba(120,50,20,${.35 * sky * (1 - p(u, .5, 1))})`; g.fillRect(0, 0, W, H); g.restore();
+  if (u < hit + .05) { const x = lerp(1180, CX + 140, land), y = lerp(-80, 900, land); const gr = g.createLinearGradient(x + 400, y - 400, x, y); gr.addColorStop(0, 'rgba(255,160,60,0)'); gr.addColorStop(1, 'rgba(255,200,120,.95)'); g.strokeStyle = gr; g.lineWidth = 46; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + 420, y - 420); g.lineTo(x, y); g.stroke(); glowDot(x, y, 120, 'rgba(255,190,90,A)', 1); g.fillStyle = '#ffe9b0'; g.beginPath(); g.arc(x, y, 30, 0, 7); g.fill(); }
+  if (u >= hit) { const r = boom * 1100; g.strokeStyle = `rgba(255,190,100,${1 - boom})`; g.lineWidth = 30 * (1 - boom) + 4; g.beginPath(); g.arc(CX + 140, 900, r, 0, 7); g.stroke(); glowDot(CX + 140, 900, 500 * (1 - boom) + 60, 'rgba(255,170,70,A)', (1 - boom)); if (u < hit + .05) { g.fillStyle = `rgba(255,255,255,${1 - (u - hit) / .05})`; g.fillRect(0, 0, W, H); } }
+  const spawn = p(u, .38, .6, E.back); if (spawn > 0) mammal(CX, 1000, 1.2 * spawn, '#ffb066', T, 'shrew');
+  const kinds = ['cat', 'horse', 'whale', 'bat'], pos = [[250, 680], [830, 700], [300, 1050], [800, 1000]];
+  kinds.forEach((k, i) => { const a = p(u, .56 + i * .07, .7 + i * .07, E.back); if (a > 0) mammal(lerp(CX, pos[i][0], a), lerp(1000, pos[i][1], a), (k === 'whale' ? .8 : .95) * a, ['#ff9a5c', '#e8c27a', '#7fb4e8', '#c79bff'][i], T + i, k); });
+  if (u > .6) label('SMALL SURVIVORS  >  MANY NEW FORMS', CX, 1250, 24, `rgba(255,255,255,${clamp((u - .6) * 4)})`, 'center', .2);
+}
+function aHuman(u, T) {
+  const g1 = p(u, .06, .5), g2 = p(u, .4, .95);
+  g.lineCap = 'round'; const A = [120, 1000]; const split = [470, 1000];
+  [[230, 640, 'ORANGUTANS', '#ffb15c'], [350, 780, 'GORILLAS', '#ff9a8a']].forEach(([bx, ey, nm, col], i) => { const q = p(u, .02 + i * .1, .4 + i * .1); if (q <= 0) return; g.strokeStyle = col; g.lineWidth = 12; g.beginPath(); g.moveTo(bx, 1000); g.bezierCurveTo(bx + 120, 1000, bx + 200, ey + 90, lerp(bx, 900, q), lerp(1000, ey, q)); g.stroke(); if (q > .95) { g.fillStyle = col; g.beginPath(); g.arc(900, ey, 14, 0, 7); g.fill(); label(nm, 870, ey - 30, 24, col, 'right', .14); } });
+  g.strokeStyle = '#ffe08a'; g.lineWidth = 16; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(lerp(A[0], split[0], g1), A[1]); g.stroke();
+  if (g1 >= 1 || g2 > 0) { const cp = [lerp(split[0], 900, g2), lerp(1000, 520, g2)], hum = [lerp(split[0], 940, g2), lerp(1000, 1000, g2)];
+    g.strokeStyle = '#ff9a5c'; g.lineWidth = 14; g.beginPath(); g.moveTo(split[0], 1000); g.bezierCurveTo(split[0] + 160, 1000, split[0] + 220, lerp(1000, 520, g2) , cp[0], cp[1]); g.stroke();
+    g.strokeStyle = '#ffe08a'; g.lineWidth = 16; g.beginPath(); g.moveTo(split[0], 1000); g.lineTo(hum[0], hum[1]); g.stroke();
+    if (g2 > .9) { g.fillStyle = '#ff9a5c'; g.beginPath(); g.arc(cp[0], cp[1], 18, 0, 7); g.fill(); label('CHIMPANZEES', cp[0] - 40, cp[1] - 44, 26, '#ffb88a', 'right', .14); g.fillStyle = '#ffe08a'; g.beginPath(); g.arc(hum[0], hum[1], 24, 0, 7); g.fill(); glowDot(hum[0], hum[1], 120, 'rgba(255,224,138,A)', .7 + .3 * Math.sin(T * 6)); label('HOMO SAPIENS', hum[0] - 50, hum[1] + 70, 26, '#ffe08a', 'right', .14); }
+    for (let i = 0; i < 4; i++) { const q = (i + 1) / 5, x = lerp(split[0], hum[0], q); if (x < hum[0] - 10) { g.fillStyle = 'rgba(255,224,138,.8)'; g.beginPath(); g.arc(x, 1000, 9, 0, 7); g.fill(); } } }
+  const a = p(u, .12, .3); label('COMMON ANCESTOR', 120, 1085, 24, `rgba(255,255,255,${a})`, 'left', .14); label('6-7 MILLION YEARS AGO', 120, 1125, 22, `rgba(255,224,138,${a})`, 'left', .12);
+}
+// ------------------------------------------------------------------ the family tree (finale)
+const TREE = [];
+(function grow(x, y, ang, len, depth, id, spine) { if (depth > 6) return; const x2 = x + Math.sin(ang) * len, y2 = y - Math.cos(ang) * len; TREE.push({ x, y, x2, y2, depth, spine, id }); const n = depth < 2 ? 2 : (hash(id * 3.1) > .35 ? 2 : 3);
+  for (let i = 0; i < n; i++) { const da = (i - (n - 1) / 2) * (.5 + hash(id + i) * .35) + (hash(id * 7 + i) - .5) * .25; grow(x2, y2, ang + da, len * (.74 + hash(id + i * 5) * .1), depth + 1, id * 3 + i + 1, spine && i === Math.floor(n / 2)); } })(540, 1450, 0, 215, 0, 1, true);
+function treeScene(u, T) {
+  g.fillStyle = DARK; g.fillRect(0, 0, W, H); glowDot(540, 900, 900, 'rgba(255,106,69,A)', .12);
+  const prog = u * 7.2; TREE.forEach(b => { const k = clamp(prog - b.depth); if (k <= 0) return; const x = lerp(b.x, b.x2, E.out3(k)), y = lerp(b.y, b.y2, E.out3(k)), hue = 18 + b.depth * 6;
+    g.strokeStyle = b.spine ? '#ffe08a' : `hsl(${hue + hash(b.id) * 30},85%,${58 + b.depth * 3}%)`; g.globalAlpha = b.spine ? 1 : .85; g.lineWidth = Math.max(2, 22 - b.depth * 3.2) * (b.spine ? 1.2 : 1); g.lineCap = 'round'; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(x, y); g.stroke(); g.globalAlpha = 1; if (b.depth === 6 && k >= 1) { g.fillStyle = `hsl(${40 + hash(b.id) * 40},95%,70%)`; g.beginPath(); g.arc(b.x2, b.y2, 6, 0, 7); g.fill(); } });
+  const names = ['Animals', 'Choanoflagellates', 'Cambrian life', 'Fish', 'Tiktaalik', 'Amniotes', 'Dinosaurs', 'Mammals', 'Humans']; const sp = TREE.filter(b => b.spine).sort((a, b) => a.depth - b.depth);
+  sp.forEach((b, i) => { const a = p(prog, i + .5, i + 1.2); if (a <= 0 || i >= names.length - 1) return; g.fillStyle = '#fff'; g.beginPath(); g.arc(b.x2, b.y2, 11 * a, 0, 7); g.fill(); g.font = 'italic 400 34px EB'; g.fillStyle = `rgba(239,230,210,${a})`; g.textAlign = i % 2 ? 'left' : 'right'; g.fillText(names[i + 1], b.x2 + (i % 2 ? 26 : -26), b.y2 + 10); });
+  const last = sp[sp.length - 1]; if (last && prog > 6.5) glowDot(last.x2, last.y2, 110, 'rgba(255,224,138,A)', .9);
+  slam('One family tree.', W / 2, 1680, 130, CREAM, p(u, .5, .75), { it: true }); label('EVERY ANIMAL ALIVE IS A COUSIN', W / 2, 1770, 28, 'rgba(239,230,210,.7)', 'center', .22);
+}
+// ------------------------------------------------------------------ pages, hop assembly
+function drawPage(h, yOff, hit) {
+  const pg = PAGES[h]; g.save(); g.translate(0, yOff); g.fillStyle = '#e9e2d3'; g.fillRect(0, -10, W, H + 20);
+  g.fillStyle = 'rgba(22,19,15,.08)'; rr(130, 130, 820, 70, 35); g.fill(); g.font = '600 28px IS'; g.fillStyle = MUTE; g.textAlign = 'center'; g.fillText('en.wikipedia.org  ›  ' + pg.t.replace(/ /g, '_'), 540, 176);
+  g.fillStyle = SHEET; g.shadowColor = 'rgba(60,40,10,.22)'; g.shadowBlur = 40; g.shadowOffsetY = 14; rr(60, 260, 960, 1260, 28); g.fill(); g.shadowColor = 'transparent';
+  g.font = '400 118px EB'; g.fillStyle = INK; g.textAlign = 'left'; g.fillText(pg.t, TX, AY + 70); g.fillStyle = ACC; g.fillRect(TX, AY + 112, 130, 9); label('ARTICLE', TX, AY + 190, 22, MUTE);
+  g.font = `400 ${FS}px EB`; pg.tok.forEach(tk => { g.fillStyle = tk.l ? '#a02a14' : INK; g.fillText(tk.s, tk.x, tk.y); if (tk.l) { g.fillStyle = tk.t ? ACC : 'rgba(160,42,20,.55)'; g.fillRect(tk.x, tk.y + 9, tk.w, tk.t ? 5 : 3); } });
+  if (hit > 0) pg.tok.filter(tk => tk.t).forEach(tk => { g.fillStyle = `rgba(214,58,31,${.4 * (1 - hit)})`; rr(tk.x - 12, tk.y - FS * .75, tk.w + 24, FS * 1.2, 12); g.fill(); });
+  g.restore();
+}
+function sceneFor(h, u, T, tr) {   // the animation layer: dark stage, timeline, animation, title + lesson text
+  const S = SCN[h]; g.fillStyle = DARK; g.fillRect(0, 0, W, H); glowDot(540, 820, 800, hexA(S.c), .1 + .04 * Math.sin(T * 3));
+  timeline(S.mya, S.c, p(u, .02, .12));
+  g.save(); S.fn(u, T); g.restore();
+  const ta = p(u, .08, .2, E.out5); g.save(); g.globalAlpha = ta; g.translate(0, (1 - ta) * 40); g.font = 'italic 400 124px EB'; g.fillStyle = S.c; g.textAlign = 'center'; g.fillText(S.n, 540, 1450); g.restore();
+  const da = p(u, .16, .3); label(S.d.toUpperCase(), 540, 1520, 30, `rgba(239,230,210,${da})`, 'center', .26);
+  const lines = wrap(S.s, 880, '400 50px EB'), sa = p(u, .24, .4); g.save(); g.globalAlpha = sa; g.font = '400 50px EB'; g.fillStyle = CREAM; g.textAlign = 'center'; lines.forEach((l, i) => g.fillText(l, 540, 1610 + i * 66)); g.restore();
+}
+function hop(b, h) {
+  const s = HOP0 + h * HL, k = b - s, T = b * B, pg = PAGES[h], tg = pg.target; const nextExists = h < NH - 1;
+  const tapK = k - 1.6, hit = clamp(tapK / .5);
+  // cursor path
+  const from = { x: 880, y: 1380 }, to = { x: tg.x, y: tg.y - 8 }, mv = E.io(clamp((k - .5) / 1.0)), cx = lerp(from.x, to.x, mv) + Math.sin(mv * Math.PI) * 80, cy = lerp(from.y, to.y, mv) - Math.sin(mv * Math.PI) * 120;
+  const open = p(k, 1.65, 2.35, E.io);
+  const pageIn = h === 0 ? 0 : 0;
+  if (k < 2.4) {
+    g.save(); const zoom = 1 + 2.4 * E.io(clamp((k - 1.65) / .7)); g.translate(to.x, to.y); g.scale(zoom, zoom); g.translate(-to.x, -to.y); drawPage(h, 0, hit); g.restore();
+    if (k < 1.9) { const press = tapK > 0 ? Math.exp(-tapK * 8) : 0, ring = clamp(tapK / .4); if (tapK > 0 && ring < 1) { g.strokeStyle = `rgba(214,58,31,${1 - ring})`; g.lineWidth = 8; g.beginPath(); g.arc(cx, cy, 30 + ring * 150, 0, 7); g.stroke(); } g.fillStyle = `rgba(22,19,15,${.22 + .1 * press})`; g.beginPath(); g.arc(cx, cy, 44 - 10 * press, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 5; g.stroke(); }
+  }
+  if (k >= 1.7) {   // the scene blooms out of the link as a growing circle
+    const r = open * 1700, u = clamp((k - 1.75) / 3.75); g.save(); if (open < 1) { g.beginPath(); g.arc(to.x, to.y, r, 0, 7); g.clip(); }
+    const tr = k > 5.5 ? E.io(clamp((k - 5.55) / .45)) : 0; g.translate(0, -tr * H); sceneFor(h, u, T, 0); g.restore();
+    if (k > 5.5 && nextExists) { const t2 = E.io(clamp((k - 5.55) / .45)); g.save(); g.translate(0, (1 - t2) * H); drawPage(h + 1, 0, 0); g.restore(); }
+    if (open < 1) { g.strokeStyle = `rgba(255,255,255,${.7 * (1 - open)})`; g.lineWidth = 10; g.beginPath(); g.arc(to.x, to.y, r, 0, 7); g.stroke(); }
+  }
+  if (tapK > 0 && tapK < .45) for (let i = 0; i < 12; i++) { const a = hash(i + h * 20) * 6.28, d = tapK * (260 + hash(i + 4) * 300); g.fillStyle = `rgba(255,${120 + hash(i) * 90 | 0},60,${1 - tapK / .45})`; g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 7, 0, 7); g.fill(); }
+}
+function hook(b) {
+  g.fillStyle = DARK; g.fillRect(0, 0, W, H); const glitch = b > 3 && b < 4 ? hash(Math.floor(b * 30)) * 28 : 0;
+  slam('600 million years', W / 2, 760, 150, CREAM, p(b, 0, .6), { glitch }); slam('of animal evolution', W / 2, 960, 120, '#9b9381', p(b, 1, 1.6), { glitch });
+  slam('in 30 seconds.', W / 2, 1200, 200, ORG, p(b, 2, 2.7), { it: true, glitch });
+  if (b > 3 && b < 4) for (let i = 0; i < 7; i++) { const y = hash(Math.floor(b * 20) + i) * H; g.fillStyle = `rgba(239,230,210,${.08 + hash(i) * .1})`; g.fillRect(0, y, W, 6 + hash(i + 3) * 24); }
+}
+function logoScene(b) {
+  const u = b - LOGOB; g.fillStyle = DARK; g.fillRect(0, 0, W, H); const LS = 1.5, LW = LOGO.vb[0] * LS, LX = (W - LW) / 2, LY = 560;
+  LOGO.dots.forEach((d, i) => { const a = p(u, .1 + i * .13, .5 + i * .13, E.back); if (a <= 0) return; g.fillStyle = d.c; g.beginPath(); g.arc(LX + d.x * LS, LY + d.y * LS, d.r * LS * a, 0, 7); g.fill(); });
+  const wa = p(u, 1.2, 2.2); g.save(); g.globalAlpha = wa; g.translate(0, (1 - wa) * 30); g.font = '400 210px EB'; const w1 = g.measureText('Scorch').width; g.font = 'italic 400 210px EB'; const w2 = g.measureText('er').width, x0 = W / 2 - (w1 + w2) / 2;
+  g.textAlign = 'left'; g.font = '400 210px EB'; g.fillStyle = CREAM; g.fillText('Scorch', x0, 1210); g.font = 'italic 400 210px EB'; g.fillStyle = ORG; g.fillText('er', x0 + w1, 1210); g.restore();
+  g.globalAlpha = p(u, 2.4, 3.2); label('LEARN SOMETHING, ONE LINK AT A TIME', W / 2, 1330, 32, CREAM, 'center', .2); g.font = '400 54px EB'; g.fillStyle = '#9b9381'; g.textAlign = 'center'; g.fillText('The daily Wikipedia link race', W / 2, 1420); g.globalAlpha = 1;
+  const ua = p(u, 4, 4.8); g.globalAlpha = ua; g.fillStyle = ORG; rr(W / 2 - 330, 1520, 660, 120, 60); g.fill(); g.fillStyle = '#fff'; g.font = '600 46px IS'; g.textAlign = 'center'; g.fillText('playscorcher.com', W / 2, 1596); g.globalAlpha = 1;
+}
+window.render = t => {
+  if (!window.__ready) return; const b = clamp(t / B, 0, NB - .001); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  if (b < HOP0 - 1) hook(b);
+  else if (b < HOP0) { const k = E.io(clamp((b - (HOP0 - 1)) / 1)); g.save(); g.translate(0, -k * H); hook(HOP0 - 1.001); g.restore(); g.save(); g.translate(0, (1 - k) * H); hop(HOP0, 0); g.restore(); }
+  else if (b < FIN) hop(b, Math.floor((b - HOP0) / HL));
+  else if (b < LOGOB) { const u = (b - FIN) / 6; treeScene(u, t); if (u < .08) { g.fillStyle = `rgba(255,255,255,${.8 * (1 - u / .08)})`; g.fillRect(0, 0, W, H); } }
+  else logoScene(b);
+  if (b > LOGOB - .3 && b < LOGOB + .35) { const f = 1 - Math.abs(b - LOGOB) / .35; if (f > 0) { g.fillStyle = `rgba(255,106,69,${f * .5})`; g.fillRect(0, 0, W, H); } }
+};
+</script></body></html>
