@@ -24,20 +24,20 @@ fx = np.zeros((nm, 2), np.float32)
 def put(t0, sig, g):
     i = int(t0 * SR); n = min(len(sig), nm - i)
     if n > 0 and i >= 0: fx[i:i + n, :] += (sig[:n] * g)[:, None]
-put(bt(0), sweep(bt(4.5) - bt(0), 150, 3000, .5), .09)                      # a quiet swell under the title
-put(bt(4.6), sweep(.7, 700, 3600, .5), .07)                                # the scale appears
-OBJ0, SEG, QB, DROP, SPAWN, LOGOB = 8, 3.25, 34, 38, 42, 75
+OBJ0, SEG, DROP = 16, 5.5, 64; QB = DROP - 4; SPAWN = DROP + 4; LOGOB = DROP + 37
+put(bt(0), sweep(bt(7.5) - bt(0), 150, 3000, .5), .09)                      # a quiet swell under the title
+put(bt(8.0), sweep(.8, 700, 3600, .5), .07)                                # the scale appears
 for i in range(8):                                                         # a soft airy lift into every object
-    put(bt(OBJ0 + i * SEG) - .3, sweep(.5, 900 + i * 180, 4200 + i * 260, .5), .07)
+    put(bt(OBJ0 + i * SEG) - .3, sweep(.6, 900 + i * 180, 4200 + i * 260, .5), .07)
 put(bt(QB) - .3, sweep(.5, 1800, 5200, .5), .08)
 put(bt(QB + .2), sweep(bt(DROP) - bt(QB + .2), 400, 6500, .5), .16)         # the build into the drop
 put(bt(DROP), thud(46), .75); put(bt(DROP), bp(noise(int(SR * 1.4)), 3000, 11000) * np.exp(-t_(1.4) * 3.5), .22)   # the drop
-put(bt(SPAWN - .4), sweep(.6, 900, 4800, .5), .06); put(bt(50), sweep(bt(62) - bt(50), 300, 5000, .5), .09)   # it grows, the pull-back gathers speed
-for bb in (62.3, 64.9, 67.5): put(bt(bb), sweep(.5, 1200, 4000, .5), .06)    # the camera flies to a real object
+put(bt(SPAWN - .4), sweep(.6, 900, 4800, .5), .06); put(bt(DROP + 12), sweep(bt(DROP + 24) - bt(DROP + 12), 300, 5000, .5), .09)   # it grows, the pull-back gathers speed
+for bb in (24.3, 26.9, 29.5): put(bt(DROP + bb), sweep(.5, 1200, 4000, .5), .06)    # the camera flies to a real object
 put(bt(LOGOB - .8), sweep(bt(LOGOB + 2) - bt(LOGOB - .8), 500, 6500, .5), .11)    # the mark gathers
 put(bt(LOGOB + 4.7), thud(52, 1.6), .45)                                    # the line lands
 duck = np.ones(nm, np.float32)
-for tt in (bt(38),):
+for tt in (bt(64),):
     i = int(tt * SR); n = min(int(.3 * SR), nm - i); x = np.arange(n) / SR; duck[i:i + n] *= (1 - .25 * np.exp(-x / .09)).astype(np.float32)
 mix = m * duck[:, None] + fx; mix *= .93 / np.max(np.abs(mix))
 out = os.path.join(HERE, '..', 'brand', 'video'); os.makedirs(out, exist_ok=True)

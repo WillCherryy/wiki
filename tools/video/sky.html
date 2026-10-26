@@ -12,7 +12,7 @@ html,body{margin:0;background:#000}canvas{display:block}
    Beats follow the Vivaldi recording (sky-beats.js). 0-4.5 title, 4.5-8 the scale and empty space, 8-34 eight objects (3.25 beats each), the quasar lands at 34 and the music drops
    at 38, the camera pulls back from 38 to 61, flies between real objects, then the end card from 75. Pure function of time: render(t). */
 const W = 1080, H = 1920, cv = document.getElementById('c'); let g = cv.getContext('2d');
-const NB = 84, SBb = window.SB.b, bt = b => { const i = Math.min(SBb.length - 2, Math.max(0, Math.floor(b))), f = b - i; return SBb[i] * (1 - f) + SBb[i + 1] * f; }, beatAt = t => { let i = 0; while (i < SBb.length - 2 && SBb[i + 1] <= t) i++; return i + (t - SBb[i]) / (SBb[i + 1] - SBb[i]); };
+const NB = 110, SBb = window.SB.b, bt = b => { const i = Math.min(SBb.length - 2, Math.max(0, Math.floor(b))), f = b - i; return SBb[i] * (1 - f) + SBb[i + 1] * f; }, beatAt = t => { let i = 0; while (i < SBb.length - 2 && SBb[i + 1] <= t) i++; return i + (t - SBb[i]) / (SBb[i + 1] - SBb[i]); };
 window.DURATION = window.SB.end; window.EVENTS = []; window.__ready = false;
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
 const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, ss: k => k * k * (3 - 2 * k), back: k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); } };
@@ -33,7 +33,7 @@ function bg(heat, t, extra = 0) { g.fillStyle = DARK; g.fillRect(0, 0, W, H); co
 function wrap(txt, maxW, font) { g.font = font; const out = []; let cur = ''; txt.split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; }); out.push(cur); return out; }
 
 // ---- timeline
-const SEG = 3.25, OBJ0 = 8, QB = 34, DROP = 38, SPAWN = 42, ZQ = 1.62, QDY = 134, ZEND = .408, ZOUT0 = DROP, ZOUT1 = 61, LOGOB = 75;
+const SEG = 5.5, OBJ0 = 16, DROP = 64, QB = DROP - 4, SPAWN = DROP + 4, ZQ = 1.62, QDY = 134, ZEND = .408, ZOUT0 = DROP, ZOUT1 = DROP + 23, LOGOB = DROP + 37;
 const TK = [2.7, 1e3, 3e3, 4e3, 5.8e3, 1e4, 2.5e4, 5e4, 1e6, 1e7];   // empty space, then the nine objects (kelvin)
 const fK = k => Math.log10(k) / 7;
 function init() { for (let i = 0; i < 9; i++) window.EVENTS.push({ t: +bt(i < 8 ? OBJ0 + i * SEG : QB).toFixed(4), kind: 'land', a: i }); window.EVENTS.push({ t: bt(DROP), kind: 'drop' }, { t: bt(LOGOB), kind: 'logo' }); buildTau(); window.__ready = true; }
@@ -56,30 +56,32 @@ function scaleHud(b, alpha) {
 
 // ---- scenes
 function titleScene(b, t) {
-  bg(0, t, 0); const f = 1 - p(b, 3.7, 4.5);
-  slam('Temperature', W / 2, 860, 200, CREAM, p(b, .2, 1.1), { fade: f }); slam('in space.', W / 2, 1060, 190, ICE, p(b, 1.3, 2.2), { it: true, fade: f }); g.globalAlpha = p(b, 2.6, 3.4) * f; label('A SHORT LESSON IN KELVIN', W / 2, 1210, 32, MUTE, 'center', .3); g.globalAlpha = 1;
+  bg(0, t, 0); const f = 1 - p(b, 6.6, 7.6, E.io);
+  slam('Temperature', W / 2, 860, 200, CREAM, p(b, .4, 1.6), { fade: f }); slam('in space.', W / 2, 1060, 190, ICE, p(b, 2.4, 3.6), { it: true, fade: f }); g.globalAlpha = p(b, 4.2, 5.4) * f; label('A SHORT LESSON IN KELVIN', W / 2, 1210, 32, MUTE, 'center', .3); g.globalAlpha = 1;
 }
 function spaceScene(b, t) {
-  bg(0, t, 0); const a = p(b, 4.9, 5.7), f = 1 - p(b, 7.2, 8);
-  g.save(); g.globalAlpha = a * f; g.textAlign = 'center'; g.font = 'italic 400 120px EB'; g.fillStyle = ICE; g.fillText('Empty space', W / 2, 820); g.font = '400 210px EB'; g.fillStyle = CREAM; g.fillText('2.7 K', W / 2, 1040);
-  g.font = '400 46px EB'; g.fillStyle = 'rgba(239,230,210,.75)'; ['The cold afterglow of the Big Bang.', 'The coldest things we can see.'].forEach((l, i) => g.fillText(l, W / 2, 1170 + i * 62)); g.restore();
+  bg(0, t, 0); const f = 1 - p(b, 14.8, 15.9, E.io), a = p(b, 8.2, 9.4, E.io);
+  g.save(); g.textAlign = 'center'; g.globalAlpha = a * f; g.font = 'italic 400 120px EB'; g.fillStyle = ICE; g.fillText('Empty space', W / 2, 820);
+  g.globalAlpha = p(b, 9.2, 10.4, E.io) * f; g.font = '400 210px EB'; g.fillStyle = CREAM; g.fillText('2.7 K', W / 2, 1040);
+  g.font = '400 46px EB'; g.fillStyle = 'rgba(239,230,210,.82)'; g.globalAlpha = p(b, 10.8, 12, E.io) * f; g.fillText('The cold afterglow of the Big Bang.', W / 2, 1170); g.globalAlpha = p(b, 12.6, 13.8, E.io) * f; g.fillText('The coldest thing we can see.', W / 2, 1232); g.restore();
 }
+const VFACT = { brown: 'Too small to fuse hydrogen.', reddwarf: 'The most common stars in the galaxy.', redgiant: 'A dying star, swollen but cool.', sun: 'Fusing hydrogen, halfway through its life.', bluewhite: 'Hotter and brighter than the Sun.', bluegiant: 'Burns bright, lives only millions of years.', whitedwarf: 'The Earth-sized core a Sun leaves behind.', neutron: 'A city-sized ball of neutrons.', quasar: 'A black hole feeding on gas, outshining galaxies.' };
 function objText(o, u, fade, y0 = 1400) {   // name, class and temperature, then a line of science; each appears in turn
   const a = p(u, .12, .55, E.out3) * fade; if (a > 0) { g.save(); g.globalAlpha = a; g.translate(0, (1 - a) * 22); g.font = 'italic 400 140px EB'; g.textAlign = 'center'; g.fillStyle = o.c; g.fillText(o.name, W / 2, y0); g.restore(); }
   g.globalAlpha = p(u, .35, .8) * fade; label(`${o.kind.toUpperCase()}  ·  ${o.temp.toUpperCase()}`, W / 2, y0 + 70, 32, CREAM, 'center', .2);
-  g.globalAlpha = p(u, .7, 1.3) * fade; g.font = '400 40px EB'; g.textAlign = 'center'; g.fillStyle = 'rgba(239,230,210,.88)'; wrap(o.fact, 900, '400 40px EB').forEach((l, i) => g.fillText(l, W / 2, y0 + 140 + i * 52)); g.globalAlpha = 1;
+  g.globalAlpha = p(u, .7, 1.3) * fade; g.font = '400 46px EB'; g.textAlign = 'center'; g.fillStyle = 'rgba(239,230,210,.9)'; g.fillText(VFACT[o.id] || o.fact, W / 2, y0 + 150); g.globalAlpha = 1;
 }
 function objScene(i, u, t) {   // u = seconds into this object
   const o = SKY.OBJ[i], heat = (i + 1) / 9; bg(heat, t, .08 * Math.exp(-u * 3));
   og.clearRect(0, 0, 1080, 1080); SKY.land(og, 1080, 1080, o.id, i, Math.min(u * 1.5, 3.2)); og.save(); og.globalCompositeOperation = 'destination-in'; { const mk = og.createRadialGradient(540, 540, 250, 540, 540, 540); mk.addColorStop(0, 'rgba(0,0,0,1)'); mk.addColorStop(1, 'rgba(0,0,0,0)'); og.fillStyle = mk; og.fillRect(0, 0, 1080, 1080); } og.restore(); g.drawImage(oc, 0, 250);
-  objText(o, u / B1, 1 - p(u / B1, SEG - 1.0, SEG - .25, E.io));
+  objText(o, u / B1, 1 - p(u / B1, SEG - .9, SEG - .2, E.io));
 }
 let B1 = .39;   // seconds per beat, set when the beat grid is known
 // ---- one continuous shot from the quasar on: it lands, the writing builds around it, the beat drops and the camera pulls back into your whole sky
 const VL = []; SKY.OBJ.map((o, i) => ({ o, i })).reverse().forEach(({ o, i }) => SKY.POOL[o.id].slice(0, 3).forEach(q => VL.push({ n: q.n, id: o.id, idx: i, count: ['Betelgeuse', 'Crab Pulsar', 'The Sun', 'Sirius A'].includes(q.n) ? 2 : 1, kind: q.kind, t: q.t })));
 const pc = document.createElement('canvas'); pc.width = 64; pc.height = 64; const pg = pc.getContext('2d');
-const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: 62.8, n: 'Betelgeuse', z: 1.5, hold: 1.3 }, { b: 65.4, n: 'Crab Pulsar', z: 1.5, hold: 1.3 }, { b: 68, n: '3C 273', z: 1.1, hold: .9 }, { b: 71.4, n: null, z: .22 }];
-const sm = k => k * k * (3 - 2 * k), FOC = [{ n: 'Betelgeuse', a: 62.8, z: 65.4 }, { n: 'Crab Pulsar', a: 65.4, z: 68 }, { n: '3C 273', a: 68, z: 70.4 }];
+const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: DROP + 24.8, n: 'Betelgeuse', z: 1.5, hold: 1.3 }, { b: DROP + 27.4, n: 'Crab Pulsar', z: 1.5, hold: 1.3 }, { b: DROP + 30, n: '3C 273', z: 1.1, hold: .9 }, { b: DROP + 33.4, n: null, z: .22 }];
+const sm = k => k * k * (3 - 2 * k), FOC = [{ n: 'Betelgeuse', a: DROP + 24.8, z: DROP + 27.4 }, { n: 'Crab Pulsar', a: DROP + 27.4, z: DROP + 30 }, { n: '3C 273', a: DROP + 30, z: DROP + 32.4 }];
 function keySeg(b) { let k = 0; while (k < KEYS.length - 2 && b >= KEYS[k + 1].b) k++; const A = KEYS[k], Bk = KEYS[Math.min(k + 1, KEYS.length - 1)], h0 = A.b + (A.hold || 0); return { A, Bk, f: E.io(clamp((b - h0) / Math.max(.01, Bk.b - h0))) }; }
 function zFor(b) {
   if (b < ZOUT1) { const s = clamp((b - ZOUT0) / (ZOUT1 - ZOUT0)); return b < ZOUT0 ? ZQ * (1 + .012 * Math.sin(b * 1.7)) : ZQ * Math.pow(ZEND / ZQ, Math.pow(s, 2.9)) * (1 + .05 * Math.exp(-(b - ZOUT0) * 5)); }
@@ -123,11 +125,11 @@ function logoScene(b, t) {
   const ua = p(u, 6.4, 7.4, E.io); g.save(); g.globalAlpha = ua; g.translate(0, (1 - ua) * 20); g.fillStyle = ORG; rr(W / 2 - 330, 1560, 660, 118, 59); g.fill(); g.fillStyle = '#fff'; g.font = '600 46px IS'; g.textAlign = 'center'; g.fillText('playscorcher.com', W / 2, 1634); g.restore();
 }
 // scenes in order; every boundary is a crossfade with the outgoing scene still moving
-const SEGS = [{ a: 0, f: titleScene, xf: 1 }, { a: 4.5, f: spaceScene, xf: .9 }, ...Array.from({ length: 8 }, (_, i) => ({ a: OBJ0 + i * SEG, f: (b, t) => objScene(i, t - bt(OBJ0 + i * SEG), t), xf: i === 0 ? .9 : 1.1 })), { a: QB, f: sysScene, xf: 1.3 }, { a: LOGOB, f: logoScene, xf: 2.6 }];
+const SEGS = [{ a: 0, f: titleScene, xf: 1 }, { a: 7.5, f: spaceScene, xf: 1.3 }, ...Array.from({ length: 8 }, (_, i) => ({ a: OBJ0 + i * SEG, f: (b, t) => objScene(i, t - bt(OBJ0 + i * SEG), t), xf: i === 0 ? 1.4 : 1.3 })), { a: QB, f: sysScene, xf: 1.3 }, { a: LOGOB, f: logoScene, xf: 2.6 }];
 window.render = t => {
   if (!window.__ready) return; const b = clamp(beatAt(t), 0, NB - .001); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   let s = 0; while (s < SEGS.length - 1 && b >= SEGS[s + 1].a) s++; const cur = SEGS[s], x = s === 0 ? 1 : E.io(clamp((b - cur.a) / cur.xf));
   if (x >= 1) cur.f(b, t); else { SEGS[s - 1].f(b, t); inCtx(ov2g, () => { ov2g.setTransform(1, 0, 0, 1, 0, 0); ov2g.clearRect(0, 0, W, H); cur.f(b, t); }); g.globalAlpha = x; g.drawImage(ov2, 0, 0); g.globalAlpha = 1; }
-  scaleHud(b, p(b, 4.8, 5.8) * (1 - p(b, DROP + .4, DROP + 1.4)));
+  scaleHud(b, p(b, 8.4, 9.8) * (1 - p(b, DROP + .4, DROP + 1.4)));
 };
 </script></body></html>
