@@ -80,8 +80,8 @@ let B1 = .39;   // seconds per beat, set when the beat grid is known
 // ---- one continuous shot from the quasar on: it lands, the writing builds around it, the beat drops and the camera pulls back into your whole sky
 const VL = []; SKY.OBJ.map((o, i) => ({ o, i })).reverse().forEach(({ o, i }) => SKY.POOL[o.id].slice(0, 3).forEach(q => VL.push({ n: q.n, id: o.id, idx: i, count: ['Betelgeuse', 'Crab Pulsar', 'The Sun', 'Sirius A'].includes(q.n) ? 2 : 1, kind: q.kind, t: q.t })));
 const pc = document.createElement('canvas'); pc.width = 64; pc.height = 64; const pg = pc.getContext('2d');
-const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: DROP + 24.8, n: 'Betelgeuse', z: 1.5, hold: 1.3 }, { b: DROP + 27.4, n: 'Crab Pulsar', z: 1.5, hold: 1.3 }, { b: DROP + 30, n: '3C 273', z: 1.1, hold: .9 }, { b: DROP + 33.4, n: null, z: .1 }];
-const sm = k => k * k * (3 - 2 * k), FOC = [{ n: 'Betelgeuse', a: DROP + 24.8, z: DROP + 27.4 }, { n: 'Crab Pulsar', a: DROP + 27.4, z: DROP + 30 }, { n: '3C 273', a: DROP + 30, z: DROP + 32.4 }];
+const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: DROP + 25.2, n: 'Betelgeuse', z: 1.5, hold: .8 }, { b: DROP + 28.4, n: 'Crab Pulsar', z: 1.5, hold: .8 }, { b: DROP + 31.6, n: '3C 273', z: 1.1, hold: .8 }, { b: DROP + 35, n: null, z: .1 }];
+const sm = k => k * k * (3 - 2 * k), FOC = [{ n: 'Betelgeuse', a: DROP + 25.2, z: DROP + 28.4 }, { n: 'Crab Pulsar', a: DROP + 28.4, z: DROP + 31.6 }, { n: '3C 273', a: DROP + 31.6, z: DROP + 34.4 }];
 function keySeg(b) { let k = 0; while (k < KEYS.length - 2 && b >= KEYS[k + 1].b) k++; const A = KEYS[k], Bk = KEYS[Math.min(k + 1, KEYS.length - 1)], h0 = A.b + (A.hold || 0); return { A, Bk, f: E.io(clamp((b - h0) / Math.max(.01, Bk.b - h0))) }; }
 function zFor(b) {
   if (b < ZOUT1) { const s = clamp((b - ZOUT0) / (ZOUT1 - ZOUT0)); return b < ZOUT0 ? ZQ * (1 + .012 * Math.sin(b * 1.7)) : ZQ * Math.pow(ZEND / ZQ, Math.pow(s, 2.9)) * (1 + .05 * Math.exp(-(b - ZOUT0) * 5)); }

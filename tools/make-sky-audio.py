@@ -33,7 +33,7 @@ put(bt(QB) - .3, sweep(.5, 1800, 5200, .5), .08)
 put(bt(QB + .2), sweep(bt(DROP) - bt(QB + .2), 400, 6500, .5), .16)         # the build into the drop
 put(bt(DROP), thud(46), .75); put(bt(DROP), bp(noise(int(SR * 1.4)), 3000, 11000) * np.exp(-t_(1.4) * 3.5), .22)   # the drop
 put(bt(SPAWN - .4), sweep(.6, 900, 4800, .5), .06); put(bt(DROP + 12), sweep(bt(DROP + 24) - bt(DROP + 12), 300, 5000, .5), .09)   # it grows, the pull-back gathers speed
-for bb in (24.3, 26.9, 29.5): put(bt(DROP + bb), sweep(.5, 1200, 4000, .5), .06)    # the camera flies to a real object
+for bb in (24.5, 27.7, 30.9): put(bt(DROP + bb), sweep(.5, 1200, 4000, .5), .06)    # the camera flies to a real object
 put(bt(LOGOB - .8), sweep(bt(LOGOB + 2) - bt(LOGOB - .8), 500, 6500, .5), .11)    # the mark gathers
 put(bt(LOGOB + 4.7), thud(52, 1.6), .45)                                    # the line lands
 duck = np.ones(nm, np.float32)
