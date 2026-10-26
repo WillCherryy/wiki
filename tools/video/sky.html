@@ -33,7 +33,7 @@ function bg(heat, t, extra = 0) { g.fillStyle = DARK; g.fillRect(0, 0, W, H); co
 function wrap(txt, maxW, font) { g.font = font; const out = []; let cur = ''; txt.split(' ').forEach(w => { const t = cur ? cur + ' ' + w : w; if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; }); out.push(cur); return out; }
 
 // ---- timeline
-const SEG = 5.5, OBJ0 = 16, DROP = 64, QB = DROP - 4, SPAWN = DROP + 4, ZQ = 1.62, QDY = 134, ZEND = .408, ZOUT0 = DROP, ZOUT1 = DROP + 23, LOGOB = DROP + 37;
+const SEG = 5.5, OBJ0 = 16, DROP = 64, QB = DROP - 4, SPAWN = DROP + 4, ZQ = 1.62, QDY = 134, ZEND = .2, ZOUT0 = DROP, ZOUT1 = DROP + 23, LOGOB = DROP + 37;
 const TK = [2.7, 1e3, 3e3, 4e3, 5.8e3, 1e4, 2.5e4, 5e4, 1e6, 1e7];   // empty space, then the nine objects (kelvin)
 const fK = k => Math.log10(k) / 7;
 function init() { for (let i = 0; i < 9; i++) window.EVENTS.push({ t: +bt(i < 8 ? OBJ0 + i * SEG : QB).toFixed(4), kind: 'land', a: i }); window.EVENTS.push({ t: bt(DROP), kind: 'drop' }, { t: bt(LOGOB), kind: 'logo' }); buildTau(); window.__ready = true; }
@@ -80,7 +80,7 @@ let B1 = .39;   // seconds per beat, set when the beat grid is known
 // ---- one continuous shot from the quasar on: it lands, the writing builds around it, the beat drops and the camera pulls back into your whole sky
 const VL = []; SKY.OBJ.map((o, i) => ({ o, i })).reverse().forEach(({ o, i }) => SKY.POOL[o.id].slice(0, 3).forEach(q => VL.push({ n: q.n, id: o.id, idx: i, count: ['Betelgeuse', 'Crab Pulsar', 'The Sun', 'Sirius A'].includes(q.n) ? 2 : 1, kind: q.kind, t: q.t })));
 const pc = document.createElement('canvas'); pc.width = 64; pc.height = 64; const pg = pc.getContext('2d');
-const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: DROP + 24.8, n: 'Betelgeuse', z: 1.5, hold: 1.3 }, { b: DROP + 27.4, n: 'Crab Pulsar', z: 1.5, hold: 1.3 }, { b: DROP + 30, n: '3C 273', z: 1.1, hold: .9 }, { b: DROP + 33.4, n: null, z: .22 }];
+const KEYS = [{ b: ZOUT1, n: null, z: ZEND / 1.7 }, { b: DROP + 24.8, n: 'Betelgeuse', z: 1.5, hold: 1.3 }, { b: DROP + 27.4, n: 'Crab Pulsar', z: 1.5, hold: 1.3 }, { b: DROP + 30, n: '3C 273', z: 1.1, hold: .9 }, { b: DROP + 33.4, n: null, z: .1 }];
 const sm = k => k * k * (3 - 2 * k), FOC = [{ n: 'Betelgeuse', a: DROP + 24.8, z: DROP + 27.4 }, { n: 'Crab Pulsar', a: DROP + 27.4, z: DROP + 30 }, { n: '3C 273', a: DROP + 30, z: DROP + 32.4 }];
 function keySeg(b) { let k = 0; while (k < KEYS.length - 2 && b >= KEYS[k + 1].b) k++; const A = KEYS[k], Bk = KEYS[Math.min(k + 1, KEYS.length - 1)], h0 = A.b + (A.hold || 0); return { A, Bk, f: E.io(clamp((b - h0) / Math.max(.01, Bk.b - h0))) }; }
 function zFor(b) {
@@ -93,14 +93,14 @@ function camFor(b, pos) {
   const { A, Bk, f } = keySeg(b), pa = at(A.n), pb = at(Bk.n); return { x: lerp(pa.x, pb.x, f), y: lerp(pa.y, pb.y, f), z: zFor(b) };
 }
 // orbit clock: orbits run slower the closer the camera is, so nothing strobes at 30 fps; the clock is integrated, so phases never jump
-const tsOf = z => 2.4 * clamp(Math.pow(.42 / z, 1.6), .07, 1); let TAU_ARR = [];
+const tsOf = z => 1.5 * clamp(Math.pow(.42 / z, 1.6), .07, 1); let TAU_ARR = [];
 function buildTau() { const dt = 1 / 60, n = Math.ceil((window.DURATION + 2) / dt); B1 = (SBb[40] - SBb[10]) / 30; TAU_ARR = new Float64Array(n + 1); for (let i = 0; i < n; i++) TAU_ARR[i + 1] = TAU_ARR[i] + dt * tsOf(zFor(beatAt(i * dt))); }
 const tauAt = t => { const x = clamp(t, 0, window.DURATION + 1.9) * 60, i = Math.floor(x); return lerp(TAU_ARR[i], TAU_ARR[Math.min(i + 1, TAU_ARR.length - 1)], x - i); };
 const ageMap = (list, t) => { const m = {}; list.forEach((q, i) => { if (i > 0) m[q.n] = t - bt(SPAWN + i / 1.7); }); return m; };
-function sysDraw(ctx, t, list, cam, focus, primScale, noLabels) { ctx.clearRect(0, 0, W, H); return SKY.system(ctx, W, H, t + 40, list, { cam, focus, primScale, tau: tauAt(t) + 40 * 2.4, ts: tsOf(cam.z), noLabels, wobble: 0, ages: ageMap(list, t) }); }
+function sysDraw(ctx, t, list, cam, focus, primScale, noLabels) { ctx.clearRect(0, 0, W, H); return SKY.system(ctx, W, H, t + 40, list, { cam, focus, primScale, tau: tauAt(t) + 40 * 1.5, ts: tsOf(cam.z), noLabels, wobble: 0, ages: ageMap(list, t) }); }
 function sysScene(b, t) {
   const RATE = 1.7, n = clamp(1 + Math.floor((b - SPAWN) * RATE), 1, VL.length), list = b < SPAWN ? VL.slice(0, 1) : VL.slice(0, n);
-  const pos = SKY.system(pg, 64, 64, t + 40, list, { cam: { x: 0, y: 0, z: 1 }, tau: tauAt(t) + 40 * 2.4, wobble: 0, noLabels: true }), cam = camFor(b, pos), q = t - bt(QB), tl = q * 1.2, grow = tl < .4 ? 0 : Math.min(1.15, E.back(clamp((tl - .4) / .85)));
+  const pos = SKY.system(pg, 64, 64, t + 40, list, { cam: { x: 0, y: 0, z: 1 }, tau: tauAt(t) + 40 * 1.5, wobble: 0, noLabels: true }), cam = camFor(b, pos), q = t - bt(QB), tl = q * 1.2, grow = tl < .4 ? 0 : Math.min(1.15, E.back(clamp((tl - .4) / .85)));
   const fo = FOC.find(f => b >= f.a && b < f.z), focus = fo ? fo.n : null;
   g.fillStyle = DARK; g.fillRect(0, 0, W, H); { const k = clamp(.9 - (b - DROP) / 22 * .7, .2, .9), gr = g.createRadialGradient(W / 2, H * .44, 60, W / 2, H * .44, 1250); gr.addColorStop(0, `rgba(255,120,60,${.30 * k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
   // three samples a few milliseconds apart so motion is smooth; labels are drawn once afterwards so they stay sharp
