@@ -29,7 +29,11 @@ put(bt(5), sweep(bt(6) - bt(5), 800, 5000, .5), .08)                     # into 
 for i in range(1, 9):                                                    # a soft airy lift into every landing
     s = 6 + i * 2 if i < 8 else 22; put(bt(s) - .35, sweep(.45, 900 + i * 200, 4200 + i * 300, .5), .07)
 put(bt(22), thud(46), .75); put(bt(22), bp(noise(int(SR * 1.4)), 3000, 11000) * np.exp(-t_(1.4) * 3.5), .22)   # the quasar
-put(bt(26) - .2, sweep(bt(30) - bt(26) + .2, 500, 6500, .5), .09)        # into the logo
+put(bt(25.6), sweep(bt(26) - bt(25.6) + .5, 700, 4200, .5), .08)          # into your sky
+put(bt(29.6), sweep(.6, 900, 4800, .5), .06); put(bt(41.6), sweep(.8, 600, 5200, .5), .08)   # it grows, then the camera flies
+put(bt(43.2), sweep(.5, 1200, 4000, .5), .06); put(bt(46.2), sweep(.5, 1200, 4000, .5), .06); put(bt(49.2), sweep(.5, 1200, 4000, .5), .06)
+put(bt(50), thud(52, 1.6), .5)                                           # the line lands
+put(bt(55.4), sweep(bt(56) - bt(55.4) + .5, 500, 6500, .5), .10)         # into the logo
 duck = np.ones(nm, np.float32)
 for tt in (bt(22),):
     i = int(tt * SR); n = min(int(.3 * SR), nm - i); x = np.arange(n) / SR; duck[i:i + n] *= (1 - .25 * np.exp(-x / .09)).astype(np.float32)

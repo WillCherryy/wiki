@@ -11,7 +11,7 @@ html,body{margin:0;background:#000}canvas{display:block}
 /* "Sky": space is cold, warm it up. A cold open, the nine objects landing coolest to hottest, then the line and the logo. No branding until the end.
    Beats follow the Vivaldi recording (sky-beats.js). Beats: 0-3 "Space is cold.", 3-6 the heat climbs, 6-22 eight objects (2 beats each), 22-26 the quasar, 26-36 the line, 30-36 logo. Pure function of time. */
 const W = 1080, H = 1920, cv = document.getElementById('c'), g = cv.getContext('2d');
-const NB = 38, SBb = window.SB.b, bt = b => { const i = Math.min(SBb.length - 2, Math.max(0, Math.floor(b))), f = b - i; return SBb[i] * (1 - f) + SBb[i + 1] * f; }, beatAt = t => { let i = 0; while (i < SBb.length - 2 && SBb[i + 1] <= t) i++; return i + (t - SBb[i]) / (SBb[i + 1] - SBb[i]); }; window.DURATION = window.SB.end; window.EVENTS = []; window.__ready = false;
+const NB = 64, SBb = window.SB.b, bt = b => { const i = Math.min(SBb.length - 2, Math.max(0, Math.floor(b))), f = b - i; return SBb[i] * (1 - f) + SBb[i + 1] * f; }, beatAt = t => { let i = 0; while (i < SBb.length - 2 && SBb[i + 1] <= t) i++; return i + (t - SBb[i]) / (SBb[i + 1] - SBb[i]); }; window.DURATION = window.SB.end; window.EVENTS = []; window.__ready = false;
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k;
 const E = { out3: k => 1 - Math.pow(1 - k, 3), io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, back: k => { const c = 1.7; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); } };
 const p = (b, a, z, e = E.out3) => e(clamp((b - a) / (z - a)));
@@ -29,7 +29,7 @@ const oc = document.createElement('canvas'); oc.width = 1080; oc.height = 1080; 
 const heatCol = h => { const S = ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'], x = clamp(h) * 4, i = Math.min(3, Math.floor(x)), f = x - i, hx = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)], A = hx(S[i]), Bc = hx(S[i + 1]); return `rgb(${A.map((v, n) => Math.round(lerp(v, Bc[n], f))).join(',')})`; };
 function bg(heat, t, extra = 0) { g.fillStyle = DARK; g.fillRect(0, 0, W, H); const gr = g.createRadialGradient(W / 2, H * .45, 100, W / 2, H * .45, 1300); gr.addColorStop(0, heatCol(heat).replace('rgb', 'rgba').replace(')', `,${.1 + .25 * heat + extra})`)); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.save(); SKY.starfield(g, W, H, t, 130, 4); g.restore(); }
 const SEG = 2;   // beats per object
-function init() { for (let i = 0; i < 9; i++) window.EVENTS.push({ t: +bt(6 + i * SEG).toFixed(4), kind: 'land', a: i }); window.EVENTS.push({ t: bt(26), kind: 'line' }, { t: bt(30), kind: 'logo' }); window.__ready = true; }
+function init() { for (let i = 0; i < 9; i++) window.EVENTS.push({ t: +bt(6 + i * SEG).toFixed(4), kind: 'land', a: i }); window.EVENTS.push({ t: bt(26), kind: 'sky' }, { t: bt(50), kind: 'line' }, { t: bt(56), kind: 'logo' }); window.__ready = true; }
 Promise.all(['54px EB', 'italic 54px EB', '600 30px IS'].map(f => document.fonts.load(f))).then(init);
 function objScene(i, u, t, beat) {   // u = seconds into this object
   const o = SKY.OBJ[i], heat = (i + 1) / 9; bg(heat, t, .1 * Math.exp(-u * 4));
@@ -39,6 +39,29 @@ function objScene(i, u, t, beat) {   // u = seconds into this object
   for (let k = 0; k < 9; k++) { const x = W / 2 + (k - 4) * 56, on = k <= i; g.fillStyle = on ? SKY.OBJ[k].c : '#2e2a44'; g.beginPath(); g.arc(x, 1670, k === i ? 17 : 10, 0, 7); g.fill(); if (on) { g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = SKY.OBJ[k].c.replace('#', '#') + '55'; g.beginPath(); g.arc(x, 1670, k === i ? 30 : 18, 0, 7); g.fill(); g.restore(); } }
   label(`TIER ${i + 1} OF 9`, W / 2, 1750, 28, MUTE, 'center', .3);
 }
+
+// ---- your sky: the system grows one object at a time, then the camera flies between real objects. Camera is a pure function of time (frames render independently).
+const VL = []; SKY.OBJ.map((o, i) => ({ o, i })).reverse().forEach(({ o, i }) => SKY.POOL[o.id].slice(0, 3).forEach(q => VL.push({ n: q.n, id: o.id, idx: i, count: ['Betelgeuse', 'Crab Pulsar', 'The Sun', 'Sirius A'].includes(q.n) ? 2 : 1, kind: q.kind, t: q.t })));
+const pc = document.createElement('canvas'); pc.width = 64; pc.height = 64; const pg = pc.getContext('2d');
+const KEYS = [{ b: 26, n: null, z: 1.2 }, { b: 30, n: null, z: 1.0 }, { b: 42, n: null, z: .24 }, { b: 43.5, n: 'Betelgeuse', z: 1.5, hold: 1.9 }, { b: 46.5, n: 'Crab Pulsar', z: 1.5, hold: 1.9 }, { b: 49.5, n: '3C 273', z: 1.1, hold: 1.0 }, { b: 53, n: null, z: .22 }];
+function sysScene(b, t) {
+  const tt = t + 40, n = clamp(1 + Math.floor((b - 30) * 2), 1, VL.length), list = VL.slice(0, b < 30 ? 1 : n), last = list[list.length - 1], tNew = b < 30 ? 0 : t - bt(30 + (list.length - 1) / 2);
+  const pos = SKY.system(pg, 64, 64, tt, list, { cam: { x: 0, y: 0, z: 1 } }), at = nm => { if (!nm) return { x: 0, y: 0 }; const p = pos.find(q => q.n === nm); return p ? { x: p.wx, y: p.wy } : { x: 0, y: 0 }; };
+  let k = 0; while (k < KEYS.length - 2 && b >= KEYS[k + 1].b) k++; const A = KEYS[k], Bk = KEYS[Math.min(k + 1, KEYS.length - 1)], h0 = A.b + (A.hold || 0), f = E.io(clamp((b - h0) / Math.max(.01, Bk.b - h0))), pa = at(A.n), pb = at(Bk.n);
+  const cam = { x: lerp(pa.x, pb.x, f), y: lerp(pa.y, pb.y, f), z: 1.7 * Math.exp(lerp(Math.log(A.z), Math.log(Bk.z), f)) };
+  const focus = b >= 43 && b < 52 ? (b < 45.8 ? 'Betelgeuse' : b < 48.8 ? 'Crab Pulsar' : '3C 273') : null;
+  g.fillStyle = DARK; g.fillRect(0, 0, W, H); SKY.system(g, W, H, tt, list, { cam, focus, newId: b < 43 && b >= 30 ? last.n : null, tNew });
+  const gt = g.createLinearGradient(0, 0, 0, 560); gt.addColorStop(0, 'rgba(8,6,16,.85)'); gt.addColorStop(1, 'rgba(8,6,16,0)'); g.fillStyle = gt; g.fillRect(0, 0, W, 560); const gb = g.createLinearGradient(0, H - 520, 0, H); gb.addColorStop(0, 'rgba(8,6,16,0)'); gb.addColorStop(1, 'rgba(8,6,16,.9)'); g.fillStyle = gb; g.fillRect(0, H - 520, W, 520);
+  if (b < 30) { slam('Every solve earns', W / 2, 250, 96, CREAM, p(b, 26, 26.8)); slam('a real star.', W / 2, 370, 130, ORG, p(b, 27, 27.9), { it: true }); }
+  else if (b < 42) { g.globalAlpha = p(b, 30, 30.6) * (1 - p(b, 41, 42)); label('YOUR OWN SKY', W / 2, 200, 34, MUTE, 'center', .3); slam('It grows with you.', W / 2, 330, 110, CREAM, p(b, 30.4, 31.2), { it: true, fade: 1 - p(b, 41, 42) }); g.globalAlpha = 1; label(`${list.length} OF 69 OBJECTS FOUND`, W / 2, H - 150, 34, CREAM, 'center', .24); }
+  if (focus) { const q = VL.find(v => v.n === focus), o = SKY.OBJ[q.idx], ba = focus === 'Betelgeuse' ? 43.5 : focus === 'Crab Pulsar' ? 46.5 : 49.5, a = p(b, ba + .5, ba + 1.1) * (1 - p(b, ba + 2.2, ba + 2.8)); g.save(); g.globalAlpha = a; g.translate(0, (1 - a) * 24); g.textAlign = 'center'; g.font = 'italic 400 140px EB'; g.fillStyle = o.c; g.fillText(q.n, W / 2, H - 260); label(`${q.kind.toUpperCase()}  ·  ${q.t.toUpperCase()}`, W / 2, H - 190, 30, CREAM, 'center', .2); label(o.name.toUpperCase() + ' · TIER ' + (q.idx + 1) + ' OF 9', W / 2, H - 140, 24, MUTE, 'center', .28); g.restore(); }
+  if (b >= 50) { const u = b - 50, fd = p(u, 4.6, 5.4); g.fillStyle = `rgba(8,6,16,${.55 * p(u, 0, .6) * (1 - fd)})`; g.fillRect(0, 0, W, H); slam('Space is cold.', W / 2, 860, 160, '#9fb6df', p(u, 0, .6), { it: true, fade: 1 - fd }); slam('Warm it up.', W / 2, 1090, 200, ORG, p(u, 1.6, 2.3), { it: true, fade: 1 - fd }); }
+}
+function logoScene(b, t) {
+  const u = b - 56; bg(1, t, .12); const v = p(u, .2, 1), LS = 1.5, LW = LOGO.vb[0] * LS, LX = (W - LW) / 2, LY = 520; g.globalAlpha = v; LOGO.dots.forEach((d, n) => { g.fillStyle = d.c; g.beginPath(); g.arc(LX + d.x * LS, LY + d.y * LS, Math.max(0, d.r * LS * p(u, .3 + n * .12, .9 + n * .12, E.back)), 0, 7); g.fill(); });
+  g.font = '400 210px EB'; const w1 = g.measureText('Scorch').width; g.font = 'italic 400 210px EB'; const w2 = g.measureText('er').width, x0 = W / 2 - (w1 + w2) / 2; g.textAlign = 'left'; g.font = '400 210px EB'; g.fillStyle = CREAM; g.fillText('Scorch', x0, 1180); g.font = 'italic 400 210px EB'; g.fillStyle = ORG; g.fillText('er', x0 + w1, 1180);
+  g.globalAlpha = p(u, 1.4, 2.2); label('THE DAILY WIKIPEDIA LINK RACE', W / 2, 1300, 34, CREAM, 'center', .24); g.globalAlpha = p(u, 3.2, 4); g.fillStyle = ORG; rr(W / 2 - 330, 1420, 660, 120, 60); g.fill(); g.fillStyle = '#fff'; g.font = '600 46px IS'; g.textAlign = 'center'; g.fillText('playscorcher.com', W / 2, 1496); g.globalAlpha = 1;
+}
 window.render = t => {
   if (!window.__ready) return; const b = clamp(beatAt(t), 0, NB - .001); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   if (b < 3) { bg(0, t, 0); const sh = b > 2.2 ? Math.sin(t * 90) * 3 * (b - 2.2) : 0; slam('Space', W / 2 + sh, 860, 250, '#9fb6df', p(b, 0, .6), { glitch: 0 }); slam('is cold.', W / 2 - sh, 1110, 250, '#6f8fc8', p(b, 1, 1.6), { it: true }); label('ABOUT 2.7 KELVIN', W / 2, 1260, 32, MUTE, 'center', .3); }
@@ -46,12 +69,7 @@ window.render = t => {
     const x0 = 140, x1 = 940, y = 1250, gr = g.createLinearGradient(x0, 0, x1, 0); ['#2a4f8a', '#5c8cbe', '#d6be8c', '#f08c50', '#d63a1f'].forEach((c, k) => gr.addColorStop(k / 4, c)); g.fillStyle = gr; rr(x0, y, x1 - x0, 24, 12); g.fill(); const mx = lerp(x0, x1, E.io(clamp((b - 3.5) / 2.3))); g.fillStyle = CREAM; g.shadowColor = 'rgba(255,160,80,.8)'; g.shadowBlur = 30; g.beginPath(); g.arc(mx, y + 12, 28, 0, 7); g.fill(); g.shadowBlur = 0; }
   else if (b < 6 + 8 * SEG) { const i = Math.floor((b - 6) / SEG); objScene(i, t - bt(6 + i * SEG), t, b); const f = (b - 6 - i * SEG); if (f < .12) { g.fillStyle = `rgba(255,255,255,${.35 * (1 - f / .12)})`; g.fillRect(0, 0, W, H); } }
   else if (b < 26) { const u = t - bt(22); objScene(8, u, t, b); const f = b - 22; if (f < .15) { g.fillStyle = `rgba(255,255,255,${.7 * (1 - f / .15)})`; g.fillRect(0, 0, W, H); } }
-  else {
-    const u = b - 26; bg(1, t, .12); const fd = 1 - p(u, 3.2, 3.8, E.out3);
-    slam('Space is cold.', W / 2, 800, 150, '#9fb6df', p(u, 0, .6), { it: true, fade: fd }); slam('Warm it up.', W / 2, 1010, 190, ORG, p(u, 1.1, 1.8), { it: true, fade: fd });
-    if (u > 3.4) { const v = p(u, 3.4, 4.2), LS = 1.5, LW = LOGO.vb[0] * LS, LX = (W - LW) / 2, LY = 520; g.globalAlpha = v; LOGO.dots.forEach((d, n) => { g.fillStyle = d.c; g.beginPath(); g.arc(LX + d.x * LS, LY + d.y * LS, Math.max(0, d.r * LS * p(u, 3.5 + n * .1, 4 + n * .1, E.back)), 0, 7); g.fill(); });
-      g.font = '400 210px EB'; const w1 = g.measureText('Scorch').width; g.font = 'italic 400 210px EB'; const w2 = g.measureText('er').width, x0 = W / 2 - (w1 + w2) / 2; g.textAlign = 'left'; g.font = '400 210px EB'; g.fillStyle = CREAM; g.fillText('Scorch', x0, 1180); g.font = 'italic 400 210px EB'; g.fillStyle = ORG; g.fillText('er', x0 + w1, 1180);
-      label('THE DAILY WIKIPEDIA LINK RACE', W / 2, 1300, 34, CREAM, 'center', .24); g.globalAlpha = p(u, 5.2, 6); g.fillStyle = ORG; rr(W / 2 - 330, 1420, 660, 120, 60); g.fill(); g.fillStyle = '#fff'; g.font = '600 46px IS'; g.textAlign = 'center'; g.fillText('playscorcher.com', W / 2, 1496); g.globalAlpha = 1; }
-  }
+  else if (b < 56) sysScene(b, t);
+  else logoScene(b, t);
 };
 </script></body></html>
