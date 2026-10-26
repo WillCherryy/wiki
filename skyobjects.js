@@ -213,13 +213,13 @@
   // The map is far larger than the view: pan with opt.cam = {x, y, z}; positions are world units with the primary at the origin.
   function kepler(M, e) { let E = M; for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
   function orbits(w, list) {   // list sorted hottest first: [{n, id, idx, count}]; every body after the first orbits the primary
-    return list.slice(1).map((b, i) => { const k = hs(b.n), a = w * .3 + i * w * .33 + (hash(k) - .5) * w * .08, T = 9 * Math.pow(a / (w * .44), 1.5); return { ...b, a, T, e: .05 + .3 * hash(k + 3.1), om: hash(k + 7.7) * TAU, M0: hash(k + 1.3) * TAU }; });
+    return list.slice(1).map((b, i) => { const k = hs(b.n), a = w * (.3 + 1.1 * Math.log(1 + .9 * i)) + (hash(k) - .5) * w * .06, T = 9 * Math.pow(a / (w * .44), 1.5); return { ...b, a, T, e: .05 + .3 * hash(k + 3.1), om: hash(k + 7.7) * TAU, M0: hash(k + 1.3) * TAU }; });
   }
   function system(g, w, h, t, list, opt = {}) {
     g.clearRect(0, 0, w, h); const cam = opt.cam || { x: 0, y: 0, z: 1 }, Z = cam.z, SY = .56, U = Math.min(w, h); if (!list.length) { starfield(g, w, h, t * .3, 60, 9); return []; }
     const ox = ((cam.x * .12) % w + w) % w, oy = ((cam.y * .12) % h + h) % h; g.save(); g.translate(-ox, -oy); for (const [dx, dy] of [[0, 0], [w, 0], [0, h], [w, h]]) { g.save(); g.translate(dx, dy); starfield(g, w, h, t * .3, Math.round(w * h / 9000), 9); g.restore(); } g.restore();
-    const prim = list[0], orb = orbits(w, list), pos = [], toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2];
-    const at = (b, tt) => { const E = kepler(b.M0 + tt * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; };
+    const prim = list[0], orb = orbits(760, list), pos = [], toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2];
+    const TS = 2.4, at = (b, tt) => { const E = kepler(b.M0 + tt * TS * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; };
     let bx = 0, by = 0, mt = 1; orb.forEach(b => { const q = at(b, t), mass = .012 * (b.idx + 1); bx += q[0] * mass; by += q[1] * mass; mt += mass; }); bx = -bx / mt * .35; by = -by / mt * .35;
     const items = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m;
     orb.forEach(b => { const foc = opt.focus === b.n; g.strokeStyle = foc ? 'rgba(255,255,255,.45)' : 'rgba(255,255,255,.1)'; g.lineWidth = foc ? 2 : 1; g.beginPath(); for (let i = 0; i <= 120; i++) { const E = i / 120 * TAU, x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om), p = toS(bx + x * c - y * s, by + (x * s + y * c) * SY); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke();
@@ -231,12 +231,12 @@
       let r = base; const born = opt.newId === b.n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1; r *= Math.max(.01, easeBack(born));
       if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, t - i * .07), p = toS(bx + q[0], by + q[1] * SY); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(p[0], p[1], Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
       if (born < 1) ring(g, it.x, it.y, base * (.6 + 3 * born), OBJ[b.idx].c, .7 * (1 - born), 3);
-      g.save(); g.translate(it.x, it.y); const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / (w * 2) * .5 + .5, 0, 1); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); g.restore();
+      const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / 1500 * .5 + .5, 0, 1); if (r * sc < 15) { halo(g, it.x, it.y, Math.max(8, r * sc * 3.2), OBJ[b.idx].c, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.x, it.y, Math.max(1.6, r * sc * .32), 0, TAU); g.fill(); } else { g.save(); g.translate(it.x, it.y); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); g.restore(); }
       for (let k = 0; k < Math.min(5, b.count - 1); k++) { const rs = r * sc * (1.9 + .4 * k) + 8, th = t * (2.3 - .25 * k) + hash(hs(b.n) + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.ellipse(it.x, it.y, rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(OBJ[b.idx].c, .95); g.beginPath(); g.arc(it.x + Math.cos(th) * rs, it.y + Math.sin(th) * rs * SY, 2.6 + (it.prim ? 1 : 0), 0, TAU); g.fill(); }
       if (Z > .45 || opt.focus === b.n) { g.font = `italic 400 ${Math.round(clamp(40 * Math.sqrt(Z), 28, 52))}px "EB Garamond", Georgia, serif`; g.textAlign = 'center'; g.lineWidth = 7; g.strokeStyle = 'rgba(8,6,16,.9)'; g.strokeText(b.n, it.x, it.y + r * sc * 1.25 + 44); g.fillStyle = opt.focus === b.n ? '#ffffff' : OBJ[b.idx].c; g.fillText(b.n, it.x, it.y + r * sc * 1.25 + 44); }
       pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: Math.max(r * sc, 18) }); });
     // minimap: the whole system with the current view as a box
-    const big = Math.max(w * .5, ...orb.map(b => b.a * (1 + b.e))), R = 58, mx = 18 + R, my = h - 18 - R, k = R / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, R + 2, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, R, 0, TAU); g.clip();
+    const big = Math.max(380, ...orb.map(b => b.a * (1 + b.e))), R = 58, mx = 18 + R, my = opt.mini === 'tl' ? 52 + R : h - 18 - R, k = R / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, R + 2, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, R, 0, TAU); g.clip();
     orb.forEach(b => { g.strokeStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.ellipse(mx + bx * k, my + by * k * 1, b.a * k, b.a * k * SY, b.om, 0, TAU); g.stroke(); }); pos.forEach(p => { g.fillStyle = p.n === opt.focus ? '#fff' : rgba(OBJ[(list.find(l => l.n === p.n) || prim).idx].c, .95); g.beginPath(); g.arc(mx + p.wx * k, my + p.wy * k, p.n === opt.focus ? 3.4 : 2.2, 0, TAU); g.fill(); });
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
     return pos;
