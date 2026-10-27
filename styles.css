@@ -913,3 +913,5 @@ html[data-calm="1"] #buddy { display: none !important; }
 
 .unistars { position: absolute; inset: 0; pointer-events: none; background-color: #07060f; }
 #skyfull canvas:not(.uniov) { background: transparent; }
+
+.sfspd { font: 700 12px var(--sans); letter-spacing: 0; width: 46px; }
