@@ -100,6 +100,14 @@
     g.restore();
   }
   const paint = (g, id, x, y, r, t) => { if (id === 'quasar') { glowPass(g, id, x, y, r, t); DRAW.quasar(g, x, y, r, t); return; } (DRAW[id] || DRAW.sun)(g, x, y, r, t); glowPass(g, DRAW[id] ? id : 'sun', x, y, r, t); };
+  // a subtle colour cast over the body only (the 'color' blend keeps the shading), plus a faint tinted halo: individual character without leaving the type
+  function tintBody(g, b, r) {
+    const soft = b.id === 'quasar' || b.id === 'whitedwarf' || b.id === 'neutron', R = r * (b.id === 'quasar' ? 1.6 : .9);   // stars have a hard edge to clip to; the others fade out
+    g.save(); g.globalCompositeOperation = 'color';
+    if (soft) { const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, rgba(b.tint, b.ta * 1.5)); gr.addColorStop(.55, rgba(b.tint, b.ta * 1.1)); gr.addColorStop(1, rgba(b.tint, 0)); g.fillStyle = gr; g.fillRect(-R, -R, R * 2, R * 2); }
+    else { g.beginPath(); g.arc(0, 0, r, 0, TAU); g.clip(); g.fillStyle = rgba(b.tint, b.ta * 1.5); g.fillRect(-r, -r, r * 2, r * 2); }
+    g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; halo(g, 0, 0, r * 2.4, b.tint, b.ta * .35); g.restore();
+  }
   function starfield(g, w, h, t, n = 90, seed = 0) { g.save(); for (let i = 0; i < n; i++) { const x = hash(seed + i) * w, y = hash(seed + i + 500) * h, r = .4 + hash(seed + i + 900) * 1.3, a = .25 + .6 * hash(seed + i + 1300) * (.7 + .3 * Math.sin(t * (1 + hash(i) * 2) + i)); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.restore(); }
   function fade(g, w, h, inner = .55) { g.save(); g.globalCompositeOperation = 'destination-in'; const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * inner * .5, w / 2, h / 2, Math.hypot(w, h) * .5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.7, 'rgba(0,0,0,.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore(); }
   // the landing: particles converge, a flash and shock rings (more for hotter objects), then the object grows in with a small overshoot
@@ -208,6 +216,27 @@
       { n: 'J0313−1806', a: 'J0313%E2%88%921806', kind: 'Distant quasar', t: 'millions of K', f: 'Seen as it was about 670 million years after the Big Bang, among the most distant quasars known.' }]
   };
   Object.keys(MORE).forEach(k => POOL[k].push(...MORE[k]));
+  // mass in solar masses (quasars: the central black hole). The system map is ordered by it: the heaviest object you own sits at the centre.
+  const MASS = { 'Gliese 229 B': .068, 'Luhman 16': .06, 'WISE 0855−0714': .005, 'Epsilon Indi B': .108, 'Teide 1': .054, 'Gliese 570 D': .048,
+    'Proxima Centauri': .122, 'Barnard’s Star': .144, 'TRAPPIST-1': .09, 'Wolf 359': .11, 'Ross 128': .17, 'Lalande 21185': .39, 'Teegarden’s Star': .09, 'AU Microscopii': .5,
+    'Betelgeuse': 18, 'Arcturus': 1.1, 'Aldebaran': 1.16, 'Antares': 12, 'Pollux': 1.9, 'Mira': 1.2, 'Gacrux': 1.5, 'VY Canis Majoris': 17,
+    'The Sun': 1, 'Alpha Centauri A': 1.1, 'Tau Ceti': .78, '51 Pegasi': 1.11, 'Beta Hydri': 1.1, '18 Scorpii': 1.02, 'HD 209458': 1.15, 'Kepler-452': 1.04,
+    'Sirius A': 2.06, 'Vega': 2.14, 'Regulus': 3.8, 'Fomalhaut': 1.92, 'Altair': 1.86, 'Castor': 2.8, 'Denebola': 1.78, 'Achernar': 6.7,
+    'Spica': 11.4, 'Bellatrix': 8.6, 'Mimosa': 16, 'Rigel': 21, 'Alnilam': 40, 'Alnitak': 33, 'Mintaka': 24, 'Adhara': 12.6,
+    'Sirius B': 1.02, 'Procyon B': .6, '40 Eridani B': .5, 'van Maanen’s Star': .68, 'Gliese 440': .5, 'Stein 2051 B': .67, 'G 29-38': .6,
+    'Crab Pulsar': 1.4, 'Vela Pulsar': 1.4, 'Geminga': 1.4, 'PSR B1919+21': 1.4, 'PSR B1913+16': 1.44, 'PSR J0737−3039': 1.34, 'SGR 1806−20': 1.4, 'PSR J0348+0432': 2.01,
+    '3C 273': 9e8, 'TON 618': 6.6e10, '3C 48': 1e9, 'APM 08279+5255': 1e10, 'Markarian 231': 1.5e8, 'Twin Quasar': 2.5e9, '3C 279': 5e8, 'J0313−1806': 1.6e9 };
+  // individual looks: a size that follows mass within the type, plus a subtle body tint (colour, strength). Every object stays recognisably its type.
+  const TINT = { 'APM 08279+5255': ['#4f94ff', .42], 'TON 618': ['#ffe2b0', .3], '3C 273': ['#bfe0ff', .3], 'J0313−1806': ['#ff6a50', .3], 'Markarian 231': ['#ffcf80', .3],
+    'Betelgeuse': ['#ff2e18', .3], 'Antares': ['#ff1c10', .34], 'VY Canis Majoris': ['#c81408', .36], 'Mira': ['#ff9460', .3], 'Arcturus': ['#ffa040', .3], 'Aldebaran': ['#ff8a40', .3], 'Pollux': ['#ffb060', .26],
+    'Rigel': ['#8cb8ff', .26], 'Spica': ['#7c8cff', .26], 'Alnilam': ['#a6d0ff', .24], 'Vega': ['#a8c0ff', .2], 'Sirius A': ['#ffffff', .2], 'Achernar': ['#8ec0ff', .26],
+    'Proxima Centauri': ['#ff4020', .26], 'TRAPPIST-1': ['#b01808', .34], 'WISE 0855−0714': ['#6a2a9a', .4], 'Gliese 229 B': ['#c05a90', .3], 'Crab Pulsar': ['#78ffd0', .26], 'SGR 1806−20': ['#c890ff', .28],
+    'The Sun': ['#ffe060', .16], 'Tau Ceti': ['#ffd890', .22], 'Kepler-452': ['#ffd070', .22], 'Sirius B': ['#d8ecff', .22] };
+  const RANGE = { quasar: [.78, 1.45] }, DEFR = [.86, 1.22];
+  OBJ.forEach((o, oi) => { const L = POOL[o.id], lm = L.map(q => Math.log10(MASS[q.n] || 1)), lo = Math.min(...lm), hi = Math.max(...lm), [a, b] = RANGE[o.id] || DEFR;
+    L.forEach((q, i) => { q.m = MASS[q.n] || 1; q.s = a + (b - a) * (hi > lo ? (lm[i] - lo) / (hi - lo) : .5);
+      const tt = TINT[q.n]; if (tt) { q.tint = tt[0]; q.ta = tt[1]; } else { const nb = OBJ[clamp(oi + (hash(i * 3.3 + oi) > .5 ? 1 : -1), 0, OBJ.length - 1)]; q.tint = nb.c; q.ta = .08 + .12 * hash(i * 1.7 + oi * 5); } }); });
+  function massText(m) { return m >= 1e9 ? (m / 1e9).toFixed(m >= 1e10 ? 0 : 1).replace(/\.0$/, '') + ' billion Suns' : m >= 1e6 ? Math.round(m / 1e6) + ' million Suns' : m >= 10 ? Math.round(m) + ' Suns' : m >= .1 ? '≈ ' + m.toFixed(2).replace(/0$/, '') + ' Suns' : Math.round(m * 1047.6) + ' Jupiters'; }
   const hs = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h; };
 
   function landFx(g, id, idx, t, cx, cy, R, w, h) {
@@ -236,11 +265,11 @@
       if (foc) { g.fillStyle = 'rgba(255,255,255,.06)'; g.beginPath(); const c0 = toS(bx, by); g.moveTo(c0[0], c0[1]); for (let i = 0; i <= 14; i++) { const qq = at(b, 1.4 - i * .1), pp = toS(bx + qq[0], by + qq[1] * SY); g.lineTo(pp[0], pp[1]); } g.fill(); }
       items.push({ b, x: p[0], y: p[1], z: q[1], wx, wy }); });
     const pp = toS(bx, by); items.push({ b: prim, x: pp[0], y: pp[1], z: 0, wx: bx, wy: by, prim: true }); items.sort((a, b) => a.z - b.z);
-    items.forEach(it => { const b = it.b, zs = opt.sizeExp ? Math.pow(Z, opt.sizeExp) * Math.pow(.7, 1 - opt.sizeExp) : Z, base = (FR[b.id] || .2) * U * (it.prim ? .62 : .4) * zs; if (!vis(it.x, it.y, base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: 0 }); return; }
+    items.forEach(it => { const b = it.b, zs = opt.sizeExp ? Math.pow(Z, opt.sizeExp) * Math.pow(.7, 1 - opt.sizeExp) : Z, base = (FR[b.id] || .2) * (b.s || 1) * U * (it.prim ? .62 : .4) * zs; if (!vis(it.x, it.y, base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: 0 }); return; }
       let r = base; if (it.prim && opt.primScale != null) r *= Math.max(.001, opt.primScale); const born = bornOf(b.n); r *= Math.max(.01, easeBack(born));
       if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, i * .07), p = toS(bx + q[0], by + q[1] * SY); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(p[0], p[1], Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
       if (born < 1) ring(g, it.x, it.y, base * (.6 + 3 * born), OBJ[b.idx].c, .7 * (1 - born), 3);
-      const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / 1500 * .5 + .5, 0, 1); if (r * sc < 15) { halo(g, it.x, it.y, Math.max(8, r * sc * 3.2), OBJ[b.idx].c, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.x, it.y, Math.max(1.6, r * sc * .32), 0, TAU); g.fill(); } else { g.save(); g.translate(it.x, it.y); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); g.restore(); }
+      const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / 1500 * .5 + .5, 0, 1); if (r * sc < 15) { halo(g, it.x, it.y, Math.max(8, r * sc * 3.2), OBJ[b.idx].c, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.x, it.y, Math.max(1.6, r * sc * .32), 0, TAU); g.fill(); } else { g.save(); g.translate(it.x, it.y); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); if (b.tint && r * sc > 12) tintBody(g, b, Math.max(.5, r * sc)); g.restore(); }
       for (let k = 0; k < Math.min(5, b.count - 1); k++) { const rs = r * sc * (1.9 + .4 * k) + 8, th = t * (2.3 - .25 * k) + hash(hs(b.n) + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.ellipse(it.x, it.y, rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(OBJ[b.idx].c, .95); g.beginPath(); g.arc(it.x + Math.cos(th) * rs, it.y + Math.sin(th) * rs * SY, 2.6 + (it.prim ? 1 : 0), 0, TAU); g.fill(); }
       let lbl = null; if (Z > .45 || list.length <= 8 || opt.focus === b.n) { lbl = { text: b.n, x: it.x, y: it.y + r * sc * 1.25 + 40, size: clamp(24 * Math.sqrt(Z), 20, 36), color: opt.focus === b.n ? '#ffffff' : rgba(OBJ[b.idx].c, .92), focus: opt.focus === b.n }; if (!opt.noLabels) drawLabel(g, lbl); }
       pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: Math.max(r * sc, 18), lbl }); });
@@ -250,5 +279,5 @@
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
     return pos;
   }
-  window.SKY = { SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { massText, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();
