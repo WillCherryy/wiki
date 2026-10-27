@@ -504,14 +504,14 @@ function skyReveal(k) {
     <h3 class="skyn" style="color:${o.c}">${esc(k.name)}</h3><div class="small">${esc(k.kind)} · ${esc(k.temp)}</div>${skyLadder(k.idx)}
     <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a><div class="skytag sm">Space is cold. Warm it up.</div></div>`;
 }
-function drawSkyCell(cv, id, t, k = 1) {
+function drawSkyCell(cv, id, t, k = 1, q) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
-  if (id) SKY.draw(g, id, w / 2, h * .52, (SKY.FR[id] || .2) * h * (.2 + .8 * k) * .85, t); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
+  if (id) SKY.drawV(g, id, w / 2, h * .52, (SKY.FR[id] || .2) * h * (.2 + .8 * k) * .85, t, q); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
   SKY.fade(g, w, h);
 }
-function mountSky(id, idx) {   // the landing animation on the results card, then it idles
-  const cv = $('#skyCv'); if (!cv) return; const t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t); requestAnimationFrame(f); })(t0);
+function mountSky(id, idx, name) {   // the landing animation on the results card, then it idles
+  const cv = $('#skyCv'); if (!cv) return; const q = SKY.POOL[id].find(p => p.n === name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t, q); requestAnimationFrame(f); })(t0);
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
 function skyList() {   // every named object you own, hottest first
@@ -575,8 +575,9 @@ function openSky(opt = {}) {
       $('#skyPane').after($('#skyD'));
       $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? have + ' of ' + SKY.POOL[o.id].length + ' named' : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`; }).join('')}</div>
         <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
+      const rep = {}; SKY.OBJ.forEach(o => { rep[o.id] = SKY.POOL[o.id].filter(q => cat[q.n]).sort((a, b) => b.m - a.m)[0]; });   // each cell shows the heaviest one you own of its type
       const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
-      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1); }); raf = requestAnimationFrame(loop); })(t0);
+      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1, rep[id]); }); raf = requestAnimationFrame(loop); })(t0);
     } else {
       const L = skySys(); if (!selN && L.length) selN = L[0].n;
       const orb = SKY.orbits(760, L);
@@ -777,7 +778,7 @@ function showResult() {
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && r.sky.id });
+  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && r.sky.id });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
@@ -957,7 +958,7 @@ function skyLadderFound() { return `<div class="ladder" style="margin-top:12px">
 function paintMeSky() {
   const cv = $('#meSky'); if (!cv) return; if ($('#meSkyBtn')) $('#meSkyBtn').onclick = () => openSky();
   const L = skyList(), top = L[0], t0 = performance.now(); if (!top) { drawSkyCell(cv, null, 0); return; }
-  (function f(now) { if (!cv.isConnected) return; drawSkyCell(cv, top.id, (now - t0) / 1000, 1); requestAnimationFrame(f); })(t0);
+  (function f(now) { if (!cv.isConnected) return; drawSkyCell(cv, top.id, (now - t0) / 1000, 1, top); requestAnimationFrame(f); })(t0);
 }
 function openProfile() { openModal(`<h2>You</h2>${statsHTML()}<button class="btn ghost" id="meCloud" style="width:100%;margin-top:18px">Cloud save</button><button class="btn ghost" id="meSet" style="width:100%;margin-top:8px">Settings &amp; data</button>`); paintMeSky(); $('#meCloud').onclick = openCloud; $('#meSet').onclick = () => openSettings(); }
 function bindSettings() {

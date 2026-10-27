@@ -108,16 +108,18 @@
     else { g.beginPath(); g.arc(0, 0, r, 0, TAU); g.clip(); g.fillStyle = rgba(b.tint, b.ta * 1.5); g.fillRect(-r, -r, r * 2, r * 2); }
     g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; halo(g, 0, 0, r * 2.4, b.tint, b.ta * .35); g.restore();
   }
+  // paint with an individual's look: q = { s: size multiplier, tint, ta } (a POOL entry)
+  function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); r *= q.s || 1; paint(g, id, x, y, r, t); if (q.tint) { g.save(); g.translate(x, y); tintBody(g, { id, tint: q.tint, ta: q.ta }, r); g.restore(); } }
   function starfield(g, w, h, t, n = 90, seed = 0) { g.save(); for (let i = 0; i < n; i++) { const x = hash(seed + i) * w, y = hash(seed + i + 500) * h, r = .4 + hash(seed + i + 900) * 1.3, a = .25 + .6 * hash(seed + i + 1300) * (.7 + .3 * Math.sin(t * (1 + hash(i) * 2) + i)); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.restore(); }
   function fade(g, w, h, inner = .55) { g.save(); g.globalCompositeOperation = 'destination-in'; const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * inner * .5, w / 2, h / 2, Math.hypot(w, h) * .5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.7, 'rgba(0,0,0,.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore(); }
   // the landing: particles converge, a flash and shock rings (more for hotter objects), then the object grows in with a small overshoot
-  function land(g, w, h, id, idx, t) {
+  function land(g, w, h, id, idx, t, q) {
     const o = OBJ.find(q => q.id === id) || OBJ[3], cx = w / 2, cy = h * .53, R = (FR[id] || .2) * h, pow = (idx + 1) / 9; g.clearRect(0, 0, w, h);
     const shake = idx >= 6 && t > .38 && t < .75 ? (1 - (t - .38) / .37) * 4 * pow : 0; g.save(); g.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
     starfield(g, w, h, t, Math.round(w * h / 5500), 3);
     if (t < .42) { const u = clamp(t / .38), e = u * u * u; for (let i = 0; i < 40; i++) { const a = hash(i + 11) * TAU, d0 = h * (.55 + hash(i + 23) * .25), d = d0 * (1 - e), d2 = d0 * (1 - Math.pow(clamp(u - .12), 3)); g.strokeStyle = rgba(o.c, .15 + .6 * u); g.lineWidth = 1 + 1.5 * u; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx + Math.cos(a) * d2, cy + Math.sin(a) * d2); g.lineTo(cx + Math.cos(a) * d, cy + Math.sin(a) * d); g.stroke(); } halo(g, cx, cy, R * (.3 + 1.4 * u), o.c, .25 + .7 * u); g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy, 3 + 9 * u, 0, TAU); g.fill(); }
     const rings = idx >= 7 ? 3 : idx >= 4 ? 2 : 1; for (let i = 0; i < rings; i++) { const u = clamp((t - .38 - i * .1) / .8); if (u > 0 && u < 1) ring(g, cx, cy, R * (.4 + 4.4 * easeOut(u)), i % 2 ? '#ffffff' : o.c, .8 * (1 - u), R * .14 * (1 - u) + 1); }
-    const k = clamp((t - .4) / .85); if (k > 0) paint(g, id, cx, cy, Math.max(.5, R * clamp(easeBack(k), 0, 1.15)), t);
+    const k = clamp((t - .4) / .85); if (k > 0) paintV(g, id, cx, cy, Math.max(.5, R * clamp(easeBack(k), 0, 1.15)), t, q);
     const fl = clamp(1 - (t - .38) / .4); if (t >= .38 && fl > 0) { const fg = g.createRadialGradient(cx, cy, 0, cx, cy, h * (.5 + .5 * pow)); fg.addColorStop(0, `rgba(255,255,255,${fl * (.2 + .32 * pow)})`); fg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = fg; g.fillRect(-10, -10, w + 20, h + 20); }
     g.restore(); fade(g, w, h);
   }
@@ -279,5 +281,5 @@
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
     return pos;
   }
-  window.SKY = { massText, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();
