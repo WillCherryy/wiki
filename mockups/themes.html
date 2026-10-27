@@ -1,0 +1,65 @@
+<!doctype html><meta charset=utf-8><title>Scorcher theme packs</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#1c1a17;font-family:'Instrument Sans',system-ui,sans-serif;padding:36px;color:#eee}
+h1{font:600 28px Georgia,serif;margin:0 0 6px}p.s{margin:0 0 28px;color:#aaa;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,320px);gap:30px;justify-content:center}
+.ph{width:320px;height:600px;border-radius:26px;overflow:hidden;position:relative;background:var(--bg);color:var(--ink);box-shadow:0 20px 50px #0008;font-family:var(--f)}
+.name{position:absolute;z-index:5;top:10px;left:50%;transform:translateX(-50%);font:700 10px system-ui;letter-spacing:.14em;text-transform:uppercase;background:#000a;color:#fff;padding:4px 10px;border-radius:99px}
+.scene{height:170px;position:relative;overflow:hidden}.scene svg{position:absolute;inset:0;width:100%;height:100%}
+.hud{padding:12px 16px 0;position:relative;margin-top:-34px}
+.tgt small{font:600 9px system-ui;letter-spacing:.14em;opacity:.7}.tgt b{display:block;font:600 27px var(--f);color:var(--acc)}
+.row{display:flex;gap:10px;align-items:center;margin:10px 0}.bar{flex:1;height:8px;border-radius:9px;background:var(--bar)}.bar i{display:block;height:100%;width:78%;border-radius:9px;background:var(--hot);box-shadow:0 0 12px var(--acc)}
+.m b{font:600 24px var(--f)}.m{text-align:center;font:600 8px system-ui;letter-spacing:.12em;opacity:.7}
+.chips{display:flex;gap:6px;margin:8px 0}.chips span{padding:4px 11px;border:1px solid var(--rule);border-radius:99px;font-size:12px;background:var(--card)}
+.art{margin:6px 12px;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--rule);font-size:13.4px;line-height:1.5}
+.art h2{font:600 24px var(--f);margin:0 0 6px}.art a{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
+.sky{position:absolute;left:12px;right:12px;bottom:60px;border-radius:14px;padding:10px 14px;background:var(--card);border:1px solid var(--rule);display:flex;gap:12px;align-items:center;font-size:12px}
+.sky i{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#9fd0ff 40%,#3b6fd0 75%);box-shadow:0 0 18px #6aa8ff}
+.dock{position:absolute;left:10px;right:10px;bottom:10px;height:44px;border-radius:14px;background:var(--dock);display:flex;justify-content:space-around;align-items:center;font:600 9px system-ui;letter-spacing:.1em;color:#fff9}
+</style>
+<h1>Scene themes</h1><p class=s>Each pack restyles palette, fonts, header scenery, heat bar and link style. Sky objects, scoring and layout stay identical.</p>
+<div class=grid>
+
+<div class=ph style="--bg:#0a0618;--ink:#e8f0ff;--card:#120d2a;--rule:#ff2bd655;--acc:#19f0ff;--f:'Orbitron','Rajdhani',system-ui,sans-serif;--bar:#1b1440;--hot:linear-gradient(90deg,#3a2cff,#ff2bd6,#ffe94d);--dock:#190f3a"><span class=name>Cyberpunk · Neon City</span>
+<div class=scene style="background:linear-gradient(#1a0633,#ff2bd6 120%)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><circle cx="240" cy="62" r="34" fill="#ffe94d" opacity=".9"/><g fill="#0a0618"><rect x="0" y="90" width="38" height="80"/><rect x="44" y="60" width="30" height="110"/><rect x="80" y="100" width="46" height="70"/><rect x="132" y="50" width="26" height="120"/><rect x="164" y="84" width="40" height="86"/><rect x="210" y="70" width="34" height="100"/><rect x="250" y="96" width="70" height="74"/></g><g fill="#19f0ff"><rect x="50" y="72" width="4" height="4"/><rect x="138" y="62" width="4" height="4"/><rect x="170" y="98" width="4" height="4"/><rect x="220" y="84" width="4" height="4"/></g><g fill="#ff2bd6"><rect x="60" y="90" width="4" height="4"/><rect x="144" y="80" width="4" height="4"/><rect x="92" y="116" width="4" height="4"/></g></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b style="text-shadow:0 0 12px #19f0ff">Crocodile</b></div><div class=row><div class=bar><i></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#eef3e6;--ink:#1f3322;--card:#f8fbf2;--rule:#b9cfae;--acc:#2f7d3a;--f:'Fraunces','EB Garamond',Georgia,serif;--bar:#d5e3c8;--hot:linear-gradient(90deg,#7fb2d8,#a8cf72,#f0a63a);--dock:#264a2b"><span class=name>Forest · Understory</span>
+<div class=scene style="background:linear-gradient(#cfe6c2,#8fbf7a)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><circle cx="70" cy="40" r="22" fill="#fff6b8"/><g fill="#2f6b3a"><path d="M0 170V110l22-60 22 60 14-34 24 58 20-50 24 66 20-44 26 62 22-54 24 58 20-40 22 44v54z" opacity=".55"/><path d="M0 170V130l18-52 18 52 20-38 22 56 22-44 22 50 22-60 24 64 22-46 26 48 22-30 22 44v26z"/></g><g fill="#1c4a26"><path d="M20 170l16-70 16 70zM120 170l18-86 18 86zM250 170l16-76 16 76z"/></g></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i style="box-shadow:0 0 10px #f0a63a"></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#e9eef3;--ink:#17283a;--card:#f7fafc;--rule:#c2d0dd;--acc:#c2410c;--f:'Cormorant Garamond',Georgia,serif;--bar:#d3dde7;--hot:linear-gradient(90deg,#5b86b5,#d9c7a8,#e0592a);--dock:#1f3550"><span class=name>Mountains · Alpine</span>
+<div class=scene style="background:linear-gradient(#9cc4e6,#f3d9c0)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><circle cx="250" cy="48" r="18" fill="#fff"/><path d="M0 170V100l60-70 40 50 50-60 70 90 40-30 60 60v30z" fill="#7d93ad"/><path d="M60 30l-16 20 12-5 8 8 8-8 10 7zM150 20l-18 24 14-6 8 9 10-9 12 7z" fill="#fff"/><path d="M0 170V130l50-34 60 40 60-48 70 52 80-30v60z" fill="#3e5873"/></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i style="box-shadow:0 0 10px #e0592a"></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#05060f;--ink:#e6e9ff;--card:#0d1024;--rule:#262b52;--acc:#ffb066;--f:'EB Garamond',Georgia,serif;--bar:#171a38;--hot:linear-gradient(90deg,#4f7cff,#ffe3b0,#ff6a45);--dock:#12163a"><span class=name>Deep space · Nebula</span>
+<div class=scene style="background:radial-gradient(ellipse at 70% 30%,#5b2a8a,transparent 60%),radial-gradient(ellipse at 20% 80%,#1b4a8a,transparent 60%),#05060f"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><g fill="#fff"><circle cx="30" cy="30" r="1.2"/><circle cx="90" cy="70" r="1"/><circle cx="150" cy="20" r="1.4"/><circle cx="210" cy="90" r="1"/><circle cx="280" cy="40" r="1.3"/><circle cx="60" cy="120" r="1"/><circle cx="240" cy="140" r="1.2"/><circle cx="180" cy="130" r="1"/></g><circle cx="255" cy="70" r="26" fill="#ffd9a0"/><ellipse cx="255" cy="70" rx="44" ry="8" fill="none" stroke="#ffd9a0aa" stroke-width="2"/></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#f6e7c9;--ink:#40250f;--card:#fff6e2;--rule:#e0c89a;--acc:#b4430f;--f:'Fraunces',Georgia,serif;--bar:#ecd6aa;--hot:linear-gradient(90deg,#7aa6c4,#f3c76a,#d9421a);--dock:#5a3410"><span class=name>Desert · Dunes</span>
+<div class=scene style="background:linear-gradient(#f9c98a,#f6e7c9)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><circle cx="80" cy="60" r="30" fill="#ff8a3d"/><path d="M0 170V120q60-40 120-10t110-10 90 20v50z" fill="#e0a45a"/><path d="M0 170V145q70-30 140-6t180-4v35z" fill="#c9823a"/></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#06222e;--ink:#e2f6f6;--card:#0b3040;--rule:#17586b;--acc:#2dd4bf;--f:'Instrument Serif',Georgia,serif;--bar:#0e3c4d;--hot:linear-gradient(90deg,#2b6cb0,#2dd4bf,#fde68a);--dock:#04161e"><span class=name>Ocean · Deep</span>
+<div class=scene style="background:linear-gradient(#0f6d8f,#06222e)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><path d="M0 40q40-14 80 0t80 0 80 0 80 0v20q-40-12-80 0t-80 0-80 0-80 0z" fill="#ffffff22"/><g fill="#ffffff33"><circle cx="40" cy="100" r="5"/><circle cx="60" cy="130" r="3"/><circle cx="250" cy="90" r="6"/><circle cx="270" cy="120" r="3"/></g><path d="M120 120q30-30 60 0-30 16-60 0zM180 120l22-10v20z" fill="#2dd4bf"/></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+<div class=ph style="--bg:#f4ecf3;--ink:#2d1430;--card:#fff;--rule:#e0c9df;--acc:#c0267c;--f:'Instrument Serif',Georgia,serif;--bar:#ead8ea;--hot:linear-gradient(90deg,#8a7bd8,#f0a6c8,#ff6a45);--dock:#3a1a40"><span class=name>Sakura · Spring</span>
+<div class=scene style="background:linear-gradient(#fbd3e0,#f4ecf3)"><svg viewBox="0 0 320 170" preserveAspectRatio="none"><path d="M200 170c0-40 10-70 40-110" stroke="#5a3a3a" stroke-width="7" fill="none"/><path d="M240 60c-20 0-40 10-50 24M240 60c20-4 40 0 56 16" stroke="#5a3a3a" stroke-width="4" fill="none"/><g fill="#f58fb5"><circle cx="190" cy="80" r="14"/><circle cx="215" cy="58" r="16"/><circle cx="250" cy="52" r="15"/><circle cx="285" cy="76" r="14"/><circle cx="262" cy="90" r="12"/></g><g fill="#fff" opacity=".9"><circle cx="60" cy="50" r="3"/><circle cx="110" cy="100" r="3"/><circle cx="40" cy="120" r="2.5"/><circle cx="150" cy="40" r="2.5"/></g></svg></div>
+<div class=hud><div class=tgt><small>REACH</small><b>Crocodile</b></div><div class=row><div class=bar><i></i></div><div class=m><b>3</b><br>CLICKS</div><div class=m><b>0:35</b><br>TIME</div></div><div class=chips><span>Pizza</span><span>Italy</span><span>Egypt</span></div></div>
+<div class=art><h2>Nile</h2>The <a>Nile</a> is a major north-flowing river in northeastern <a>Africa</a>, and the longest river in the world.</div>
+<div class=sky><i></i><div><b>Stein 2051 B</b><br>white dwarf · new in your sky</div></div><div class=dock><span>BACK</span><span>FIND</span><span>CONTENTS</span><span>MORE</span></div></div>
+
+</div>
