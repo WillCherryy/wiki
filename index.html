@@ -765,7 +765,7 @@ function openSky(opt = {}) {
       <div class="skyprog"><div class="skyprog-bar"><i style="width:${Math.max(2, Math.round(owned / total * 100))}%"></i></div><div class="skyprog-lab"><span><b>${owned}</b> of ${total} objects</span><span><b>${types}</b> of 9 types</span><span><b>${P.sky.total}</b> earned</span></div>${skyNext() ? `<div class="skynext">→ ${esc(skyNext())}</div>` : ''}</div></div>
     <div class="tabs sk" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your universe</button></div>
     <div id="skyPane"></div>`);
-  $('#modal').classList.add('sky');
+  const SKYBOX = $('#page').style.display !== 'none' ? $('#pageBody') : $('#modal'); SKYBOX.classList.add('sky');
   let raf = 0, t0 = performance.now();
   const runBox = n => { const rn = (P.sky.runs || {})[n]; if (!rn) return '<div class="runbox"><div class="small">The run that earned it</div><p class="mute" style="margin:6px 0 0">Earned before runs were recorded.</p></div>'; const one = (x, lab) => `<div class="runr"><div class="small">${lab}</div><b>${esc(x.from || '?')} → ${esc(x.to || '?')}</b><div>${x.mode === 'daily' ? 'Daily #' + x.num : x.mode === 'pack' ? 'Companion pack' : 'Puzzle'} · ${new Date(x.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div><div>${x.clicks} click${x.clicks === 1 ? '' : 's'}${x.par ? ' (par ' + x.par + ')' : ''} · ${fmt(x.secs)}</div>${x.why ? `<div class="mute">${esc(x.why)}</div>` : ''}</div>`; return `<div class="runbox">${one(rn.first, 'The run that earned it')}${rn.last && rn.last.at !== rn.first.at ? one(rn.last, 'Most recent') : ''}</div>`; };
   let stop = () => cancelAnimationFrame(raf);
@@ -2326,7 +2326,7 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
-openPacks = asPage(openPacks, 'modes'); openPack = asPage(openPack, 'modes'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
+openPacks = asPage(openPacks, 'modes'); openPack = asPage(openPack, 'modes'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
 handleInvite();
 
 applyTheme();

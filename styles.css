@@ -861,32 +861,61 @@ html[data-calm="1"] #buddy { display: none !important; }
 .modal .disc-fact { color: #d6d0ec; margin: 12px 6px 0; } .modal .x { z-index: 6; }
 
 /* the Sky window, in the same dark glass as the full-screen map */
-.modal.sky { background: #0c0a1a; color: #eceaf8; border: 1px solid rgba(255, 255, 255, .1); width: min(640px, 100%); padding: 22px 20px 26px; }
-.modal.sky h2 { color: #fff; font: 500 clamp(32px, 6vw, 40px)/1 var(--serif); margin: 0; } .modal.sky p { color: #cfc8e6; } .modal.sky .x { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .14); color: #fff; }
-.modal.sky .skytag { margin: 4px 0 12px; font: italic 400 21px var(--display); color: #ffb48a; }
+.modal.sky { background: #0c0a1a; color: #eceaf8; border: 1px solid rgba(255, 255, 255, .1); width: min(640px, 100%); padding: 22px 20px 26px; }}
+/* the Sky window,in the same dark glass as the full-screen map */
+.pagebody.sky{ background: #0c0a1a; color: #eceaf8; border: 1px solid rgba(255, 255, 255, .1); width: min(640px, 100%); padding: 22px 20px 26px; }
+.modal.sky h2 { color: #fff; font: 500 clamp(32px, 6vw, 40px)/1 var(--serif); margin: 0; }}
+.pagebody.sky h2{ color: #fff; font: 500 clamp(32px, 6vw, 40px)/1 var(--serif); margin: 0; } .modal.sky p { color: #cfc8e6; }}
+.pagebody.sky p{ color: #cfc8e6; } .modal.sky .x { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .14); color: #fff; }}
+.pagebody.sky .x{ background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .14); color: #fff; }
+.modal.sky .skytag { margin: 4px 0 12px; font: italic 400 21px var(--display); color: #ffb48a; }}
+.pagebody.sky .skytag{ margin: 4px 0 12px; font: italic 400 21px var(--display); color: #ffb48a; }
 .skyprog-bar { height: 8px; border-radius: 6px; background: rgba(255, 255, 255, .1); overflow: hidden; } .skyprog-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #d070a8, #f57a34, #ffc83a, #6fa4ff, #5fe0ff, #ffa24a); }
 .skyprog-lab { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 9px; font: 500 12.5px var(--sans); color: #a9a2c8; } .skyprog-lab b { color: #fff; font-weight: 700; }
-.modal.sky .tabs.sk { display: flex; gap: 4px; padding: 4px; margin: 16px 0 14px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .06); } .modal.sky .tabs.sk button { flex: 1; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #a9a2c8; font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; } .modal.sky .tabs.sk button.on { background: #fff; color: #14112a; }
-.modal.sky .skygrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; } .modal.sky .skycell { position: relative; padding: 0 0 10px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 18px; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--c) 14%, #15122c), #0a0914 72%); text-align: center; color: #fff; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; } .modal.sky .skycell:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 60%, transparent); }
-.modal.sky .skycell.lock { background: #12102a; } .modal.sky .skycell.lock canvas { opacity: .6; } .modal.sky .skycell.sel { outline: 0; border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 8px 26px -8px var(--c); }
-.modal.sky .skycell b { display: block; margin-top: -10px; font: italic 400 19px/1.1 var(--display); color: var(--c); text-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent); } .modal.sky .skycell.lock b { color: #6c6785; text-shadow: none; }
-.modal.sky .skycell small { display: block; margin-top: 3px; font: 600 10.5px var(--sans); letter-spacing: .06em; color: #a9a2c8; text-transform: none; }
+.modal.sky .tabs.sk { display: flex; gap: 4px; padding: 4px; margin: 16px 0 14px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .06); }}
+.pagebody.sky .tabs.sk{ display: flex; gap: 4px; padding: 4px; margin: 16px 0 14px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .06); } .modal.sky .tabs.sk button { flex: 1; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #a9a2c8; font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }}
+.pagebody.sky .tabs.sk button{ flex: 1; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #a9a2c8; font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; } .modal.sky .tabs.sk button.on { background: #fff; color: #14112a; }}
+.pagebody.sky .tabs.sk button.on{ background: #fff; color: #14112a; }
+.modal.sky .skygrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }}
+.pagebody.sky .skygrid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; } .modal.sky .skycell { position: relative; padding: 0 0 10px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 18px; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--c) 14%, #15122c), #0a0914 72%); text-align: center; color: #fff; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; }}
+.pagebody.sky .skycell{ position: relative; padding: 0 0 10px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 18px; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--c) 14%, #15122c), #0a0914 72%); text-align: center; color: #fff; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; } .modal.sky .skycell:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 60%, transparent); }}
+.pagebody.sky .skycell:hover{ transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 60%, transparent); }
+.modal.sky .skycell.lock { background: #12102a; }}
+.pagebody.sky .skycell.lock{ background: #12102a; } .modal.sky .skycell.lock canvas { opacity: .6; }}
+.pagebody.sky .skycell.lock canvas{ opacity: .6; } .modal.sky .skycell.sel { outline: 0; border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 8px 26px -8px var(--c); }}
+.pagebody.sky .skycell.sel{ outline: 0; border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 8px 26px -8px var(--c); }
+.modal.sky .skycell b { display: block; margin-top: -10px; font: italic 400 19px/1.1 var(--display); color: var(--c); text-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent); }}
+.pagebody.sky .skycell b{ display: block; margin-top: -10px; font: italic 400 19px/1.1 var(--display); color: var(--c); text-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent); } .modal.sky .skycell.lock b { color: #6c6785; text-shadow: none; }}
+.pagebody.sky .skycell.lock b{ color: #6c6785; text-shadow: none; }
+.modal.sky .skycell small { display: block; margin-top: 3px; font: 600 10.5px var(--sans); letter-spacing: .06em; color: #a9a2c8; text-transform: none; }}
+.pagebody.sky .skycell small{ display: block; margin-top: 3px; font: 600 10.5px var(--sans); letter-spacing: .06em; color: #a9a2c8; text-transform: none; }
 .skybar { display: block; height: 4px; margin: 8px 16px 0; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; } .skybar i { display: block; height: 100%; border-radius: 3px; background: var(--c); box-shadow: 0 0 8px var(--c); }
-.modal.sky .skycell .tally { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); font: 700 11px var(--sans); font-style: normal; color: #fff; }
+.modal.sky .skycell .tally { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); font: 700 11px var(--sans); font-style: normal; color: #fff; }}
+.pagebody.sky .skycell .tally{ position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); font: 700 11px var(--sans); font-style: normal; color: #fff; }
 .skypanel { margin-top: 14px; padding: 16px 14px 10px; border: 1px solid rgba(255, 255, 255, .1); border-top: 2px solid var(--c, #fff); border-radius: 18px; background: #100e24; }
 .skyp-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .skyp-tier { font: 600 11px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #8d86b0; } .skyp-rar { padding: 3px 10px; border-radius: 999px; font: 800 9.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #14112a; background: #cfc8e6; } .skyp-rar.r2, .skyp-rar.r3 { background: #6fe0a8; } .skyp-rar.r4, .skyp-rar.r5 { background: #7cc0ff; } .skyp-rar.r6, .skyp-rar.r7 { background: linear-gradient(90deg, #c79bff, #ff8ad8); } .skyp-rar.r8 { background: linear-gradient(90deg, #ffd86a, #ff9a4a); }
 .skypanel .skyn { margin: 8px 0 4px; font: italic 400 36px/1.05 var(--display); } .skyp-fact { margin: 0 0 8px !important; font: 400 16px/1.42 var(--serif) !important; color: #c3bcdc !important; }
 .sflist.inl { max-height: 360px; padding: 0; } a.sfrow { text-decoration: none; } .sfrow { font-family: var(--sans); } .sfrow.lock { cursor: default; opacity: .65; } .sfrow.lock i { background: transparent; box-shadow: none; border: 1.5px dashed var(--c); } .sfrow.lock b { font-style: normal; letter-spacing: .2em; color: #8d86b0; }
 .skymini-h { margin: 18px 2px 8px; font: 700 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #8d86b0; }
-.modal.sky .skycal i { background: rgba(255, 255, 255, .07); } .modal.sky .skycal i.on { background: var(--c); box-shadow: 0 0 8px var(--c); }
-.sftypes.inl { position: static; padding: 0 0 10px; margin: 0 -2px; } .modal.sky .skysys { position: relative; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); background: #07060f; } .modal.sky .skysys canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; touch-action: none; cursor: grab; }
-.modal.sky .sysnote { position: absolute; left: 14px; top: 18px; font: 600 10px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #8d86b0; pointer-events: none; }
-.modal.sky .syszoom { position: absolute; right: 10px; bottom: 10px; display: grid; gap: 8px; } .modal.sky .syszoom .sfib { width: 42px; height: 42px; }
-.modal.sky .skysys .sflevel { position: absolute; right: 10px; top: 10px; grid-auto-flow: column; padding: 8px 10px; gap: 6px; }
+.modal.sky .skycal i { background: rgba(255, 255, 255, .07); }}
+.pagebody.sky .skycal i{ background: rgba(255, 255, 255, .07); } .modal.sky .skycal i.on { background: var(--c); box-shadow: 0 0 8px var(--c); }}
+.pagebody.sky .skycal i.on{ background: var(--c); box-shadow: 0 0 8px var(--c); }
+.sftypes.inl { position: static; padding: 0 0 10px; margin: 0 -2px; } .modal.sky .skysys { position: relative; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); background: #07060f; }}
+.pagebody.sky .skysys{ position: relative; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); background: #07060f; } .modal.sky .skysys canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; touch-action: none; cursor: grab; }}
+.pagebody.sky .skysys canvas{ display: block; width: 100%; height: auto; aspect-ratio: 1; touch-action: none; cursor: grab; }
+.modal.sky .sysnote { position: absolute; left: 14px; top: 18px; font: 600 10px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #8d86b0; pointer-events: none; }}
+.pagebody.sky .sysnote{ position: absolute; left: 14px; top: 18px; font: 600 10px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #8d86b0; pointer-events: none; }
+.modal.sky .syszoom { position: absolute; right: 10px; bottom: 10px; display: grid; gap: 8px; }}
+.pagebody.sky .syszoom{ position: absolute; right: 10px; bottom: 10px; display: grid; gap: 8px; } .modal.sky .syszoom .sfib { width: 42px; height: 42px; }}
+.pagebody.sky .syszoom .sfib{ width: 42px; height: 42px; }
+.modal.sky .skysys .sflevel { position: absolute; right: 10px; top: 10px; grid-auto-flow: column; padding: 8px 10px; gap: 6px; }}
+.pagebody.sky .skysys .sflevel{ position: absolute; right: 10px; top: 10px; grid-auto-flow: column; padding: 8px 10px; gap: 6px; }
 .sfcard.inl { position: relative; left: auto; bottom: auto; width: auto; max-height: none; margin-top: 12px; } .sfcard.inl:empty { display: none; }
 .ubrowse { margin-top: 14px; } .ubrowse .sfhead { padding: 0 0 10px; } .skyfoot { margin: 12px 2px 0 !important; font: 500 12px/1.5 var(--sans) !important; color: #8d86b0 !important; }
-.modal.sky .sysempty { padding: 40px 10px; text-align: center; color: #8d86b0 !important; }
-.modal.sky .mute, .modal.sky .small { color: #8d86b0; }
+.modal.sky .sysempty { padding: 40px 10px; text-align: center; color: #8d86b0 !important; }}
+.pagebody.sky .sysempty{ padding: 40px 10px; text-align: center; color: #8d86b0 !important; }
+.modal.sky .mute, .modal.sky .small { color: #8d86b0; }}
+.pagebody.sky .mute,.pagebody.sky .small{ color: #8d86b0; }
 .modal .disc:not(.compact) { margin-top: 36px; }
 .disc-btn.share { background: var(--c); color: #0b0a18; box-shadow: 0 0 22px -4px var(--c); } .disc-btn.alt { background: rgba(255, 255, 255, .12); color: #fff; }
 
@@ -909,13 +938,15 @@ html[data-calm="1"] #buddy { display: none !important; }
 .finv-cta .btn.big { width: 100%; justify-content: center; }
 
 .uniov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.modal.sky .skysys canvas.uniov, #skyfull canvas.uniov { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; cursor: default; touch-action: none; pointer-events: none; }
+.modal.sky .skysys canvas.uniov, #skyfull canvas.uniov { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; cursor: default; touch-action: none; pointer-events: none; }}
+.pagebody.sky .skysys canvas.uniov,#skyfull canvas.uniov{ position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; cursor: default; touch-action: none; pointer-events: none; }
 
 .unistars { position: absolute; inset: 0; pointer-events: none; background-color: #07060f; }
 #skyfull canvas:not(.uniov) { background: transparent; }
 
 .sfspd { font: 700 12px var(--sans); letter-spacing: 0; width: 46px; }
-.modal.sky .skysys canvas#sysCv { position: relative; }
+.modal.sky .skysys canvas#sysCv { position: relative; }}
+.pagebody.sky .skysys canvas#sysCv{ position: relative; }
 
 .sfhintbar { position: absolute; left: 50%; top: calc(124px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; background: rgba(20, 17, 40, .75); color: #cfc8e6; font: 600 11.5px var(--sans); letter-spacing: .06em; pointer-events: none; transition: opacity .8s; white-space: nowrap; } .sfhintbar.gone { opacity: 0; }
 
@@ -1048,3 +1079,27 @@ html[data-calm="1"] #buddy { display: none !important; }
   @keyframes sheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
 }
 @media (max-width: 899px) { .scrim:has(.modal.sheetm) { z-index: 90; } }
+@media (min-width: 980px) {
+  .pagebody.k-path-map #pmBody { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 6px 28px; align-items: start; max-width: 1240px; }
+  .pagebody.k-path-map #pmBody > svg { grid-column: 1; grid-row: 1 / span 8; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; max-height: 78vh; height: auto; }
+  .pagebody.k-path-map #pmBody > :not(svg) { grid-column: 2; } .pagebody.k-path-map #pmBody .grid3 { grid-template-columns: 1fr; gap: 8px; }
+}
+.pagebody.k-path-map { max-width: 1240px; }
+/* Sky as a page */
+.pagebody.sky { max-width: 1100px; margin: 0 auto; background: #0c0a1a; color: #eceaf8; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; padding: 26px 28px 30px; }
+@media (min-width: 980px) { .pagebody.sky .skygrid { grid-template-columns: repeat(3, 1fr); } .pagebody.sky #skyPane { display: block; } }
+@media (max-width: 899px) { .pagebody.sky { padding: 18px 14px 24px; border-radius: 10px; } }
+/* Studio as a two-column workspace */
+@media (min-width: 980px) {
+  .pagebody.k-studio { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 16px 28px; align-items: start; max-width: 1240px; }
+  .pagebody.k-studio .stu-sample { grid-column: 1; grid-row: 1; position: sticky; top: 84px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 22px; }
+  .pagebody.k-studio #stuTabs { grid-column: 2; grid-row: 1; max-width: 460px; } .pagebody.k-studio #stuBody { grid-column: 2; grid-row: 2; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 22px 18px; margin-top: -4px; }
+  .pagebody.k-studio .actions { grid-column: 1; grid-row: 2; align-self: start; margin-top: 0; }
+}
+.pagebody.k-cloud-save { max-width: 760px; } .pagebody.k-cloud-save .cloudcode { margin: 14px 0; }
+@media (max-width: 899px) { .pagebody .pkcards { grid-template-columns: 1fr 1fr !important; gap: 10px; } .pagebody .pkcard { min-height: 170px; padding: 12px; } .pagebody .pkcard b { font-size: 21px; } .pagebody .pkcard .pkex { font-size: 12px; } }
+@media (min-width: 980px) {
+  .pagebody.k-studio { grid-template-rows: auto auto auto; } .pagebody.k-studio .stu-sample { grid-row: 1 / span 3; } .pagebody.k-studio .actions { grid-column: 2; grid-row: 3; max-width: 420px; margin-top: 4px; } .pagebody.k-studio #stuBody { margin-top: 0; }
+}
+@media (min-width: 980px) { .pagebody.sky .skygrid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } .pagebody.sky .skyhead { text-align: left; } .pagebody.sky .skyhead h2 { font-size: 44px; } }
+.pagebody.k-x.sky { display: block; max-width: 1100px; } .pagebody.k-x.sky > * { grid-column: auto; }
