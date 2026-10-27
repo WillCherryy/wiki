@@ -43,6 +43,7 @@
       const fl = .5 + .5 * Math.sin(t * 1.3); loopArc(g, x, y, r * .99, -.9, .42, r * .26 * (.6 + .5 * fl), '#ffc090', .7, r * .05, Math.sin(t * 2) * r * .02); loopArc(g, x, y, r * .99, 2.1, .32, r * .18, '#ff9060', .55, r * .04, 0);
     },
     redgiant(g, x, y, r0, t) {
+      for (let k = 0; k < 3; k++) { const q = ((t * .06 + k / 3) % 1); g.strokeStyle = `rgba(255,130,70,${.18 * (1 - q)})`; g.lineWidth = Math.max(1, r0 * .05 * (1 - q)); g.beginPath(); g.arc(x, y, r0 * (1.5 + q * 2.4), 0, TAU); g.stroke(); }
       const r = r0 * (1 + .018 * Math.sin(t * .9)); for (let i = 3; i >= 1; i--) halo(g, x, y, r * (1.25 + i * .45), '#ff5a28', .16 + .06 * (4 - i));
       sphere(g, x, y, r, '#ffc490', '#f06a30', '#7a1e0c', 44, t, 26, '#ffd8a8', .6, .5);
       g.save(); g.beginPath(); g.arc(x, y, r, 0, TAU); g.clip(); for (let i = 0; i < 18; i++) { const a = hash(i + 200) * TAU, d = Math.sqrt(hash(i + 230)) * r * .9, w = r * (.16 + hash(i + 260) * .18), px = x + Math.cos(a) * d + Math.sin(t * .2 + i) * r * .01, py = y + Math.sin(a) * d, gr = g.createRadialGradient(px, py, 0, px, py, w); gr.addColorStop(0, 'rgba(255,214,150,.38)'); gr.addColorStop(.7, 'rgba(255,170,100,.12)'); gr.addColorStop(1, 'rgba(120,30,10,.0)'); g.fillStyle = gr; g.beginPath(); g.arc(px, py, w, 0, TAU); g.fill(); } g.restore();
@@ -50,6 +51,7 @@
     },
     sun(g, x, y, r, t) {
       halo(g, x, y, r * 3.2, '#ffb020', .5); g.save(); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 14; i++) { const a = i / 14 * TAU + hash(i + 7) * .3 + t * .02, l = r * (2 + 1.1 * hash(i + 60)), w = r * (.07 + .1 * hash(i + 90)); g.save(); g.translate(x, y); g.rotate(a); const q = g.createLinearGradient(r, 0, l, 0); q.addColorStop(0, 'rgba(255,220,150,.16)'); q.addColorStop(1, 'rgba(255,200,120,0)'); g.fillStyle = q; g.beginPath(); g.moveTo(r * .95, -w * .5); g.lineTo(l, -w * 2.2); g.lineTo(l, w * 2.2); g.lineTo(r * .95, w * .5); g.closePath(); g.fill(); g.restore(); }
       for (let i = 0; i < 46; i++) { const a = i / 46 * TAU + hash(i) * .1, l = r * (1.35 + hash(i + 40) * .75 + .08 * Math.sin(t * .6 + i)); const gr = g.createLinearGradient(x + Math.cos(a) * r, y + Math.sin(a) * r, x + Math.cos(a) * l, y + Math.sin(a) * l); gr.addColorStop(0, 'rgba(255,214,120,.34)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); g.strokeStyle = gr; g.lineWidth = r * (.025 + hash(i + 9) * .04); g.lineCap = 'round'; g.beginPath(); g.moveTo(x + Math.cos(a) * r * .98, y + Math.sin(a) * r * .98); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); } g.restore();
       sphere(g, x, y, r, '#fffbe0', '#ffd23e', '#e07a0e', 66, t, 90, '#ffffff', .5, .4);
       g.save(); g.beginPath(); g.arc(x, y, r, 0, TAU); g.clip(); [[.35, -.2, .1], [-.3, .25, .075], [.05, .5, .06]].forEach(([a, b, c]) => { g.fillStyle = 'rgba(140,60,10,.65)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r * 1.7, c * r * 1.3, .3, 0, TAU); g.fill(); g.fillStyle = 'rgba(40,12,4,.85)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r, c * r * .75, .3, 0, TAU); g.fill(); }); g.restore();
@@ -77,14 +79,43 @@
       g.restore(); sphere(g, x, y, r * .32, '#ffffff', '#c2f2ff', '#58c4ec', 8, t, 0, '#fff', 0, .2); halo(g, x, y, r * .8, '#ffffff', .9);
     },
     quasar(g, x, y, r, t) {
-      halo(g, x, y, r * 2.8, '#ff8a3a', .38); g.save(); g.translate(x, y); g.rotate(-.28); g.globalCompositeOperation = 'lighter';
-      for (const s of [-1, 1]) { const fl = .88 + .12 * Math.sin(t * 8 + s), L = r * 3.4 * fl, gr = g.createLinearGradient(0, 0, 0, s * L); gr.addColorStop(0, 'rgba(210,230,255,.9)'); gr.addColorStop(.6, 'rgba(130,175,255,.28)'); gr.addColorStop(1, 'rgba(110,160,255,0)'); for (const wd of [.34, .2, .08]) { g.fillStyle = gr; g.globalAlpha = wd < .1 ? .9 : .33; g.beginPath(); g.moveTo(-r * wd * .3, 0); g.lineTo(-r * wd, s * L); g.lineTo(r * wd, s * L); g.lineTo(r * wd * .3, 0); g.fill(); } g.globalAlpha = 1;
-        for (let i = 0; i < 4; i++) { const q = ((t * .5 + i / 4) % 1); g.fillStyle = `rgba(220,238,255,${.9 * (1 - q)})`; g.beginPath(); g.arc(0, s * q * L, r * (.07 + .05 * q), 0, TAU); g.fill(); } }
-      g.restore(); g.save(); g.translate(x, y); g.rotate(-.28); g.scale(1, .3);
-      for (let i = 0; i < 60; i++) { const q = i / 59, rad = r * 1.35 * (1.15 - q * .85), a = clamp(.3 + .6 * q); g.strokeStyle = q < .3 ? `rgba(200,50,30,${a})` : q < .55 ? `rgba(255,${110 + q * 150 | 0},50,${a})` : q < .8 ? `rgba(255,${190 + q * 60 | 0},120,${a})` : `rgba(255,250,235,${a})`; g.lineWidth = r * .05; g.beginPath(); g.arc(0, 0, rad, 0, TAU); g.stroke(); }
-      g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 26; i++) { const a0 = hash(i + 5) * TAU + t * (.9 - hash(i) * .5), rad = r * 1.35 * (.4 + hash(i + 17) * .7); g.strokeStyle = `rgba(255,230,190,${.18 + hash(i) * .3})`; g.lineWidth = r * .02; g.beginPath(); g.arc(0, 0, rad, a0, a0 + .5 + hash(i + 2)); g.stroke(); }
+      // a supermassive black hole: a lensed accretion disc with Doppler beaming, a photon ring, collimated jets with shock knots and radio lobes, in a faint host-galaxy haze
+      const TILT = -.3, SY = .3, rot = t * .28, ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`;
+      halo(g, x, y, r * 3.4, '#ff8a3a', .24); halo(g, x, y, r * 1.9, '#ffb060', .3);
+      g.save(); g.translate(x, y); g.rotate(TILT); g.globalCompositeOperation = 'lighter';
+      // jets: layered cones that widen with distance, a pulsing core, knots travelling outward, and a soft lobe where each one ends
+      for (const sgn of [-1, 1]) {
+        const L = r * 4.1, flick = .9 + .1 * Math.sin(t * 7 + sgn);
+        for (const [wd, al, col] of [[.2, .1, [120, 170, 255]], [.11, .2, [150, 200, 255]], [.05, .5, [215, 235, 255]], [.018, .95, [255, 255, 255]]]) {
+          const g0 = g.createLinearGradient(0, 0, 0, sgn * L); g0.addColorStop(0, ray(al * flick, col)); g0.addColorStop(.55, ray(al * .5 * flick, col)); g0.addColorStop(1, ray(0, col));
+          g.fillStyle = g0; g.beginPath(); g.moveTo(-r * wd * .5, 0); g.quadraticCurveTo(-r * wd * 1.2 + Math.sin(t * .6 + sgn) * r * .03, sgn * L * .5, -r * wd * 2.1, sgn * L); g.lineTo(r * wd * 2.1, sgn * L); g.quadraticCurveTo(r * wd * 1.2 + Math.sin(t * .6 + sgn) * r * .03, sgn * L * .5, r * wd * .5, 0); g.closePath(); g.fill();
+        }
+        for (let i = 0; i < 6; i++) { const q = ((t * .32 + i / 6) % 1), yy = sgn * L * (.12 + .88 * q), a2 = (1 - q) * (.4 + .6 * Math.sin(q * Math.PI)), rad = r * (.05 + .17 * q); halo(g, Math.sin(t * .6 + sgn) * r * .03 * q * 2, yy, rad * 2.6, '#bcd8ff', a2 * .55); g.fillStyle = `rgba(235,246,255,${a2})`; g.beginPath(); g.arc(Math.sin(t * .6 + sgn) * r * .03 * q * 2, yy, rad * .42, 0, TAU); g.fill(); }
+        const lg = g.createRadialGradient(0, sgn * L, 0, 0, sgn * L, r * 1.1); lg.addColorStop(0, 'rgba(150,190,255,.2)'); lg.addColorStop(1, 'rgba(150,190,255,0)'); g.fillStyle = lg; g.beginPath(); g.ellipse(0, sgn * L, r * 1.1, r * .8, 0, 0, TAU); g.fill();
+      }
       g.restore();
-      g.fillStyle = '#000'; g.beginPath(); g.arc(x, y, r * .3, 0, TAU); g.fill(); g.save(); g.translate(x, y); g.rotate(-.28); g.strokeStyle = 'rgba(255,232,200,.9)'; g.lineWidth = r * .05; g.beginPath(); g.arc(0, 0, r * .33, 0, TAU); g.stroke(); g.strokeStyle = 'rgba(255,215,160,.7)'; g.lineWidth = r * .07; g.beginPath(); g.ellipse(0, -r * .04, r * .44, r * .38, 0, Math.PI * 1.04, Math.PI * 1.96); g.stroke(); g.restore();
+      // the disc, seen nearly edge-on
+      g.save(); g.translate(x, y); g.rotate(TILT);
+      const heat = q => q < .12 ? [255, 255, 255] : q < .3 ? [255, 238, 190] : q < .55 ? [255, 176, 70] : q < .8 ? [236, 92, 40] : [150, 36, 28], RMIN = r * .42, RMAX = r * 1.8, N = 38;
+      const ringAt = (i, half) => { const q = i / (N - 1), rad = RMAX - (RMAX - RMIN) * Math.pow(q, .85), c = heat(1 - q), al = Math.min(1, .14 + .62 * q), beam = .75 + .5 * Math.sin(rot * 0 + .0);   // q 0 = outer
+        g.lineWidth = Math.max(.6, r * (.05 - .025 * q)); g.beginPath(); if (half === 'back') g.ellipse(0, 0, rad, rad * SY, 0, Math.PI, TAU); else g.ellipse(0, 0, rad, rad * SY, 0, 0, Math.PI); g.strokeStyle = ray(al, c); g.stroke();
+        // Doppler beaming: the side turning toward us is brighter
+        g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, half === 'back' ? Math.PI : Math.PI * .5, half === 'back' ? Math.PI * 1.5 : Math.PI, false); g.strokeStyle = ray(al * .55, [255, 255, 255]); g.lineWidth *= .6; g.stroke(); };
+      g.globalCompositeOperation = 'lighter';
+      { const vg = g.createRadialGradient(0, 0, RMIN * .9, 0, 0, RMAX); vg.addColorStop(0, 'rgba(255,220,150,.5)'); vg.addColorStop(.35, 'rgba(255,140,60,.3)'); vg.addColorStop(.75, 'rgba(200,60,30,.14)'); vg.addColorStop(1, 'rgba(150,36,28,0)'); g.save(); g.scale(1, SY); g.fillStyle = vg; g.beginPath(); g.arc(0, 0, RMAX, 0, TAU); g.fill(); g.restore(); }
+      for (let i = 0; i < N; i++) ringAt(i, 'back');
+      // the far side of the disc, bent over and under the hole by gravity: a bright arch above, a thinner one below
+      for (const [k, al, up] of [[.62, .95, -1], [.5, .5, 1]]) { for (let j = 0; j < 7; j++) { const q = j / 6, rad = r * (k + q * .26), c = heat(.05 + q * .6); g.strokeStyle = ray(al * (1 - q * .6) * .8, c); g.lineWidth = Math.max(.6, r * (.05 - q * .03)); g.beginPath(); g.arc(0, 0, rad, up < 0 ? Math.PI * 1.04 : -.04 * 0, up < 0 ? Math.PI * 1.96 : Math.PI * .96); g.stroke(); } }
+      // swirling bright streaks in the flow
+      for (let i = 0; i < 46; i++) { const u = hash(i + 5), q = hash(i + 41), rad = RMIN + (RMAX - RMIN) * Math.pow(u, .9), sp = (.55 + 1.6 * (1 - u)), a0 = hash(i + 17) * TAU + t * sp, len = .12 + .5 * hash(i + 77); g.strokeStyle = ray(.28 + .5 * hash(i + 9), heat(u)); g.lineWidth = Math.max(.5, r * .018); g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, a0, a0 + len); g.stroke(); }
+      g.globalCompositeOperation = 'source-over';
+      const core = g.createRadialGradient(0, 0, 0, 0, 0, r * .75); core.addColorStop(0, 'rgba(255,250,235,.55)'); core.addColorStop(.4, 'rgba(255,190,110,.18)'); core.addColorStop(1, 'rgba(255,150,60,0)'); g.save(); g.scale(1, SY * 1.6); g.fillStyle = core; g.beginPath(); g.arc(0, 0, r * .75, 0, TAU); g.fill(); g.restore();
+      // the shadow and its photon ring
+      const sh = g.createRadialGradient(0, 0, r * .2, 0, 0, r * .36); sh.addColorStop(0, '#000'); sh.addColorStop(.85, '#000'); sh.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sh; g.beginPath(); g.arc(0, 0, r * .36, 0, TAU); g.fill();
+      g.globalCompositeOperation = 'lighter'; for (const [mul, al, w] of [[.335, .95, .035], [.36, .4, .06], [.4, .15, .1]]) { g.strokeStyle = ray(al, [255, 236, 200]); g.lineWidth = r * w; g.beginPath(); g.arc(0, 0, r * mul, 0, TAU); g.stroke(); }
+      // the near side of the disc passes in front of the hole
+      for (let i = Math.round(N * .62); i < N; i++) ringAt(i, 'front');
+      g.restore();
     }
   };
 

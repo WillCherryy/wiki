@@ -320,13 +320,15 @@ function playDaily() {
 function renderHeroAct() {
   const day = dayKey(), e = P.days[day], cur = readCur(), box = $('#heroAct');
   if (e) {
-    box.innerHTML = `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b><span>${e.won ? `${e.clicks} click${e.clicks === 1 ? '' : 's'} · ${fmt(e.secs)}${e.par ? ` · par ${e.par}` : ''}${e.stars ? ' · ' + '★'.repeat(e.stars) : ''}${e.purist ? ' · ◆ purist' : ''}` : 'Back tomorrow'}</span></div>
-      ${dayDiscovery(day) ? skyReveal(dayDiscovery(day), { compact: true, sky: true }) : ''}
-      <div class="act-row">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge a friend</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button></div>`;
-    { const dk = dayDiscovery(day); if (dk) { mountDiscovery(box, dk); if ($('#discSky')) $('#discSky').onclick = () => openSky({ tab: 'sky', focus: dk.id }); } }
+    const dk = dayDiscovery(day), st = e.won ? [[e.clicks, e.clicks === 1 ? 'click' : 'clicks'], [fmt(e.secs), 'time'], e.par ? [e.par, 'par'] : null, e.stars ? ['★'.repeat(e.stars), 'rating'] : null].filter(Boolean) : [];
+    box.innerHTML = `<div class="done ${dk ? 'has-disc' : ''}"><div class="done-top"><div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b>${e.won ? '' : '<span>Back tomorrow</span>'}</div>
+        ${e.won ? `<div class="done-stats">${st.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}</div>${e.purist ? '<div class="done-purist">◆ Purist run: no link search, no rewind</div>' : ''}` : ''}</div>
+      ${dk ? `<div class="done-r">${skyReveal(dk, { compact: true, sky: true })}</div>` : ''}
+      <div class="done-btns">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button><button class="btn ghost" id="heroPoster">Today’s poster</button></div></div>`;
+    if (dk) { mountDiscovery(box, dk); if ($('#discSky')) $('#discSky').onclick = () => openSky({ tab: 'sky', focus: dk.id }); }
     if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
     $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
-    box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
+    $('#heroPoster').onclick = openPoster;
   } else {
     const resume = cur && cur.mode === 'daily' && cur.day === day;
     box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
@@ -512,18 +514,28 @@ function dayDiscovery(day) {
 }
 function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a foil border that says exactly what you found
   const o = SKY.OBJ[k.idx], total = SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0), have = Object.keys(P.sky.cat).length, rar = RARITY[k.idx], sm = opt.compact;
-  const head = k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You found';
+  const head = opt.visitor ? 'Discovered on Scorcher' : k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You found';
   return `<div class="disc ${sm ? 'compact' : ''}" style="--c:${o.c};--c2:${k.idx > 4 ? '#ffffff' : '#ffd8a8'}"><div class="disc-in">
     <div class="disc-top"><span class="disc-eye">${head}</span><span class="disc-rar r${k.idx}">${rar}</span></div>
     <div class="disc-art"><canvas ${opt.id ? `id="${opt.id}"` : 'class="discCv"'} width="760" height="${sm ? 360 : 520}"></canvas></div>
     <div class="disc-type"><i></i>${o.name} · tier ${k.idx + 1} of 9</div>
     <h3 class="disc-name">${esc(k.name)}</h3><div class="disc-sub">${esc(k.kind)}</div>
-    <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${have}<small> / ${total}</small></b><span>Collected</span></div></div>
+    <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${opt.visitor ? RARITY[k.idx] : have + '<small> / ' + total + '</small>'}</b><span>${opt.visitor ? 'Rarity' : 'Collected'}</span></div></div>
     ${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
     ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
-    <div class="disc-foot"><button class="disc-btn share" data-discshare>Share this find</button><a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn alt" id="discSky">Your sky</button>' : ''}</div>
+    <div class="disc-foot">${opt.visitor ? '' : '<button class="disc-btn share" data-discshare>Share this find</button>'}<a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn alt" id="discSky">Your sky</button>' : ''}</div>
     <div class="disc-tag">Space is cold. Warm it up.</div></div></div>`;
 }
+function openFound(name) {   // someone followed a shared discovery link: show the object, and invite them to find their own
+  const k = discoveryK(name, {}), clean = () => { try { history.replaceState(null, '', SITE_URL + location.search); } catch {} };
+  if (!k) { clean(); return; }
+  const o = SKY.OBJ[k.idx], mine = !!P.sky.cat[name];
+  openModal(`<div class="finv"><p class="finv-eye">A friend discovered</p>${skyReveal({ ...k, first: false, why: '', count: 1 }, { visitor: true })}
+    <div class="finv-cta"><h3>${mine ? 'You have this one too.' : 'Can you find a ' + esc(o.name.toLowerCase()) + ' of your own?'}</h3><p>Scorcher is a daily Wikipedia link race. Reach the target in fewer clicks and you earn a real star, galaxy or black hole. The better your route, the hotter it burns.</p><button class="btn big" id="finPlay">Play today’s puzzle <span class="arr">→</span></button></div></div>`, clean);
+  $('#finPlay').onclick = () => { closeModal(); playDaily(); };
+  mountDiscovery($('#modal'), k);
+}
+if (/^\/find\//.test(location.pathname)) setTimeout(() => { let n = ''; try { n = decodeURIComponent(location.pathname.slice(6)); } catch {} openFound(n); }, 900);
 async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image, with the site address on it
   try { await document.fonts.ready; } catch {}
   const W = 1080, H = 1350, o = SKY.OBJ[k.idx], q = SKY.POOL[k.id].find(p => p.n === k.name), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), rar = RARITY[k.idx];
@@ -562,13 +574,13 @@ async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image
   return cv;
 }
 async function openDiscoveryShare(k, back) {
-  const text = `${k.first ? 'I just discovered' : 'I found'} ${k.name} (${RARITY[k.idx]} ${SKY.OBJ[k.idx].name.toLowerCase()}) on ${BRAND.name}. Space is cold. Warm it up. ${SITE_URL}`;
+  const link = SITE_URL + 'find/' + encodeURIComponent(k.name), text = `${k.first ? 'I just discovered' : 'I found'} ${k.name} (${RARITY[k.idx]} ${SKY.OBJ[k.idx].name.toLowerCase()}) on ${BRAND.name}. Space is cold. Warm it up. ${link}`;
   openModal(`<h2>Share your find</h2><p style="margin-bottom:12px">${esc(k.name)}, with a link to play.</p><img id="dsImg" alt="Your discovery card" style="width:100%;border-radius:18px;display:block;background:#0b0a18;aspect-ratio:4/5"><div class="actions" style="margin-top:14px"><button class="btn" id="dsShare">Share</button><button class="btn ghost" id="dsSave">Save image</button></div><div class="actions" style="margin-top:10px"><button class="btn ghost" id="dsTxt">Copy text + link</button>${back ? '<button class="btn ghost" id="dsBack">← Back</button>' : ''}</div>`);
   const canvas = await discoveryCanvas(k), blob = await new Promise(res => canvas.toBlob(res, 'image/png')), url = URL.createObjectURL(blob), name = `${BRAND.name}-${k.name.replace(/[^A-Za-z0-9]+/g, '-')}.png`, file = new File([blob], name, { type: 'image/png' });
   $('#dsImg').src = url;
   const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
   $('#dsSave').onclick = () => { save(); Ping.share(); toast('Image saved'); };
-  $('#dsShare').onclick = async () => { Ping.share(); try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text, url: SITE_URL }); else if (navigator.share) await navigator.share({ text, url: SITE_URL }); else { save(); toast('Image saved. Add the link when you post'); } } catch {} };
+  $('#dsShare').onclick = async () => { Ping.share(); try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text, url: link }); else if (navigator.share) await navigator.share({ text, url: link }); else { save(); toast('Image saved. Add the link when you post'); } } catch {} };
   $('#dsTxt').onclick = async () => { try { await navigator.clipboard.writeText(text); toast('Copied'); } catch { prompt('Copy:', text); } };
   if (back) $('#dsBack').onclick = () => { closeModal(); back(); };
 }
@@ -972,7 +984,7 @@ function openCloud() {
 }
 { const m = /^#restore=([A-Za-z0-9-]{16,24})$/.exec(location.hash); if (m) setTimeout(() => { history.replaceState(null, '', location.pathname + location.search); cloudRestore(m[1]); }, 900); }   // a restore link opened on a new device
 
-const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
+const SITE_URL = location.origin + (location.pathname.startsWith('/find/') ? '/' : location.pathname.replace(/[^/]*$/, ''));
 /* anonymous usage counts: one flag per player per day, no names or IPs. Players can switch it off in Settings. */
 /* ---- anonymous analytics: where visitors come from, never who they are. The founder's own devices and bots send nothing. */
 const Traffic = (() => {

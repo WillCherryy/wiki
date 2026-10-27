@@ -297,6 +297,12 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(buf);
     });
   }
+  if (req.method === 'GET' && url.pathname.startsWith('/find/')) {
+    return fs.readFile(path.join(__dirname, 'index.html'), 'utf8', async (e, html) => {
+      if (e) return json(res, 500, { error: 'missing index.html' });
+      const { findPage } = await import('./worker/find.js'); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(findPage(html, 'http://' + req.headers.host, url.pathname.slice(6)));
+    });
+  }
   json(res, 404, { error: 'not found' });
 });
 server.on('upgrade', (req, socket) => {

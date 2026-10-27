@@ -12,6 +12,8 @@ import { checkOverride } from './puzzle.js';
 export { Lobby } from './lobby.js';
 let ready;
 
+import { findPage } from './find.js';
+
 export default {
   async fetch(request, env) {
     const now = () => (env.TEST_NOW ? Number(env.TEST_NOW) : Date.now());
@@ -19,6 +21,7 @@ export default {
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...cors } });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
+    if (path.startsWith('/find/') && env.ASSETS && request.method === 'GET') { const r = await env.ASSETS.fetch(new Request(url.origin + '/', request)); return new Response(findPage(await r.text(), url.origin, path.slice(6)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } }); }
     if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);   // everything else is the static site
     if (path.startsWith('/api/lobby')) return lobbyRoute(request, env, path, request.method, reply, now());
     try {
