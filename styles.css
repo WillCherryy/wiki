@@ -888,3 +888,4 @@ html[data-calm="1"] #buddy { display: none !important; }
 .modal.sky .sysempty { padding: 40px 10px; text-align: center; color: #8d86b0 !important; }
 .modal.sky .mute, .modal.sky .small { color: #8d86b0; }
 .modal .disc:not(.compact) { margin-top: 36px; }
+.disc-btn.share { background: var(--c); color: #0b0a18; box-shadow: 0 0 22px -4px var(--c); } .disc-btn.alt { background: rgba(255, 255, 255, .12); color: #fff; }

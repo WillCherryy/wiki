@@ -521,9 +521,58 @@ function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a 
     <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${have}<small> / ${total}</small></b><span>Collected</span></div></div>
     ${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
     ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
-    <div class="disc-foot"><a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">${esc(k.name)} on Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn" id="discSky">Your sky</button>' : ''}</div>
+    <div class="disc-foot"><button class="disc-btn share" data-discshare>Share this find</button><a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn alt" id="discSky">Your sky</button>' : ''}</div>
     <div class="disc-tag">Space is cold. Warm it up.</div></div></div>`;
 }
+async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image, with the site address on it
+  try { await document.fonts.ready; } catch {}
+  const W = 1080, H = 1350, o = SKY.OBJ[k.idx], q = SKY.POOL[k.id].find(p => p.n === k.name), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), rar = RARITY[k.idx];
+  const total = SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0), have = Object.keys(P.sky.cat).length, serif = '"EB Garamond", Georgia, serif', sans = '"Instrument Sans", system-ui, sans-serif';
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#0b0a18'); bg.addColorStop(1, '#14112a'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  // foil frame
+  const fr = g.createLinearGradient(0, 0, W, H); fr.addColorStop(0, o.c); fr.addColorStop(.35, '#ffffffaa'); fr.addColorStop(.6, k.idx > 4 ? '#ffffff' : '#ffd8a8'); fr.addColorStop(1, o.c);
+  g.save(); g.shadowColor = o.c; g.shadowBlur = 50; g.fillStyle = fr; rr(46, 46, W - 92, H - 92, 56); g.fill(); g.restore();
+  const inner = g.createRadialGradient(W / 2, 330, 40, W / 2, 330, 900); inner.addColorStop(0, o.c + '55'); inner.addColorStop(.55, '#0d0b1c'); inner.addColorStop(1, '#090813'); g.fillStyle = inner; rr(54, 54, W - 108, H - 108, 50); g.fill();
+  g.save(); rr(54, 54, W - 108, H - 108, 50); g.clip(); SKY.starfield(g, W, H, 3, 260, 5); g.restore();
+  // the object on its own sky, clipped to the art window
+  { const t = document.createElement('canvas'); t.width = W; t.height = 700; const tg = t.getContext('2d'); SKY.drawV(tg, k.id, W / 2, 400, (SKY.FR[k.id] || .2) * 1100 * .62 * (q && q.s ? Math.min(1.1, q.s) : 1), 2.4, q);
+    tg.globalCompositeOperation = 'destination-in'; const m = tg.createRadialGradient(W / 2, 400, 120, W / 2, 400, 470); m.addColorStop(0, '#000'); m.addColorStop(.7, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)'); tg.fillStyle = m; tg.fillRect(0, 0, W, 700); g.drawImage(t, 0, 56); }
+  const fd = g.createLinearGradient(0, 690, 0, 740); fd.addColorStop(0, 'rgba(11,10,24,0)'); fd.addColorStop(1, 'rgba(11,10,24,.0)');
+  // header
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = `700 30px ${sans}`; try { g.letterSpacing = '7px'; } catch {} g.shadowColor = o.c; g.shadowBlur = 18;
+  g.fillText((k.first ? 'NEW DISCOVERY' : k.count > 1 ? 'A MOON FOR ' + k.name.toUpperCase() : 'YOU FOUND'), 108, 138); g.shadowBlur = 0; try { g.letterSpacing = '0px'; } catch {}
+  const pill = rar.toUpperCase(); g.font = `800 26px ${sans}`; try { g.letterSpacing = '4px'; } catch {} const pw = g.measureText(pill).width + 52, px = W - 108 - pw, rg = g.createLinearGradient(px, 0, px + pw, 0);
+  if (k.idx >= 8) { rg.addColorStop(0, '#ffd86a'); rg.addColorStop(1, '#ff9a4a'); } else if (k.idx >= 6) { rg.addColorStop(0, '#c79bff'); rg.addColorStop(1, '#ff8ad8'); } else if (k.idx >= 4) { rg.addColorStop(0, '#7cc0ff'); rg.addColorStop(1, '#7cc0ff'); } else if (k.idx >= 2) { rg.addColorStop(0, '#6fe0a8'); rg.addColorStop(1, '#6fe0a8'); } else { rg.addColorStop(0, '#cfc8e6'); rg.addColorStop(1, '#cfc8e6'); }
+  g.fillStyle = rg; rr(px, 98, pw, 54, 27); g.fill(); g.fillStyle = '#14112a'; g.textAlign = 'center'; g.fillText(pill, px + pw / 2 + 2, 134); g.textAlign = 'left'; try { g.letterSpacing = '0px'; } catch {}
+  // type chip
+  const chip = `${o.name.toUpperCase()}  ·  TIER ${k.idx + 1} OF 9`; g.font = `700 28px ${sans}`; try { g.letterSpacing = '4px'; } catch {} const cw = g.measureText(chip).width + 76, cx = (W - cw) / 2;
+  g.fillStyle = o.c + '33'; rr(cx, 742, cw, 60, 30); g.fill(); g.strokeStyle = o.c + 'aa'; g.lineWidth = 2; g.stroke(); g.fillStyle = o.c; g.beginPath(); g.arc(cx + 34, 772, 8, 0, 7); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(chip, cx + 56, 782); try { g.letterSpacing = '0px'; } catch {}
+  // name
+  let fs = 128; g.textAlign = 'center'; do { g.font = `italic 400 ${fs}px ${serif}`; fs -= 4; } while (g.measureText(k.name).width > 880 && fs > 56);
+  g.save(); g.shadowColor = o.c; g.shadowBlur = 44; g.fillStyle = o.c; g.fillText(k.name, W / 2, 920); g.restore(); g.fillStyle = o.c; g.fillText(k.name, W / 2, 920);
+  g.fillStyle = '#a9a2c8'; g.font = `600 30px ${sans}`; try { g.letterSpacing = '5px'; } catch {} g.fillText(k.kind.toUpperCase(), W / 2, 978); try { g.letterSpacing = '0px'; } catch {}
+  // stats
+  [[SKY.massText(k.m), 'MASS'], [k.temp, 'TEMPERATURE'], [`${have} / ${total}`, 'COLLECTED']].forEach(([v, l], i) => { const w = 276, x = 108 + i * (w + 22); g.fillStyle = 'rgba(255,255,255,.07)'; rr(x, 1018, w, 112, 22); g.fill(); g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; let f = 34; do { g.font = `600 ${f}px ${sans}`; f -= 2; } while (g.measureText(v).width > w - 24 && f > 18); g.fillText(v, x + w / 2, 1070); g.fillStyle = '#8d86b0'; g.font = `700 20px ${sans}`; try { g.letterSpacing = '4px'; } catch {} g.fillText(l, x + w / 2, 1108); try { g.letterSpacing = '0px'; } catch {} });
+  // heat ladder
+  SKY.OBJ.forEach((t, i) => { const x = W / 2 + (i - 4) * 62; g.fillStyle = i <= k.idx ? o.c : 'rgba(255,255,255,.18)'; g.beginPath(); g.arc(x, 1168, i === k.idx ? 17 : 10, 0, 7); g.fill(); });
+  // footer: the call to action and the address
+  g.fillStyle = '#ffb48a'; g.font = `italic 400 44px ${serif}`; g.fillText('Space is cold. Warm it up.', W / 2, 1232);
+  g.fillStyle = '#fff'; g.font = `700 40px ${sans}`; try { g.letterSpacing = '2px'; } catch {} g.fillText(BRAND.domain, W / 2, 1284); try { g.letterSpacing = '0px'; } catch {}
+  return cv;
+}
+async function openDiscoveryShare(k, back) {
+  const text = `${k.first ? 'I just discovered' : 'I found'} ${k.name} (${RARITY[k.idx]} ${SKY.OBJ[k.idx].name.toLowerCase()}) on ${BRAND.name}. Space is cold. Warm it up. ${SITE_URL}`;
+  openModal(`<h2>Share your find</h2><p style="margin-bottom:12px">${esc(k.name)}, with a link to play.</p><img id="dsImg" alt="Your discovery card" style="width:100%;border-radius:18px;display:block;background:#0b0a18;aspect-ratio:4/5"><div class="actions" style="margin-top:14px"><button class="btn" id="dsShare">Share</button><button class="btn ghost" id="dsSave">Save image</button></div><div class="actions" style="margin-top:10px"><button class="btn ghost" id="dsTxt">Copy text + link</button>${back ? '<button class="btn ghost" id="dsBack">← Back</button>' : ''}</div>`);
+  const canvas = await discoveryCanvas(k), blob = await new Promise(res => canvas.toBlob(res, 'image/png')), url = URL.createObjectURL(blob), name = `${BRAND.name}-${k.name.replace(/[^A-Za-z0-9]+/g, '-')}.png`, file = new File([blob], name, { type: 'image/png' });
+  $('#dsImg').src = url;
+  const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  $('#dsSave').onclick = () => { save(); Ping.share(); toast('Image saved'); };
+  $('#dsShare').onclick = async () => { Ping.share(); try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text, url: SITE_URL }); else if (navigator.share) await navigator.share({ text, url: SITE_URL }); else { save(); toast('Image saved. Add the link when you post'); } } catch {} };
+  $('#dsTxt').onclick = async () => { try { await navigator.clipboard.writeText(text); toast('Copied'); } catch { prompt('Copy:', text); } };
+  if (back) $('#dsBack').onclick = () => { closeModal(); back(); };
+}
+function bindDiscShare(el, k) { const b = el && el.querySelector('[data-discshare]'); if (b && k) b.onclick = () => openDiscoveryShare(k, () => { if (G && G.result && document.querySelector('#home').style.display === 'none') showResult(); }); }
 function tiltCard(el) {   // a little foil-card parallax where there is a pointer
   if (!el || !matchMedia('(hover: hover)').matches) return;
   el.addEventListener('pointermove', e => { const r = el.getBoundingClientRect(); el.style.setProperty('--ry', ((e.clientX - r.left) / r.width - .5) * 8 + 'deg'); el.style.setProperty('--rx', (.5 - (e.clientY - r.top) / r.height) * 8 + 'deg'); });
@@ -532,7 +581,7 @@ function tiltCard(el) {   // a little foil-card parallax where there is a pointe
 function mountDiscovery(root, k) {   // idle animation on the homepage card, only while it is on screen
   const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.POOL[k.id].find(p => p.n === k.name), t0 = performance.now();
   (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent) { setTimeout(() => requestAnimationFrame(f), 500); return; } drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
-  tiltCard(root.querySelector('.disc'));
+  tiltCard(root.querySelector('.disc')); bindDiscShare(root.querySelector('.disc'), k);
 }
 function drawSkyCell(cv, id, t, k = 1, q) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
@@ -541,7 +590,7 @@ function drawSkyCell(cv, id, t, k = 1, q) {
 }
 function mountSky(id, idx, name) {   // the landing animation on the results card, then it idles
   const cv = $('#skyCv'); if (!cv) return; const q = SKY.POOL[id].find(p => p.n === name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  tiltCard(cv.closest('.disc'));
+  tiltCard(cv.closest('.disc')); bindDiscShare(cv.closest('.disc'), G.result && G.result.sky);
   (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t, q); requestAnimationFrame(f); })(t0);
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
@@ -715,7 +764,7 @@ function finish(won) {
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
   if (skyOK) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
+  G.result.sky = { m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
