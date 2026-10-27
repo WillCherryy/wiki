@@ -568,6 +568,7 @@ function openSky(opt = {}) {
   };
   let stop = () => cancelAnimationFrame(raf);
   const draw = () => {
+    { const d = $('#skyD'), pane = $('#skyPane'); if (d && pane.contains(d)) pane.after(d); }   // keep the detail card out of the pane that is about to be rewritten
     stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     if (tab === 'sky') {
       $('#skyPane').after($('#skyD'));
