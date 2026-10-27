@@ -281,5 +281,60 @@
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
     return pos;
   }
-  window.SKY = { massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+
+  // ---- the universe: a gravitational hierarchy. Each quasar you own is a galaxy nucleus; neutron stars and very heavy stars anchor sub-clusters; the rest orbit an anchor or the nucleus.
+  // Galaxies orbit the heaviest nucleus on enormous, near-imperceptibly slow ellipses; clusters orbit their nucleus; stars orbit their anchor (T^2 ~ a^3 at every tier). Deterministic from the names.
+  const hs2 = n => { let h = 2166136261; for (let i = 0; i < n.length; i++) h = Math.imul(h ^ n.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
+  function layout(list) {
+    const items = list.slice().sort((x, y) => (y.m || 1) - (x.m || 1) || y.idx - x.idx || (x.n < y.n ? -1 : 1)), quas = items.filter(b => b.id === 'quasar'), nuclei = quas.length ? quas : items.slice(0, 1);
+    const rest = items.filter(b => !nuclei.includes(b)), anchors = rest.filter(b => b.id === 'neutron' || (b.m || 0) >= 8), members = rest.filter(b => !anchors.includes(b));
+    const W = nuclei.map(b => Math.max(.5, Math.log10(b.m || 1) - 7 + .5)), SW = W.reduce((a, b) => a + b, 0), galOf = b => { let u = hs2(b.n + 'g') * SW, i = 0; while (i < W.length - 1 && u > W[i]) { u -= W[i]; i++; } return i; };
+    const bodies = [], idxOf = {}, add = (b, o) => { const e = { ...b, ...o }; idxOf[b.n] = bodies.length; bodies.push(e); return e; };
+    const T = a => 30 * Math.pow(a / 300, 1.5), orb = (b, a, k) => ({ a, T: T(a), e: .05 + .3 * hs2(b.n + 'e'), om: hs2(b.n + 'o') * TAU, M0: hs2(b.n + 'm') * TAU, k });
+    nuclei.forEach((b, i) => { const a = 45000 * (1 + .7 * (i - 1)) * (1 + .15 * hs2(b.n + 'a')); add(b, i === 0 ? { tier: 'nucleus', parent: -1, gal: i, a: 0, T: 1, e: 0, om: 0, M0: 0 } : { tier: 'nucleus', parent: 0, gal: i, ...orb(b, a) }); });
+    const kA = nuclei.map(() => 0); anchors.forEach(b => { const g = galOf(b), a = (3500 + 1800 * kA[g]++) * (1 + .12 * hs2(b.n + 'a')); add(b, { tier: 'anchor', parent: nuclei.findIndex((n, i) => i === g) >= 0 ? idxOf[nuclei[g].n] : 0, gal: g, ...orb(b, a) }); });
+    const kM = {}; members.forEach(b => { const g = galOf(b), mine = anchors.filter(x => galOf(x) === g), toAnchor = mine.length && hs2(b.n + 'p') > .3, par = toAnchor ? idxOf[mine[Math.floor(hs2(b.n + 'q') * mine.length)].n] : idxOf[nuclei[g].n], j = kM[par] = (kM[par] || 0) + 1 - 1, base = toAnchor ? 380 + 240 * j : 1500 + 700 * j;
+      kM[par] = j + 1; add(b, { tier: 'member', parent: par, gal: g, ...orb(b, base * (1 + .1 * hs2(b.n + 'a'))) }); });
+    // extents: how far each body's own system reaches (for framing and for the galaxy glow)
+    const ext = bodies.map(() => 0); for (let i = bodies.length - 1; i >= 0; i--) { const b = bodies[i]; b.reach = Math.max(ext[i], b.tier === 'member' ? 0 : 0); if (b.parent >= 0 && b.tier !== 'nucleus') ext[b.parent] = Math.max(ext[b.parent], b.a * (1 + b.e) + b.reach); }
+    bodies.forEach((b, i) => { b.reach = ext[i]; });
+    const R = Math.max(380, ...bodies.map((b, i) => { let r = 0, j = i; while (j >= 0) { r += bodies[j].a * (1 + bodies[j].e); j = bodies[j].parent; } return r + b.reach * 0; }));
+    return { bodies, idxOf, R };
+  }
+  function lineage(lay, n) { const out = []; let i = lay.idxOf[n]; while (i != null && i >= 0) { const b = lay.bodies[i]; out.unshift(b); if (b.tier === 'nucleus') break; i = b.parent; } return out; }
+  function kepAt(b, PH) { const E = kepler(b.M0 + PH * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
+  function universe(g, w, h, t, lay, opt = {}) {
+    g.clearRect(0, 0, w, h); const cam = opt.cam || { x: 0, y: 0, z: .1 }, Z = cam.z, SY = .56, U = Math.min(w, h), K = Math.max(1, w / 760), B = lay.bodies;
+    for (const [lvl, par, n, sd] of [[0, .02, Math.round(w * h / 11000), 9], [1, .07, Math.round(w * h / 16000), 31]]) { const ox = ((cam.x * par) % w + w) % w, oy = ((cam.y * par) % h + h) % h; g.save(); g.translate(-ox, -oy); for (const [dx, dy] of [[0, 0], [w, 0], [0, h], [w, h]]) { g.save(); g.translate(dx, dy); starfield(g, w, h, t * .3, n, sd); g.restore(); } g.restore(); }
+    if (!B.length) return [];
+    const PH = (opt.tau != null ? opt.tau : t) * 1.5, toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2], W = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m, newT = opt.newId, born = n => newT === n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1;
+    B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
+    const col = b => OBJ[b.idx].c;
+    // galaxy glow and spiral dust, then sub-cluster halos
+    B.forEach((b, i) => { if (b.tier === 'member' || !b.reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? b.reach * 1.15 * Z : (b.reach * 1.5 + 200) * Z, gal ? 46 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
+      g.save(); g.translate(p[0], p[1]); g.scale(1, SY); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, rgba(col(b), gal ? .55 : .16)); gr.addColorStop(.22, rgba(col(b), gal ? .24 : .06)); gr.addColorStop(.6, rgba(col(b), gal ? .07 : .02)); gr.addColorStop(1, rgba(col(b), 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill();
+      if (gal && R < w * 2.5) { const rot = PH * .002, N = Math.min(220, 40 + Math.round(R / 3)); for (let k = 0; k < N; k++) { const u = k / (N - 1), r = R * (.1 + .85 * Math.pow(u, .85)), arm = k % 2 ? Math.PI : 0, a = arm + 4.6 * u + rot / (u + .25) + (hs2(b.n + k) - .5) * .5, x = r * Math.cos(a), y = r * Math.sin(a); g.fillStyle = rgba(hs2(b.n + k + 'c') > .6 ? '#ffffff' : col(b), (.3 + .45 * hs2(b.n + k + 'v')) * (1 - u * .6)); g.beginPath(); g.arc(x, y, (.9 + 1.6 * hs2(b.n + k + 's')) * K, 0, TAU); g.fill(); } }
+      g.restore(); });
+    // orbits (a faint ellipse around the parent, only once it is big enough on screen to read)
+    B.forEach((b, i) => { if (b.parent < 0) return; const ap = b.a * (1 + b.e) * Z; if (ap < 10 * K) return; const foc = opt.focus === b.n || B[b.parent].n === opt.focus, c0 = toS(W[b.parent][0], W[b.parent][1]), cs = Math.cos(b.om), sn = Math.sin(b.om); if (!vis(c0[0], c0[1], ap * 1.5 + w)) return;
+      g.strokeStyle = foc ? 'rgba(255,255,255,.3)' : b.tier === 'member' ? 'rgba(255,255,255,.1)' : 'rgba(190,200,255,.14)'; g.lineWidth = (foc ? 2 : 1) * K; g.beginPath(); for (let k = 0; k <= 100; k++) { const E = k / 100 * TAU, x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), p = toS(W[b.parent][0] + x * cs - y * sn, W[b.parent][1] + (x * sn + y * cs) * SY); k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke(); });
+    const labels = [], items = B.map((b, i) => ({ b, i, p: toS(W[i][0], W[i][1]), z: W[i][1] })).sort((x, y) => x.z - y.z), pos = [], zs = Math.pow(Z, .42) * Math.pow(.7, .58);
+    items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', base = (FR[b.id] || .2) * (b.s || 1) * U * (nuc ? .62 : b.tier === 'anchor' ? .5 : .4) * zs, bn = born(b.n);
+      if (!vis(it.p[0], it.p[1], base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier }); return; }
+      const r = Math.max(.01, base * Math.max(.01, easeBack(bn))), rr = Math.max(r, nuc ? 6 * K : 3 * K);
+      if (bn < 1) ring(g, it.p[0], it.p[1], base * (.6 + 3 * bn), col(b), .7 * (1 - bn), 3);
+      if (rr < 15 * K) { halo(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
+      else { g.save(); g.translate(it.p[0], it.p[1]); paint(g, b.id, 0, 0, r, t + b.idx); if (b.tint && r > 12 * K) tintBody(g, b, r); g.restore(); }
+      for (let k = 0; k < Math.min(4, (b.count || 1) - 1); k++) { const rs = rr * (1.9 + .4 * k) + 8 * K, th = t * (2.3 - .25 * k) + hs2(b.n + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = K; g.beginPath(); g.ellipse(it.p[0], it.p[1], rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(col(b), .95); g.beginPath(); g.arc(it.p[0] + Math.cos(th) * rs, it.p[1] + Math.sin(th) * rs * SY, Math.max(1.8 * K, rr * .09), 0, TAU); g.fill(); }
+      const foc = opt.focus === b.n, orbPx = b.tier === 'member' ? (B[b.parent].a ? b.a * Z : 0) : 0, near = b.tier === 'member' ? b.a * (1 + b.e) * Z > 55 * K : true, showL = foc || (nuc ? true : b.tier === 'anchor' ? b.a * Z > 90 * K || b.reach * Z > 30 * K : near && b.a * Z > 60 * K);
+      let lbl = null; if (showL && !opt.noLabels) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
+      pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 46 * K : 18 * K), lbl, tier: b.tier }); });
+    { const taken = []; labels.sort((x, y) => x.pr - y.pr || y.m - x.m).forEach(({ lbl }) => { const wd = lbl.text.length * lbl.size * .5, bx = { x0: lbl.x - wd / 2, x1: lbl.x + wd / 2, y0: lbl.y - lbl.size, y1: lbl.y + lbl.size * .3 }; if (!lbl.focus && taken.some(q => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) return; taken.push(bx); drawLabel(g, lbl); }); }
+    // minimap: the whole universe with the view as a box
+    const Rm = 58 * K, mx = 18 * K + Rm, my = opt.mini === 'tl' ? 52 * K + Rm : h - 18 * K - Rm, big = lay.R * 1.1, k = Rm / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5 * K; g.beginPath(); g.arc(mx, my, Rm + 2 * K, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, Rm, 0, TAU); g.clip();
+    B.forEach((b, i) => { const big2 = b.tier === 'nucleus'; g.fillStyle = b.n === opt.focus ? '#fff' : rgba(col(b), big2 ? 1 : .8); g.beginPath(); g.arc(mx + W[i][0] * k, my + W[i][1] * k, big2 ? 3.2 * K : b.tier === 'anchor' ? 2.2 * K : 1.4 * K, 0, TAU); g.fill(); });
+    g.strokeStyle = '#fff'; g.lineWidth = 1.5 * K; g.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); g.restore();
+    return pos;
+  }
+  window.SKY = { layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();
