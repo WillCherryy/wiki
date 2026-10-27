@@ -1,0 +1,73 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Solved home: options</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:IS;font-weight:400;src:url(../fonts/instrument-sans-latin-400-normal.woff2)}
+@font-face{font-family:IS;font-weight:600 700;src:url(../fonts/instrument-sans-latin-600-normal.woff2)}
+:root{--paper:#f3eee4;--sheet:#fbf8f1;--ink:#16130f;--mute:#8a8372;--rule:#e2dac9;--acc:#d63a1f;--c:#5fe0ff}
+*{box-sizing:border-box}body{margin:0;background:#8d8a84;font-family:IS,sans-serif;color:var(--ink);padding:26px}
+.row{display:flex;gap:28px;align-items:flex-start;margin-bottom:36px}.lab{color:#fff;font:700 12px IS;letter-spacing:.18em;text-transform:uppercase;margin:0 0 10px}
+.dt{width:1000px;background:var(--paper);border-radius:14px;overflow:hidden}.ph{width:390px;background:var(--paper);border-radius:26px;overflow:hidden}
+.plate{background:var(--sheet);margin:18px;border-radius:14px;padding:22px;box-shadow:0 14px 34px -18px rgba(60,40,10,.3)}
+.head{text-align:center;font:600 10.5px IS;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}.route{display:flex;justify-content:center;gap:16px;align-items:baseline;font:400 34px EB;margin:6px 0 4px}.route i{color:var(--acc)}.route s{font:italic 18px EB;text-decoration:none;color:var(--mute)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);font:600 13.5px IS;color:var(--ink)}.btn.k{background:#16130f;color:#fff;border-color:#16130f}
+.cv{display:block;width:100%;height:auto}
+.dark{background:radial-gradient(130% 80% at 50% 0%,#12304a,#0a0914 62%);color:#eceaf8;border-radius:16px;position:relative;overflow:hidden}
+.nm{font:italic 400 52px/1 EB;color:var(--c);text-shadow:0 0 28px var(--c)}.sub{font:600 11px IS;letter-spacing:.14em;text-transform:uppercase;color:#a9a2c8}
+.chip{display:inline-block;padding:4px 11px;border-radius:99px;background:rgba(255,255,255,.1);font:600 11.5px IS;color:#e8e3f8}
+.st{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.st div{text-align:center}.st b{display:block;font:400 34px/1 EB}.st span{display:block;margin-top:4px;font:700 9.5px IS;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.dark .st b{color:#fff}.dark .st span{color:#8d86b0}
+.so{padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.07);border-left:3px solid var(--c);font:500 13px/1.4 IS}.so b{display:block;font:800 9.5px IS;letter-spacing:.18em;text-transform:uppercase;color:var(--c)}
+.boost{padding:6px 12px;border-radius:12px;background:rgba(255,190,80,.18);border:1px solid rgba(255,200,100,.4);font:600 12.5px IS;color:#ffe9b8}
+.cd{font:400 40px EB;font-variant-numeric:tabular-nums}.ring{width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--acc) 0 74%,#e6dfce 0);display:grid;place-items:center}.ring i{width:66px;height:66px;border-radius:50%;background:var(--sheet);display:grid;place-items:center;font:400 28px EB;font-style:normal}
+.cal{display:flex;gap:5px}.cal u{width:20px;height:20px;border-radius:5px;background:#e9e2d2}.cal u.on{background:var(--acc)}.cal u.t{background:#e9a58f}
+.mini{height:6px;border-radius:4px;background:linear-gradient(90deg,#2a4f8a,#d8c8a8,#d63a1f)}
+.sec{font:700 10px IS;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+</style></head><body>
+<script src="../skyobjects.js"></script>
+<div id="root"></div>
+<script>
+const Q=SKY.POOL.neutron.find(q=>q.n==='Crab Pulsar');
+const heads=`<div class="head">Tuesday 27 October · Plate no. 300</div><div class="route"><span>Lemon</span><s>to</s><i>Global Positioning System</i></div>`;
+const act=(k)=>`<span class="btn ${k?'k':''}">Share card</span>`;
+const stats=`<div class="st"><div><b>4</b><span>Clicks</span></div><div><b>0:44</b><span>Time</span></div><div><b>4</b><span>Par</span></div><div><b>★★★</b><span>Rating</span></div></div>`;
+const near=`<div class="so"><b>So close</b>One click fewer would have found a <b style="display:inline;letter-spacing:0;font:700 13px IS;color:#fff;text-transform:none">quasar</b>.</div>`;
+function art(h,id){return `<canvas class="cv" data-art width="760" height="${h}"></canvas>`}
+const V={};
+// A: stage (dark hero)
+V.A=(m)=>`<div class="plate">${heads}
+ <div class="dark" style="margin-top:14px;display:${m?'block':'grid'};grid-template-columns:1.1fr 1fr;align-items:center">
+  <div style="position:relative"><canvas class="cv" data-art width="760" height="${m?470:560}"></canvas><div style="position:absolute;left:16px;top:14px" class="sub">New discovery</div></div>
+  <div style="padding:${m?'4px 18px 20px':'26px 30px 26px 8px'};${m?'text-align:center':''}">
+   <span class="chip">Neutron star · Epic</span><div class="nm" style="margin:8px 0 4px">Crab Pulsar</div><div class="sub">Pulsar · 1.4 Suns</div>
+   <div style="margin:14px 0" class="boost">Streak boost · 7-day streak lifted this find</div>${near}
+   <div style="display:flex;gap:8px;margin-top:14px;${m?'justify-content:center':''}"><span class="btn k" style="background:var(--c);color:#06121a;border:0">Share this find</span><span class="btn" style="background:rgba(255,255,255,.1);border:0;color:#fff">Your sky</span></div></div></div>
+ <div style="margin-top:16px">${stats}</div>
+ <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap">${act(1)}<span class="btn">Challenge</span><span class="btn">Path map</span><span class="btn">Poster</span></div>
+ <div style="text-align:center;margin-top:14px;color:var(--mute);font:500 13px IS">Next puzzle in <b style="color:var(--ink)">11:29:26</b> · 🔥 12-day streak</div></div>`;
+// B: ticket (compact result strip then card, actions as icon row)
+V.B=(m)=>`<div class="plate" style="padding:20px">${heads}
+ <div style="margin:14px auto 0;max-width:${m?'100%':'760px'};display:flex;align-items:center;gap:14px;justify-content:space-between;border:1px solid var(--rule);border-radius:99px;padding:8px 18px;background:#fff6"><span style="color:#2a7a3a;font:700 13px IS">✓ Solved</span><span style="font:600 13.5px IS">4 clicks · 0:44 · par 4</span><span style="letter-spacing:3px">★★★</span></div>
+ <div style="display:${m?'block':'flex'};gap:26px;margin-top:18px;align-items:stretch;justify-content:center">
+  <div class="dark" style="flex:0 0 ${m?'auto':'420px'};padding-bottom:16px;text-align:center"><canvas class="cv" data-art width="760" height="470"></canvas><span class="chip">Neutron star · Epic</span><div class="nm" style="margin:6px 0 2px;font-size:46px">Crab Pulsar</div><div class="sub">1.4 Suns · 3 of 146 collected</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:10px;margin-top:${m?'14px':'0'}">
+   <div class="boost" style="background:#fff3d8;color:#7a5200;border-color:#f0cd88"><b>Streak boost</b> · 7-day streak lifted this find</div>
+   <div class="so" style="background:#16130f;color:#eceaf8">${near.replace('<div class="so">','').replace(/<\/div>$/,'')}</div>
+   <div style="font:500 13px/1.4 IS;color:var(--mute)">→ 2 more neutron stars completes your collection</div>
+   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:auto">${['Share','Challenge','Route','Poster'].map(t=>`<span class="btn" style="flex-direction:column;height:62px;gap:4px;font-size:12px"><span style="font-size:18px">${{Share:'⇪',Challenge:'⚔',Route:'⌖',Poster:'▣'}[t]}</span>${t}</span>`).join('')}</div>
+  </div></div>
+ <div style="text-align:center;margin-top:16px;color:var(--mute);font:500 13px IS">Next puzzle in <b style="color:var(--ink)">11:29:26</b></div></div>`;
+// C: dashboard
+V.C=(m)=>`<div style="padding:18px">
+ <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="sec" style="margin:0">Plate no. 300 · solved</div><div style="font:400 28px EB">Lemon → <i style="color:var(--acc)">Global Positioning System</i></div></div><div style="font:700 12px IS;color:#2a7a3a;background:#e4f3e4;padding:6px 12px;border-radius:99px">✓ Solved</div></div>
+ <div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1.25fr 1fr'};gap:14px">
+  <div class="plate" style="margin:0;padding:18px"><div class="sec">Your run</div><div class="st" style="grid-template-columns:repeat(2,1fr);gap:14px 10px;text-align:left"><div style="text-align:left"><b>4</b><span>Clicks · par 4</span></div><div style="text-align:left"><b>0:44</b><span>Time</span></div><div style="text-align:left"><b>★★★</b><span>Rating</span></div><div style="text-align:left"><b>×3</b><span>Burn chain</span></div></div><div class="mini" style="margin:16px 0 6px"></div><div style="font:500 12px IS;color:var(--mute)">Lemon › Citrus › … › GPS · every click warmer</div><div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><span class="btn k" style="flex:1">Share card</span><span class="btn">Route</span></div></div>
+  <div class="dark" style="padding-bottom:16px;text-align:center"><div class="sub" style="padding-top:14px">New discovery · Epic</div><canvas class="cv" data-art width="760" height="440"></canvas><div class="nm" style="font-size:48px">Crab Pulsar</div><div class="sub" style="margin:4px 0 10px">Neutron star · 1.4 Suns</div><div style="padding:0 16px;display:grid;gap:8px"><div class="boost">Streak boost · 7-day streak</div>${near}</div></div>
+  <div class="plate" style="margin:0;padding:18px"><div class="sec">Tomorrow</div><div style="display:flex;align-items:center;gap:14px"><div class="ring"><i>12</i></div><div><div style="font:700 13px IS">12-day streak</div><div style="font:500 12px IS;color:var(--mute)">Next boost at 14 days</div></div></div><div class="cal" style="margin:14px 0">${'<u class="on"></u>'.repeat(11)}<u class="t"></u><u></u><u></u></div><div class="cd">11:29:26</div><div style="font:500 12px IS;color:var(--mute)">until plate no. 301</div><div class="sec" style="margin-top:16px">Today's board</div><div style="font:500 13px IS">You're <b>#2</b> of 6 · Ada 31s</div></div>
+ </div></div>`;
+const root=document.getElementById('root');
+for(const [k,name] of [['A','A · Stage: the discovery is the hero'],['B','B · Ticket: result strip, card and action row'],['C','C · Dashboard: run, discovery and tomorrow side by side']]){
+ root.insertAdjacentHTML('beforeend',`<p class="lab">${name}</p><div class="row"><div class="dt">${V[k](false)}</div><div class="ph">${V[k](true)}</div></div>`);
+}
+document.fonts.ready.then(()=>{document.querySelectorAll('canvas[data-art]').forEach(cv=>{const g=cv.getContext('2d'),w=cv.width,h=cv.height;g.fillStyle='#0a0d18';g.fillRect(0,0,w,h);SKY.starfield(g,w,h,0,110,5);SKY.drawV(g,'neutron',w/2,h*.52,(SKY.FR.neutron||.2)*h*.95,1.7,Q);});document.body.dataset.ready=1});
+</script></body></html>

@@ -309,12 +309,15 @@
     const A = [x + dx, y + dy, r * .62], B2 = [x - dx, y - dy, r * .5]; (front ? [B2, A] : [A, B2]).forEach(b => one(b[0], b[1], b[2]));
   }
   function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); paintBody(g, id, x, y, r * (q.s || 1), t, q); }
-  function starfield(g, w, h, t, n = 90, seed = 0) {   // many faint stars and a few bright ones (a power law), a hint of colour, clumped a little: not polka dots
-    g.save(); const tints = ['255,255,255', '255,238,215', '206,224,255', '255,214,190'];
-    for (let i = 0; i < n; i++) { const u = hash(seed + i + 900), v = hash(seed + i + 1300), cl = hash(Math.floor(hash(seed + i) * 6) + seed * 3.1), x = ((hash(seed + i) + (hash(seed + i + 77) - .5) * .12 * cl) % 1 + 1) % 1 * w, y = ((hash(seed + i + 500) + (hash(seed + i + 177) - .5) * .12 * cl) % 1 + 1) % 1 * h, big = Math.pow(u, 7), r = .28 + 1.5 * big + .25 * u, a = (.14 + .5 * Math.pow(v, 1.6) + .4 * big) * (.8 + .2 * Math.sin(t * (1 + hash(i) * 2) + i)), tn = tints[Math.floor(hash(seed + i + 2100) * tints.length)];
-      g.fillStyle = `rgba(${tn},${Math.min(1, a)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); if (big > .12) { g.fillStyle = `rgba(${tn},${a * .16})`; g.beginPath(); g.arc(x, y, r * 3.2, 0, TAU); g.fill(); } }
+  function starfield(g, w, h, t, n = 90, seed = 0) {   // a real random scatter (a seeded PRNG, not a lattice hash): many faint stars, a few bright ones, a hint of colour, mild clumping
+    let a0 = (Math.floor(seed * 7919) + 1013904223) >>> 0; const rnd = () => { a0 = (a0 + 0x6D2B79F5) >>> 0; let t2 = a0; t2 = Math.imul(t2 ^ (t2 >>> 15), t2 | 1); t2 ^= t2 + Math.imul(t2 ^ (t2 >>> 7), t2 | 61); return ((t2 ^ (t2 >>> 14)) >>> 0) / 4294967296; };
+    g.save(); const tints = ['255,255,255', '255,238,215', '206,224,255', '255,214,190'], clumps = []; for (let i = 0; i < 7; i++) clumps.push([rnd(), rnd(), .05 + .1 * rnd()]);
+    for (let i = 0; i < n; i++) { let x, y; if (rnd() < .3) { const c = clumps[Math.floor(rnd() * clumps.length)]; x = c[0] + (rnd() + rnd() + rnd() - 1.5) * c[2]; y = c[1] + (rnd() + rnd() + rnd() - 1.5) * c[2]; x = ((x % 1) + 1) % 1; y = ((y % 1) + 1) % 1; } else { x = rnd(); y = rnd(); }
+      const u = rnd(), v = rnd(), big = Math.pow(u, 7), r = .28 + 1.5 * big + .25 * u, al = (.14 + .5 * Math.pow(v, 1.6) + .4 * big) * (.8 + .2 * Math.sin(t * (1 + rnd() * 2) + i)), tn = tints[Math.floor(rnd() * tints.length)];
+      g.fillStyle = `rgba(${tn},${Math.min(1, al)})`; g.beginPath(); g.arc(x * w, y * h, r, 0, TAU); g.fill(); if (big > .12) { g.fillStyle = `rgba(${tn},${al * .16})`; g.beginPath(); g.arc(x * w, y * h, r * 3.2, 0, TAU); g.fill(); } }
     g.restore();
   }
+
   function fade(g, w, h, inner = .55) { g.save(); g.globalCompositeOperation = 'destination-in'; const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * inner * .5, w / 2, h / 2, Math.hypot(w, h) * .5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.7, 'rgba(0,0,0,.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore(); }
   // the landing: particles converge, a flash and shock rings (more for hotter objects), then the object grows in with a small overshoot
   function land(g, w, h, id, idx, t, q) {
@@ -599,7 +602,7 @@
     return { bodies, idxOf, R };
   }
   function lineage(lay, n) { const out = []; let i = lay.idxOf[n]; while (i != null && i >= 0) { const b = lay.bodies[i]; out.unshift(b); if (b.tier === 'nucleus') break; i = b.parent; } return out; }
-  function kepAt(b, PH) { const E = kepler(b.M0 + PH * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
+  function kepAt(b, PH, ph) { const E = kepler(b.M0 + (ph != null ? ph : PH * TAU / b.T), b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
   // pre-rendered sprites keep the heavy art out of the frame loop: a galaxy (arms, dust lanes, HII regions, bulge), a dense star cluster, tiled star layers and label bitmaps
   const SPR = new Map(), TILES = new Map(), LBL = new Map(), mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
   const GPAL = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878']];
@@ -687,7 +690,7 @@
     if (!opt.noStars) for (const [par, per, sd] of [[.04, 9000, 9], [.1, 7000, 27]]) { const tile = starTile(sd, per, sd === 9 ? 640 : 1013), T = tile.width, ox = Math.round(((cam.x * par) % T + T) % T), oy = Math.round(((cam.y * par) % T + T) % T); for (let x = -ox; x < w; x += T) for (let y = -oy; y < h; y += T) g.drawImage(tile, x, y); }
     if (!B.length) return [];
     const PH = (opt.tau != null ? opt.tau : t) * 1.5, toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2], W = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m, newT = opt.newId, born = n => newT === n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1;
-    B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
+    B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH, opt.phases ? opt.phases[i] : null), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
     const col = b => OBJ[b.idx].c;
     // galaxy glow and spiral dust, then sub-cluster halos
     B.forEach((b, i) => { if (b.tier === 'member' || !b.reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? b.reach * 1.15 * Z : (b.reach * 1.5 + 200) * Z, gal ? 38 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
