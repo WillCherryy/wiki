@@ -29,15 +29,17 @@
     <span class="word" data-brand>Scorch<b>er</b></span>
     <span class="tagline">the daily Wikipedia link race</span>
   </button>
-  <nav class="topnav" id="topnav" aria-label="Main"><button data-go="play" class="on">Play</button><button data-go="packs">Packs</button><button data-go="ranks">Ranks</button><button data-go="live">Live</button><button data-go="sky">Sky</button><button data-go="studio">Studio</button></nav>
+  <nav class="topnav" id="topnav" aria-label="Main"><button data-go="play" class="on">Play</button><button data-go="modes" id="modesBtn" aria-haspopup="true">Modes <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg></button><button data-go="sky">Sky</button><button data-go="ranks">Ranks</button><button data-go="studio">Studio</button></nav>
+  <div class="modesmenu" id="modesMenu" hidden></div>
   <div class="spacer"></div>
+  <span class="nextpill hide-s" id="nextPill"><i></i><span id="nextPillT"></span></span>
   <button class="status hide-s" id="streakChip" title="Daily streak"><svg class="ic fl" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span><b id="streakN">0</b> streak</span></button>
   <button class="status rankchip" id="rankChip" title="Your rank"><span class="dot"></span><span id="rankName">Wanderer</span></button>
   <button class="chip iconbtn" id="lbBtn" aria-label="Leaderboards"><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></button>
   <button class="chip iconbtn" id="themeBtn" aria-label="Switch light or dark"></button>
   <button class="chip iconbtn" id="menuBtn" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg></button>
 </div></header>
-<nav class="tabbar" id="tabbar" aria-label="Main"><button data-go="play" class="on"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg><span>Play</span></button><button data-go="packs"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Packs</span></button><button data-go="ranks"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 20h8"/></svg><span>Ranks</span></button><button data-go="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 4-5 7-5s6 1 7 5"/></svg><span>Me</span></button></nav>
+<nav class="tabbar" id="tabbar" aria-label="Main"><button data-go="play" class="on"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg><span>Play</span></button><button data-go="sky"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><span>Sky</span></button><button data-go="packs"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Packs</span></button><button data-go="ranks"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 20h8"/></svg><span>Ranks</span></button><button data-go="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 4-5 7-5s6 1 7 5"/></svg><span>Me</span></button></nav>
 
 <main class="wrap">
   <section id="home">
@@ -58,7 +60,7 @@
       <div class="plate-act" id="heroAct"></div>
       <div class="next" id="nextIn"></div>
     </div>
-    <div class="kp-head"><span>Keep playing</span></div>
+    <div class="kp-head"><span>Game modes</span></div>
     <nav class="quiet kp" id="quiet" aria-label="More to play"></nav>
     <div class="hx" id="hx"><div class="card hxc" id="hxLb"></div><div class="card hxc" id="hxStreak"></div><div class="card hxc" id="hxPack"></div></div>
     <footer class="foot"><span class="dots5 sm" aria-hidden="true"><i style="background:#2a4f8a"></i><i style="background:#5c8cbe"></i><i style="background:#d6be8c"></i><i style="background:#f08c50"></i><i style="background:#d63a1f"></i></span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
@@ -346,6 +348,7 @@ const ICONS = { sky: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 
 const PACK_ICON = { pop: 'film', history: 'temple', science: 'flask', geo: 'globe', sport: 'ball', food: 'food', music: 'music', nature: 'leaf', space: 'planet', art: 'art', tech: 'tech', myth: 'bolt' };
 const gicon = n => `<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n] || ''}</svg>`;
 function goNav(where) {
+  if (where === 'modes') return toggleModes();
   if (where === 'play') return $('#logo').click();
   if (where === 'packs') return openPacks(); if (where === 'ranks') return openLeaderboard('day'); if (where === 'live') return liveMenu(); if (where === 'sky') return openSky(); if (where === 'studio') return openStudio(); if (where === 'me') return openProfile();
 }
@@ -360,7 +363,27 @@ async function renderHomeExtras() {
   try { const rows = (await fetchBoard('day')).slice(0, 3); lb.querySelector('.hxl').innerHTML = rows.length ? rows.map((e, i) => `<div class="hxr"><span>${i + 1}</span><b>${esc(e.name)}</b><em>${e.clicks} clicks · ${fmt(e.secs)}</em></div>`).join('') : '<small>No scores yet. Be the first on the board.</small>'; }
   catch { lb.querySelector('.hxl').innerHTML = '<small>The leaderboard is offline right now.</small>'; }
 }
+const MODES = [
+  ['live', 'bolt', '#e5482a', 'Play with friends', 'Race the same puzzle live in a lobby', 'Multiplayer', () => liveMenu()],
+  ['chal', 'target', '#d63a1f', 'Challenge a friend', 'Send your result as a link to beat', 'Multiplayer', () => { const e = P.days[dayKey()]; if (e && e.won) openChallenge(dailyCtx(), () => closeModal()); else toast('Solve today’s puzzle first, then challenge a friend'); }],
+  ['stream', 'sky', '#6a4fa8', 'Livestream mode', 'A lobby your audience joins, with an OBS overlay', 'Streamers', () => openHost()],
+  ['packs', 'grid', '#2a4f8a', 'Packs', 'Themed sets of puzzles: space, food, history and more', 'Packs', () => openPacks()],
+  ['practice', 'target', '#2f7d46', 'Practice', 'Random puzzles: no streak, no sky objects', 'Unlimited', () => startGame('practice')],
+  ['studio', 'grid', '#8a6a2a', 'Make a puzzle', 'Pick any two articles and share your own puzzle', 'Create', () => openStudio()],
+  ['league', 'bolt', '#0f8b7e', 'Leagues', 'A private board with friends across daily puzzles', 'Social', () => leagueModal()]];
+function toggleModes(force) {
+  const m = $('#modesMenu'), on = force != null ? force : m.hidden; if (!on) { m.hidden = true; $('#modesBtn').classList.remove('open'); return; }
+  m.innerHTML = MODES.filter(x => x[0] !== 'practice' || true).map(([id, ic, col, t, p]) => `<button data-m="${id}"><span class="mi" style="--c:${col}">${gicon(ic)}</span><span><b>${t}</b><small>${p}</small></span></button>`).join('') + '<button class="mall" data-m="all">See all game modes →</button>';
+  m.style.left = Math.max(0, $('#modesBtn').offsetLeft - 8) + 'px'; m.hidden = false; $('#modesBtn').classList.add('open');
+  m.querySelectorAll('button').forEach(b => b.onclick = () => { toggleModes(false); if (b.dataset.m === 'all') { show('home'); $('#home .kp-head').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } MODES.find(x => x[0] === b.dataset.m)[6](); });
+}
+document.addEventListener('click', e => { const m = $('#modesMenu'); if (m && !m.hidden && !e.target.closest('#modesMenu') && !e.target.closest('#modesBtn')) toggleModes(false); });
 function renderQuiet() {
+  const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + packStats(p.id).total, 0);
+  $('#quiet').innerHTML = MODES.filter(x => x[0] !== 'league').map(([id, ic, col, t, p, tag]) => `<button class="mode" data-m="${id}" style="--c:${col}"><span class="mtag">${id === 'packs' ? pt + ' puzzles' : tag}</span><span class="mic">${gicon(ic)}</span><b>${t}</b><small>${id === 'packs' ? solved + ' of ' + pt + ' solved' : p}</small><em>Start →</em></button>`).join('');
+  $('#quiet').querySelectorAll('.mode').forEach(b => b.onclick = () => MODES.find(x => x[0] === b.dataset.m)[6]());
+}
+function renderQuietV4() {
   const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + packStats(p.id).total, 0);
   $('#quiet').innerHTML = [['qPacks', 'grid', 'Packs', `${solved} of ${pt} solved`, openPacks], ['qPractice', 'target', 'Practice', 'No pressure, no sky objects', () => startGame('practice')], ['qLive', 'bolt', 'Live race', 'Host or join a lobby', liveMenu], ['qSky', 'sky', 'Your sky', `${SKY.OBJ.filter(o => P.sky.found[o.id]).length} of 9 found`, openSky]].map(([id, ic, t, sub]) => `<button class="kcard" id="${id}"><span class="itile">${gicon(ic)}</span><b>${t}</b><small>${sub}</small></button>`).join('');
   [['qPacks', openPacks], ['qPractice', () => startGame('practice')], ['qLive', liveMenu], ['qSky', openSky]].forEach(([id, fn]) => { $('#' + id).onclick = fn; });
@@ -2282,7 +2305,7 @@ document.addEventListener('keydown', e => {
 });
 function tickNext() {
   const n = new Date(), s = Math.floor((new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1) - n) / 1000), z = v => String(v).padStart(2, '0');
-  $('#nextIn').textContent = `Next puzzle in ${z(Math.floor(s / 3600))}:${z(Math.floor(s % 3600 / 60))}:${z(s % 60)}`;
+  const tt = `${z(Math.floor(s / 3600))}:${z(Math.floor(s % 3600 / 60))}:${z(s % 60)}`; $('#nextIn').textContent = `Next puzzle in ${tt}`; if ($('#nextPillT')) $('#nextPillT').textContent = 'Next puzzle ' + tt;
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();

@@ -949,3 +949,61 @@ html[data-calm="1"] #buddy { display: none !important; }
 .in-eye { font: 700 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--c); } .in-name { margin: 4px 0 2px; font: italic 400 clamp(40px, 9vw, 58px)/1 var(--display); color: var(--c); text-shadow: 0 0 26px color-mix(in srgb, var(--c) 60%, transparent); } .in-sub { font: 600 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: #a9a2c8; } .in-fact { margin: 10px 0 12px; max-width: 560px; font: 400 17px/1.42 var(--serif); color: #d6d0ec; }
 .in-hint { position: absolute; left: 50%; top: calc(24px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; background: rgba(20, 17, 40, .75); font: 600 11.5px var(--sans); color: #cfc8e6; transition: opacity .8s; white-space: nowrap; pointer-events: none; } .in-hint.gone { opacity: 0; }
 .sfrow.insp { cursor: pointer; } .insp-go { margin-left: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); font: 700 10.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: #fff; }
+
+/* ====================== v5: top navigation, game modes, squarer boxes ====================== */
+:root { --rad: 10px; --rad-s: 7px; }
+.card, .modal, .rcard, .hxc, .kcard, .pkcard, .tile, .skycell, .skypanel, .sfcard, .mdl, .routecard, .found, .article.card { border-radius: 10px; }
+.disc { border-radius: 12px; } .disc-in { border-radius: 10px; } .stage { border-radius: 12px; }
+.disc-btn, .disc-link, .sflink, .sfdock button { border-radius: 8px; } .skyprog-bar, .skyprog-bar i { border-radius: 3px; }
+.sfsheet { border-radius: 14px 14px 0 0; } .sfib, .sftypes button { border-radius: 9px; } .sftypes button { border-radius: 99px; }
+.top { background: var(--sheet); } .top .wrap { height: 64px; position: relative; }
+.topnav button { text-transform: none; letter-spacing: 0; font: 600 14px var(--sans); color: var(--ink-2); padding: 9px 14px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; }
+.topnav button.on, .topnav button.open { background: var(--accent-soft); color: var(--accent-ink); box-shadow: none; } .topnav button:hover { color: var(--ink); background: var(--paper); } .topnav button.on:hover { background: var(--accent-soft); color: var(--accent-ink); }
+.topnav .chev { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: .6; } .topnav button.open .chev { transform: rotate(180deg); }
+.nextpill { display: none; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); font: 700 12.5px var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nextpill i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulseDot 2s ease-in-out infinite; } @keyframes pulseDot { 50% { opacity: .35; } }
+@media (min-width: 900px) { .nextpill { display: inline-flex; } .nextpill.hide-s { display: inline-flex; } }
+.modesmenu { position: absolute; top: 58px; left: 200px; width: 580px; z-index: 60; background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; box-shadow: 0 30px 60px -22px rgba(30, 20, 5, .45); } .modesmenu[hidden] { display: none; }
+.modesmenu button { display: flex; gap: 12px; text-align: left; border: 0; background: none; padding: 11px 12px; border-radius: 9px; cursor: pointer; font: inherit; color: var(--ink); } .modesmenu button:hover { background: var(--paper); }
+.modesmenu .mi { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); } .modesmenu .mi .gi { width: 20px; height: 20px; }
+.modesmenu b { display: block; font: 600 14px var(--sans); } .modesmenu small { display: block; font: 500 12px/1.4 var(--sans); color: var(--mute); margin-top: 1px; }
+.modesmenu .mall { grid-column: 1 / -1; border-top: 1px solid var(--rule); border-radius: 0 0 9px 9px; margin-top: 4px; padding: 12px; font: 700 13px var(--sans); color: var(--accent-ink); }
+/* game modes grid */
+.kp-head { max-width: 1400px; margin: 34px auto 12px; text-align: left; font: 700 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--ink-2); }
+.quiet.kp { grid-template-columns: repeat(3, 1fr); max-width: 1400px; gap: 16px; padding: 0; border: 0; margin-top: 0; }
+.mode { position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); padding: 20px 22px; min-height: 190px; cursor: pointer; font: inherit; color: var(--ink); transition: transform .15s, border-color .15s, box-shadow .15s; }
+.mode:hover { transform: translateY(-3px); border-color: var(--c); box-shadow: 0 18px 34px -22px var(--c); }
+.mode .mic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); margin-bottom: auto; } .mode .mic .gi { width: 22px; height: 22px; }
+.mode .mtag { position: absolute; top: 16px; right: 16px; padding: 4px 10px; border-radius: 99px; background: var(--paper); color: var(--ink-2); font: 700 10px var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.mode b { font: 400 29px/1.05 var(--display); margin-top: 16px; } .mode small { font: 500 13px/1.45 var(--sans); color: var(--mute); margin-top: 6px; min-height: 38px; } .mode em { font: 700 13px var(--sans); font-style: normal; color: var(--accent-ink); margin-top: 8px; }
+@media (max-width: 899px) { .quiet.kp { grid-template-columns: repeat(2, 1fr); gap: 10px; } .mode { min-height: 150px; padding: 14px; } .mode b { font-size: 22px; } .mode small { font-size: 12px; min-height: 0; } .mode:last-child:nth-child(odd) { grid-column: 1 / -1; } .kp-head { margin: 26px 4px 10px; } }
+/* desktop home: the daily puzzle as one wide banner with Play on the right */
+@media (min-width: 900px) {
+  #home { text-align: left; padding-top: 22px; } #home .lede { max-width: 1400px; margin: 0 auto 14px; text-align: left; } #home .lede .eyebrow { display: none; } #home .lede .steps3 { justify-content: flex-start; margin: 0; }
+  #home .plate { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 56px; align-items: center; background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 30px 44px 34px; text-align: left; max-width: 1400px; box-shadow: var(--shadow-c); }
+  #home .plate > * { grid-column: 1; } #home .plate-meta { justify-content: flex-start; margin: 0 0 14px; } #home .plate-meta::before, #home .plate-meta::after { display: none; }
+  #home .plate-from, #home .plate-to { font-size: clamp(40px, 4.8vw, 72px); line-height: 1; padding-bottom: .1em; text-wrap: pretty; } #home .plate-cap { margin: 2px 0 0; max-width: none; min-height: 0; font-size: 16px; }
+  #home .plate-lab { display: block; font: 700 10.5px var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--mute); margin-bottom: 4px; }
+  #home .plate-route { margin: 10px 0 8px; max-width: 280px; } #home .plate-facts { justify-content: flex-start; margin: 18px 0 4px; gap: 8px 22px; } #home .plate-facts span + span::before { margin-right: 22px; } #home .plate-check { text-align: left; }
+  #home .plate-act { grid-column: 2; grid-row: 2 / span 5; align-self: center; text-align: center; min-height: 0; } #home .plate-act .btn.big { height: 76px; padding: 0 48px; font-size: 19px; border-radius: 12px; box-shadow: 0 18px 36px -16px var(--accent); }
+  #home .next { display: none; }
+  #home .plate:has(.done) { grid-template-columns: auto auto 1fr; column-gap: 18px; row-gap: 6px; padding: 22px 36px 30px; }
+  #home .plate:has(.done) .plate-meta, #home .plate:has(.done) .plate-act { grid-column: 1 / -1; grid-row: auto; }
+  #home .plate:has(.done) .side.from { grid-column: 1; } #home .plate:has(.done) .side.to { grid-column: 2; display: flex; align-items: baseline; gap: 14px; } #home .plate:has(.done) .side.to::before { content: '→'; font: 400 34px var(--display); color: var(--mute); order: -1; }
+  #home .plate:has(.done) .plate-route, #home .plate:has(.done) .plate-cap, #home .plate:has(.done) .plate-lab, #home .plate:has(.done) .plate-facts, #home .plate:has(.done) .plate-check { display: none; }
+  #home .plate:has(.done) .plate-from, #home .plate:has(.done) .plate-to { font-size: 40px; }
+  .hx { max-width: 1400px; margin-left: auto; margin-right: auto; }
+}
+/* in a puzzle: calmer, squarer tools */
+.rail .hud, .rail .routecard { border-radius: 10px; } .tools .chip, .tools .finder { border-radius: 8px; } .metric { border-radius: 8px; }
+@media (min-width: 900px) {
+  #home .plate > .plate-act { grid-column: 2; grid-row: 2 / span 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; margin: 0; }
+  #home .plate > .plate-facts, #home .plate > .plate-check, #home .plate > .plate-meta { grid-column: 1; } #home .plate > .plate-meta { grid-column: 1 / -1; }
+  #home .plate-route { display: none !important; } #home .plate .side.to { margin-top: 14px; }
+  #home .plate-act .btn.big { background: var(--accent); color: #fff; border: 0; } #home .plate-act .posterbtn { width: auto; margin-top: 14px; border: 0; background: none; font-size: 13px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; height: auto; padding: 4px; box-shadow: none; }
+  #home .plate:has(.done) > .plate-act { grid-column: 1 / -1; grid-row: auto; display: block; } #home .plate:has(.done) .side.to { margin-top: 0; }
+}
+@media (min-width: 900px) { #home .plate-check { display: flex; justify-content: flex-start; align-items: center; } #home .plate-from { margin-bottom: 4px; } }
+@media (min-width: 900px) { #home .plate-check { justify-content: flex-start !important; text-align: left; margin-left: 0 !important; width: 100%; } #home .plate-check > * { margin-left: 0 !important; } #home .done { margin: 8px 0 0; max-width: none; justify-items: stretch; } }
+@media (max-width: 759px) { body:not(.ingame) .tabbar { grid-template-columns: repeat(5, 1fr) !important; border-radius: 12px !important; } .tabbar button span { font-size: 10px; letter-spacing: .04em; } }
+@media (min-width: 900px) { #game.on { grid-template-columns: 290px minmax(0, 1fr) 290px; } .rail.l .tools .chip, .rail.l .tools .finder { height: 42px; background: var(--paper); border: 0; border-radius: 8px; padding: 0 12px; } .rail.l .tools { display: grid; gap: 8px; } }
