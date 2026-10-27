@@ -40,6 +40,20 @@
     for (const e of [-1, 1]) halo(g, x + Math.cos(a + e * span / 2) * r, y + Math.sin(a + e * span / 2) * r, r * .12, '#ffffff', al * .35);
     g.restore();
   }
+  let QDISC = null;
+  function quasarDisc() {   // the accretion disc, lensed, with Doppler beaming: built once at r = 128 as a back layer and a front layer (the near side that passes in front of the hole)
+    if (QDISC) return QDISC; const r = 128, SY = .3, N = 40, RMIN = r * .42, RMAX = r * 1.8, mkc = () => { const c = document.createElement('canvas'); c.width = 512; c.height = 288; return c; }, back = mkc(), front = mkc(), ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`;
+    const heat = q => q < .12 ? [255, 255, 255] : q < .3 ? [255, 238, 190] : q < .55 ? [255, 176, 70] : q < .8 ? [236, 92, 40] : [150, 36, 28];
+    const ring = (g, i, half) => { const q = i / (N - 1), rad = RMAX - (RMAX - RMIN) * Math.pow(q, .85), c = heat(1 - q), al = Math.min(1, .14 + .62 * q); g.lineWidth = Math.max(.7, r * (.05 - .025 * q)); g.beginPath(); if (half === 'back') g.ellipse(0, 0, rad, rad * SY, 0, Math.PI, TAU); else g.ellipse(0, 0, rad, rad * SY, 0, 0, Math.PI); g.strokeStyle = ray(al, c); g.stroke();
+      g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, half === 'back' ? Math.PI : Math.PI * .5, half === 'back' ? Math.PI * 1.5 : Math.PI, false); g.strokeStyle = ray(al * .6, [255, 255, 255]); g.lineWidth *= .6; g.stroke(); };
+    { const g = back.getContext('2d'); g.translate(256, 144); g.globalCompositeOperation = 'lighter';
+      const vg = g.createRadialGradient(0, 0, RMIN * .9, 0, 0, RMAX); vg.addColorStop(0, 'rgba(255,220,150,.5)'); vg.addColorStop(.35, 'rgba(255,140,60,.3)'); vg.addColorStop(.75, 'rgba(200,60,30,.14)'); vg.addColorStop(1, 'rgba(150,36,28,0)'); g.save(); g.scale(1, SY); g.fillStyle = vg; g.beginPath(); g.arc(0, 0, RMAX, 0, TAU); g.fill(); g.restore();
+      for (let i = 0; i < N; i++) ring(g, i, 'back');
+      for (const [k, al, up] of [[.62, .95, -1], [.5, .5, 1]]) for (let j = 0; j < 8; j++) { const q = j / 7, rad = r * (k + q * .26), c = heat(.05 + q * .6); g.strokeStyle = ray(al * (1 - q * .6) * .85, c); g.lineWidth = Math.max(.7, r * (.05 - q * .03)); g.beginPath(); g.arc(0, 0, rad, up < 0 ? Math.PI * 1.04 : 0, up < 0 ? Math.PI * 1.96 : Math.PI * .96); g.stroke(); }
+      const core = g.createRadialGradient(0, 0, 0, 0, 0, r * .75); core.addColorStop(0, 'rgba(255,250,235,.55)'); core.addColorStop(.4, 'rgba(255,190,110,.18)'); core.addColorStop(1, 'rgba(255,150,60,0)'); g.save(); g.scale(1, SY * 1.6); g.fillStyle = core; g.beginPath(); g.arc(0, 0, r * .75, 0, TAU); g.fill(); g.restore(); }
+    { const g = front.getContext('2d'); g.translate(256, 144); g.globalCompositeOperation = 'lighter'; for (let i = Math.round(N * .62); i < N; i++) ring(g, i, 'front'); }
+    QDISC = { back, front }; return QDISC;
+  }
   const DRAW = {
     brown(g, x, y, r, t) {
       halo(g, x, y, r * 3.2, '#ff5a9a', .34); halo(g, x, y, r * 1.7, '#ffb070', .26); sphere(g, x, y, r, '#e29ac4', '#8a3f78', '#2a1030', 3, t, 0, '#000', 0, .55);
@@ -112,42 +126,32 @@
       halo(g, x, y, r * 1.6, '#9fe6ff', .7); sphere(g, x, y, r * .3, '#ffffff', '#c2f2ff', '#58c4ec', 8, t, 0, '#fff', 0, .2); halo(g, x, y, r * .8, '#ffffff', 1);
     },
     quasar(g, x, y, r, t) {
-      // a supermassive black hole: a lensed accretion disc with Doppler beaming, a photon ring, collimated jets with shock knots and radio lobes, in a faint host-galaxy haze
-      const TILT = -.3, SY = .3, rot = t * .28, ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`;
-      halo(g, x, y, r * 3.4, '#ff8a3a', .24); halo(g, x, y, r * 1.9, '#ffb060', .3);
+      // a supermassive black hole: a lensed accretion disc (cached art) with orbiting hot spots, a photon ring, helical jets with shock knots, radio lobes and a coronal haze
+      const TILT = -.3, SY = .3, k = r / 128, spr = quasarDisc(), ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`, br = .92 + .08 * Math.sin(t * 5.3) + .04 * Math.sin(t * 11.1);
+      halo(g, x, y, r * 4.2, '#ff7a30', .2); halo(g, x, y, r * 2.4, '#ffa060', .26 * br); halo(g, x, y, r * 1.3, '#ffe0b0', .22 * br);
       g.save(); g.translate(x, y); g.rotate(TILT); g.globalCompositeOperation = 'lighter';
-      // jets: layered cones that widen with distance, a pulsing core, knots travelling outward, and a soft lobe where each one ends
       for (const sgn of [-1, 1]) {
-        const L = r * 4.1, flick = .9 + .1 * Math.sin(t * 7 + sgn);
-        for (const [wd, al, col] of [[.2, .1, [120, 170, 255]], [.11, .2, [150, 200, 255]], [.05, .5, [215, 235, 255]], [.018, .95, [255, 255, 255]]]) {
+        const L = r * 4.6, flick = .9 + .1 * Math.sin(t * 7 + sgn), sw = (z) => Math.sin(t * .7 + sgn + z * 2.2) * r * .035 * z;
+        for (const [wd, al, col] of [[.22, .09, [110, 160, 255]], [.12, .18, [150, 200, 255]], [.055, .48, [215, 235, 255]], [.02, .95, [255, 255, 255]]]) {
           const g0 = g.createLinearGradient(0, 0, 0, sgn * L); g0.addColorStop(0, ray(al * flick, col)); g0.addColorStop(.55, ray(al * .5 * flick, col)); g0.addColorStop(1, ray(0, col));
-          g.fillStyle = g0; g.beginPath(); g.moveTo(-r * wd * .5, 0); g.quadraticCurveTo(-r * wd * 1.2 + Math.sin(t * .6 + sgn) * r * .03, sgn * L * .5, -r * wd * 2.1, sgn * L); g.lineTo(r * wd * 2.1, sgn * L); g.quadraticCurveTo(r * wd * 1.2 + Math.sin(t * .6 + sgn) * r * .03, sgn * L * .5, r * wd * .5, 0); g.closePath(); g.fill();
+          g.fillStyle = g0; g.beginPath(); g.moveTo(-r * wd * .5, 0); g.quadraticCurveTo(-r * wd * 1.2 + sw(.5), sgn * L * .5, -r * wd * 2.2 + sw(1), sgn * L); g.lineTo(r * wd * 2.2 + sw(1), sgn * L); g.quadraticCurveTo(r * wd * 1.2 + sw(.5), sgn * L * .5, r * wd * .5, 0); g.closePath(); g.fill();
         }
-        for (let i = 0; i < 6; i++) { const q = ((t * .32 + i / 6) % 1), yy = sgn * L * (.12 + .88 * q), a2 = (1 - q) * (.4 + .6 * Math.sin(q * Math.PI)), rad = r * (.05 + .17 * q); halo(g, Math.sin(t * .6 + sgn) * r * .03 * q * 2, yy, rad * 2.6, '#bcd8ff', a2 * .55); g.fillStyle = `rgba(235,246,255,${a2})`; g.beginPath(); g.arc(Math.sin(t * .6 + sgn) * r * .03 * q * 2, yy, rad * .42, 0, TAU); g.fill(); }
-        const lg = g.createRadialGradient(0, sgn * L, 0, 0, sgn * L, r * 1.1); lg.addColorStop(0, 'rgba(150,190,255,.2)'); lg.addColorStop(1, 'rgba(150,190,255,0)'); g.fillStyle = lg; g.beginPath(); g.ellipse(0, sgn * L, r * 1.1, r * .8, 0, 0, TAU); g.fill();
+        // helical filaments wound around the jet
+        for (let h = 0; h < 2; h++) { g.strokeStyle = `rgba(190,225,255,${.4 - h * .14})`; g.lineWidth = Math.max(.7, r * .018); g.beginPath(); for (let i = 0; i <= 28; i++) { const z = i / 28, w = Math.sin(z * 14 - t * 2.2 + h * Math.PI) * r * (.03 + .1 * z); i ? g.lineTo(w + sw(z), sgn * L * z * .95) : g.moveTo(w, 0); } g.stroke(); }
+        for (let i = 0; i < 6; i++) { const q = ((t * .32 + i / 6) % 1), yy = sgn * L * (.1 + .9 * q), a2 = (1 - q) * (.4 + .6 * Math.sin(q * Math.PI)), rad = r * (.05 + .19 * q), xx = sw(q); halo(g, xx, yy, rad * 3, '#bcd8ff', a2 * .55); g.fillStyle = `rgba(240,248,255,${a2})`; g.beginPath(); g.arc(xx, yy, rad * .42, 0, TAU); g.fill(); }
+        const lg = g.createRadialGradient(0, sgn * L, 0, 0, sgn * L, r * 1.3); lg.addColorStop(0, 'rgba(150,190,255,.24)'); lg.addColorStop(.5, 'rgba(120,160,255,.09)'); lg.addColorStop(1, 'rgba(120,160,255,0)'); g.fillStyle = lg; g.beginPath(); g.ellipse(0, sgn * L, r * 1.3, r * .95, 0, 0, TAU); g.fill();
       }
       g.restore();
-      // the disc, seen nearly edge-on
-      g.save(); g.translate(x, y); g.rotate(TILT);
-      const heat = q => q < .12 ? [255, 255, 255] : q < .3 ? [255, 238, 190] : q < .55 ? [255, 176, 70] : q < .8 ? [236, 92, 40] : [150, 36, 28], RMIN = r * .42, RMAX = r * 1.8, N = 38;
-      const ringAt = (i, half) => { const q = i / (N - 1), rad = RMAX - (RMAX - RMIN) * Math.pow(q, .85), c = heat(1 - q), al = Math.min(1, .14 + .62 * q), beam = .75 + .5 * Math.sin(rot * 0 + .0);   // q 0 = outer
-        g.lineWidth = Math.max(.6, r * (.05 - .025 * q)); g.beginPath(); if (half === 'back') g.ellipse(0, 0, rad, rad * SY, 0, Math.PI, TAU); else g.ellipse(0, 0, rad, rad * SY, 0, 0, Math.PI); g.strokeStyle = ray(al, c); g.stroke();
-        // Doppler beaming: the side turning toward us is brighter
-        g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, half === 'back' ? Math.PI : Math.PI * .5, half === 'back' ? Math.PI * 1.5 : Math.PI, false); g.strokeStyle = ray(al * .55, [255, 255, 255]); g.lineWidth *= .6; g.stroke(); };
-      g.globalCompositeOperation = 'lighter';
-      { const vg = g.createRadialGradient(0, 0, RMIN * .9, 0, 0, RMAX); vg.addColorStop(0, 'rgba(255,220,150,.5)'); vg.addColorStop(.35, 'rgba(255,140,60,.3)'); vg.addColorStop(.75, 'rgba(200,60,30,.14)'); vg.addColorStop(1, 'rgba(150,36,28,0)'); g.save(); g.scale(1, SY); g.fillStyle = vg; g.beginPath(); g.arc(0, 0, RMAX, 0, TAU); g.fill(); g.restore(); }
-      for (let i = 0; i < N; i++) ringAt(i, 'back');
-      // the far side of the disc, bent over and under the hole by gravity: a bright arch above, a thinner one below
-      for (const [k, al, up] of [[.62, .95, -1], [.5, .5, 1]]) { for (let j = 0; j < 7; j++) { const q = j / 6, rad = r * (k + q * .26), c = heat(.05 + q * .6); g.strokeStyle = ray(al * (1 - q * .6) * .8, c); g.lineWidth = Math.max(.6, r * (.05 - q * .03)); g.beginPath(); g.arc(0, 0, rad, up < 0 ? Math.PI * 1.04 : -.04 * 0, up < 0 ? Math.PI * 1.96 : Math.PI * .96); g.stroke(); } }
-      // swirling bright streaks in the flow
-      for (let i = 0; i < 46; i++) { const u = hash(i + 5), q = hash(i + 41), rad = RMIN + (RMAX - RMIN) * Math.pow(u, .9), sp = (.55 + 1.6 * (1 - u)), a0 = hash(i + 17) * TAU + t * sp, len = .12 + .5 * hash(i + 77); g.strokeStyle = ray(.28 + .5 * hash(i + 9), heat(u)); g.lineWidth = Math.max(.5, r * .018); g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, a0, a0 + len); g.stroke(); }
+      g.save(); g.translate(x, y); g.rotate(TILT); g.globalCompositeOperation = 'lighter'; g.globalAlpha = br;
+      g.drawImage(spr.back, -256 * k, -144 * k, 512 * k, 288 * k); g.globalAlpha = 1;
+      // hot spots orbiting in the disc: brighter as they swing towards us
+      const RMIN = r * .42, RMAX = r * 1.8;
+      for (let i = 0; i < 46; i++) { const u = hash(i + 5), rad = RMIN + (RMAX - RMIN) * Math.pow(u, .9), sp = (.55 + 1.6 * (1 - u)), a0 = hash(i + 17) * TAU + t * sp, len = .12 + .5 * hash(i + 77); g.strokeStyle = ray(.22 + .45 * hash(i + 9), u < .3 ? [255, 238, 190] : u < .6 ? [255, 176, 70] : [236, 92, 40]); g.lineWidth = Math.max(.5, r * .018); g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, a0, a0 + len); g.stroke(); }
+      for (let i = 0; i < 3; i++) { const rad = r * (.62 + .3 * i), a = t * (1.9 - .5 * i) + i * 2.1, px = Math.cos(a) * rad, py = Math.sin(a) * rad * SY, boost = .55 + .45 * -Math.sin(a + .0); halo(g, px, py, r * .26, '#fff1c8', .7 * boost); }
       g.globalCompositeOperation = 'source-over';
-      const core = g.createRadialGradient(0, 0, 0, 0, 0, r * .75); core.addColorStop(0, 'rgba(255,250,235,.55)'); core.addColorStop(.4, 'rgba(255,190,110,.18)'); core.addColorStop(1, 'rgba(255,150,60,0)'); g.save(); g.scale(1, SY * 1.6); g.fillStyle = core; g.beginPath(); g.arc(0, 0, r * .75, 0, TAU); g.fill(); g.restore();
-      // the shadow and its photon ring
       const sh = g.createRadialGradient(0, 0, r * .2, 0, 0, r * .36); sh.addColorStop(0, '#000'); sh.addColorStop(.85, '#000'); sh.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sh; g.beginPath(); g.arc(0, 0, r * .36, 0, TAU); g.fill();
-      g.globalCompositeOperation = 'lighter'; for (const [mul, al, w] of [[.335, .95, .035], [.36, .4, .06], [.4, .15, .1]]) { g.strokeStyle = ray(al, [255, 236, 200]); g.lineWidth = r * w; g.beginPath(); g.arc(0, 0, r * mul, 0, TAU); g.stroke(); }
-      // the near side of the disc passes in front of the hole
-      for (let i = Math.round(N * .62); i < N; i++) ringAt(i, 'front');
+      g.globalCompositeOperation = 'lighter'; for (const [mul, al, w] of [[.335, .98, .035], [.36, .45, .06], [.4, .16, .1]]) { g.strokeStyle = ray(al * br, [255, 236, 200]); g.lineWidth = r * w; g.beginPath(); g.arc(0, 0, r * mul, 0, TAU); g.stroke(); }
+      g.drawImage(spr.front, -256 * k, -144 * k, 512 * k, 288 * k);
       g.restore();
     }
   };
@@ -238,7 +242,50 @@
     g.globalCompositeOperation = 'destination-in'; const m = g.createRadialGradient(0, 0, S * .18, 0, 0, S * .5); m.addColorStop(0, '#000'); m.addColorStop(.6, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = m; g.fillRect(-S / 2, -S / 2, S, S);
     NEB = c; return c;
   }
-  const paint = (g, id, x, y, r, t) => { if (id === 'quasar') { glowPass(g, id, x, y, r, t); DRAW.quasar(g, x, y, r, t); return; } (DRAW[id] || DRAW.sun)(g, x, y, r, t); if (SURFSPEC[id] && r > 5) bodySurface(g, id, x, y, r, t); glowPass(g, DRAW[id] ? id : 'sun', x, y, r, t); };
+  // ---- extra layers: nebulae and dust drawn behind a body, and finishing details (chromosphere, aurora, transiting planet, diffraction) drawn on top
+  let REFL = null, DUST = null;
+  function reflTex() {   // a blue reflection nebula: wispy filaments of scattered starlight
+    if (REFL) return REFL; const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'); g.translate(S / 2, S / 2); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for (let k = 0; k < 90; k++) { const a0 = hash(k + 3) * TAU, r0 = S * (.1 + .3 * hash(k + 40)), arc = .5 + 1.6 * hash(k + 80), w = 8 + 26 * hash(k + 120); g.strokeStyle = rgba(hash(k + 7) > .5 ? '#7fb4ff' : '#4f86ff', .05 + .09 * hash(k + 160)); g.lineWidth = w; g.beginPath(); for (let j = 0; j <= 18; j++) { const a = a0 + arc * j / 18, rr = r0 + Math.sin(j * .5 + k) * S * .03 + j * 1.2; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr * .85); } g.stroke(); }
+    for (let k = 0; k < 40; k++) { const a = hash(k + 300) * TAU, rr = S * (.1 + .3 * hash(k + 330)), sz = 30 + 60 * hash(k + 360), gr = g.createRadialGradient(Math.cos(a) * rr, Math.sin(a) * rr, 0, Math.cos(a) * rr, Math.sin(a) * rr, sz); gr.addColorStop(0, 'rgba(120,170,255,.1)'); gr.addColorStop(1, 'rgba(120,170,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(Math.cos(a) * rr, Math.sin(a) * rr, sz, 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'destination-in'; const m = g.createRadialGradient(0, 0, S * .12, 0, 0, S * .5); m.addColorStop(0, '#000'); m.addColorStop(.6, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = m; g.fillRect(-S / 2, -S / 2, S, S); REFL = c; return c;
+  }
+  function dustTex() {   // clumpy shells of dust thrown off by a giant: dark, rust and gold arcs
+    if (DUST) return DUST; const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'); g.translate(S / 2, S / 2); g.globalCompositeOperation = 'lighter';
+    for (const [rad, col, n] of [[.3, '#ff9a50', 90], [.4, '#d86a38', 100], [.47, '#a8462a', 80]]) for (let k = 0; k < n; k++) { const a = hash(k + rad * 70) * TAU, rr = S * rad * (.94 + .12 * hash(k * 3 + rad * 9)), sz = S * (.012 + .04 * hash(k + rad * 5)), gr = g.createRadialGradient(Math.cos(a) * rr, Math.sin(a) * rr, 0, Math.cos(a) * rr, Math.sin(a) * rr, sz); gr.addColorStop(0, rgba(col, .2)); gr.addColorStop(1, rgba(col, 0)); g.fillStyle = gr; g.beginPath(); g.arc(Math.cos(a) * rr, Math.sin(a) * rr, sz, 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'destination-in'; const m = g.createRadialGradient(0, 0, S * .2, 0, 0, S * .5); m.addColorStop(0, '#000'); m.addColorStop(.7, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = m; g.fillRect(-S / 2, -S / 2, S, S); DUST = c; return c;
+  }
+  function under(g, id, x, y, r, t) {
+    if (id === 'bluegiant') { const D = r * 12; g.save(); g.translate(x, y); g.rotate(t * .008); g.globalAlpha = .38; g.drawImage(reflTex(), -D / 2, -D / 2, D, D); g.restore(); }
+    else if (id === 'bluewhite') { const D = r * 8; g.save(); g.translate(x, y); g.rotate(-t * .006); g.globalAlpha = .22; g.drawImage(reflTex(), -D / 2, -D / 2, D, D); g.restore(); }
+    else if (id === 'redgiant') { const D = r * 9; g.save(); g.translate(x, y); g.rotate(t * .01); g.globalAlpha = .7; g.drawImage(dustTex(), -D / 2, -D / 2, D, D); g.restore(); }
+  }
+  function extras(g, id, x, y, r, t) {
+    g.save(); g.globalCompositeOperation = 'lighter';
+    if (id === 'sun') {
+      ring(g, x, y, r * 1.012, '#ff5a64', .5, r * .03);   // the thin pink chromosphere
+      for (let i = 0; i < 70; i++) { const a = i / 70 * TAU + hash(i) * .05, l = r * (.04 + .07 * hash(i + 9) * (.7 + .3 * Math.sin(t * 2 + i))); g.strokeStyle = 'rgba(255,110,90,.45)'; g.lineWidth = Math.max(.6, r * .012); g.beginPath(); g.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); g.lineTo(x + Math.cos(a) * (r + l), y + Math.sin(a) * (r + l)); g.stroke(); }
+      const cp = (t * .07) % 1; if (cp < .6) { const u = cp / .6, a = hash(Math.floor(t * .07) + 5) * TAU, d = r * (1.1 + 1.9 * easeOut(u)); g.strokeStyle = `rgba(255,205,150,${.2 * (1 - u)})`; g.lineWidth = r * (.16 * (1 - u) + .03); g.beginPath(); g.arc(x + Math.cos(a) * d * .55, y + Math.sin(a) * d * .55, d * .45, a - 1.1, a + 1.1); g.stroke(); }   // a coronal mass ejection
+    } else if (id === 'reddwarf') {
+      ring(g, x, y, r * 1.012, '#ff4a40', .5, r * .03);
+      const a = t * .55, px = Math.cos(a) * r * 2.1, py = Math.sin(a) * r * .5, front = Math.sin(a) > 0, hid = !front && Math.abs(px) < r;
+      if (!hid) { g.globalCompositeOperation = 'source-over'; g.fillStyle = front ? '#120808' : '#2a1410'; g.beginPath(); g.arc(x + px, y + py, r * .13, 0, TAU); g.fill(); g.globalCompositeOperation = 'lighter'; ring(g, x + px, y + py, r * .135, '#ff9a6a', .6, r * .025); }
+    } else if (id === 'brown') {
+      for (const sg of [-1, 1]) for (let k = 0; k < 3; k++) { g.strokeStyle = `rgba(${k ? '200,120,255' : '255,120,220'},${.34 - k * .08 + .12 * Math.sin(t * 1.4 + k + sg)})`; g.lineWidth = r * (.07 - k * .015); g.beginPath(); g.ellipse(x, y + sg * r * (.78 - k * .05), r * (.5 - k * .05), r * (.14 + .02 * k), 0, sg > 0 ? .1 : Math.PI + .1, sg > 0 ? Math.PI - .1 : TAU - .1); g.stroke(); }   // aurorae at the poles
+      const fl = (t * 1.3) % 1, id2 = Math.floor(t * 1.3); if (fl < .25) { const ang = hash(id2 + 9) * TAU, d = r * .75 * Math.sqrt(hash(id2 + 13)); halo(g, x + Math.cos(ang) * d, y + Math.sin(ang) * d, r * .3 * (1 - fl * 2), '#ffe6ff', .7 * (1 - fl * 4)); }   // lightning
+    } else if (id === 'bluewhite') {
+      for (let i = 0; i < 3; i++) { ring(g, x, y, r * (2.7 + i * .85), i % 2 ? '#ffd0d0' : '#d0e0ff', .1 * (1 - i * .25), r * .03); }   // Airy rings
+      for (const [col, da] of [['#ff7a7a', .25], ['#7affa0', 0], ['#7aa4ff', -.25]]) spikes(g, x, y, r * 5.4, col, .22 + .16 * Math.sin(t * 6 + da * 9), .15 + da * .05, 4);
+    } else if (id === 'bluegiant') {
+      for (let k = 0; k < 2; k++) { const u = ((t * .1) + k * .5) % 1; g.strokeStyle = `rgba(160,210,255,${.28 * (1 - u)})`; g.lineWidth = r * .05 * (1 - u) + .6; g.beginPath(); g.arc(x, y, r * (1.6 + u * 3.4), -.9, .9); g.stroke(); g.beginPath(); g.arc(x, y, r * (1.6 + u * 3.4), Math.PI - .9, Math.PI + .9); g.stroke(); }   // wind bow shocks
+    } else if (id === 'redgiant') {
+      const pu = .5 + .5 * Math.sin(t * .8); halo(g, x, y, r * 1.7, '#ff8a40', .2 + .12 * pu);
+    } else if (id === 'quasar') {
+      const L = r * 7, fl = .16 + .06 * Math.sin(t * 3); g.save(); g.translate(x, y); g.rotate(-.3); const lg = g.createLinearGradient(-L, 0, L, 0); lg.addColorStop(0, 'rgba(255,200,140,0)'); lg.addColorStop(.5, `rgba(255,236,200,${fl})`); lg.addColorStop(1, 'rgba(255,200,140,0)'); g.fillStyle = lg; g.fillRect(-L, -r * .018, L * 2, r * .036); g.restore();   // an anamorphic lens streak
+    }
+    g.restore();
+  }
+  const paint = (g, id, x, y, r, t) => { if (id === 'quasar') { glowPass(g, id, x, y, r, t); DRAW.quasar(g, x, y, r, t); if (r > 10) extras(g, id, x, y, r, t); return; } if (r > 10) under(g, id, x, y, r, t); (DRAW[id] || DRAW.sun)(g, x, y, r, t); if (SURFSPEC[id] && r > 5) bodySurface(g, id, x, y, r, t); if (r > 10) extras(g, id, x, y, r, t); glowPass(g, DRAW[id] ? id : 'sun', x, y, r, t); };
   // a subtle colour cast over the body only (the 'color' blend keeps the shading), plus a faint tinted halo: individual character without leaving the type
   function tintBody(g, b, r) {
     const soft = b.id === 'quasar' || b.id === 'whitedwarf' || b.id === 'neutron', R = r * (b.id === 'quasar' ? 1.6 : .9);   // stars have a hard edge to clip to; the others fade out
