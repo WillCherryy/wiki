@@ -310,7 +310,7 @@ function setPlate(d, sa, sb) {
 }
 function dailyCtx() {
   const day = dayKey(), e = P.days[day]; if (!e) return null;
-  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map((x, i) => ({ sig: x, title: (e.path || [])[i] })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0, purist: !!e.purist, route: e.route || (PUZZLES && PUZZLES[day] && PUZZLES[day].route) || null, alts: e.alts || (PUZZLES && PUZZLES[day] && PUZZLES[day].alts) || [] } };
+  G = { mode: 'daily', day, done: true, result: { won: e.won, clicks: e.clicks, secs: e.secs, score: e.score, path: e.path, steps: (e.steps || []).map((x, i) => ({ sig: x, title: (e.path || [])[i] })), gain: 0, before: P.xp, mode: 'daily', par: e.par || null, stars: e.stars || 0, timeline: e.timeline || null, from: e.from, to: e.to, rewinds: e.rewinds || 0, sky: dayDiscovery(day), purist: !!e.purist, route: e.route || (PUZZLES && PUZZLES[day] && PUZZLES[day].route) || null, alts: e.alts || (PUZZLES && PUZZLES[day] && PUZZLES[day].alts) || [] } };
   return G.result;
 }
 function playDaily() {
@@ -321,7 +321,9 @@ function renderHeroAct() {
   const day = dayKey(), e = P.days[day], cur = readCur(), box = $('#heroAct');
   if (e) {
     box.innerHTML = `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b><span>${e.won ? `${e.clicks} click${e.clicks === 1 ? '' : 's'} · ${fmt(e.secs)}${e.par ? ` · par ${e.par}` : ''}${e.stars ? ' · ' + '★'.repeat(e.stars) : ''}${e.purist ? ' · ◆ purist' : ''}` : 'Back tomorrow'}</span></div>
+      ${dayDiscovery(day) ? skyReveal(dayDiscovery(day), { compact: true, sky: true }) : ''}
       <div class="act-row">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge a friend</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button></div>`;
+    { const dk = dayDiscovery(day); if (dk) { mountDiscovery(box, dk); if ($('#discSky')) $('#discSky').onclick = () => openSky({ tab: 'sky', focus: dk.id }); } }
     if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
     $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
     box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
@@ -498,11 +500,39 @@ async function doRewind() {
 
 
 function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" style="--c:${o.c}">${SKY.OBJ.map((_, i) => `<i class="${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}"></i>`).join('')}</div>`; }
-function skyReveal(k) {
-  const o = SKY.OBJ[k.idx];
-  return `<div class="skyr"><div class="skyc"><canvas id="skyCv" width="760" height="520"></canvas><span class="small">${k.first ? 'New in your sky' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You earned'}</span></div>
-    <h3 class="skyn" style="color:${o.c}">${esc(k.name)}</h3><div class="small">${esc(k.kind)} · ${esc(k.temp)}</div>${skyLadder(k.idx)}
-    <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a><div class="skytag sm">Space is cold. Warm it up.</div></div>`;
+const RARITY = ['Common', 'Common', 'Uncommon', 'Uncommon', 'Rare', 'Rare', 'Epic', 'Epic', 'Legendary'];
+function discoveryK(name, d = {}) {   // everything the discovery card shows, rebuilt from the catalogue so it stays current
+  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
+  return null;
+}
+function dayDiscovery(day) {
+  const e = P.days[day]; let d = e && e.sky;
+  if (!d) for (const [n, rn] of Object.entries(P.sky.runs || {})) if (rn.first && rn.first.day === day && rn.first.mode === 'daily') { d = { name: n, first: true, why: rn.first.why }; break; }
+  return d ? discoveryK(d.name, d) : null;
+}
+function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a foil border that says exactly what you found
+  const o = SKY.OBJ[k.idx], total = SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0), have = Object.keys(P.sky.cat).length, rar = RARITY[k.idx], sm = opt.compact;
+  const head = k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You found';
+  return `<div class="disc ${sm ? 'compact' : ''}" style="--c:${o.c};--c2:${k.idx > 4 ? '#ffffff' : '#ffd8a8'}"><div class="disc-in">
+    <div class="disc-top"><span class="disc-eye">${head}</span><span class="disc-rar r${k.idx}">${rar}</span></div>
+    <div class="disc-art"><canvas ${opt.id ? `id="${opt.id}"` : 'class="discCv"'} width="760" height="${sm ? 360 : 520}"></canvas></div>
+    <div class="disc-type"><i></i>${o.name} · tier ${k.idx + 1} of 9</div>
+    <h3 class="disc-name">${esc(k.name)}</h3><div class="disc-sub">${esc(k.kind)}</div>
+    <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${have}<small> / ${total}</small></b><span>Collected</span></div></div>
+    ${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
+    ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
+    <div class="disc-foot"><a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">${esc(k.name)} on Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn" id="discSky">Your sky</button>' : ''}</div>
+    <div class="disc-tag">Space is cold. Warm it up.</div></div></div>`;
+}
+function tiltCard(el) {   // a little foil-card parallax where there is a pointer
+  if (!el || !matchMedia('(hover: hover)').matches) return;
+  el.addEventListener('pointermove', e => { const r = el.getBoundingClientRect(); el.style.setProperty('--ry', ((e.clientX - r.left) / r.width - .5) * 8 + 'deg'); el.style.setProperty('--rx', (.5 - (e.clientY - r.top) / r.height) * 8 + 'deg'); });
+  el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
+}
+function mountDiscovery(root, k) {   // idle animation on the homepage card, only while it is on screen
+  const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.POOL[k.id].find(p => p.n === k.name), t0 = performance.now();
+  (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent) { setTimeout(() => requestAnimationFrame(f), 500); return; } drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
+  tiltCard(root.querySelector('.disc'));
 }
 function drawSkyCell(cv, id, t, k = 1, q) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
@@ -511,6 +541,7 @@ function drawSkyCell(cv, id, t, k = 1, q) {
 }
 function mountSky(id, idx, name) {   // the landing animation on the results card, then it idles
   const cv = $('#skyCv'); if (!cv) return; const q = SKY.POOL[id].find(p => p.n === name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  tiltCard(cv.closest('.disc'));
   (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t, q); requestAnimationFrame(f); })(t0);
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
@@ -541,6 +572,18 @@ function uniMap(cv, L, o) {
 }
 const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n, n: b.n })));
 const crumb = (lay, n) => ['Universe'].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n)).join(' › ');
+const sfNamed = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
+const sfRows = (L, filter, sortBy, query) => { const a = L.filter(b => (!filter.size || filter.has(b.id)) && (!query || b.n.toLowerCase().includes(query))); a.sort(sortBy === 'az' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'heat' ? (x, y) => y.idx - x.idx || y.m - x.m : (x, y) => y.m - x.m || x.n.localeCompare(y.n)); return a; };
+const sfRowHTML = (b, selN) => { const o = SKY.OBJ[b.idx]; return `<button class="sfrow ${b.n === selN ? 'on' : ''}" data-n="${esc(b.n)}" style="--c:${o.c}"><i></i><div style="flex:1;min-width:0"><b>${esc(b.n)}</b><small>${esc(b.kind)}</small></div><span>${SKY.massText(b.m)}${b.count > 1 ? `<br><em>×${b.count}</em>` : ''}</span></button>`; };
+const sfListHTML = (a, sortBy, filter) => { if (!a.length) return '<div class="sfnone">Nothing matches.</div>'; if (sortBy === 'heat' && filter.size !== 1) { let h = '', last = -1; a.forEach(b => { if (b.idx !== last) { last = b.idx; const o = SKY.OBJ[b.idx]; h += `<h6 style="--c:${o.c}"><i></i>${o.name}<em>${a.filter(x => x.idx === b.idx).length}</em></h6>`; } h += sfRowHTML(b); }); return h; } return a.map(b => sfRowHTML(b)).join(''); };
+const sfChipsHTML = L => { const types = SKY.OBJ.map((o, i) => ({ o, n: L.filter(b => b.idx === i).length })).filter(t => t.n); return `<button class="all on" data-t=""><i></i>All <em>${L.length}</em></button>${types.map(t => `<button data-t="${t.o.id}" style="--c:${t.o.c}"><i></i>${t.o.name} <em>${t.n}</em></button>`).join('')}`; };
+const sfChevron = '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>';
+function sfCardHTML(n, lay) {   // the object card, shared by the full screen and the inline universe
+  const q = sfNamed(n); if (!q) return ''; const rn = (P.sky.runs || {})[n], r = rn && rn.first, parts = crumbParts(lay, n);
+  return `<button class="sfmin" aria-label="Collapse">${sfChevron}</button><div class="crumb">${parts.map((c, i) => (i ? '<span>›</span>' : '') + (i === parts.length - 1 ? `<b>${esc(c.t)}</b>` : `<button data-c="${c.n == null ? '' : esc(c.n)}">${esc(c.t)}</button>`)).join('')}</div>
+    <div class="sfbadges"><span class="t">${q.o.name}</span><span>${RARITY[q.idx]}</span><span>${SKY.massText(q.m)}</span><span>${esc(q.t)}</span></div><h3 class="skyn" style="color:${q.o.c}">${esc(q.n)}</h3>${q.kind === q.o.name ? '' : `<div class="small" style="color:#9b93b8;margin:-2px 0 6px;font:600 11px var(--sans);letter-spacing:.06em">${esc(q.kind)}</div>`}<p>${esc(q.f)}</p><a class="sflink" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read on Wikipedia ↗</a>${r ? `<div class="sfrun"><b>${esc(r.from || '?')} → ${esc(r.to || '?')}</b><br>${r.mode === 'daily' ? 'Daily #' + r.num : r.mode === 'pack' ? 'Pack puzzle' : 'Puzzle'} · ${r.clicks} clicks${r.par ? ' (par ' + r.par + ')' : ''} · ${fmt(r.secs)} · ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>` : ''}`;
+}
+function sfCardMount(el, n, map, L) { const q = sfNamed(n), was = el.classList.contains('min'); if (q) el.style.setProperty('--ac', q.o.c); el.innerHTML = sfCardHTML(n, map.lay); el.classList.toggle('min', was); const m = el.querySelector('.sfmin'); if (m) m.onclick = () => el.classList.toggle('min'); el.querySelectorAll('.crumb button').forEach(b => b.onclick = () => { if (b.dataset.c) map.pick(b.dataset.c); else map.home(L[0].n); }); }
 function openSkyFull(opt = {}) {   // the universe on the whole screen: filter by type, browse and sort every object, fly anywhere
   closeModal(); const L = skySys(), cat = P.sky.cat, wide = () => window.matchMedia('(min-width: 900px)').matches; let host = document.createElement('div'); host.id = 'skyfull';
   const ic = { list: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>', x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>', plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>', minus: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>', home: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>', search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>', chev: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>' };
@@ -554,25 +597,11 @@ function openSkyFull(opt = {}) {   // the universe on the whole screen: filter b
     <div class="sfsheet" id="sfSheet"><div class="sfgrab" id="sfGrab"><i></i></div><div class="sfhead"><label class="sfsearch">${ic.search}<input id="sfQ" placeholder="Search ${L.length} objects" autocomplete="off" spellcheck="false"></label><div class="sfsort"><small>Sort</small><button data-s="mass" class="on">Mass</button><button data-s="heat">Heat</button><button data-s="az">A–Z</button><span id="sfN"></span></div></div><div class="sflist" id="sfListBody"></div></div>`;
   document.body.appendChild(host); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
   let qual = 1; const cv = $('#sfCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
-  const named = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o }; } return null; };
   let selN = opt.focus || (L[0] && L[0].n), filter = new Set(), sortBy = 'mass', query = '';
-  const card = n => { selN = n; const q = named(n), rn = (P.sky.runs || {})[n], r = rn && rn.first; const el = $('#sfCard'), wasMin = el.classList.contains('min');
-    if (!q) { el.innerHTML = ''; return; } el.style.setProperty('--ac', q.o.c); const parts = crumbParts(map.lay, n);
-    el.innerHTML = `<button class="sfmin" id="sfMin" aria-label="Collapse">${ic.chev}</button><div class="crumb">${parts.map((c, i) => (i ? '<span>›</span>' : '') + (i === parts.length - 1 ? `<b>${esc(c.t)}</b>` : `<button data-c="${c.n == null ? '' : esc(c.n)}">${esc(c.t)}</button>`)).join('')}</div>
-      <div class="sfbadges"><span class="t">${q.o.name}</span><span>${SKY.massText(q.m)}</span><span>${esc(q.t)}</span></div><h3 class="skyn" style="color:${q.o.c}">${esc(q.n)}</h3>${q.kind === q.o.name ? '' : `<div class="small" style="color:#9b93b8;margin:-2px 0 6px;font:600 11px var(--sans);letter-spacing:.06em">${esc(q.kind)}</div>`}<p>${esc(q.f)}</p><a class="sflink" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read on Wikipedia ↗</a>${r ? `<div class="sfrun"><b>${esc(r.from || '?')} → ${esc(r.to || '?')}</b><br>${r.mode === 'daily' ? 'Daily #' + r.num : r.mode === 'pack' ? 'Pack puzzle' : 'Puzzle'} · ${r.clicks} clicks${r.par ? ' (par ' + r.par + ')' : ''} · ${fmt(r.secs)} · ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>` : ''}`;
-    el.classList.toggle('min', wasMin); $('#sfMin').onclick = () => el.classList.toggle('min');
-    el.querySelectorAll('.crumb button').forEach(b => b.onclick = () => { if (b.dataset.c) map.pick(b.dataset.c); else map.home(L[0].n); });
-    document.querySelectorAll('#sfListBody .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
+  const card = n => { selN = n; sfCardMount($('#sfCard'), n, map, L); document.querySelectorAll('#sfListBody .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
   const map = uniMap(cv, L, { z: .4, mini: 'tl', miniTop: () => 130 * cv.width / host.clientWidth, onQuality: v => { qual = v; size(); }, follow: selN, focus: selN, newId: opt.newId, onPick: n => card(n) });
   // browse + sort + filter
-  const rows = () => { let a = L.filter(b => (!filter.size || filter.has(b.id)) && (!query || b.n.toLowerCase().includes(query)));
-    a.sort(sortBy === 'az' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'heat' ? (x, y) => y.idx - x.idx || y.m - x.m : (x, y) => y.m - x.m || x.n.localeCompare(y.n)); return a; };
-  const rowHTML = b => { const o = SKY.OBJ[b.idx]; return `<button class="sfrow ${b.n === selN ? 'on' : ''}" data-n="${esc(b.n)}" style="--c:${o.c}"><i></i><div style="flex:1;min-width:0"><b>${esc(b.n)}</b><small>${esc(b.kind)}</small></div><span>${SKY.massText(b.m)}${b.count > 1 ? `<br><em>×${b.count}</em>` : ''}</span></button>`; };
-  const fillList = () => { const a = rows(); $('#sfN').textContent = a.length + (a.length === 1 ? ' object' : ' objects'); let h = '';
-    if (!a.length) h = '<div class="sfnone">Nothing matches.</div>';
-    else if (sortBy === 'heat' && filter.size !== 1) { let last = -1; a.forEach(b => { if (b.idx !== last) { last = b.idx; const o = SKY.OBJ[b.idx]; h += `<h6 style="--c:${o.c}"><i></i>${o.name}<em>${a.filter(x => x.idx === b.idx).length}</em></h6>`; } h += rowHTML(b); }); }
-    else h = a.map(rowHTML).join('');
-    $('#sfListBody').innerHTML = h; document.querySelectorAll('#sfListBody .sfrow').forEach(b => b.onclick = () => { map.pick(b.dataset.n); if (!wide()) sheet(false); }); };
+  const fillList = () => { const a = sfRows(L, filter, sortBy, query); $('#sfN').textContent = a.length + (a.length === 1 ? ' object' : ' objects'); $('#sfListBody').innerHTML = sfListHTML(a, sortBy, filter); document.querySelectorAll('#sfListBody .sfrow').forEach(b => { b.classList.toggle('on', b.dataset.n === selN); b.onclick = () => { map.pick(b.dataset.n); if (!wide()) sheet(false); }; }); };
   const sheet = on => { $('#sfSheet').classList.toggle('open', on); $('#sfList').classList.toggle('on', on); host.classList.toggle('shelf', on && wide()); if (on) { const r = $('#sfListBody .sfrow.on'); if (r) r.scrollIntoView({ block: 'nearest' }); } };
   const setTypes = () => { document.querySelectorAll('#sfTypes button').forEach(b => b.classList.toggle('on', b.dataset.t ? filter.has(b.dataset.t) : !filter.size)); map.setFilter(filter); fillList(); };
   document.querySelectorAll('#sfTypes button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (!t) filter.clear(); else if (filter.has(t)) filter.delete(t); else filter.add(t); setTypes(); if (filter.size && !$('#sfSheet').classList.contains('open')) sheet(true); });
@@ -588,46 +617,54 @@ function openSkyFull(opt = {}) {   // the universe on the whole screen: filter b
   const esc2 = e => { if (e.key === 'Escape' && host.isConnected) { if ($('#sfSheet').classList.contains('open') && !wide()) sheet(false); else done(); } else if (e.key === '/' && document.activeElement !== $('#sfQ')) { e.preventDefault(); sheet(true); $('#sfQ').focus(); } }; document.addEventListener('keydown', esc2);
 }
 function openSky(opt = {}) {
-  const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length; let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
+  const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length, total = SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0);
+  let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<h2>Your sky</h2><p class="skytag">Space is cold. Warm it up.</p><p>Every solved puzzle earns a real astronomical object. The better your route, the hotter it burns. <b>${owned} of ${SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0)}</b> catalogued · <b>${types} of 9</b> types · <b>${P.sky.total}</b> earned in all.</p>
-    <div class="tabs" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your universe</button></div>
-    <div id="skyPane"></div><div class="rcard skyd" id="skyD"></div>`);
-  let raf = 0, t0 = performance.now(), pos = [];
-  const named = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
+  openModal(`<div class="skyhead"><h2>Your sky</h2><p class="skytag">Space is cold. Warm it up.</p>
+      <div class="skyprog"><div class="skyprog-bar"><i style="width:${Math.max(2, Math.round(owned / total * 100))}%"></i></div><div class="skyprog-lab"><span><b>${owned}</b> of ${total} objects</span><span><b>${types}</b> of 9 types</span><span><b>${P.sky.total}</b> earned</span></div></div></div>
+    <div class="tabs sk" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your universe</button></div>
+    <div id="skyPane"></div>`);
+  $('#modal').classList.add('sky');
+  let raf = 0, t0 = performance.now();
   const runBox = n => { const rn = (P.sky.runs || {})[n]; if (!rn) return '<div class="runbox"><div class="small">The run that earned it</div><p class="mute" style="margin:6px 0 0">Earned before runs were recorded.</p></div>'; const one = (x, lab) => `<div class="runr"><div class="small">${lab}</div><b>${esc(x.from || '?')} → ${esc(x.to || '?')}</b><div>${x.mode === 'daily' ? 'Daily #' + x.num : x.mode === 'pack' ? 'Companion pack' : 'Puzzle'} · ${new Date(x.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div><div>${x.clicks} click${x.clicks === 1 ? '' : 's'}${x.par ? ' (par ' + x.par + ')' : ''} · ${fmt(x.secs)}</div>${x.why ? `<div class="mute">${esc(x.why)}</div>` : ''}</div>`; return `<div class="runbox">${one(rn.first, 'The run that earned it')}${rn.last && rn.last.at !== rn.first.at ? one(rn.last, 'Most recent') : ''}</div>`; };
-  const link = q => `<a class="skyl" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read about ${esc(q.n)} on Wikipedia ↗</a>`;
-  const detail = () => {
-    const box = $('#skyD');
-    if (tab === 'sys') { const q = selN && cat[selN] ? named(selN) : null; box.innerHTML = !q ? '<p class="mute" style="margin:0">Tap an object on the map, or a name below, to fly to it.</p>' : `<div class="small">${esc(q.kind)} · ${esc(q.t)} · ${q.o.name} · ${SKY.massText(q.m)}</div><h3 class="skyn" style="color:${q.o.c};margin:4px 0 6px;font-size:34px">${esc(q.n)}</h3><p class="skyf" style="margin:0 0 8px">${esc(q.f)}</p>${link(q)}${runBox(q.n)}<div class="small" style="margin-top:8px">Earned ${cat[q.n]} time${cat[q.n] > 1 ? 's' : ''}</div>`; return; }
-    const o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; }
-    box.innerHTML = `<div class="small">${o.kind} · ${o.temp} · tier ${SKY.OBJ.indexOf(o) + 1} of 9</div><h3 class="skyn" style="color:${o.c};margin:4px 0 8px;font-size:34px">${o.name}</h3>
-      <div class="catl">${SKY.POOL[o.id].map(q => cat[q.n] ? `<div class="catr"><b>${esc(q.n)}</b><span>${esc(q.kind)}</span><em>×${cat[q.n]}</em><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener" aria-label="${esc(q.n)} on Wikipedia">↗</a></div>` : `<div class="catr lock"><b>???</b><span>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</span></div>`).join('')}</div>`;
-  };
   let stop = () => cancelAnimationFrame(raf);
   const draw = () => {
-    { const d = $('#skyD'), pane = $('#skyPane'); if (d && pane.contains(d)) pane.after(d); }   // keep the detail card out of the pane that is about to be rewritten
     stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     if (tab === 'sky') {
-      $('#skyPane').after($('#skyD'));
-      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map(o => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<small style="color:${f[o.id] ? o.c : '#6c6785'}">${f[o.id] ? have + ' of ' + SKY.POOL[o.id].length + ' named' : 'not found yet'}</small><b>${f[o.id] ? o.name : '???'}</b></button>`; }).join('')}</div>
-        <div class="small" style="margin:14px 0 6px">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
       const rep = {}; SKY.OBJ.forEach(o => { rep[o.id] = SKY.POOL[o.id].filter(q => cat[q.n]).sort((a, b) => b.m - a.m)[0]; });   // each cell shows the heaviest one you own of its type
-      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); detail(); });
+      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map((o, i) => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length, n = SKY.POOL[o.id].length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}" style="--c:${o.c}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<b>${f[o.id] ? o.name : '???'}</b><small>${f[o.id] ? have + ' of ' + n : 'not found yet'}</small><span class="skybar"><i style="width:${Math.round(have / n * 100)}%"></i></span></button>`; }).join('')}</div>
+        <div class="skypanel" id="skyD"></div>
+        <div class="skymini-h">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
+      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); typePanel(); $('#skyD').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
       t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1, rep[id]); }); raf = requestAnimationFrame(loop); })(t0);
-    } else {
-      const L = skySys(); if (!selN && L.length) selN = L[0].n;
-      const lay = SKY.layout(L);
-      $('#skyPane').innerHTML = `<div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas>${L.length ? `<span class="small sysnote">Drag to explore · + / − to zoom</span><div class="syszoom"><button id="zIn" aria-label="Zoom in">+</button><button id="zOut" aria-label="Zoom out">−</button><button id="zHome" aria-label="Back to the primary">⌖</button><button id="zFull" aria-label="Full screen">⛶</button></div>` : '<p class="mute sysempty">Solve a puzzle and your first object starts your universe.</p>'}</div>
-        <div class="syslegend">${lay.bodies.map(b => { const o = SKY.OBJ[b.idx], sub = b.tier === 'nucleus' ? (b.id === 'quasar' ? (b.parent < 0 ? 'central galaxy' : 'galaxy') : 'centre') : b.tier === 'anchor' ? 'cluster anchor' : 'orbits ' + lay.bodies[b.parent].n; return `<button class="sysrow ${selN === b.n ? 'sel' : ''}" data-n="${esc(b.n)}"><i style="background:${o.c}"></i><b>${esc(b.n)}</b><span>${sub} · ${SKY.massText(b.m)}</span><em>×${b.count}</em></button>`; }).join('')}</div>
-        <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Each quasar is the nucleus of a galaxy; neutron stars and very heavy stars anchor clusters; everything else orbits one of them. Orbits are Keplerian (T² ∝ a³), so galaxies turn almost imperceptibly while inner stars whirl. Duplicates become moons.</p>`;
-      $('.skysys').after($('#skyD'));
-      const cv = $('#sysCv'), map = uniMap(cv, L, { follow: opt.newId || (L[0] && L[0].n), focus: selN, newId: opt.newId, onPick: n => { selN = n; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); } });
-      stop = () => map.stop();
-      if ($('#zIn')) { $('#zIn').onclick = () => map.zoom(1.3); $('#zOut').onclick = () => map.zoom(1 / 1.3); $('#zHome').onclick = () => map.home(L[0].n); $('#zFull').onclick = () => { map.stop(); openSkyFull({ focus: selN, newId: null, back: () => openSky({ tab: 'sys', focus: selN, newId: null }) }); }; }
-      document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { map.pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
-    }
-    detail();
+      typePanel();
+    } else universeTab();
+  };
+  const typePanel = () => {   // the selected type: what it is, and every named object of it (found and still to find)
+    const box = $('#skyD'), o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; } const i = SKY.OBJ.indexOf(o), list = SKY.POOL[o.id].slice().sort((a, b) => (cat[b.n] ? 1 : 0) - (cat[a.n] ? 1 : 0) || b.m - a.m);   // found first, then the ones still to find
+    box.style.setProperty('--c', o.c);
+    box.innerHTML = `<div class="skyp-top"><span class="skyp-rar r${i}">${RARITY[i]}</span><span class="skyp-tier">tier ${i + 1} of 9 · ${o.temp}</span></div><h3 class="skyn" style="color:${o.c}">${o.name}</h3><p class="skyp-fact">${esc(o.fact)}</p>
+      <div class="sflist inl">${list.map(q => cat[q.n] ? sfRowHTML({ ...q, idx: i, count: cat[q.n] }).replace('<button', '<a href="' + wikiUrl(q.a) + '" target="_blank" rel="noopener"').replace('</button>', '</a>') : `<div class="sfrow lock" style="--c:${o.c}"><i></i><div style="flex:1"><b>???</b><small>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</small></div></div>`).join('')}</div>`;
+  };
+  const universeTab = () => {
+    const L = skySys(); if (!selN && L.length) selN = L[0].n; let filter = new Set(), sortBy = 'mass', query = '';
+    if (!L.length) { $('#skyPane').innerHTML = '<p class="mute sysempty">Solve a puzzle and your first object starts your universe.</p>'; return; }
+    const galaxies = L.filter(b => b.id === 'quasar').length;
+    $('#skyPane').innerHTML = `<div class="sftypes inl" id="uTypes">${sfChipsHTML(L)}</div>
+      <div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas><span class="sysnote">Drag to explore · tap an object</span><div class="syszoom"><button class="sfib" id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="sfib" id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="sfib" id="zHome" aria-label="Whole universe"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button><button class="sfib" id="zFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div><div class="sflevel" id="uLevel"><i></i><i></i><i></i><i></i></div></div>
+      <div class="sfcard inl" id="uCard"></div>
+      <div class="ubrowse"><div class="sfhead"><label class="sfsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="uQ" placeholder="Search ${L.length} objects" autocomplete="off" spellcheck="false"></label><div class="sfsort"><small>Sort</small><button data-s="mass" class="on">Mass</button><button data-s="heat">Heat</button><button data-s="az">A–Z</button><span id="uN"></span></div></div><div class="sflist inl" id="uList"></div></div>
+      <p class="skyfoot">${L.length} objects${galaxies ? ' · ' + galaxies + (galaxies === 1 ? ' galaxy' : ' galaxies') : ''}. Illustrative scale: each quasar is a galaxy nucleus, neutron stars and very heavy stars anchor clusters, everything else orbits one of them (T² ∝ a³).</p>`;
+    const cv = $('#sysCv'), card = n => { selN = n; sfCardMount($('#uCard'), n, map, L); document.querySelectorAll('#uList .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
+    const map = uniMap(cv, L, { follow: opt.newId || (L[0] && L[0].n), focus: selN, newId: opt.newId, onPick: card });
+    const fill = () => { const a = sfRows(L, filter, sortBy, query); $('#uN').textContent = a.length + (a.length === 1 ? ' object' : ' objects'); $('#uList').innerHTML = sfListHTML(a, sortBy, filter); document.querySelectorAll('#uList .sfrow').forEach(b => { b.classList.toggle('on', b.dataset.n === selN); b.onclick = () => { map.pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }; }); };
+    document.querySelectorAll('#uTypes button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (!t) filter.clear(); else if (filter.has(t)) filter.delete(t); else filter.add(t); document.querySelectorAll('#uTypes button').forEach(x => x.classList.toggle('on', x.dataset.t ? filter.has(x.dataset.t) : !filter.size)); map.setFilter(filter); fill(); });
+    document.querySelectorAll('.ubrowse .sfsort [data-s]').forEach(b => b.onclick = () => { sortBy = b.dataset.s; document.querySelectorAll('.ubrowse .sfsort [data-s]').forEach(x => x.classList.toggle('on', x === b)); fill(); });
+    $('#uQ').oninput = e => { query = e.target.value.trim().toLowerCase(); fill(); };
+    stop = () => { clearInterval(lv); map.stop(); };
+    const lv = setInterval(() => { if (!cv.isConnected) { clearInterval(lv); return; } const k = map.level(); document.querySelectorAll('#uLevel i').forEach((d, i) => d.classList.toggle('on', i === k)); }, 250);
+    $('#zIn').onclick = () => map.zoom(1.3); $('#zOut').onclick = () => map.zoom(1 / 1.3); $('#zHome').onclick = () => map.home(L[0].n); $('#zFull').onclick = () => { stop(); openSkyFull({ focus: selN, newId: null, back: () => openSky({ tab: 'sys', focus: selN, newId: null }) }); };
+    fill(); card(selN);
   };
   document.querySelectorAll('#skyTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); draw();
 }
@@ -678,7 +715,7 @@ function finish(won) {
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
   if (skyOK) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
+  G.result.sky = { count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -696,7 +733,7 @@ async function submitScore() {
 }
 
 /* ------------------------------------------------------------------- modals */
-function openModal(html, onclose) { $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; }
+function openModal(html, onclose) { $('#modal').classList.remove('sky'); $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; }
 function closeModal() { $('#scrim').classList.remove('on'); const f = $('#scrim').onclose; $('#scrim').onclose = null; if (f) f(); }
 $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim' || e.target.closest('[data-close]')) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -797,7 +834,7 @@ function showResult() {
   const rankUp = ri > prevRi, daily = r.mode === 'daily', ref = r.par || r.goal, ch = r.chal;
   const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
   openModal(`
-    ${r.sky ? skyReveal(r.sky) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
+    ${r.sky ? skyReveal(r.sky, { id: 'skyCv' }) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
     ${r.sky ? `<p class="resulthead">${resultHead(r)}</p>` : `<div class="win-top">
       <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
       <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '\u2014'}</div>
