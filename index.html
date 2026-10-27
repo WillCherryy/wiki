@@ -713,6 +713,25 @@ function openSkyFull(opt = {}) {   // the universe on the whole screen: filter b
   { const SP = [1, 100, 3000, 50000]; let si = 0; $('#sfSpeed').onclick = e => { si = (si + 1) % SP.length; map.setSpeed(SP[si]); e.currentTarget.textContent = (SP[si] >= 1000 ? SP[si] / 1000 + 'k' : SP[si]) + '×'; e.currentTarget.classList.toggle('on', si > 0); toast(si ? 'Time ×' + SP[si].toLocaleString('en') + ': watch the orbits move' : 'Real time'); }; }
   const esc2 = e => { if (e.key === 'Escape' && host.isConnected) { if ($('#sfSheet').classList.contains('open') && !wide()) sheet(false); else done(); } else if (e.key === '/' && document.activeElement !== $('#sfQ')) { e.preventDefault(); sheet(true); $('#sfQ').focus(); } }; document.addEventListener('keydown', esc2);
 }
+
+function openInspect(name, back) {   // a close look: the object large on its own sky, drag to move it, pinch or scroll to zoom
+  const q = sfNamed(name); if (!q) return; closeModal(); const host = document.createElement('div'); host.id = 'inspect'; host.style.setProperty('--c', q.o.c);
+  host.innerHTML = `<canvas id="inCv"></canvas><button class="sfib" id="inX" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="inbar"><div class="in-eye">${esc(q.o.name)} · ${RARITY[q.idx]}</div><h3 class="in-name">${esc(q.n)}</h3><div class="in-sub">${esc(q.kind)} · ${SKY.massText(q.m)} · ${esc(q.t)}</div><p class="in-fact">${esc(q.f)}</p><a class="sflink" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read on Wikipedia ↗</a></div>
+    <div class="in-hint" id="inHint">Drag to move · pinch or scroll to zoom · double-tap to reset</div>`;
+  document.body.appendChild(host); const cv = $('#inCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
+  const g = cv.getContext('2d'), rec = SKY.POOL[q.id].find(p => p.n === name), t0 = performance.now(); let zoom = 1, px = 0, py = 0, dead = false; const ptr = new Map(); let pd = 0, last = 0;
+  const frame = now => { if (dead) return; const w = cv.width, h = cv.height, t = (now - t0) / 1000; g.clearRect(0, 0, w, h); g.fillStyle = '#07060f'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5000), 3);
+    const r = (SKY.FR[q.id] || .2) * Math.min(w, h) * 1.05 * zoom; SKY.drawV(g, q.id, w / 2 + px * dpr, h * .4 + py * dpr, r, t + 1.5, rec); requestAnimationFrame(frame); };
+  requestAnimationFrame(frame);
+  const clampZ = z => Math.max(.4, Math.min(14, z));
+  cv.onpointerdown = e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { cv.setPointerCapture(e.pointerId); } catch {} if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pd = Math.hypot(a.x - b.x, a.y - b.y); } const n = performance.now(); if (ptr.size === 1 && n - last < 300) { zoom = 1; px = py = 0; } last = n; };
+  cv.onpointermove = e => { const o = ptr.get(e.pointerId); if (!o) return; if (ptr.size === 2) { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pd) zoom = clampZ(zoom * d / pd); pd = d; return; } px += e.clientX - o.x; py += e.clientY - o.y; ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); };
+  cv.onpointerup = cv.onpointercancel = e => { ptr.delete(e.pointerId); pd = 0; };
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoom = clampZ(zoom * Math.exp(-e.deltaY * .0018)); }, { passive: false });
+  const done = () => { dead = true; document.removeEventListener('keydown', esc3); window.removeEventListener('resize', size); host.remove(); if (back) back(); };
+  const esc3 = e => { if (e.key === 'Escape') done(); }; document.addEventListener('keydown', esc3); window.addEventListener('resize', size); $('#inX').onclick = done; setTimeout(() => { const h = $('#inHint'); if (h) h.classList.add('gone'); }, 5000);
+}
 function openSky(opt = {}) {
   const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length, total = SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0);
   let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
@@ -741,7 +760,8 @@ function openSky(opt = {}) {
     const box = $('#skyD'), o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; } const i = SKY.OBJ.indexOf(o), list = SKY.POOL[o.id].slice().sort((a, b) => (cat[b.n] ? 1 : 0) - (cat[a.n] ? 1 : 0) || b.m - a.m);   // found first, then the ones still to find
     box.style.setProperty('--c', o.c);
     box.innerHTML = `<div class="skyp-top"><span class="skyp-rar r${i}">${RARITY[i]}</span><span class="skyp-tier">tier ${i + 1} of 9 · ${o.temp}</span></div><h3 class="skyn" style="color:${o.c}">${o.name}</h3><p class="skyp-fact">${esc(o.fact)}</p>
-      <div class="sflist inl">${list.map(q => cat[q.n] ? sfRowHTML({ ...q, idx: i, count: cat[q.n] }).replace('<button', '<a href="' + wikiUrl(q.a) + '" target="_blank" rel="noopener"').replace('</button>', '</a>') : `<div class="sfrow lock" style="--c:${o.c}"><i></i><div style="flex:1"><b>???</b><small>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</small></div></div>`).join('')}</div>`;
+      <div class="sflist inl">${list.map(q => cat[q.n] ? sfRowHTML({ ...q, idx: i, count: cat[q.n] }).replace('<button class="sfrow', '<button data-inspect="' + esc(q.n) + '" class="sfrow insp').replace('</button>', '<u class="insp-go">Inspect</u></button>') : `<div class="sfrow lock" style="--c:${o.c}"><i></i><div style="flex:1"><b>???</b><small>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</small></div></div>`).join('')}</div>`;
+    box.querySelectorAll('[data-inspect]').forEach(b => b.onclick = () => openInspect(b.dataset.inspect, () => openSky({ tab: 'sky', focus: selT })));
   };
   const universeTab = () => {
     const L = skySys(); if (!selN && L.length) selN = L[0].n; let filter = new Set(), sortBy = 'mass', query = '';

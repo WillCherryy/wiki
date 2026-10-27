@@ -942,3 +942,10 @@ html[data-calm="1"] #buddy { display: none !important; }
 
 @media (min-width: 900px) { .done.has-disc { grid-template-areas: none !important; grid-template-columns: minmax(0, 1fr) !important; } .done.has-disc > * { grid-area: auto !important; } .done.has-disc .done-btns { max-width: none; } }
 .done.has-disc > .stage { width: 100%; justify-self: stretch; }
+
+#inspect { position: fixed; inset: 0; z-index: 450; background: #07060f; color: #eceaf8; font-family: var(--sans); } #inspect canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#inspect #inX { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px; }
+.inbar { position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 20px calc(22px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(0deg, rgba(7, 6, 15, .96) 40%, rgba(7, 6, 15, 0)); pointer-events: none; } .inbar a { pointer-events: auto; }
+.in-eye { font: 700 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--c); } .in-name { margin: 4px 0 2px; font: italic 400 clamp(40px, 9vw, 58px)/1 var(--display); color: var(--c); text-shadow: 0 0 26px color-mix(in srgb, var(--c) 60%, transparent); } .in-sub { font: 600 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: #a9a2c8; } .in-fact { margin: 10px 0 12px; max-width: 560px; font: 400 17px/1.42 var(--serif); color: #d6d0ec; }
+.in-hint { position: absolute; left: 50%; top: calc(24px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; background: rgba(20, 17, 40, .75); font: 600 11.5px var(--sans); color: #cfc8e6; transition: opacity .8s; white-space: nowrap; pointer-events: none; } .in-hint.gone { opacity: 0; }
+.sfrow.insp { cursor: pointer; } .insp-go { margin-left: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .12); font: 700 10.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: #fff; }
