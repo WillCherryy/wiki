@@ -30,6 +30,16 @@
   function spikes(g, x, y, len, col, a, rot = 0, n = 4) { g.save(); g.translate(x, y); g.rotate(rot); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < n; i++) { g.rotate(Math.PI / (n / 2)); const gr = g.createLinearGradient(0, 0, len, 0); gr.addColorStop(0, rgba(col, a)); gr.addColorStop(.25, rgba(col, a * .35)); gr.addColorStop(1, rgba(col, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(0, -len * .012); g.lineTo(len, 0); g.lineTo(0, len * .012); g.fill(); } g.restore(); }
   function ring(g, x, y, r, col, a, w) { g.strokeStyle = rgba(col, a); g.lineWidth = Math.max(.5, w); g.beginPath(); g.arc(x, y, Math.max(.1, r), 0, TAU); g.stroke(); }
   function loopArc(g, x, y, r, a0, span, h, col, a, w, sway) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(col, a * .55); g.lineWidth = w * 1.8; g.lineCap = 'round'; g.beginPath(); const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a0 + span) * r, y1 = y + Math.sin(a0 + span) * r, am = a0 + span / 2, mx = x + Math.cos(am) * (r + h * 1.6 + sway), my = y + Math.sin(am) * (r + h * 1.6 + sway); g.moveTo(x0, y0); g.quadraticCurveTo(mx, my, x1, y1); g.stroke(); g.strokeStyle = rgba('#ffffff', a * .5); g.lineWidth = w * .5; g.stroke(); g.restore(); }
+  // a solar prominence: a glowing arch of plasma strands rising from the limb, swaying, then fading and re-forming elsewhere
+  function prominence(g, x, y, r, t, seed, col, rate, hMul = 1) {
+    const life = (t * rate + hash(seed) * 7) % 1, cyc = Math.floor(t * rate + hash(seed) * 7), al = Math.sin(life * Math.PI), a = hash(seed + cyc * 1.7) * TAU, span = (.2 + .22 * hash(seed + cyc)) * (.6 + .5 * al), h = r * (.26 + .4 * hash(seed + cyc + 3)) * hMul * (.5 + .6 * al);
+    if (al < .02) return; g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for (let k = 0; k < 8; k++) { const f = 1 - k * .1, sw = Math.sin(t * 1.3 + k + seed) * span * .06, a0 = a - span / 2 * f + sw, a1 = a + span / 2 * f + sw, hh = h * (1 + .22 * k / 8), ca = (a0 + a1) / 2;
+      g.strokeStyle = rgba(col, al * (.55 - k * .04)); g.lineWidth = Math.max(.7, r * (.02 + .008 * (k % 3))); g.beginPath(); g.moveTo(Math.cos(a0) * r * .99 + x, Math.sin(a0) * r * .99 + y); g.quadraticCurveTo(x + Math.cos(ca) * (r + 2 * hh), y + Math.sin(ca) * (r + 2 * hh), x + Math.cos(a1) * r * .99, y + Math.sin(a1) * r * .99); g.stroke(); }
+    g.strokeStyle = rgba(col, al * .2); g.lineWidth = r * .1; g.beginPath(); g.moveTo(Math.cos(a - span / 2) * r + x, Math.sin(a - span / 2) * r + y); g.quadraticCurveTo(x + Math.cos(a) * (r + 2 * h), y + Math.sin(a) * (r + 2 * h), x + Math.cos(a + span / 2) * r, y + Math.sin(a + span / 2) * r); g.stroke();
+    for (const e of [-1, 1]) halo(g, x + Math.cos(a + e * span / 2) * r, y + Math.sin(a + e * span / 2) * r, r * .12, '#ffffff', al * .35);
+    g.restore();
+  }
   const DRAW = {
     brown(g, x, y, r, t) {
       halo(g, x, y, r * 3.2, '#ff5a9a', .34); halo(g, x, y, r * 1.7, '#ffb070', .26); sphere(g, x, y, r, '#e29ac4', '#8a3f78', '#2a1030', 3, t, 0, '#000', 0, .55);
@@ -40,7 +50,7 @@
     reddwarf(g, x, y, r, t) {
       halo(g, x, y, r * 4, '#ff3a20', .42); halo(g, x, y, r * 2.2, '#ff7a40', .3); { const fp = (t * .13) % 1; if (fp < .35) { const k = Math.sin(fp / .35 * Math.PI), a = hash(Math.floor(t * .13) + 3) * TAU; g.save(); g.globalCompositeOperation = 'lighter'; halo(g, x + Math.cos(a) * r * (1 + .5 * k), y + Math.sin(a) * r * (1 + .5 * k), r * (.5 + .9 * k), '#ffd0a0', .55 * k); g.restore(); } } sphere(g, x, y, r, '#ffa070', '#e6482e', '#5a0e06', 21, t, 34, '#ffb078', .5, .5);
       g.save(); g.beginPath(); g.arc(x, y, r, 0, TAU); g.clip(); [[.3, -.25, .16], [-.35, .2, .12], [.1, .45, .09]].forEach(([a, b, c]) => { g.fillStyle = 'rgba(120,30,14,.4)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r * 1.6, c * r * 1.3, .4, 0, TAU); g.fill(); g.fillStyle = 'rgba(40,6,4,.6)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r, c * r * .8, .4, 0, TAU); g.fill(); }); g.restore();
-      const fl = .5 + .5 * Math.sin(t * 1.3); loopArc(g, x, y, r * .99, -.9, .42, r * .26 * (.6 + .5 * fl), '#ffc090', .7, r * .05, Math.sin(t * 2) * r * .02); loopArc(g, x, y, r * .99, 2.1, .32, r * .18, '#ff9060', .55, r * .04, 0);
+      prominence(g, x, y, r, t, 11, '#ffb890', .09, .8); prominence(g, x, y, r, t, 23, '#ff9060', .07, .6);
     },
     redgiant(g, x, y, r0, t) {
       for (let k = 0; k < 3; k++) { const q = ((t * .06 + k / 3) % 1); g.strokeStyle = `rgba(255,130,70,${.18 * (1 - q)})`; g.lineWidth = Math.max(1, r0 * .05 * (1 - q)); g.beginPath(); g.arc(x, y, r0 * (1.5 + q * 2.4), 0, TAU); g.stroke(); }
@@ -55,7 +65,7 @@
       for (let i = 0; i < 46; i++) { const a = i / 46 * TAU + hash(i) * .1, l = r * (1.35 + hash(i + 40) * .75 + .08 * Math.sin(t * .6 + i)); const gr = g.createLinearGradient(x + Math.cos(a) * r, y + Math.sin(a) * r, x + Math.cos(a) * l, y + Math.sin(a) * l); gr.addColorStop(0, 'rgba(255,214,120,.34)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); g.strokeStyle = gr; g.lineWidth = r * (.025 + hash(i + 9) * .04); g.lineCap = 'round'; g.beginPath(); g.moveTo(x + Math.cos(a) * r * .98, y + Math.sin(a) * r * .98); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); } g.restore();
       sphere(g, x, y, r, '#fffbe0', '#ffd23e', '#e07a0e', 66, t, 90, '#ffffff', .5, .4);
       g.save(); g.beginPath(); g.arc(x, y, r, 0, TAU); g.clip(); [[.35, -.2, .1], [-.3, .25, .075], [.05, .5, .06]].forEach(([a, b, c]) => { g.fillStyle = 'rgba(140,60,10,.65)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r * 1.7, c * r * 1.3, .3, 0, TAU); g.fill(); g.fillStyle = 'rgba(40,12,4,.85)'; g.beginPath(); g.ellipse(x + a * r, y + b * r, c * r, c * r * .75, .3, 0, TAU); g.fill(); }); g.restore();
-      loopArc(g, x, y, r * .995, -.55, .5, r * .24, '#ff9c3a', .85, r * .045, Math.sin(t * 1.6) * r * .03); loopArc(g, x, y, r * .995, 2.45, .36, r * .17, '#ffb05a', .75, r * .04, Math.sin(t * 1.9 + 1) * r * .02);
+      prominence(g, x, y, r, t, 31, '#ff9c4a', .06, 1.2); prominence(g, x, y, r, t, 47, '#ffb05a', .08, .9); prominence(g, x, y, r, t, 59, '#ff8a3a', .05, 1);
     },
     bluewhite(g, x, y, r, t) {
       halo(g, x, y, r * 4.4, '#8fb8ff', .55); halo(g, x, y, r * 2.2, '#ffffff', .5); sphere(g, x, y, r, '#ffffff', '#e4efff', '#9ebcf2', 12, t, 0, '#fff', 0, .3);
@@ -120,19 +130,19 @@
   };
 
   // every object gets a glow pass on top: layered additive halos, an incandescent core and a bright rim. It breathes, and hotter objects glow harder.
-  const GLOW = { brown: ['#ff7ab0', .62, .12], reddwarf: ['#ff4a2a', 1.0, .5], redgiant: ['#ff7a30', 1.2, .6], sun: ['#ffb838', 1.05, .7], bluewhite: ['#9cc4ff', 1.15, .8], bluegiant: ['#6fa0ff', 1.3, .85], whitedwarf: ['#b8d8ff', 1.2, 1], neutron: ['#6fe8ff', 1.3, 1], quasar: ['#ff9a48', 1.25, .5] };
+  const GLOW = { brown: ['#ff7ab0', .62, .12], reddwarf: ['#ff4a2a', 1.0, .5], redgiant: ['#ff7a30', 1.2, .6], sun: ['#ffb838', 1.05, .7], bluewhite: ['#9cc4ff', 1.15, .3], bluegiant: ['#6fa0ff', 1.3, .35], whitedwarf: ['#b8d8ff', 1.2, 1], neutron: ['#6fe8ff', 1.3, 1], quasar: ['#ff9a48', 1.25, .5] };
   function glowPass(g, id, x, y, r, t) {
     const [c, k, core] = GLOW[id] || GLOW.sun, seed = id.length * 1.7, pu = 1 + .07 * Math.sin(t * 1.6 + seed) + .03 * Math.sin(t * 4.1 + seed * 2);
     g.save(); g.globalCompositeOperation = 'lighter';
     const rr = id === 'whitedwarf' ? r * .6 : id === 'neutron' ? r * .5 : r;   // those two draw a small body inside a large radius
-    halo(g, x, y, rr * 1.3 * pu, c, .34 * k); halo(g, x, y, rr * 2.3 * pu, c, .24 * k); halo(g, x, y, rr * 4.2 * pu, c, .13 * k);
+    if (id !== 'bluewhite' && id !== 'bluegiant') halo(g, x, y, rr * 1.3 * pu, c, .34 * k); halo(g, x, y, rr * 2.3 * pu, c, .24 * k); halo(g, x, y, rr * 4.2 * pu, c, .13 * k);
     if (core > 0 && id !== 'quasar') { const gr = g.createRadialGradient(x, y, 0, x, y, rr * 1.05); gr.addColorStop(0, `rgba(255,255,255,${.5 * core * pu})`); gr.addColorStop(.55, rgba(c, .22 * core)); gr.addColorStop(1, rgba(c, 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr * 1.05, 0, TAU); g.fill(); }
     if (['reddwarf', 'redgiant', 'sun', 'bluegiant', 'bluewhite'].includes(id)) { ring(g, x, y, r * 1.0, c, .38 * pu, r * .05); ring(g, x, y, r * 1.06, '#ffffff', .12, r * .04); }
     g.restore();
   }
   // ---- hand-built surface textures: each star or brown dwarf gets a seamless 1024x512 map (bands, granulation, convection cells, spots) drawn once, then scrolled across the disc with limb darkening
   const SURF = new Map(), SURFSPEC = {
-    brown: { base: '#9a4a86', speed: .012 }, reddwarf: { base: '#d8452c', speed: .006 }, redgiant: { base: '#e2602c', speed: .003 }, sun: { base: '#ffc02e', speed: .01 }
+    bluewhite: { base: '#9cbcf6', speed: .03, limb: .3 }, bluegiant: { base: '#5a8cf0', speed: .018, limb: .4 }, brown: { base: '#9a4a86', speed: .012 }, reddwarf: { base: '#d8452c', speed: .006 }, redgiant: { base: '#e2602c', speed: .003 }, sun: { base: '#ffc02e', speed: .01 }
   };
   function surfaceTex(id) {
     let c = SURF.get(id); if (c) return c; const W = 1024, H = 512; c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), sd = id.length * 7.3, R = k => hash(sd + k);
@@ -145,6 +155,14 @@
         wrap(() => { g.beginPath(); g.moveTo(0, y0); for (let x = 0; x <= W; x += 16) g.lineTo(x, y0 + Math.sin(x / W * TAU * fr + ph) * amp); for (let x = W; x >= 0; x -= 16) g.lineTo(x, y0 + h * 1.15 + Math.sin(x / W * TAU * fr + ph + .6) * amp); g.closePath(); g.fillStyle = rgba(col, .34 + .3 * R(row + 5)); g.fill(); }); }
       for (let i = 0; i < 70; i++) blob(R(i + 200) * W, R(i + 300) * H, 30 + 70 * R(i + 400), 4 + 8 * R(i + 500), R(i + 600) > .5 ? '#ffe3ee' : '#4a1744', .16 + .2 * R(i + 700));
       for (let k = 0; k < 3; k++) { const x = R(k + 800) * W, y = H * (.3 + .4 * R(k + 810)); blob(x, y, 52, 30, '#fff1f6', .9); blob(x, y, 34, 19, '#f4a9c8', .7); wrap(() => { g.strokeStyle = 'rgba(255,240,246,.55)'; g.lineWidth = 2.2; g.beginPath(); for (let a = 0; a < 9; a += .15) { const rr = 3 + a * 3.1; g.lineTo(x + Math.cos(a) * rr * 1.7, y + Math.sin(a) * rr); } g.stroke(); }); }
+    } else if (id === 'bluewhite') {   // a fast rotator: hot, almost limb-free plasma with a bright equatorial belt and darker, gravity-dimmed poles
+      for (let i = 0; i < 500; i++) { const rr = 10 + 26 * R(i + 1); blob(R(i) * W, R(i + 3000) * H, rr, rr * .7, R(i + 2000) > .5 ? '#f2f7ff' : '#5f8ae0', .3); }
+      for (let i = 0; i < 40; i++) blob(R(i + 400) * W, H * (.35 + .3 * R(i + 420)), 120 + 120 * R(i + 440), 18 + 22 * R(i + 460), '#eaf2ff', .3);
+      const pg = g.createLinearGradient(0, 0, 0, H); pg.addColorStop(0, 'rgba(70,100,190,.55)'); pg.addColorStop(.28, 'rgba(70,100,190,0)'); pg.addColorStop(.72, 'rgba(70,100,190,0)'); pg.addColorStop(1, 'rgba(70,100,190,.55)'); g.fillStyle = pg; g.fillRect(0, 0, W, H);
+    } else if (id === 'bluegiant') {   // turbulent plasma: long wavering streaks and hot bright knots in deep blue
+      for (let row = 0; row < 40; row++) { const y0 = row / 40 * H, col = R(row) > .5 ? '#a6c8ff' : '#2a4fc8', amp = 5 + 12 * R(row + 40), fr = 3 + Math.floor(R(row + 80) * 5), ph = R(row + 120) * TAU;
+        wrap(() => { g.beginPath(); g.moveTo(0, y0); for (let x = 0; x <= W; x += 12) g.lineTo(x, y0 + Math.sin(x / W * TAU * fr + ph) * amp); for (let x = W; x >= 0; x -= 12) g.lineTo(x, y0 + 9 + Math.sin(x / W * TAU * fr + ph + .5) * amp); g.closePath(); g.fillStyle = rgba(col, .2 + .18 * R(row + 9)); g.fill(); }); }
+      for (let i = 0; i < 380; i++) { const rr = 7 + 18 * R(i + 1); blob(R(i) * W, R(i + 3000) * H, rr, rr * .8, R(i + 2000) > .55 ? '#e8f2ff' : '#173a9a', .3); }
     } else if (id === 'redgiant') {   // vast convection cells: bright upwellings in dark lanes
       g.fillStyle = '#9a3a16'; g.fillRect(0, 0, W, H);
       for (let i = 0; i < 220; i++) { const rr = 22 + 34 * R(i + 11); blob(R(i) * W, R(i + 50) * H, rr, rr * (.8 + .4 * R(i + 77)), '#ffb26a', .6); blob(R(i) * W, R(i + 50) * H, rr * .5, rr * .45, '#ffe4b0', .28); }
@@ -165,7 +183,7 @@
     g.save(); g.beginPath(); g.arc(x, y, rr, 0, TAU); g.clip();
     if (!N) { g.drawImage(tex, off, 0, H, H, x - rr, y - rr, d, d); }
     else for (let i = 0; i < N; i++) { const a0 = -1 + 2 * i / N, a1 = -1 + 2 * (i + 1) / N, l0 = Math.asin(a0), l1 = Math.asin(a1), u0 = off + (l0 / Math.PI + .5) * (W / 2) * 2 * .5 * 2, u1 = off + (l1 / Math.PI + .5) * (W / 2) * 2 * .5 * 2; g.drawImage(tex, u0, 0, Math.max(.5, u1 - u0), H, x + a0 * rr, y - rr, (a1 - a0) * rr + .6, d); }
-    const sh = g.createRadialGradient(x - rr * .3, y - rr * .32, rr * .2, x, y, rr * 1.02); sh.addColorStop(0, 'rgba(255,255,255,.12)'); sh.addColorStop(.5, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.68)'); g.fillStyle = sh; g.fillRect(x - rr, y - rr, d, d);
+    const sh = g.createRadialGradient(x - rr * .3, y - rr * .32, rr * .2, x, y, rr * 1.02); sh.addColorStop(0, 'rgba(255,255,255,.12)'); sh.addColorStop(.5, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,' + (sp.limb != null ? sp.limb : .68) + ')'); g.fillStyle = sh; g.fillRect(x - rr, y - rr, d, d);
     g.restore();
   }
 
