@@ -588,7 +588,7 @@ function openSky(opt = {}) {
         <div class="syslegend">${lay.bodies.map(b => { const o = SKY.OBJ[b.idx], sub = b.tier === 'nucleus' ? (b.id === 'quasar' ? (b.parent < 0 ? 'central galaxy' : 'galaxy') : 'centre') : b.tier === 'anchor' ? 'cluster anchor' : 'orbits ' + lay.bodies[b.parent].n; return `<button class="sysrow ${selN === b.n ? 'sel' : ''}" data-n="${esc(b.n)}"><i style="background:${o.c}"></i><b>${esc(b.n)}</b><span>${sub} · ${SKY.massText(b.m)}</span><em>×${b.count}</em></button>`; }).join('')}</div>
         <p class="small" style="margin:10px 2px 0;text-transform:none;letter-spacing:.02em">Illustrative scale. Each quasar is the nucleus of a galaxy; neutron stars and very heavy stars anchor clusters; everything else orbits one of them. Orbits are Keplerian (T² ∝ a³), so galaxies turn almost imperceptibly while inner stars whirl. Duplicates become moons.</p>`;
       $('.skysys').after($('#skyD'));
-      const cv = $('#sysCv'), map = sysMap(cv, L, { follow: opt.newId || (L[0] && L[0].n), focus: selN, newId: opt.newId, onPick: n => { selN = n; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); } });
+      const cv = $('#sysCv'), map = uniMap(cv, L, { follow: opt.newId || (L[0] && L[0].n), focus: selN, newId: opt.newId, onPick: n => { selN = n; document.querySelectorAll('.sysrow').forEach(b => b.classList.toggle('sel', b.dataset.n === n)); detail(); } });
       stop = () => map.stop();
       if ($('#zIn')) { $('#zIn').onclick = () => map.zoom(1.3); $('#zOut').onclick = () => map.zoom(1 / 1.3); $('#zHome').onclick = () => map.home(L[0].n); $('#zFull').onclick = () => { map.stop(); openSkyFull({ focus: selN, newId: null, back: () => openSky({ tab: 'sys', focus: selN, newId: null }) }); }; }
       document.querySelectorAll('.sysrow').forEach(b => b.onclick = () => { map.pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
@@ -816,8 +816,14 @@ async function cloudPush(force) {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudPush(); });
 setTimeout(() => cloudSoon(100), 4000);   // players who already have progress get their first save soon after opening
 const agoText = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
+const FOUNDER_HASH = '9ee1887e3d8cdf52a64464557fd43e1fa549aac6bee4eb712d33fc9c85aaa1fd';   // SHA-256('scorcher-founder:' + code): the code itself is not in the source
+async function founderGrant(code) {   // the founder's code adds every sky object on this device (it changes nothing on the server)
+  try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('scorcher-founder:' + code)); if ([...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('') !== FOUNDER_HASH) return false; } catch { return false; }
+  SKY.OBJ.forEach(o => { const L = SKY.POOL[o.id]; L.forEach(q => { P.sky.cat[q.n] = P.sky.cat[q.n] || 1; }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, L.length); });
+  P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.keys(P.sky.cat).length); P.founder = 1; saveP(); renderHeader(); closeModal(); toast('Founder sky unlocked: every object is yours'); setTimeout(() => openSky({ tab: 'sys' }), 400); return true;
+}
 async function cloudRestore(codeIn, silent) {
-  const code = cloudNorm(codeIn); if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) return toast('That code is not valid');
+  const code = cloudNorm(codeIn); if (await founderGrant(code)) return; if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) return toast('That code is not valid');
   let j; try { const r = await fetch(API_BASE + '/api/load', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) }); if (r.status === 404) return toast('No saved progress found for that code'); if (!r.ok) throw 0; j = await r.json(); } catch { return toast('Could not reach the server. Try again in a moment.'); }
   let o; try { o = JSON.parse(j.blob); if (!o || !o.pid) throw 0; } catch { return toast('That save could not be read'); }
   const go = () => { o.cloud = { code, on: true, at: j.at }; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch { return toast('Could not save on this device'); } history.replaceState(null, '', location.pathname + location.search); location.reload(); };
