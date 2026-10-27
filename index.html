@@ -592,7 +592,7 @@ function tiltCard(el) {   // a little foil-card parallax where there is a pointe
 }
 function mountDiscovery(root, k) {   // idle animation on the homepage card, only while it is on screen
   const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.POOL[k.id].find(p => p.n === k.name), t0 = performance.now();
-  (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent) { setTimeout(() => requestAnimationFrame(f), 500); return; } drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
+  (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent || document.hidden) { setTimeout(() => requestAnimationFrame(f), 500); return; } if (now - (f.l || 0) < 33) { requestAnimationFrame(f); return; } f.l = now; drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
   tiltCard(root.querySelector('.disc')); bindDiscShare(root.querySelector('.disc'), k);
 }
 function drawSkyCell(cv, id, t, k = 1, q) {
@@ -617,9 +617,14 @@ function uniMap(cv, L, o) {
   const g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now(), t0 = born, lay = SKY.layout(L);
   const fit = R => clamp2(Math.min(cv.width * .4 / R, cv.height * .4 / (R * .56)), .0006, 1.6), Zd = o.z || .7, Z0 = L.length > 1 ? Math.min(fit(lay.R), Zd) : Zd, Zmin = Z0 * .45;   // open with the whole universe in view
   const cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false, last = 0, ema = 16, q = 1, cnt = 0, filter = null;
+  const sd = document.createElement('div'); sd.className = 'unistars'; sd.style.backgroundImage = `url(${SKY.starTileURL()})`; cv.before(sd);   // the star field is a CSS background moved with the camera: free for the compositor, nothing to repaint
+  const ov = document.createElement('canvas'); ov.className = 'uniov'; cv.after(ov); const og = ov.getContext('2d'), ovDpr = Math.min(3, window.devicePixelRatio || 1);   // names and the minimap are drawn on their own full-resolution layer, so they stay sharp even when the map itself renders at reduced resolution
   const frame = now => { if (dead || !cv.isConnected) return;
-    if (last && o.onQuality) { ema += (Math.min(now - last, 100) - ema) * .08; if (++cnt > 45 && ema > 27 && q > .55) { q = Math.max(.55, q * .8); cnt = 0; ema = 16; o.onQuality(q); } }   // slow device: render fewer pixels rather than drop frames
-    last = now; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.universe(g, cv.width, cv.height, t, lay, { cam, focus: sel, filter, newId: o.newId, tNew: (now - born) / 1000, mini: o.mini, miniTop: o.miniTop });
+    if (last && o.onQuality) { ema += (Math.min(now - last, 100) - ema) * .08; if (++cnt > 20 && ema > 24 && q > .5) { q = Math.max(.5, q * .78); cnt = 0; ema = 16; o.onQuality(q); } }   // slow device: render fewer pixels rather than drop frames
+    last = now; const t = calm ? 40 : 40 + (now - t0) / 1000; const needOv = cv.clientWidth && cv.width < cv.clientWidth * ovDpr * .92;   // only when the map renders below the screen's resolution does the sharp layer earn its cost
+    if (needOv) { const tw = Math.round(cv.clientWidth * ovDpr), th = Math.round(cv.clientHeight * ovDpr); if (ov.width !== tw || ov.height !== th) { ov.width = tw; ov.height = th; } if (ov.style.display) ov.style.display = ''; } else if (ov.style.display !== 'none') { ov.style.display = 'none'; og.clearRect(0, 0, ov.width, ov.height); }
+    if (cv.clientWidth) { const T = 640 * cv.clientWidth / cv.width, ox = (((cam.x * SKY.STAR_PAR * cv.clientWidth / cv.width) % T) + T) % T, oy = (((cam.y * SKY.STAR_PAR * cv.clientWidth / cv.width) % T) + T) % T; sd.style.backgroundSize = T + 'px ' + T + 'px'; sd.style.backgroundPosition = `${-ox}px ${-oy}px`; }
+    pos = SKY.universe(g, cv.width, cv.height, t, lay, { noStars: true, ov: needOv ? { g: og, f: ov.width / cv.width } : null, cam, focus: sel, filter, newId: o.newId, tNew: (now - born) / 1000, mini: o.mini, miniTop: o.miniTop });
     cam.z = calm ? cam.tz : cam.z * Math.pow(cam.tz / cam.z, .08); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .09); cam.y += (p.wy - cam.y) * (calm ? 1 : .09); } } raf = requestAnimationFrame(frame); };
   if (L.length) frame(t0);
   const zoomFor = n => { const b = lay.bodies[lay.idxOf[n]]; if (!b) return Z0; return b.tier === 'nucleus' ? clamp2(fit(Math.max(900, b.reach * 1.25)), Z0, 1.25) : b.tier === 'anchor' ? clamp2(fit(Math.max(700, b.reach * 1.6 + 300)), Z0, 1.25) : Math.max(1.25, cam.tz > Z0 * 40 ? cam.tz : 1.25); };
@@ -629,7 +634,7 @@ function uniMap(cv, L, o) {
   cv.onpointermove = e => { if (!drag) return; const r = cv.getBoundingClientRect(), dx = (e.clientX - drag.x) / r.width * cv.width, dy = (e.clientY - drag.y) / r.height * cv.height; if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; cam.follow = null; } if (drag.moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; } };
   cv.onpointerup = e => { const d = drag; drag = null; if (!d || d.moved) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * cv.width, y = (e.clientY - r.top) / r.height * cv.height, k = cv.width / 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < Math.max(p.r, 34 * k)); if (hit) pick(hit.n); };
   cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(-e.deltaY * .002)); }, { passive: false });
-  return { lay, pick, stop: () => { dead = true; cancelAnimationFrame(raf); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
+  return { lay, pick, stop: () => { dead = true; cancelAnimationFrame(raf); ov.remove(); sd.remove(); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
 }
 const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n, n: b.n })));
 const crumb = (lay, n) => ['Universe'].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n)).join(' › ');
@@ -657,7 +662,7 @@ function openSkyFull(opt = {}) {   // the universe on the whole screen: filter b
     <div class="sfdock"><button id="sfBrowse">${ic.list}Browse objects<em>${L.length}</em></button></div>
     <div class="sfsheet" id="sfSheet"><div class="sfgrab" id="sfGrab"><i></i></div><div class="sfhead"><label class="sfsearch">${ic.search}<input id="sfQ" placeholder="Search ${L.length} objects" autocomplete="off" spellcheck="false"></label><div class="sfsort"><small>Sort</small><button data-s="mass" class="on">Mass</button><button data-s="heat">Heat</button><button data-s="az">A–Z</button><span id="sfN"></span></div></div><div class="sflist" id="sfListBody"></div></div>`;
   document.body.appendChild(host); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
-  let qual = 1; const cv = $('#sfCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
+  let qual = 1; const cv = $('#sfCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
   let selN = opt.focus || (L[0] && L[0].n), filter = new Set(), sortBy = 'mass', query = '';
   const card = n => { selN = n; sfCardMount($('#sfCard'), n, map, L); document.querySelectorAll('#sfListBody .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
   const map = uniMap(cv, L, { z: .4, mini: 'tl', miniTop: () => 130 * cv.width / host.clientWidth, onQuality: v => { qual = v; size(); }, follow: selN, focus: selN, newId: opt.newId, onPick: n => card(n) });
@@ -697,7 +702,7 @@ function openSky(opt = {}) {
         <div class="skypanel" id="skyD"></div>
         <div class="skymini-h">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
       const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); typePanel(); $('#skyD').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
-      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1, rep[id]); }); raf = requestAnimationFrame(loop); })(t0);
+      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; if (now - (loop.l || 0) < 33) { raf = requestAnimationFrame(loop); return; } loop.l = now; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1, rep[id]); }); raf = requestAnimationFrame(loop); })(t0);
       typePanel();
     } else universeTab();
   };

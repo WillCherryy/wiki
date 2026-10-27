@@ -907,3 +907,9 @@ html[data-calm="1"] #buddy { display: none !important; }
 .finv-eye { margin: 6px 0 10px; text-align: center; font: 700 11.5px var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--mute); }
 .finv .disc { margin-top: 0; } .finv-cta { text-align: center; margin: 6px 0 0; } .finv-cta h3 { margin: 6px 0 4px; font: 400 28px/1.1 var(--display); } .finv-cta p { margin: 0 auto 14px; max-width: 420px; font: 400 16px/1.45 var(--serif); }
 .finv-cta .btn.big { width: 100%; justify-content: center; }
+
+.uniov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.modal.sky .skysys canvas.uniov, #skyfull canvas.uniov { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; cursor: default; touch-action: none; pointer-events: none; }
+
+.unistars { position: absolute; inset: 0; pointer-events: none; background-color: #07060f; }
+#skyfull canvas:not(.uniov) { background: transparent; }
