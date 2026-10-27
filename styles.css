@@ -1007,3 +1007,44 @@ html[data-calm="1"] #buddy { display: none !important; }
 @media (min-width: 900px) { #home .plate-check { justify-content: flex-start !important; text-align: left; margin-left: 0 !important; width: 100%; } #home .plate-check > * { margin-left: 0 !important; } #home .done { margin: 8px 0 0; max-width: none; justify-items: stretch; } }
 @media (max-width: 759px) { body:not(.ingame) .tabbar { grid-template-columns: repeat(5, 1fr) !important; border-radius: 12px !important; } .tabbar button span { font-size: 10px; letter-spacing: .04em; } }
 @media (min-width: 900px) { #game.on { grid-template-columns: 290px minmax(0, 1fr) 290px; } .rail.l .tools .chip, .rail.l .tools .finder { height: 42px; background: var(--paper); border: 0; border-radius: 8px; padding: 0 12px; } .rail.l .tools { display: grid; gap: 8px; } }
+
+/* ====================== v5: full pages ====================== */
+#page { max-width: 1400px; margin: 0 auto; padding: 26px 0 80px; }
+.pagehead { margin-bottom: 18px; } .pagehead h1 { margin: 0; font: 400 clamp(36px, 4vw, 52px)/1.02 var(--display); letter-spacing: -.01em; } .pagehead p { margin: 8px 0 0; max-width: 70ch; font: 500 15px/1.5 var(--sans); color: var(--mute); } .pagehead p b { color: var(--ink); }
+.pagebody { display: block; font-size: 16px; } .pagebody > p { color: var(--ink-2); max-width: 70ch; }
+.pagebody .pkcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; } .pagebody .pkcard { min-height: 230px; border-radius: 10px; }
+.pagebody .pkgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.pagebody .tabs { max-width: 520px; }
+.pagebody .statsgrid, .pagebody .grid3 { max-width: none; }
+.pagebody .actions { max-width: 520px; } .pagebody .field { max-width: 560px; }
+.pagebody #lbBody, .pagebody #lbTabs, .pagebody #scopes { max-width: 900px; }
+@media (min-width: 900px) {
+  .pagebody.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .pagebody .sgroup { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; margin: 0 0 16px; } .pagebody:has(.sgroup) { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; align-items: start; }
+}
+@media (max-width: 899px) { #page { padding-top: 14px; } .pagebody .pkcards { grid-template-columns: 1fr 1fr; gap: 10px; } .pagehead h1 { font-size: 36px; } body.inpage { padding-bottom: 90px; } }
+@media (max-width: 560px) { .pagebody .pkcards { grid-template-columns: 1fr; } }
+.pagebody .rcard, .pagebody .card { border-radius: 10px; }
+.twocards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; max-width: 980px; } .pcard { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-c); } .pcard h5 { margin: 0; font: 400 28px/1.1 var(--display); } .pcard p { margin: 0 0 6px; font: 500 14px/1.45 var(--sans); color: var(--mute); }
+@media (max-width: 760px) { .twocards { grid-template-columns: 1fr; } }
+.pagebody.k-leagues, .pagebody.k-join- { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; max-width: 980px; } .pagebody.k-leagues > .field, .pagebody.k-leagues > .btn { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; margin: 0; max-width: none; } .pagebody.k-leagues > .field:first-child { grid-column: 1 / -1; }
+@media (max-width: 760px) { .pagebody.k-leagues { grid-template-columns: 1fr; } }
+.pagebody .lkgrid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; } .pagebody .lkgrid .item { aspect-ratio: 1.45; border-radius: 10px; }
+.pagebody.k-locker { display: block; } .pagebody.k-locker #lkCv { max-height: 230px; }
+.pagebody.k-you { display: block; columns: 2 420px; column-gap: 22px; } .pagebody.k-you > * { break-inside: avoid; margin-bottom: 16px; } .pagebody.k-you > :first-child { column-span: all; } .pagebody.k-you .grid3 { margin-bottom: 16px; }
+.pagebody.k-leaderboards, .pagebody.k-path-map { max-width: 1100px; }
+.pagebody .pkhead { margin: 10px 0; } .pagebody #pkPlay { max-width: 460px; }
+@media (min-width: 980px) {
+  .pagebody.k-x { display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 0 32px; align-items: start; max-width: 1240px; margin: 0 auto; } .pagebody.k-x > * { grid-column: 2; min-width: 0; } .pagebody.k-x > .disc { grid-column: 1; grid-row: 1 / span 30; position: sticky; top: 84px; margin: 0; max-width: none; }
+  .pagebody.k-x .actions { max-width: none; } .pagebody.k-x .resulthead { text-align: left; }
+}
+.pagebody.k-x .actions { display: flex; flex-wrap: wrap; gap: 10px; } .pagebody.k-x .actions .btn { flex: 1 1 140px; }
+/* phone, in a puzzle: Contents, More and the other tools rise as a bottom sheet */
+@media (max-width: 899px) {
+  .scrim:has(.modal.sheetm) { align-items: flex-end; padding: 0; background: rgba(10, 8, 20, .45); }
+  .modal.sheetm { width: 100%; max-width: none; max-height: 66vh; border-radius: 18px 18px 0 0; padding: 22px 20px calc(24px + env(safe-area-inset-bottom, 0px)); animation: sheetUp .28s cubic-bezier(.2, .9, .3, 1); overflow: auto; }
+  .modal.sheetm::before { content: ''; display: block; width: 42px; height: 4px; border-radius: 3px; background: var(--rule); margin: -8px auto 12px; }
+  .modal.sheetm h2 { font-size: 30px; margin-bottom: 8px; } .modal.sheetm .toc.big .toc-i { padding: 13px 10px; font-size: 16px; border-radius: 8px; }
+  @keyframes sheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+}
+@media (max-width: 899px) { .scrim:has(.modal.sheetm) { z-index: 90; } }

@@ -66,6 +66,8 @@
     <footer class="foot"><span class="dots5 sm" aria-hidden="true"><i style="background:#2a4f8a"></i><i style="background:#5c8cbe"></i><i style="background:#d6be8c"></i><i style="background:#f08c50"></i><i style="background:#d63a1f"></i></span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · Article text from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). Not affiliated with Wikipedia or the Wikimedia Foundation.</footer>
   </section>
 
+  <section id="page" style="display:none"><div class="pagehead" id="pageHead"></div><div class="pagebody" id="pageBody"></div></section>
+
   <section id="game">
     <aside class="rail l">
       <div class="hud">
@@ -286,7 +288,7 @@ let tick = null;
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
-function show(view) { document.body.classList.toggle('ingame', view === 'game'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
+function show(view) { document.body.classList.toggle('ingame', view === 'game'); document.body.classList.toggle('inpage', view === 'page'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#page').style.display = view === 'page' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) {
   const r = document.documentElement; r.style.setProperty('--temp', tempCss(sg)); r.style.setProperty('--heat', String(Math.max(0, Math.min(1, sg))));
   r.dataset.heat = sg >= .97 ? 'sight' : sg > .72 ? 'scorching' : sg > .5 ? 'hot' : sg > .32 ? 'warm' : sg > .15 ? 'cool' : 'cold';
@@ -890,9 +892,24 @@ async function submitScore() {
 }
 
 /* ------------------------------------------------------------------- modals */
-function openModal(html, onclose) { $('#modal').classList.remove('sky'); $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; }
-function closeModal() { $('#scrim').classList.remove('on'); const f = $('#scrim').onclose; $('#scrim').onclose = null; if (f) f(); }
+let pageUntil = 0, pageNav = '', prevView = 'home';
+const curView = () => $('#page').style.display !== 'none' ? 'page' : $('#game').classList.contains('on') ? 'game' : 'home';
+function setNav(n) { document.querySelectorAll('#topnav [data-go], #tabbar [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === n)); }
+function openPage(html, onclose) {   // the same content as a modal, laid out as a full page in the site chrome
+  const m = /^\s*<h2[^>]*>([\s\S]*?)<\/h2>\s*(<p[^>]*>[\s\S]*?<\/p>)?/.exec(html), title = m ? m[1] : '', sub = m && m[2] ? m[2].replace(/^<p[^>]*>|<\/p>$/g, '') : '', rest = m ? html.slice(m[0].length) : html;
+  if (curView() !== 'page') prevView = curView();
+  $('#pageBody').className = 'pagebody k-' + (title.replace(/<[^>]+>/g, '').toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '') || 'x'); $('#pageHead').innerHTML = title ? `<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}` : ''; $('#pageHead').style.display = title ? '' : 'none'; $('#pageBody').innerHTML = rest;
+  $('#page').onclose = onclose; $('#page').dataset.k = pageNav; show('page'); window.scrollTo({ top: 0 }); setNav(pageNav);
+}
+function openModal(html, onclose) { if (Date.now() < pageUntil) { pageUntil = 0; return openPage(html, onclose); } $('#modal').classList.remove('sky'); $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; $('#modal').classList.toggle('sheetm', document.body.classList.contains('ingame') && matchMedia('(max-width: 899px)').matches); }
+function closeModal() {
+  pageUntil = 0;
+  if ($('#scrim').classList.contains('on')) { $('#scrim').classList.remove('on'); const f = $('#scrim').onclose; $('#scrim').onclose = null; if (f) f(); return; }
+  if (curView() === 'page') { const f = $('#page').onclose; $('#page').onclose = null; show(prevView === 'page' ? 'home' : prevView); setNav(prevView === 'home' ? 'play' : ''); if (prevView === 'home') renderHome(); if (f) f(); }
+}
+const asPage = (fn, nav) => function (...a) { pageUntil = Date.now() + 4000; pageNav = nav || ''; try { return fn.apply(this, a); } finally { if (!(fn.constructor.name === 'AsyncFunction')) pageUntil = 0; } };
 $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim' || e.target.closest('[data-close]')) closeModal(); });
+$('#page').addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 function resultHead(r) {
@@ -1981,9 +1998,9 @@ function renderHost() {
   if (focus && $('#' + focus) && $('#' + focus).tagName === 'INPUT') $('#' + focus).focus();
 }
 function liveMenu() {
-  openModal(`<span class="eyebrow">Live races</span><h2 style="margin-top:10px">Race together</h2>
-    <div class="field">Join a lobby<div class="namebox" style="margin:0"><input id="liveCode" maxlength="8" placeholder="Code, e.g. K7QMA" style="text-transform:uppercase"><button class="btn" id="liveGo">Join</button></div></div>
-    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="liveHost">Host a lobby for my stream</button></div>`);
+  openModal(`<h2>Play with friends</h2><p>Race the same puzzle at the same time. Join a friend’s lobby with a code, or host your own for friends or a stream.</p>
+    <div class="twocards"><div class="pcard"><h5>Join a lobby</h5><p>Enter the code your host shared.</p><div class="namebox" style="margin:0"><input id="liveCode" maxlength="8" placeholder="Code, e.g. K7QMA" style="text-transform:uppercase"><button class="btn" id="liveGo">Join</button></div></div>
+    <div class="pcard"><h5>Host a lobby</h5><p>Run a race for friends or your stream audience, with an OBS overlay.</p><button class="btn ghost" id="liveHost" style="width:100%">Host a lobby</button></div></div>`);
   $('#liveGo').onclick = () => { const c = $('#liveCode').value; closeModal(); openLiveJoin(c); };
   $('#liveCode').onkeydown = e => { if (e.key === 'Enter') $('#liveGo').click(); };
   $('#liveHost').onclick = openHost;
@@ -2309,6 +2326,7 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
+openPacks = asPage(openPacks, 'modes'); openPack = asPage(openPack, 'modes'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
 handleInvite();
 
 applyTheme();
