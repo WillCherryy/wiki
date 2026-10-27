@@ -329,6 +329,8 @@ function renderHeroAct() {
     box.innerHTML = `<div class="done ${dk ? 'has-disc' : ''}">
       ${dk ? `<div class="stage" style="--c:${o.c}"><div class="stage-art"><canvas class="discCv" width="760" height="560"></canvas><span class="stage-eye">${dk.first ? 'New discovery' : dk.count > 1 ? 'A moon for ' + esc(dk.name) + ' · ×' + dk.count : 'You found'}</span></div>
         <div class="stage-info"><span class="stage-chip">${o.name} · ${RARITY[dk.idx]}</span><h3 class="stage-name">${esc(dk.name)}</h3><div class="stage-sub">${esc(dk.kind)} · ${SKY.massText(dk.m)}</div>
+          <div class="stage-stats"><div><b>${SKY.massText(dk.m)}</b><span>Mass</span></div><div><b>${esc(dk.temp)}</b><span>Temperature</span></div><div><b>${Object.keys(P.sky.cat).length}<small> / ${SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0)}</small></b><span>Collected</span></div></div>
+          ${skyLadder(dk.idx)}<p class="stage-fact">${esc(dk.fact)}</p>
           ${dk.boost ? `<div class="stage-boost"><b>Streak boost</b> ${dk.boost.days}-day streak lifted this find</div>` : ''}${dk.near ? `<div class="stage-near"><span>So close</span>${esc(dk.near.how)} would have found a <b>${esc(SKY.OBJ[dk.near.to].name.toLowerCase())}</b>.</div>` : ''}
           ${dk.why ? `<div class="stage-why">${esc(dk.why)}</div>` : ''}
           <div class="stage-btns"><button class="disc-btn share" data-discshare>Share this find</button><button class="disc-btn alt" id="discSky">Your sky</button></div>${dk.next ? `<div class="stage-next">${esc(dk.next)}</div>` : ''}</div></div>` : `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b>${e.won ? '' : '<span>Back tomorrow</span>'}</div>`}
