@@ -500,7 +500,7 @@ async function doRewind() {
 function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" style="--c:${o.c}">${SKY.OBJ.map((_, i) => `<i class="${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}"></i>`).join('')}</div>`; }
 function skyReveal(k) {
   const o = SKY.OBJ[k.idx];
-  return `<div class="skyr"><div class="skyc"><canvas id="skyCv" width="760" height="520"></canvas><span class="small">${k.first ? 'New in your sky' : 'You earned'}</span></div>
+  return `<div class="skyr"><div class="skyc"><canvas id="skyCv" width="760" height="520"></canvas><span class="small">${k.first ? 'New in your sky' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You earned'}</span></div>
     <h3 class="skyn" style="color:${o.c}">${esc(k.name)}</h3><div class="small">${esc(k.kind)} · ${esc(k.temp)}</div>${skyLadder(k.idx)}
     <div class="small skyw">${o.name} · tier ${k.idx + 1} of 9${k.why ? ' · ' + esc(k.why) : ''}</div><p class="skyf">${esc(k.fact)}</p><a class="skyl" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Read about ${esc(k.name)} on Wikipedia ↗</a><div class="skytag sm">Space is cold. Warm it up.</div></div>`;
 }
@@ -524,8 +524,10 @@ const clamp2 = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 function uniMap(cv, L, o) {
   const g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now(), t0 = born, lay = SKY.layout(L);
   const fit = R => clamp2(Math.min(cv.width * .4 / R, cv.height * .4 / (R * .56)), .0006, 1.6), Zd = o.z || .7, Z0 = L.length > 1 ? Math.min(fit(lay.R), Zd) : Zd, Zmin = Z0 * .45;   // open with the whole universe in view
-  const cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false;
-  const frame = now => { if (dead || !cv.isConnected) return; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.universe(g, cv.width, cv.height, t, lay, { cam, focus: sel, newId: o.newId, tNew: (now - born) / 1000, mini: o.mini });
+  const cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false, last = 0, ema = 16, q = 1, cnt = 0;
+  const frame = now => { if (dead || !cv.isConnected) return;
+    if (last && o.onQuality) { ema += (Math.min(now - last, 100) - ema) * .08; if (++cnt > 45 && ema > 27 && q > .55) { q = Math.max(.55, q * .8); cnt = 0; ema = 16; o.onQuality(q); } }   // slow device: render fewer pixels rather than drop frames
+    last = now; const t = calm ? 40 : 40 + (now - t0) / 1000; pos = SKY.universe(g, cv.width, cv.height, t, lay, { cam, focus: sel, newId: o.newId, tNew: (now - born) / 1000, mini: o.mini });
     cam.z = calm ? cam.tz : cam.z * Math.pow(cam.tz / cam.z, .08); if (cam.follow) { const p = pos.find(q => q.n === cam.follow); if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .09); cam.y += (p.wy - cam.y) * (calm ? 1 : .09); } } raf = requestAnimationFrame(frame); };
   if (L.length) frame(t0);
   const zoomFor = n => { const b = lay.bodies[lay.idxOf[n]]; if (!b) return Z0; return b.tier === 'nucleus' ? clamp2(fit(Math.max(900, b.reach * 1.25)), Z0, 1.25) : b.tier === 'anchor' ? clamp2(fit(Math.max(700, b.reach * 1.6 + 300)), Z0, 1.25) : Math.max(1.25, cam.tz > Z0 * 40 ? cam.tz : 1.25); };
@@ -542,10 +544,10 @@ function openSkyFull(opt = {}) {   // the system on the whole screen, with a flo
   closeModal(); const L = skySys(), cat = P.sky.cat; let host = document.createElement('div'); host.id = 'skyfull';
   host.innerHTML = `<canvas id="sfCv"></canvas><button class="sfx" id="sfClose" aria-label="Exit full screen">✕</button><div class="sfz"><button id="sfIn" aria-label="Zoom in">+</button><button id="sfOut" aria-label="Zoom out">−</button><button id="sfHome" aria-label="Back to the primary">⌖</button></div><div class="sfhint">Drag to explore · tap an object</div><div class="sfcard" id="sfCard"></div><div class="sfchips" id="sfChips">${L.map(b => `<button data-n="${esc(b.n)}" style="--c:${SKY.OBJ[b.idx].c}"><i></i>${esc(b.n)}</button>`).join('')}</div>`;
   document.body.appendChild(host); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
-  const cv = $('#sfCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
+  let qual = 1; const cv = $('#sfCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
   const named = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o }; } return null; };
   const card = n => { const q = named(n), rn = (P.sky.runs || {})[n], r = rn && rn.first; $('#sfCard').innerHTML = !q ? '' : `<div class="crumb">${esc(crumb(map.lay, n))}</div><div class="small">${esc(q.kind)} · ${esc(q.t)} · ${q.o.name} · ${SKY.massText(q.m)}</div><h3 class="skyn" style="color:${q.o.c}">${esc(q.n)}</h3><p>${esc(q.f)}</p><a class="skyl" href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Read on Wikipedia ↗</a>${r ? `<div class="sfrun"><b>${esc(r.from || '?')} → ${esc(r.to || '?')}</b> ${r.mode === 'daily' ? 'Daily #' + r.num : r.mode === 'pack' ? 'Pack puzzle' : 'Puzzle'} · ${r.clicks} clicks${r.par ? ' (par ' + r.par + ')' : ''} · ${fmt(r.secs)} · ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>` : ''}`; document.querySelectorAll('#sfChips button').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
-  const map = uniMap(cv, L, { z: .4, mini: 'tl', follow: opt.focus || (L[0] && L[0].n), focus: opt.focus || (L[0] && L[0].n), newId: opt.newId, onPick: n => card(n) }); card(opt.focus || (L[0] && L[0].n));
+  const map = uniMap(cv, L, { z: .4, mini: 'tl', onQuality: v => { qual = v; size(); }, follow: opt.focus || (L[0] && L[0].n), focus: opt.focus || (L[0] && L[0].n), newId: opt.newId, onPick: n => card(n) }); card(opt.focus || (L[0] && L[0].n));
   const done = () => { map.stop(); window.removeEventListener('resize', rs); document.removeEventListener('fullscreenchange', fc); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} } host.remove(); if (opt.back) opt.back(); };
   const rs = () => size(), fc = () => { if (!document.fullscreenElement && host.isConnected && !opt.keep) { /* left native full screen: keep the overlay open */ } };
   window.addEventListener('resize', rs); document.addEventListener('fullscreenchange', fc);
@@ -605,7 +607,8 @@ function burnOf(steps) {   // a click "burns" when it lands warmer than the page
 }
 function pickNamed(typeId) {   // a real, famous object of that type: the first ever is the most famous, then ones you do not have yet
   const pool = SKY.POOL[typeId], cat = P.sky.cat, fresh = pool.filter(p => !cat[p.n]); if (!pool.some(p => cat[p.n])) return pool[0];
-  const list = fresh.length ? fresh : pool; return list[Math.floor(Math.random() * list.length)];
+  const mn = Math.min(...pool.map(p => cat[p.n] || 0)), list = fresh.length ? fresh : pool.filter(p => (cat[p.n] || 0) === mn);   // once everything is found, repeats go to the one you have the fewest of
+  return list[Math.floor(Math.random() * list.length)];
 }
 const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
@@ -643,7 +646,7 @@ function finish(won) {
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
   if (skyOK) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
+  G.result.sky = { count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }

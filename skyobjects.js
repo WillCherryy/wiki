@@ -109,7 +109,20 @@
     g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; halo(g, 0, 0, r * 2.4, b.tint, b.ta * .35); g.restore();
   }
   // paint with an individual's look: q = { s: size multiplier, tint, ta } (a POOL entry)
-  function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); r *= q.s || 1; paint(g, id, x, y, r, t); if (q.tint) { g.save(); g.translate(x, y); tintBody(g, { id, tint: q.tint, ta: q.ta }, r); g.restore(); } }
+  // one body with its individual look; real multiples are drawn as two bodies around a shared centre (a lensed quasar: two images and a faint arc)
+  function paintBody(g, id, x, y, r, t, q) {
+    const one = (px, py, pr) => { paint(g, id, px, py, pr, t); if (q && q.tint && pr > 12) { g.save(); g.translate(px, py); tintBody(g, { id, tint: q.tint, ta: q.ta }, pr); g.restore(); } };
+    if (!q || !q.twin) return one(x, y, r);
+    const c = OBJ.find(o => o.id === id).c, ph = hs2(q.n) * TAU;
+    if (q.twin === 'lens') {
+      const d = r * 1.3, a = -.5 + ph * .05; halo(g, x, y, r * 1.1, '#ffd9a0', .3); g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(c, .3); g.lineWidth = Math.max(1, r * .05); g.lineCap = 'round';
+      g.beginPath(); g.arc(x, y, d, a + .5, a + Math.PI - .5); g.stroke(); g.beginPath(); g.arc(x, y, d * .9, a + Math.PI + .5, a + TAU - .5); g.stroke(); g.restore();
+      one(x + Math.cos(a) * d, y + Math.sin(a) * d * .85, r * .62); one(x - Math.cos(a) * d * .9, y - Math.sin(a) * d * .8, r * .48); return;
+    }
+    const th = t * .8 + ph, d = r * 1.05, dx = Math.cos(th) * d, dy = Math.sin(th) * d * .5, front = Math.sin(th) > 0;   // the nearer one is drawn last
+    const A = [x + dx, y + dy, r * .62], B2 = [x - dx, y - dy, r * .5]; (front ? [B2, A] : [A, B2]).forEach(b => one(b[0], b[1], b[2]));
+  }
+  function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); paintBody(g, id, x, y, r * (q.s || 1), t, q); }
   function starfield(g, w, h, t, n = 90, seed = 0) { g.save(); for (let i = 0; i < n; i++) { const x = hash(seed + i) * w, y = hash(seed + i + 500) * h, r = .4 + hash(seed + i + 900) * 1.3, a = .25 + .6 * hash(seed + i + 1300) * (.7 + .3 * Math.sin(t * (1 + hash(i) * 2) + i)); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.restore(); }
   function fade(g, w, h, inner = .55) { g.save(); g.globalCompositeOperation = 'destination-in'; const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * inner * .5, w / 2, h / 2, Math.hypot(w, h) * .5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.7, 'rgba(0,0,0,.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore(); }
   // the landing: particles converge, a flash and shock rings (more for hotter objects), then the object grows in with a small overshoot
@@ -218,6 +231,88 @@
       { n: 'J0313−1806', a: 'J0313%E2%88%921806', kind: 'Distant quasar', t: 'millions of K', f: 'Seen as it was about 670 million years after the Big Bang, among the most distant quasars known.' }]
   };
   Object.keys(MORE).forEach(k => POOL[k].push(...MORE[k]));
+  // a third batch: every type now has well over a dozen real objects (m = solar masses; quasars: the central black hole)
+  const E = (n, a, kind, t, m, f) => ({ n, a, kind, t, m, f });
+  const MORE2 = {
+    brown: [E('SCR 1845−6357 B', 'SCR_1845-6357', 'T-dwarf brown dwarf', '≈ 950 K', .04, 'A cool brown dwarf orbiting a red dwarf about 13 light-years away, one of the nearest known.'),
+      E('Gliese 569 B', 'Gliese_569', 'Binary brown dwarf', '≈ 2,000 K', .12, 'Two brown dwarfs orbiting each other, themselves circling a flaring red dwarf about 32 light-years away.'),
+      E('LP 944-20', 'LP_944-20', 'M-dwarf brown dwarf', '≈ 2,300 K', .06, 'A brown dwarf about 21 light-years away, detected in X-rays in 2000: the first seen that way.'),
+      E('WISE 1828+2650', 'WISE_1828%2B2650', 'Y-dwarf brown dwarf', '≈ 300 K', .01, 'One of the coldest brown dwarfs known, at roughly room temperature.'),
+      E('PSO J318.5−22', 'PSO_J318.5-22', 'Rogue planetary-mass object', '≈ 1,100 K', .0076, 'A planet-mass object drifting alone about 80 light-years away, with no star to orbit.'),
+      E('2M1207', '2M1207', 'Young brown dwarf', '≈ 2,500 K', .025, 'A young brown dwarf with a planet-mass companion imaged in 2004, often called the first directly imaged exoplanet.'),
+      E('HD 130948 BC', 'HD_130948', 'Binary brown dwarf', '≈ 1,900 K', .115, 'Two brown dwarfs orbiting each other and a Sun-like star about 60 light-years away; their orbit gave direct masses.')],
+    reddwarf: [E('Gliese 229 A', 'Gliese_229', 'M-type red dwarf', '≈ 3,700 K', .58, 'A red dwarf 19 light-years away whose companion turned out, in 2024, to be two brown dwarfs.'),
+      E('Gliese 569 A', 'Gliese_569', 'M-type red dwarf', '≈ 3,500 K', .35, 'A magnetically active red dwarf about 32 light-years away that holds a pair of brown dwarfs in orbit.'),
+      E('SCR 1845−6357 A', 'SCR_1845-6357', 'M-type red dwarf', '≈ 2,700 K', .1, 'A very small red dwarf about 13 light-years away with a cool brown dwarf in orbit.'),
+      E('Stein 2051 A', 'Stein_2051', 'M-type red dwarf', '≈ 3,200 K', .5, 'A red dwarf 18 light-years away; its white dwarf partner let astronomers weigh a star by gravitational lensing.'),
+      E('Gliese 581', 'Gliese_581', 'M-type red dwarf', '≈ 3,500 K', .3, 'A red dwarf about 20 light-years away that hosted some of the first claimed habitable-zone planets.'),
+      E('Gliese 876', 'Gliese_876', 'M-type red dwarf', '≈ 3,200 K', .33, 'The first red dwarf found with planets: two giants locked in a 2:1 orbital resonance, 15 light-years away.'),
+      E('Luyten’s Star', 'Luyten%27s_Star', 'M-type red dwarf', '≈ 3,300 K', .29, 'A quiet red dwarf 12 light-years away with a super-Earth in its habitable zone.'),
+      E('Kapteyn’s Star', 'Kapteyn%27s_Star', 'M-type red subdwarf', '≈ 3,500 K', .28, 'A red subdwarf from the galaxy’s old halo, 13 light-years away and moving fast across the sky.'),
+      E('Lacaille 9352', 'Lacaille_9352', 'M-type red dwarf', '≈ 3,700 K', .49, 'One of the closest stars to the Sun, 10.7 light-years away, with two known super-Earths.'),
+      E('Wolf 1061', 'Wolf_1061', 'M-type red dwarf', '≈ 3,400 K', .29, 'A red dwarf 14 light-years away with three known planets, one in its habitable zone.'),
+      E('LHS 1140', 'LHS_1140', 'M-type red dwarf', '≈ 3,000 K', .18, 'A red dwarf 49 light-years away with a rocky super-Earth in the habitable zone, studied by JWST.'),
+      E('YZ Ceti', 'YZ_Ceti', 'M-type flare star', '≈ 3,000 K', .13, 'A flaring red dwarf 12 light-years away; radio bursts hint at interactions with its planets.')],
+    redgiant: [E('UY Scuti', 'UY_Scuti', 'Red supergiant', '≈ 3,300 K', 9, 'One of the largest stars known, roughly 900 to 1,700 times the Sun’s radius.'),
+      E('WOH G64', 'WOH_G64', 'Red supergiant', '≈ 3,400 K', 25, 'A giant in the Large Magellanic Cloud, the first star outside our galaxy imaged in detail (2024).'),
+      E('Mu Cephei', 'Mu_Cephei', 'Red supergiant', '≈ 3,750 K', 19, 'Herschel’s “Garnet Star”: among the most luminous red supergiants visible to the naked eye.'),
+      E('Rasalgethi', 'Alpha_Herculis', 'Red giant', '≈ 3,300 K', 2.5, 'The head of Hercules: a pulsating red giant in a multiple system, hundreds of times wider than the Sun.'),
+      E('R Doradus', 'R_Doradus', 'Red giant', '≈ 2,700 K', 1.2, 'A red giant with the largest apparent size of any star except the Sun; ALMA has mapped its surface.'),
+      E('L2 Puppis', 'L2_Puppis', 'Red giant', '≈ 3,500 K', .7, 'A dying Sun-like star 200 light-years away, a preview of the Sun’s future, with a disc seen by ALMA.'),
+      E('Hamal', 'Hamal', 'Orange giant', '≈ 4,500 K', 1.5, 'The brightest star in Aries, an orange giant 66 light-years away.'),
+      E('Alphard', 'Alpha_Hydrae', 'Orange giant', '≈ 4,100 K', 3, 'The solitary star of Hydra, an orange giant 177 light-years away.')],
+    sun: [E('Procyon A', 'Procyon', 'F-type main-sequence star', '≈ 6,500 K', 1.5, 'The eighth brightest star in the sky, 11.5 light-years away, with a white dwarf companion.'),
+      E('40 Eridani A', '40_Eridani', 'K-type main-sequence star', '≈ 5,200 K', .84, 'An orange dwarf 16 light-years away in a triple system with a white dwarf and a red dwarf.'),
+      E('Alpha Centauri B', 'Alpha_Centauri', 'K-type main-sequence star', '≈ 5,200 K', .9, 'The orange partner of Alpha Centauri A in the Sun’s nearest star system, 4.4 light-years away.'),
+      E('55 Cancri', '55_Cancri', 'G-type main-sequence star', '≈ 5,200 K', .9, 'A Sun-like star 41 light-years away with five known planets, including a lava-world super-Earth.'),
+      E('Epsilon Eridani', 'Epsilon_Eridani', 'K-type main-sequence star', '≈ 5,000 K', .82, 'A young orange dwarf 10.5 light-years away, ringed by dust and orbited by a giant planet.'),
+      E('Epsilon Indi A', 'Epsilon_Indi', 'K-type main-sequence star', '≈ 4,600 K', .76, 'An orange dwarf 12 light-years away; JWST imaged a cold giant planet around it in 2024.'),
+      E('61 Cygni', '61_Cygni', 'Binary K dwarfs', '≈ 4,500 K', .7, 'The first star whose distance was measured (Bessel, 1838): two orange dwarfs 11.4 light-years away.'),
+      E('HD 130948 A', 'HD_130948', 'G-type main-sequence star', '≈ 5,900 K', 1.1, 'A Sun-like star about 60 light-years away, circled by a pair of brown dwarfs.'),
+      E('Kepler-22', 'Kepler-22', 'G-type main-sequence star', '≈ 5,500 K', .97, 'Host of Kepler-22b, in 2011 the first planet Kepler confirmed in a habitable zone; about 620 light-years away.'),
+      E('HD 189733', 'HD_189733', 'K-type main-sequence star', '≈ 4,900 K', .8, 'Host of a hot Jupiter whose deep blue colour was measured in 2013, 64 light-years away.'),
+      E('Capella', 'Capella', 'Binary of yellow giants', '≈ 5,000 K', 2.6, 'The sixth brightest star, two yellow giants orbiting each other 43 light-years away.'),
+      E('Polaris', 'Polaris', 'Cepheid supergiant', '≈ 6,000 K', 5.4, 'The North Star, a pulsating supergiant roughly 430 light-years away.'),
+      E('Delta Cephei', 'Delta_Cephei', 'Cepheid supergiant', '≈ 5,900 K', 4.5, 'The star that names the Cepheids, whose rhythmic pulsing became a cosmic yardstick.')],
+    bluewhite: [E('Algol', 'Algol', 'Eclipsing binary', '≈ 12,500 K', 3.2, 'The “Demon Star”: a blue-white star eclipsed by a dimmer partner every 2.9 days, 90 light-years away.'),
+      E('Deneb', 'Deneb', 'White supergiant', '≈ 8,500 K', 19, 'A supergiant tens of thousands of times brighter than the Sun, in the Summer Triangle, about 2,600 light-years away.'),
+      E('Alderamin', 'Alderamin', 'A-type main-sequence star', '≈ 7,700 K', 1.7, 'A rapidly spinning star 49 light-years away that will be near the pole star in about 5,500 years.'),
+      E('Merak', 'Beta_Ursae_Majoris', 'A-type main-sequence star', '≈ 9,400 K', 2.7, 'One of the Big Dipper’s “pointer” stars, 79 light-years away.'),
+      E('Alioth', 'Alioth', 'A-type chemically peculiar star', '≈ 9,500 K', 3.2, 'The brightest star in the Big Dipper, with a strong and oddly oriented magnetic field, 83 light-years away.'),
+      E('Rasalhague', 'Alpha_Ophiuchi', 'A-type giant', '≈ 8,000 K', 2.4, 'The head of the Serpent Bearer, a fast-rotating star about 49 light-years away.'),
+      E('Beta Pictoris', 'Beta_Pictoris', 'A-type main-sequence star', '≈ 8,000 K', 1.75, 'A young star 63 light-years away wrapped in a dusty debris disc with at least two giant planets.'),
+      E('HR 8799', 'HR_8799', 'A/F-type main-sequence star', '≈ 7,400 K', 1.5, 'A young star 129 light-years away with four giant planets imaged directly.')],
+    bluegiant: [E('Acrux', 'Alpha_Crucis', 'Binary of blue giants', '≈ 28,000 K', 15, 'The brightest star of the Southern Cross: two hot, massive stars 320 light-years away.'),
+      E('Zeta Ophiuchi', 'Zeta_Ophiuchi', 'O-type blue star', '≈ 34,000 K', 20, 'A runaway star, probably flung out by a supernova companion, driving a bow shock through space.'),
+      E('Naos', 'Zeta_Puppis', 'O-type blue supergiant', '≈ 40,000 K', 56, 'One of the hottest stars visible to the naked eye, shining about 800,000 times brighter than the Sun.'),
+      E('Eta Carinae', 'Eta_Carinae', 'Luminous blue variable', '≈ 35,000 K', 100, 'In 1843 it briefly became the second brightest star in the sky and threw out the Homunculus Nebula.'),
+      E('R136a1', 'R136a1', 'Wolf–Rayet star', '≈ 46,000 K', 200, 'The most massive star known, about 200 times the Sun’s mass, in the Tarantula Nebula.'),
+      E('Saiph', 'Kappa_Orionis', 'B-type supergiant', '≈ 26,500 K', 15, 'The Hunter’s knee, a blue supergiant about 650 light-years away.'),
+      E('Meissa', 'Lambda_Orionis', 'O-type giant', '≈ 36,000 K', 25, 'The Hunter’s head, a hot blue star lighting a huge ring of gas about 1,100 light-years away.'),
+      E('Hadar', 'Beta_Centauri', 'Triple blue giants', '≈ 25,000 K', 11, 'A triple system of hot blue stars about 390 light-years away, the 11th brightest star in the sky.')],
+    whitedwarf: [E('BPM 37093', 'BPM_37093', 'Crystallising white dwarf', '≈ 11,000 K', 1.1, 'Its carbon core has crystallised into a vast diamond-like lattice, about 50 light-years away.'),
+      E('WD 1856+534', 'WD_1856%2B534', 'White dwarf with a planet', '≈ 4,700 K', .52, 'A giant planet orbits this white dwarf every 34 hours, having survived the star’s red-giant phase.'),
+      E('PG 1159−035', 'PG_1159-035', 'Pulsating white dwarf', '≈ 140,000 K', .59, 'A very hot, pulsating white dwarf that gave its name to a whole class of variable stars.'),
+      E('IK Pegasi B', 'IK_Pegasi', 'Massive white dwarf', '≈ 35,000 K', 1.15, 'A heavy white dwarf 150 light-years away whose partner star may one day feed it towards a supernova.'),
+      E('WD 0137−349', 'WD_0137-349', 'White dwarf with a brown dwarf', '≈ 16,500 K', .4, 'A brown dwarf survived being swallowed by this star as it swelled into a red giant.'),
+      E('WD 1145+017', 'WD_1145%2B017', 'White dwarf with shattered debris', '≈ 15,900 K', .6, 'Fragments of a shattered planetesimal cross its face, dimming it every few hours.')],
+    neutron: [E('Cassiopeia A', 'Cassiopeia_A', 'Young neutron star', '≈ 2,000,000 K', 1.4, 'Born in a supernova whose light reached Earth about 340 years ago; its cooling can be measured year by year.'),
+      E('PSR J1748−2446ad', 'PSR_J1748-2446ad', 'Millisecond pulsar', '≈ 1,000,000 K', 1.4, 'The fastest-spinning pulsar known: 716 rotations every second.'),
+      E('PSR J0952−0607', 'PSR_J0952-0607', 'Black-widow pulsar', '≈ 1,000,000 K', 2.35, 'Among the heaviest neutron stars known: about 2.3 Suns packed into a city, spinning 707 times a second.'),
+      E('PSR B1257+12', 'PSR_B1257%2B12', 'Pulsar with planets', '≈ 1,000,000 K', 1.4, 'The first planets found beyond the Solar System (1992) orbit this pulsar.'),
+      E('PSR J1614−2230', 'PSR_J1614-2230', 'Heavy millisecond pulsar', '≈ 1,000,000 K', 1.9, 'A neutron star of about 1.9 Suns whose weight ruled out many exotic models of matter.'),
+      E('RX J1856.5−3754', 'RX_J1856.5-3754', 'Isolated neutron star', '≈ 700,000 K', 1.4, 'One of the nearest neutron stars, about 400 light-years away, glowing alone from leftover heat.'),
+      E('SGR 1935+2154', 'SGR_1935%2B2154', 'Magnetar', '≈ 1,000,000 K', 1.4, 'In 2020 this magnetar produced the first fast radio burst traced to our own galaxy.')],
+    quasar: [E('OJ 287', 'OJ_287', 'Blazar with a black-hole pair', 'millions of K', 1.8e10, 'Its flares are thought to come from a smaller black hole crossing the disc of a giant one, about every 12 years.'),
+      E('Messier 87', 'Messier_87', 'Active galactic nucleus', 'millions of K', 6.5e9, 'Its black hole gave us the first image of a black hole’s shadow, in 2019.'),
+      E('Sagittarius A*', 'Sagittarius_A*', 'Supermassive black hole', 'faint, hot flow', 4.3e6, 'The black hole at the centre of our own Milky Way, about 4 million Suns, imaged in 2022.'),
+      E('Cygnus A', 'Cygnus_A', 'Radio galaxy', 'millions of K', 2.5e9, 'One of the strongest radio sources in the sky, with jets that carve lobes hundreds of thousands of light-years wide.'),
+      E('Centaurus A', 'Centaurus_A', 'Radio galaxy', 'millions of K', 5.5e7, 'The nearest active galaxy, 12 million light-years away, with a dark dust lane and powerful jets.'),
+      E('S5 0014+81', 'S5_0014%2B81', 'Quasar', 'millions of K', 4e10, 'One of the most luminous quasars known, powered by a black hole of tens of billions of Suns.'),
+      E('SDSS J0100+2802', 'SDSS_J0100%2B2802', 'Distant quasar', 'millions of K', 1.2e10, 'Seen as it was less than a billion years after the Big Bang, with a black hole of about 12 billion Suns.'),
+      E('ULAS J1342+0928', 'ULAS_J1342%2B0928', 'Distant quasar', 'millions of K', 8e8, 'Seen as it was about 690 million years after the Big Bang, the most distant quasar known when found in 2017.')]
+  };
+  Object.keys(MORE2).forEach(k => POOL[k].push(...MORE2[k]));
   // mass in solar masses (quasars: the central black hole). The system map is ordered by it: the heaviest object you own sits at the centre.
   const MASS = { 'Gliese 229 B': .068, 'Luhman 16': .06, 'WISE 0855−0714': .005, 'Epsilon Indi B': .108, 'Teide 1': .054, 'Gliese 570 D': .048,
     'Proxima Centauri': .122, 'Barnard’s Star': .144, 'TRAPPIST-1': .09, 'Wolf 359': .11, 'Ross 128': .17, 'Lalande 21185': .39, 'Teegarden’s Star': .09, 'AU Microscopii': .5,
@@ -234,11 +329,14 @@
     'Rigel': ['#8cb8ff', .26], 'Spica': ['#7c8cff', .26], 'Alnilam': ['#a6d0ff', .24], 'Vega': ['#a8c0ff', .2], 'Sirius A': ['#ffffff', .2], 'Achernar': ['#8ec0ff', .26],
     'Proxima Centauri': ['#ff4020', .26], 'TRAPPIST-1': ['#b01808', .34], 'WISE 0855−0714': ['#6a2a9a', .4], 'Gliese 229 B': ['#c05a90', .3], 'Crab Pulsar': ['#78ffd0', .26], 'SGR 1806−20': ['#c890ff', .28],
     'The Sun': ['#ffe060', .16], 'Tau Ceti': ['#ffd890', .22], 'Kepler-452': ['#ffd070', .22], 'Sirius B': ['#d8ecff', .22] };
+  // real multiples are drawn as pairs around a shared centre; companions orbit their real partner whenever you own both
+  const TWIN = { 'Luhman 16': 'binary', 'Epsilon Indi B': 'binary', 'Gliese 229 B': 'binary', 'Gliese 569 B': 'binary', 'HD 130948 BC': 'binary', 'PSR J0737−3039': 'binary', 'PSR B1913+16': 'binary', 'Castor': 'binary', '61 Cygni': 'binary', 'Capella': 'binary', 'Algol': 'binary', 'Acrux': 'binary', 'Hadar': 'binary', 'OJ 287': 'binary', 'Twin Quasar': 'lens' };
+  const COMP = { 'Sirius B': 'Sirius A', 'Procyon B': 'Procyon A', '40 Eridani B': '40 Eridani A', 'Stein 2051 B': 'Stein 2051 A', 'Proxima Centauri': 'Alpha Centauri A', 'Alpha Centauri B': 'Alpha Centauri A', 'Gliese 229 B': 'Gliese 229 A', 'Gliese 569 B': 'Gliese 569 A', 'SCR 1845−6357 B': 'SCR 1845−6357 A', 'HD 130948 BC': 'HD 130948 A', 'Epsilon Indi B': 'Epsilon Indi A' };
   const RANGE = { quasar: [.78, 1.45] }, DEFR = [.86, 1.22];
-  OBJ.forEach((o, oi) => { const L = POOL[o.id], lm = L.map(q => Math.log10(MASS[q.n] || 1)), lo = Math.min(...lm), hi = Math.max(...lm), [a, b] = RANGE[o.id] || DEFR;
-    L.forEach((q, i) => { q.m = MASS[q.n] || 1; q.s = a + (b - a) * (hi > lo ? (lm[i] - lo) / (hi - lo) : .5);
+  OBJ.forEach((o, oi) => { const L = POOL[o.id], lm = L.map(q => Math.log10(q.m || MASS[q.n] || 1)), lo = Math.min(...lm), hi = Math.max(...lm), [a, b] = RANGE[o.id] || DEFR;
+    L.forEach((q, i) => { q.m = q.m || MASS[q.n] || 1; if (TWIN[q.n]) q.twin = TWIN[q.n]; if (COMP[q.n]) q.comp = COMP[q.n]; q.s = a + (b - a) * (hi > lo ? (lm[i] - lo) / (hi - lo) : .5);
       const tt = TINT[q.n]; if (tt) { q.tint = tt[0]; q.ta = tt[1]; } else { const nb = OBJ[clamp(oi + (hash(i * 3.3 + oi) > .5 ? 1 : -1), 0, OBJ.length - 1)]; q.tint = nb.c; q.ta = .08 + .12 * hash(i * 1.7 + oi * 5); } }); });
-  function massText(m) { return m >= 1e9 ? (m / 1e9).toFixed(m >= 1e10 ? 0 : 1).replace(/\.0$/, '') + ' billion Suns' : m >= 1e6 ? Math.round(m / 1e6) + ' million Suns' : m >= 10 ? Math.round(m) + ' Suns' : m >= .1 ? '≈ ' + m.toFixed(2).replace(/0$/, '') + ' Suns' : Math.round(m * 1047.6) + ' Jupiters'; }
+  function massText(m) { return m >= 1e9 ? (m / 1e9).toFixed(m >= 1e10 ? 0 : 1).replace(/\.0$/, '') + ' billion Suns' : m >= 1e6 ? Math.round(m / 1e6) + ' million Suns' : m >= 10 ? Math.round(m) + ' Suns' : m >= .1 ? '≈ ' + m.toFixed(2).replace(/0$/, '') + ' Suns' : '≈ ' + Math.round(m * 1047.6) + ' Jupiters'; }
   const hs = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h; };
 
   function landFx(g, id, idx, t, cx, cy, R, w, h) {
@@ -287,7 +385,7 @@
   const hs2 = n => { let h = 2166136261; for (let i = 0; i < n.length; i++) h = Math.imul(h ^ n.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
   function layout(list) {
     const items = list.slice().sort((x, y) => (y.m || 1) - (x.m || 1) || y.idx - x.idx || (x.n < y.n ? -1 : 1)), quas = items.filter(b => b.id === 'quasar'), nuclei = quas.length ? quas : items.slice(0, 1);
-    const rest = items.filter(b => !nuclei.includes(b)), anchors = rest.filter(b => b.id === 'neutron' || (b.m || 0) >= 8), members = rest.filter(b => !anchors.includes(b));
+    const rest = items.filter(b => !nuclei.includes(b)), owned = new Set(items.map(x => x.n)), comps = rest.filter(b => b.comp && owned.has(b.comp)), loose = rest.filter(b => !comps.includes(b)), anchors = loose.filter(b => b.id === 'neutron' || (b.m || 0) >= 8), members = loose.filter(b => !anchors.includes(b));
     const W = nuclei.map(b => Math.max(.5, Math.log10(b.m || 1) - 7 + .5)), SW = W.reduce((a, b) => a + b, 0), galOf = b => { let u = hs2(b.n + 'g') * SW, i = 0; while (i < W.length - 1 && u > W[i]) { u -= W[i]; i++; } return i; };
     const bodies = [], idxOf = {}, add = (b, o) => { const e = { ...b, ...o }; idxOf[b.n] = bodies.length; bodies.push(e); return e; };
     const T = a => 30 * Math.pow(a / 300, 1.5), orb = (b, a, k) => ({ a, T: T(a), e: .05 + .3 * hs2(b.n + 'e'), om: hs2(b.n + 'o') * TAU, M0: hs2(b.n + 'm') * TAU, k });
@@ -295,6 +393,7 @@
     const kA = nuclei.map(() => 0); anchors.forEach(b => { const g = galOf(b), a = (7500 + 3800 * kA[g]++) * (1 + .12 * hs2(b.n + 'a')); add(b, { tier: 'anchor', parent: nuclei.findIndex((n, i) => i === g) >= 0 ? idxOf[nuclei[g].n] : 0, gal: g, ...orb(b, a) }); });
     const kM = {}; members.forEach(b => { const g = galOf(b), mine = anchors.filter(x => galOf(x) === g), toAnchor = mine.length && hs2(b.n + 'p') > .3, par = toAnchor ? idxOf[mine[Math.floor(hs2(b.n + 'q') * mine.length)].n] : idxOf[nuclei[g].n], j = kM[par] = (kM[par] || 0) + 1 - 1, base = toAnchor ? 1000 + 650 * j : 3200 + 1500 * j;
       kM[par] = j + 1; add(b, { tier: 'member', parent: par, gal: g, ...orb(b, base * (1 + .1 * hs2(b.n + 'a'))) }); });
+    const kC = {}; comps.forEach(b => { const par = idxOf[b.comp], j = kC[par] = (kC[par] || 0) + 1; add(b, { tier: 'member', parent: par, gal: bodies[par].gal, ...orb(b, (320 + 170 * (j - 1)) * (1 + .1 * hs2(b.n + 'a'))) }); });   // companions orbit their real partner
     // extents: how far each body's own system reaches (for framing and for the galaxy glow)
     const ext = bodies.map(() => 0); for (let i = bodies.length - 1; i >= 0; i--) { const b = bodies[i]; b.reach = Math.max(ext[i], b.tier === 'member' ? 0 : 0); if (b.parent >= 0 && b.tier !== 'nucleus') ext[b.parent] = Math.max(ext[b.parent], b.a * (1 + b.e) + b.reach); }
     bodies.forEach((b, i) => { b.reach = ext[i]; });
@@ -303,33 +402,75 @@
   }
   function lineage(lay, n) { const out = []; let i = lay.idxOf[n]; while (i != null && i >= 0) { const b = lay.bodies[i]; out.unshift(b); if (b.tier === 'nucleus') break; i = b.parent; } return out; }
   function kepAt(b, PH) { const E = kepler(b.M0 + PH * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
+  // pre-rendered sprites keep the heavy art out of the frame loop: a galaxy (arms, dust lanes, HII regions, bulge), a dense star cluster, tiled star layers and label bitmaps
+  const SPR = new Map(), TILES = new Map(), LBL = new Map(), mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
+  function galaxySprite(b, hex) {
+    let c = SPR.get(b.n); if (c) return c; c = mk(512); const g = c.getContext('2d'), S = 512, m = S / 2, R = S * .47, h = k => hs2(b.n + k), arms = 2 + Math.floor(h('a') * 3), wind = 2.4 + h('w') * 2.6, pal = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878']][Math.floor(h('p') * 3)];
+    g.translate(m, m); g.globalCompositeOperation = 'lighter';
+    let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.05); gr.addColorStop(0, rgba(hex, .3)); gr.addColorStop(.4, rgba(pal[1], .07)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.05, 0, TAU); g.fill();
+    for (let k = 0; k < 900; k++) { const arm = k % arms, u = Math.pow(hs2(b.n + k + 'U'), .85), r = R * (.08 + .9 * u), sc = (hs2(b.n + k + 'X') + hs2(b.n + k + 'Y') - 1) * (.5 - .2 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, col = u < .25 ? pal[0] : pal[1], rad = 10 + 26 * hs2(b.n + k + 'R');   // soft diffuse body of the arms
+      const x = Math.cos(th) * r, y = Math.sin(th) * r, bl = g.createRadialGradient(x, y, 0, x, y, rad); bl.addColorStop(0, rgba(col, .07 * (1 - .5 * u))); bl.addColorStop(1, rgba(col, 0)); g.fillStyle = bl; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
+    for (let k = 0; k < 9000; k++) { const arm = k % arms, u = Math.pow(hs2(b.n + k + 'u'), .8), r = R * (.05 + .95 * u), sc = (hs2(b.n + k + 'x') + hs2(b.n + k + 'y') - 1) * (.34 - .12 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, hii = hs2(b.n + k + 'h') > .965, col = u < .22 ? pal[0] : hii ? pal[2] : pal[1];
+      g.fillStyle = rgba(col, (hii ? .55 : .1 + .34 * hs2(b.n + k + 'v')) * (1 - .45 * u)); g.beginPath(); g.arc(Math.cos(th) * r, Math.sin(th) * r, hii ? 1.5 + 1.8 * hs2(b.n + k + 's') : .5 + 1.1 * hs2(b.n + k + 's'), 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
+    for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[18, .16], [8, .22]]) { g.strokeStyle = `rgba(8,6,18,${al})`; g.lineWidth = lw; g.beginPath(); for (let i = 0; i <= 44; i++) { const u = .14 + .76 * i / 44, r = R * u, th = arm * TAU / arms + wind * u * 1.7 + .3; i ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); }
+    g.globalCompositeOperation = 'lighter'; gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .34); gr.addColorStop(0, rgba(pal[0], .95)); gr.addColorStop(.35, rgba(hex, .38)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .34, 0, TAU); g.fill();
+    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .09); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .09, 0, TAU); g.fill();
+    SPR.set(b.n, c); return c;
+  }
+  function clusterSprite(b, hex) {
+    let c = SPR.get('c:' + b.n); if (c) return c; c = mk(256); const g = c.getContext('2d'), m = 128, R = 120; g.translate(m, m); g.globalCompositeOperation = 'lighter';
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, rgba(hex, .3)); gr.addColorStop(.3, rgba(hex, .1)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill();
+    for (let k = 0; k < 520; k++) { const r = R * .95 * Math.pow(hs2(b.n + k + 'r'), 1.9), a = hs2(b.n + k + 'a') * TAU; g.fillStyle = rgba(hs2(b.n + k + 'c') > .55 ? '#ffffff' : hex, .15 + .5 * hs2(b.n + k + 'v')); g.beginPath(); g.arc(Math.cos(a) * r, Math.sin(a) * r, .6 + 1.1 * hs2(b.n + k + 's'), 0, TAU); g.fill(); }
+    SPR.set('c:' + b.n, c); return c;
+  }
+  const GLOWS = new Map();
+  function glowAt(g, x, y, r, hex, a) {   // a cached soft glow stamped at any size: far cheaper than building a radial gradient per body per frame
+    let c = GLOWS.get(hex); if (!c) { c = mk(96); const k = c.getContext('2d'), gr = k.createRadialGradient(48, 48, 0, 48, 48, 48); gr.addColorStop(0, rgba(hex, 1)); gr.addColorStop(.3, rgba(hex, .45)); gr.addColorStop(.65, rgba(hex, .12)); gr.addColorStop(1, rgba(hex, 0)); k.fillStyle = gr; k.fillRect(0, 0, 96, 96); GLOWS.set(hex, c); }
+    g.globalAlpha = a; g.drawImage(c, x - r, y - r, r * 2, r * 2); g.globalAlpha = 1;
+  }
+  function starTile(sd, per) { const T = 640, key = sd + '|' + per; let c = TILES.get(key); if (!c) { c = mk(T); starfield(c.getContext('2d'), T, T, 0, Math.round(T * T / per), sd); TILES.set(key, c); } return c; }
+  function labelImg(l) {
+    const sz = Math.round(l.size / 2) * 2, key = l.text + '|' + sz + '|' + l.color; let e = LBL.get(key);
+    if (!e) { if (LBL.size > 260) LBL.clear(); const probe = mk(8).getContext('2d'); probe.font = `400 ${sz}px "EB Garamond", Georgia, serif`; const wd = Math.ceil(probe.measureText(l.text).width + sz * 1.4), c = document.createElement('canvas'); c.width = wd; c.height = Math.ceil(sz * 2); drawLabel(c.getContext('2d'), { ...l, size: sz, x: wd / 2, y: sz * 1.3 }); e = { c, ox: wd / 2, oy: sz * 1.3 }; LBL.set(key, e); }
+    return e;
+  }
   function universe(g, w, h, t, lay, opt = {}) {
     g.clearRect(0, 0, w, h); const cam = opt.cam || { x: 0, y: 0, z: .1 }, Z = cam.z, SY = .56, U = Math.min(w, h), K = Math.max(1, w / 760), B = lay.bodies;
-    for (const [lvl, par, n, sd] of [[0, .02, Math.round(w * h / 11000), 9], [1, .07, Math.round(w * h / 16000), 31]]) { const ox = ((cam.x * par) % w + w) % w, oy = ((cam.y * par) % h + h) % h; g.save(); g.translate(-ox, -oy); for (const [dx, dy] of [[0, 0], [w, 0], [0, h], [w, h]]) { g.save(); g.translate(dx, dy); starfield(g, w, h, t * .3, n, sd); g.restore(); } g.restore(); }
+    for (const [par, per, sd] of [[.05, 9000, 9]]) { const tile = starTile(sd, per), T = tile.width, ox = Math.round(((cam.x * par) % T + T) % T), oy = Math.round(((cam.y * par) % T + T) % T); for (let x = -ox; x < w; x += T) for (let y = -oy; y < h; y += T) g.drawImage(tile, x, y); }
     if (!B.length) return [];
     const PH = (opt.tau != null ? opt.tau : t) * 1.5, toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2], W = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m, newT = opt.newId, born = n => newT === n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1;
     B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
     const col = b => OBJ[b.idx].c;
     // galaxy glow and spiral dust, then sub-cluster halos
     B.forEach((b, i) => { if (b.tier === 'member' || !b.reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? b.reach * 1.15 * Z : (b.reach * 1.5 + 200) * Z, gal ? 38 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
-      g.save(); g.translate(p[0], p[1]); g.scale(1, SY); g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, rgba(col(b), gal ? .55 : .16)); gr.addColorStop(.22, rgba(col(b), gal ? .24 : .06)); gr.addColorStop(.6, rgba(col(b), gal ? .07 : .02)); gr.addColorStop(1, rgba(col(b), 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill();
-      if (gal && R < w * 2.5) { const rot = PH * .002, N = Math.min(220, 40 + Math.round(R / 3)); for (let k = 0; k < N; k++) { const u = k / (N - 1), r = R * (.1 + .85 * Math.pow(u, .85)), arm = k % 2 ? Math.PI : 0, a = arm + 4.6 * u + rot / (u + .25) + (hs2(b.n + k) - .5) * .5, x = r * Math.cos(a), y = r * Math.sin(a); g.fillStyle = rgba(hs2(b.n + k + 'c') > .6 ? '#ffffff' : col(b), (.3 + .45 * hs2(b.n + k + 'v')) * (1 - u * .6)); g.beginPath(); g.arc(x, y, (.9 + 1.6 * hs2(b.n + k + 's')) * K, 0, TAU); g.fill(); } }
+      if (gal && R > w * 3) return;
+      g.save(); g.translate(p[0], p[1]); g.globalCompositeOperation = 'lighter';
+      if (gal) { g.scale(1, SY); g.rotate(PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1)); const D = R * 2.13; g.drawImage(galaxySprite(b, col(b)), -D / 2, -D / 2, D, D); } else { const D = R * 2.1; g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); }
       g.restore(); });
-    // orbits (a faint ellipse around the parent, only once it is big enough on screen to read)
-    B.forEach((b, i) => { if (b.parent < 0) return; const ap = b.a * (1 + b.e) * Z; if (ap < 10 * K) return; const foc = opt.focus === b.n || B[b.parent].n === opt.focus, c0 = toS(W[b.parent][0], W[b.parent][1]), cs = Math.cos(b.om), sn = Math.sin(b.om); if (!vis(c0[0], c0[1], ap * 1.5 + w)) return;
-      g.strokeStyle = foc ? 'rgba(255,255,255,.3)' : b.tier === 'member' ? 'rgba(255,255,255,.1)' : 'rgba(190,200,255,.14)'; g.lineWidth = (foc ? 2 : 1) * K; g.beginPath(); for (let k = 0; k <= 100; k++) { const E = k / 100 * TAU, x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), p = toS(W[b.parent][0] + x * cs - y * sn, W[b.parent][1] + (x * sn + y * cs) * SY); k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke(); });
+    // orbits: a faint ellipse around the parent, drawn only when big enough to read, at most a budget of them (nearest the view first), stroked in three batches
+    {
+      const cand = []; B.forEach((b, i) => { if (b.parent < 0) return; const ap = b.a * (1 + b.e) * Z; if (ap < 10 * K || ap > w * 5) return; const c0 = toS(W[b.parent][0], W[b.parent][1]), dist = Math.hypot(Math.max(0, -c0[0], c0[0] - w), Math.max(0, -c0[1], c0[1] - h)); if (dist > ap * 1.3) return; cand.push({ b, ap, c0, foc: opt.focus === b.n || B[b.parent].n === opt.focus, pr: (opt.focus === b.n || B[b.parent].n === opt.focus ? -1e9 : 0) + Math.hypot(c0[0] - w / 2, c0[1] - h / 2) }); });
+      cand.sort((x, y) => x.pr - y.pr); const paths = { f: [], m: [], t: [] };
+      cand.slice(0, 10).forEach(c => (c.foc ? paths.f : c.b.tier === 'member' ? paths.m : paths.t).push(c));
+      for (const [key, st, lw] of [['m', 'rgba(255,255,255,.1)', 1], ['t', 'rgba(190,200,255,.14)', 1], ['f', 'rgba(255,255,255,.3)', 2]]) { if (!paths[key].length) continue; g.strokeStyle = st; g.lineWidth = lw * K; g.beginPath();
+        paths[key].forEach(({ b, ap }) => { const cs = Math.cos(b.om), sn = Math.sin(b.om), pw = W[b.parent], nseg = ap < 90 * K ? 36 : Math.min(160, Math.round(48 + ap / (6 * K))), bb = b.a * Math.sqrt(1 - b.e * b.e), mg = 40 * K; let px0 = 0, py0 = 0, down = false;
+          for (let k = 0; k <= nseg; k++) { const E = k / nseg * TAU, x = b.a * (Math.cos(E) - b.e), y = bb * Math.sin(E), px = (pw[0] + x * cs - y * sn - cam.x) * Z + w / 2, py = (pw[1] + (x * sn + y * cs) * SY - cam.y) * Z + h / 2;
+            if (k) { const seen = !((px < -mg && px0 < -mg) || (px > w + mg && px0 > w + mg) || (py < -mg && py0 < -mg) || (py > h + mg && py0 > h + mg)); if (seen) { if (!down) g.moveTo(px0, py0); g.lineTo(px, py); down = true; } else down = false; } px0 = px; py0 = py; } });
+        g.stroke(); }
+    }
     const labels = [], items = B.map((b, i) => ({ b, i, p: toS(W[i][0], W[i][1]), z: W[i][1] })).sort((x, y) => x.z - y.z), pos = [], zs = Math.pow(Z, .42) * Math.pow(.7, .58);
     items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', base = (FR[b.id] || .2) * (b.s || 1) * U * (nuc ? .46 : b.tier === 'anchor' ? .36 : .28) * zs, bn = born(b.n);
       if (!vis(it.p[0], it.p[1], base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier }); return; }
       const r = Math.max(.01, base * Math.max(.01, easeBack(bn))), rr = Math.max(r, nuc ? 6 * K : 3 * K);
       if (bn < 1) ring(g, it.p[0], it.p[1], base * (.6 + 3 * bn), col(b), .7 * (1 - bn), 3);
-      if (rr < 15 * K) { halo(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
-      else { g.save(); g.translate(it.p[0], it.p[1]); paint(g, b.id, 0, 0, r, t + b.idx); if (b.tint && r > 12 * K) tintBody(g, b, r); g.restore(); }
+      if (rr < 15 * K) { glowAt(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
+      else { g.save(); g.translate(it.p[0], it.p[1]); paintBody(g, b.id, 0, 0, r, t + b.idx, b); g.restore(); }
       for (let k = 0; k < Math.min(4, (b.count || 1) - 1); k++) { const rs = rr * (1.9 + .4 * k) + 8 * K, th = t * (2.3 - .25 * k) + hs2(b.n + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = K; g.beginPath(); g.ellipse(it.p[0], it.p[1], rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(col(b), .95); g.beginPath(); g.arc(it.p[0] + Math.cos(th) * rs, it.p[1] + Math.sin(th) * rs * SY, Math.max(1.8 * K, rr * .09), 0, TAU); g.fill(); }
       const foc = opt.focus === b.n, orbPx = b.tier === 'member' ? (B[b.parent].a ? b.a * Z : 0) : 0, near = b.tier === 'member' ? b.a * (1 + b.e) * Z > 55 * K : true, showL = foc || (nuc ? true : b.tier === 'anchor' ? b.a * Z > 90 * K || b.reach * Z > 30 * K : near && b.a * Z > 60 * K);
       let lbl = null; if (showL && !opt.noLabels) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
       pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 46 * K : 18 * K), lbl, tier: b.tier }); });
-    { const taken = []; labels.sort((x, y) => x.pr - y.pr || y.m - x.m).forEach(({ lbl }) => { const wd = lbl.text.length * lbl.size * .5, bx = { x0: lbl.x - wd / 2, x1: lbl.x + wd / 2, y0: lbl.y - lbl.size, y1: lbl.y + lbl.size * .3 }; if (!lbl.focus && taken.some(q => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) return; taken.push(bx); drawLabel(g, lbl); }); }
+    { const taken = []; labels.sort((x, y) => x.pr - y.pr || y.m - x.m).forEach(({ lbl }) => { const wd = lbl.text.length * lbl.size * .5, bx = { x0: lbl.x - wd / 2, x1: lbl.x + wd / 2, y0: lbl.y - lbl.size, y1: lbl.y + lbl.size * .3 }; if (!lbl.focus && taken.some(q => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) return; taken.push(bx); const im = labelImg(lbl); g.drawImage(im.c, lbl.x - im.ox, lbl.y - im.oy); }); }
     // minimap: the whole universe with the view as a box
     const Rm = 58 * K, mx = 18 * K + Rm, my = opt.mini === 'tl' ? 52 * K + Rm : h - 18 * K - Rm, big = lay.R * 1.1, k = Rm / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5 * K; g.beginPath(); g.arc(mx, my, Rm + 2 * K, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, Rm, 0, TAU); g.clip();
     B.forEach((b, i) => { const big2 = b.tier === 'nucleus'; g.fillStyle = b.n === opt.focus ? '#fff' : rgba(col(b), big2 ? 1 : .8); g.beginPath(); g.arc(mx + W[i][0] * k, my + W[i][1] * k, big2 ? 3.2 * K : b.tier === 'anchor' ? 2.2 * K : 1.4 * K, 0, TAU); g.fill(); });
