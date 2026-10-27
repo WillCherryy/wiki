@@ -50,3 +50,6 @@ h3 { margin: 0 0 12px; font: 600 13px var(--sans); letter-spacing: .18em; text-t
 .tile { padding: 18px 20px; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(180deg, rgba(24, 20, 18, .82), rgba(12, 10, 9, .78)); }
 .tile b { display: block; font: 400 62px/1 var(--display); color: var(--accent); } .tile b small { font: 400 30px var(--display); color: var(--mute); } .tile span { display: block; margin-top: 6px; font: 600 12.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip b { font-size: 32px; }
+body.bg { background: radial-gradient(80% 70% at 12% 0%, #2a1712 0%, transparent 62%), radial-gradient(70% 60% at 100% 100%, #131a33 0%, transparent 60%), #0b0a10; }
+body.bg .panel, body.bg .tile { background: linear-gradient(180deg, rgba(30, 26, 34, .92), rgba(16, 14, 20, .92)); backdrop-filter: none; }
+.empty { display: grid; place-items: center; min-height: 240px; text-align: center; font: italic 400 34px/1.2 var(--display); color: var(--mute); }

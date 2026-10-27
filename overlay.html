@@ -25,7 +25,7 @@
 (function () {
   const q = new URLSearchParams(location.search), code = (q.get('c') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const CFG = window.WIKIIO || {}, API = (q.get('api') || CFG.api || '').replace(/\/$/, '') || location.origin;
-  if (q.get('bg')) document.body.classList.add('bg');
+  if (q.get('bg') || (!window.obsstudio && q.get('clear') !== '1')) document.body.classList.add('bg');   // a normal browser gets a dark backdrop; OBS (window.obsstudio) stays transparent
   const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   const ord = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
@@ -46,8 +46,8 @@
     if (!st) return;
     $('#wait').hidden = true; $('#ov').hidden = false;
     const p = st.puzzle;
-    $('#goal').innerHTML = p ? `<em>From</em><span>${esc(p.from)}</span><em>to</em><span>${esc(p.to)}</span>` : '<span style="color:var(--mute)">Waiting for the host to start</span>';
-    $('#stat').textContent = { open: 'Open · join with the code', countdown: 'Starting', racing: 'Racing', ended: 'Finished' }[st.phase];
+    $('#goal').innerHTML = p ? `<em>From</em><span>${esc(p.from)}</span><em>to</em><span>${esc(p.to)}</span>` : '<span style="color:var(--mute);font-style:italic">Waiting for the host to pick a puzzle…</span>';
+    $('#stat').textContent = { open: 'Lobby open', countdown: 'Starting', racing: 'Racing', ended: 'Finished' }[st.phase];
     const b = bd || { n: 0, fin: 0, top: [], stuck: [] };
     $('#count').textContent = `${b.fin}/${b.n} finished`;
     $('#board').innerHTML = b.top.slice(0, 10).map((r, i) => `<div class="row${r.d ? ' done' : ''}"><span class="pos">${i + 1}</span><span class="nm">${esc(r.n)}</span><span class="meta">${r.d ? `${r.c} clicks · ${fmt(r.s)}` : r.at ? esc(r.at) : ''}</span><div class="bar"><i style="width:${Math.round((r.d ? 1 : r.tp) * 100)}%;--c:${heat(r.tp)}"></i></div></div>`).join('') || '<div class="empty">Nobody has joined yet. Share the link!</div>';
