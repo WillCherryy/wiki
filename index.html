@@ -320,11 +320,17 @@ function playDaily() {
 function renderHeroAct() {
   const day = dayKey(), e = P.days[day], cur = readCur(), box = $('#heroAct');
   if (e) {
-    const dk = dayDiscovery(day), st = e.won ? [[e.clicks, e.clicks === 1 ? 'click' : 'clicks'], [fmt(e.secs), 'time'], e.par ? [e.par, 'par'] : null, e.stars ? ['★'.repeat(e.stars), 'rating'] : null].filter(Boolean) : [];
-    box.innerHTML = `<div class="done ${dk ? 'has-disc' : ''}"><div class="done-top"><div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b>${e.won ? '' : '<span>Back tomorrow</span>'}</div>
-        ${e.won ? `<div class="done-stats">${st.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}</div>${e.purist ? '<div class="done-purist">◆ Purist run: no link search, no rewind</div>' : ''}` : ''}</div>
-      ${dk ? `<div class="done-r">${skyReveal(dk, { compact: true, sky: true })}</div>` : ''}
-      <div class="done-btns">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button><button class="btn ghost" id="heroPoster">Today’s poster</button></div></div>`;
+    const dk = dayDiscovery(day), o = dk ? SKY.OBJ[dk.idx] : null, st = e.won ? [[e.clicks, e.clicks === 1 ? 'click' : 'clicks'], [fmt(e.secs), 'time'], e.par ? [e.par, 'par'] : null, e.stars ? ['★'.repeat(e.stars), 'rating'] : null].filter(Boolean) : [];
+    const dayNo = dayNum(day), left = '<span id="nextIn"></span>';
+    box.innerHTML = `<div class="done ${dk ? 'has-disc' : ''}">
+      ${dk ? `<div class="stage" style="--c:${o.c}"><div class="stage-art"><canvas class="discCv" width="760" height="560"></canvas><span class="stage-eye">${dk.first ? 'New discovery' : dk.count > 1 ? 'A moon for ' + esc(dk.name) + ' · ×' + dk.count : 'You found'}</span></div>
+        <div class="stage-info"><span class="stage-chip">${o.name} · ${RARITY[dk.idx]}</span><h3 class="stage-name">${esc(dk.name)}</h3><div class="stage-sub">${esc(dk.kind)} · ${SKY.massText(dk.m)}</div>
+          ${dk.boost ? `<div class="stage-boost"><b>Streak boost</b> ${dk.boost.days}-day streak lifted this find</div>` : ''}${dk.near ? `<div class="stage-near"><span>So close</span>${esc(dk.near.how)} would have found a <b>${esc(SKY.OBJ[dk.near.to].name.toLowerCase())}</b>.</div>` : ''}
+          ${dk.why ? `<div class="stage-why">${esc(dk.why)}</div>` : ''}
+          <div class="stage-btns"><button class="disc-btn share" data-discshare>Share this find</button><button class="disc-btn alt" id="discSky">Your sky</button></div>${dk.next ? `<div class="stage-next">${esc(dk.next)}</div>` : ''}</div></div>` : `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b>${e.won ? '' : '<span>Back tomorrow</span>'}</div>`}
+      <div class="done-row">${e.won ? `<div class="done-stats">${st.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}</div>` : ''}${e.won && e.purist ? '<div class="done-purist">◆ Purist run: no link search, no rewind</div>' : ''}</div>
+      <div class="done-btns">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button><button class="btn ghost" id="heroPoster">Today’s poster</button></div>
+      ${P.streak > 1 ? `<div class="done-foot">${P.streak}-day streak${streakBoost(P.streak).v ? ' · boost active' : ''}${streakBoost(P.streak + 1).v > streakBoost(P.streak).v ? ' · come back tomorrow for a bigger one' : ''}</div>` : ''}</div>`;
     if (dk) { mountDiscovery(box, dk); if ($('#discSky')) $('#discSky').onclick = () => openSky({ tab: 'sky', focus: dk.id }); }
     if ($('#heroShare')) { $('#heroShare').onclick = () => openShareCard(dailyCtx(), () => closeModal()); $('#heroChal').onclick = () => openChallenge(dailyCtx(), () => closeModal()); $('#heroMap').onclick = () => openPathMap(dailyCtx()); }
     $('#heroResult').onclick = () => { dailyCtx(); showResult(); };
@@ -595,7 +601,7 @@ function tiltCard(el) {   // a little foil-card parallax where there is a pointe
 function mountDiscovery(root, k) {   // idle animation on the homepage card, only while it is on screen
   const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.POOL[k.id].find(p => p.n === k.name), t0 = performance.now();
   (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent || document.hidden) { setTimeout(() => requestAnimationFrame(f), 500); return; } if (now - (f.l || 0) < 33) { requestAnimationFrame(f); return; } f.l = now; drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
-  tiltCard(root.querySelector('.disc')); bindDiscShare(root.querySelector('.disc'), k);
+  { const el = root.querySelector('.disc') || root.querySelector('.stage'); tiltCard(el); bindDiscShare(el, k); }
 }
 function drawSkyCell(cv, id, t, k = 1, q) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
