@@ -106,7 +106,7 @@
     },
     neutron(g, x, y, r, t) {
       // a pulsar: a city-sized core, a swirling wind nebula, a tilted dipole field, and two lighthouse beams that sweep the sky and ping once a turn
-      const rot = t * 2.6 + .6, tilt = .35;
+      const VW = (window.SKY && window.SKY.view) || {}, rot = t * 2.6 + .6, tilt = VW.roll != null ? VW.roll + .65 : .35;
       halo(g, x, y, r * 6, '#4fb6ff', .34); { const D = r * 13; g.save(); g.translate(x, y); g.rotate(-t * .01); g.globalAlpha = .9; g.drawImage(crabTex(), -D / 2, -D / 2, D, D); g.restore(); }
       g.save(); g.translate(x, y); g.globalCompositeOperation = 'lighter';
       // the wind: rings flung outward from the equator, bright where they are young
@@ -127,7 +127,7 @@
     },
     quasar(g, x, y, r, t) {
       // a supermassive black hole: a lensed accretion disc (cached art) with orbiting hot spots, a photon ring, helical jets with shock knots, radio lobes and a coronal haze
-      const TILT = -.3, SY = .3, k = r / 128, spr = quasarDisc(), ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`, br = .92 + .08 * Math.sin(t * 5.3) + .04 * Math.sin(t * 11.1);
+      const VW = (window.SKY && window.SKY.view) || {}, TILT = VW.roll != null ? VW.roll : -.3, INC = VW.inc != null ? VW.inc : 1, SY = .3, k = r / 128, spr = quasarDisc(), ray = (u, c) => `rgba(${c[0]},${c[1]},${c[2]},${u})`, br = .92 + .08 * Math.sin(t * 5.3) + .04 * Math.sin(t * 11.1);
       halo(g, x, y, r * 4.2, '#ff7a30', .2); halo(g, x, y, r * 2.4, '#ffa060', .26 * br); halo(g, x, y, r * 1.3, '#ffe0b0', .22 * br);
       g.save(); g.translate(x, y); g.rotate(TILT); g.globalCompositeOperation = 'lighter';
       for (const sgn of [-1, 1]) {
@@ -143,7 +143,7 @@
       }
       g.restore();
       g.save(); g.translate(x, y); g.rotate(TILT); g.globalCompositeOperation = 'lighter'; g.globalAlpha = br;
-      g.drawImage(spr.back, -256 * k, -144 * k, 512 * k, 288 * k); g.globalAlpha = 1;
+      g.save(); g.scale(1, INC); g.drawImage(spr.back, -256 * k, -144 * k, 512 * k, 288 * k); g.restore(); g.globalAlpha = 1;
       // hot spots orbiting in the disc: brighter as they swing towards us
       const RMIN = r * .42, RMAX = r * 1.8;
       for (let i = 0; i < 46; i++) { const u = hash(i + 5), rad = RMIN + (RMAX - RMIN) * Math.pow(u, .9), sp = (.55 + 1.6 * (1 - u)), a0 = hash(i + 17) * TAU + t * sp, len = .12 + .5 * hash(i + 77); g.strokeStyle = ray(.22 + .45 * hash(i + 9), u < .3 ? [255, 238, 190] : u < .6 ? [255, 176, 70] : [236, 92, 40]); g.lineWidth = Math.max(.5, r * .018); g.beginPath(); g.ellipse(0, 0, rad, rad * SY, 0, a0, a0 + len); g.stroke(); }
@@ -151,7 +151,7 @@
       g.globalCompositeOperation = 'source-over';
       const sh = g.createRadialGradient(0, 0, r * .2, 0, 0, r * .36); sh.addColorStop(0, '#000'); sh.addColorStop(.85, '#000'); sh.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sh; g.beginPath(); g.arc(0, 0, r * .36, 0, TAU); g.fill();
       g.globalCompositeOperation = 'lighter'; for (const [mul, al, w] of [[.335, .98, .035], [.36, .45, .06], [.4, .16, .1]]) { g.strokeStyle = ray(al * br, [255, 236, 200]); g.lineWidth = r * w; g.beginPath(); g.arc(0, 0, r * mul, 0, TAU); g.stroke(); }
-      g.drawImage(spr.front, -256 * k, -144 * k, 512 * k, 288 * k);
+      g.save(); g.scale(1, INC); g.drawImage(spr.front, -256 * k, -144 * k, 512 * k, 288 * k); g.restore();
       g.restore();
     }
   };
@@ -206,10 +206,10 @@
     const c2 = document.createElement('canvas'); c2.width = c.width * 2; c2.height = c.height; const k2 = c2.getContext('2d'); k2.drawImage(c, 0, 0); k2.drawImage(c, c.width, 0); SURF.set(key, c2); return c2;
   }
   function bodySurface(g, id, x, y, r, t) {   // the scrolled texture wrapped onto a sphere (vertical strips narrow towards the limb), with limb darkening, a soft highlight and a thin rim
-    const sp = SURFSPEC[id]; if (!sp) return; const tex = surfaceTex(id, r > 110), W = tex.width / 2, H = tex.height, off = ((t * sp.speed * W) % W + W) % W, rr = r * .985, d = rr * 2, N = r > 70 ? 44 : r > 32 ? 26 : 0;
+    const sp = SURFSPEC[id]; if (!sp) return; const tex = surfaceTex(id, r > 110), W = tex.width / 2, H = tex.height, VW = (window.SKY && window.SKY.view) || {}, off = (((VW.spin != null ? VW.spin : t * sp.speed) * W) % W + W) % W, tl = VW.tilt || 0, sy0 = H * (.08 + .08 * tl), sh0 = H * .84, rr = r * .985, d = rr * 2, N = r > 70 ? 44 : r > 32 ? 26 : 0;
     g.save(); g.beginPath(); g.arc(x, y, rr, 0, TAU); g.clip();
-    if (!N) { g.drawImage(tex, off, 0, H, H, x - rr, y - rr, d, d); }
-    else for (let i = 0; i < N; i++) { const a0 = -1 + 2 * i / N, a1 = -1 + 2 * (i + 1) / N, l0 = Math.asin(a0), l1 = Math.asin(a1), u0 = off + (l0 / Math.PI + .5) * (W / 2) * 2 * .5 * 2, u1 = off + (l1 / Math.PI + .5) * (W / 2) * 2 * .5 * 2; g.drawImage(tex, u0, 0, Math.max(.5, u1 - u0), H, x + a0 * rr, y - rr, (a1 - a0) * rr + .6, d); }
+    if (!N) { g.drawImage(tex, off, sy0, H, sh0, x - rr, y - rr, d, d); }
+    else for (let i = 0; i < N; i++) { const a0 = -1 + 2 * i / N, a1 = -1 + 2 * (i + 1) / N, l0 = Math.asin(a0), l1 = Math.asin(a1), u0 = off + (l0 / Math.PI + .5) * (W / 2) * 2 * .5 * 2, u1 = off + (l1 / Math.PI + .5) * (W / 2) * 2 * .5 * 2; g.drawImage(tex, u0, sy0, Math.max(.5, u1 - u0), sh0, x + a0 * rr, y - rr, (a1 - a0) * rr + .6, d); }
     const sh = g.createRadialGradient(x - rr * .3, y - rr * .32, rr * .2, x, y, rr * 1.02); sh.addColorStop(0, 'rgba(255,255,255,.12)'); sh.addColorStop(.5, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,' + (sp.limb != null ? sp.limb : .68) + ')'); g.fillStyle = sh; g.fillRect(x - rr, y - rr, d, d);
     g.restore();
   }
