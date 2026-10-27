@@ -404,8 +404,31 @@
   function kepAt(b, PH) { const E = kepler(b.M0 + PH * TAU / b.T, b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
   // pre-rendered sprites keep the heavy art out of the frame loop: a galaxy (arms, dust lanes, HII regions, bulge), a dense star cluster, tiled star layers and label bitmaps
   const SPR = new Map(), TILES = new Map(), LBL = new Map(), mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
+  const GPAL = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878']];
+  const gparams = b => ({ arms: 2 + Math.floor(hs2(b.n + 'a') * 3), wind: 2.4 + hs2(b.n + 'w') * 2.6, pal: GPAL[Math.floor(hs2(b.n + 'p') * 3)] });
+  // the same galaxy as live geometry, for close-ups: ~36,000 stars, diffuse arm blobs and dust lanes in unit coordinates, drawn crisp at any zoom (the sprite only serves the distant view)
+  const DET = new Map();
+  function galaxyField(b) {
+    let f = DET.get(b.n); if (f) return f;
+    let sd = Math.floor(hs2(b.n + 'seed') * 4294967296) >>> 0; const rnd = () => { sd = (sd + 0x6D2B79F5) >>> 0; let t = sd; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const { arms, wind, pal } = gparams(b), NB = 12, bucket = [], styles = []; for (let c = 0; c < 3; c++) for (let a = 0; a < 4; a++) { bucket.push({ x: [], y: [], z: [] }); styles.push(rgba(pal[c], (c === 2 ? .5 : .12) + a * (c === 2 ? .12 : .09))); }
+    for (let k = 0; k < 36000; k++) { const arm = k % arms, u = Math.pow(rnd(), .8), r = .05 + .95 * u, sc = (rnd() + rnd() - 1) * (.34 - .12 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, hii = rnd() > .965, c = u < .22 ? 0 : hii ? 2 : 1, a = Math.min(3, Math.floor(rnd() * 4 * (1 - .4 * u))), bk = bucket[c * 4 + a]; bk.x.push(r * Math.cos(th)); bk.y.push(r * Math.sin(th)); bk.z.push(hii ? 1.5 + 1.8 * rnd() : .5 + 1.1 * rnd()); }
+    const blobs = []; for (let k = 0; k < 700; k++) { const arm = k % arms, u = Math.pow(rnd(), .85), r = .08 + .9 * u, sc = (rnd() + rnd() - 1) * (.5 - .2 * u), th = arm * TAU / arms + wind * u * 1.7 + sc; blobs.push([r * Math.cos(th), r * Math.sin(th), (.04 + .11 * rnd()) , u < .25 ? pal[0] : pal[1]]); }
+    const lanes = []; for (let arm = 0; arm < arms; arm++) { const pts = []; for (let i = 0; i <= 60; i++) { const u = .14 + .76 * i / 60, r = u, th = arm * TAU / arms + wind * u * 1.7 + .3; pts.push([r * Math.cos(th), r * Math.sin(th)]); } lanes.push(pts); }
+    f = { bucket, styles, blobs, lanes, pal }; DET.set(b.n, f); return f;
+  }
+  function galaxyDetail(g, b, cx, cy, R, rot, SY, w, h, K, hex, da, haze) {
+    const f = galaxyField(b), cr = Math.cos(rot), sr = Math.sin(rot), kk = .42 * K * Math.pow(Math.max(1, R / (300 * K)), .15), fall = Math.min(1, Math.pow(650 * K / R, 1.3)), /* big blobs overlap more as you zoom in, so they thin out */ X = (x, y) => cx + (x * cr - y * sr) * R, Y = (x, y) => cy + (x * sr + y * cr) * R * SY;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = da;
+    let n = 0; for (const [bx, by, br, col] of f.blobs) { const px = X(bx, by), py = Y(bx, by), rad = br * R; if (px < -rad || px > w + rad || py < -rad * SY || py > h + rad * SY) continue; glowAt(g, px, py, rad, col, .07 * haze * fall); if (++n > 260) break; }
+    f.bucket.forEach((bk, i) => { g.fillStyle = f.styles[i]; g.beginPath(); let m = 0, lim = 170; for (let j = 0; j < bk.x.length; j++) { const px = cx + (bk.x[j] * cr - bk.y[j] * sr) * R, py = cy + (bk.x[j] * sr + bk.y[j] * cr) * R * SY; if (px < -4 || px > w + 4 || py < -4 || py > h + 4) continue; const sz = bk.z[j] * kk; if (i >= 8) { g.moveTo(px + sz, py); g.arc(px, py, sz, 0, TAU); } else g.rect(px - sz, py - sz, sz * 2, sz * 2); if (++m > lim) break; } g.fill(); });
+    g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
+    f.lanes.forEach(pts => { for (const [lw, al] of [[.075, .16], [.033, .22]]) { g.strokeStyle = `rgba(8,6,18,${al * haze * Math.max(.4, fall)})`; g.lineWidth = Math.max(1, Math.min(lw * R * SY * 1.4, 90 * K)); g.beginPath(); let down = false, px0 = 0, py0 = 0; pts.forEach(([x, y], i) => { const px = X(x, y), py = Y(x, y); if (i) { const seen = !((px < -200 && px0 < -200) || (px > w + 200 && px0 > w + 200) || (py < -200 && py0 < -200) || (py > h + 200 && py0 > h + 200)); if (seen) { if (!down) g.moveTo(px0, py0); g.lineTo(px, py); down = true; } else down = false; } px0 = px; py0 = py; }); g.stroke(); } });
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1; const cr2 = R * .34; if (cx > -cr2 && cx < w + cr2 && cy > -cr2 && cy < h + cr2) { g.save(); g.translate(cx, cy); g.scale(1, SY); let gr = g.createRadialGradient(0, 0, 0, 0, 0, cr2); gr.addColorStop(0, rgba(f.pal[0], .9 * da * haze * fall)); gr.addColorStop(.35, rgba(hex, .36 * da * haze * fall)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, cr2, 0, TAU); g.fill(); g.restore(); }
+    g.restore();
+  }
   function galaxySprite(b, hex) {
-    let c = SPR.get(b.n); if (c) return c; c = mk(512); const g = c.getContext('2d'), S = 512, m = S / 2, R = S * .47, h = k => hs2(b.n + k), arms = 2 + Math.floor(h('a') * 3), wind = 2.4 + h('w') * 2.6, pal = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878']][Math.floor(h('p') * 3)];
+    let c = SPR.get(b.n); if (c) return c; c = mk(512); const g = c.getContext('2d'), S = 512, m = S / 2, R = S * .47, { arms, wind, pal } = gparams(b);
     g.translate(m, m); g.globalCompositeOperation = 'lighter';
     let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.05); gr.addColorStop(0, rgba(hex, .3)); gr.addColorStop(.4, rgba(pal[1], .07)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.05, 0, TAU); g.fill();
     for (let k = 0; k < 900; k++) { const arm = k % arms, u = Math.pow(hs2(b.n + k + 'U'), .85), r = R * (.08 + .9 * u), sc = (hs2(b.n + k + 'X') + hs2(b.n + k + 'Y') - 1) * (.5 - .2 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, col = u < .25 ? pal[0] : pal[1], rad = 10 + 26 * hs2(b.n + k + 'R');   // soft diffuse body of the arms
@@ -444,9 +467,9 @@
     const col = b => OBJ[b.idx].c;
     // galaxy glow and spiral dust, then sub-cluster halos
     B.forEach((b, i) => { if (b.tier === 'member' || !b.reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? b.reach * 1.15 * Z : (b.reach * 1.5 + 200) * Z, gal ? 38 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
-      if (gal && R > w * 3) return;
+      if (!gal && R > w * 3) return;
       g.save(); g.translate(p[0], p[1]); g.globalCompositeOperation = 'lighter';
-      if (gal) { g.scale(1, SY); g.rotate(PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1)); const D = R * 2.13; g.drawImage(galaxySprite(b, col(b)), -D / 2, -D / 2, D, D); } else { const D = R * 2.1; g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); }
+      if (gal) { const rot = PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1), big = R / K, fadeS = clamp(1 - (big - 380) / 380), da = clamp((big - 300) / 380), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, SY); g.rotate(rot); g.globalAlpha = fadeS; const D = R * 2.13; g.drawImage(galaxySprite(b, col(b)), -D / 2, -D / 2, D, D); g.restore(); } if (da > 0) { g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, SY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1; g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); }
       g.restore(); });
     // orbits: a faint ellipse around the parent, drawn only when big enough to read, at most a budget of them (nearest the view first), stroked in three batches
     {

@@ -820,11 +820,15 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setTimeout(() => cloudSoon(100), 4000);   // players who already have progress get their first save soon after opening
 const agoText = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
 const FOUNDER_HASH = '9ee1887e3d8cdf52a64464557fd43e1fa549aac6bee4eb712d33fc9c85aaa1fd';   // SHA-256('scorcher-founder:' + code): the code itself is not in the source
+function founderFill() {   // gives the founder every sky object (and tops up whenever new ones are added)
+  let n = 0; SKY.OBJ.forEach(o => { const L = SKY.POOL[o.id]; L.forEach(q => { if (!P.sky.cat[q.n]) { P.sky.cat[q.n] = 1; n++; } }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, L.length); });
+  P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.keys(P.sky.cat).length); return n;
+}
 async function founderGrant(code) {   // the founder's code adds every sky object on this device (it changes nothing on the server)
   try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('scorcher-founder:' + code)); if ([...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('') !== FOUNDER_HASH) return false; } catch { return false; }
-  SKY.OBJ.forEach(o => { const L = SKY.POOL[o.id]; L.forEach(q => { P.sky.cat[q.n] = P.sky.cat[q.n] || 1; }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, L.length); });
-  P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.keys(P.sky.cat).length); P.founder = 1; saveP(); renderHeader(); closeModal(); toast('Founder sky unlocked: every object is yours'); setTimeout(() => openSky({ tab: 'sys' }), 400); return true;
+  founderFill(); P.founder = 1; saveP(); renderHeader(); closeModal(); toast('Founder sky unlocked: every object is yours'); setTimeout(() => openSky({ tab: 'sys' }), 400); return true;
 }
+if (P.founder && founderFill()) saveP();   // a founder profile (this device or restored from the cloud) always holds the whole catalogue
 async function cloudRestore(codeIn, silent) {
   const code = cloudNorm(codeIn); if (await founderGrant(code)) return; if (!/^[A-HJ-NP-Z2-9]{16}$/.test(code)) return toast('That code is not valid');
   let j; try { const r = await fetch(API_BASE + '/api/load', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) }); if (r.status === 404) return toast('No saved progress found for that code'); if (!r.ok) throw 0; j = await r.json(); } catch { return toast('Could not reach the server. Try again in a moment.'); }
