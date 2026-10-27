@@ -504,7 +504,7 @@ async function doRewind() {
 function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" style="--c:${o.c}">${SKY.OBJ.map((_, i) => `<i class="${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}"></i>`).join('')}</div>`; }
 const RARITY = ['Common', 'Common', 'Uncommon', 'Uncommon', 'Rare', 'Rare', 'Epic', 'Epic', 'Legendary'];
 function discoveryK(name, d = {}) {   // everything the discovery card shows, rebuilt from the catalogue so it stays current
-  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
+  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
   return null;
 }
 function dayDiscovery(day) {
@@ -521,8 +521,10 @@ function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a 
     <div class="disc-type"><i></i>${o.name} · tier ${k.idx + 1} of 9</div>
     <h3 class="disc-name">${esc(k.name)}</h3><div class="disc-sub">${esc(k.kind)}</div>
     <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${opt.visitor ? RARITY[k.idx] : have + '<small> / ' + total + '</small>'}</b><span>${opt.visitor ? 'Rarity' : 'Collected'}</span></div></div>
-    ${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
+    ${k.boost ? `<div class="disc-boost"><b>Streak boost</b> ${k.boost.days}-day streak lifted this find</div>` : ''}${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
+    ${k.near && !opt.visitor ? `<div class="disc-near"><span>So close</span>${esc(k.near.how)} would have found a <b>${esc(SKY.OBJ[k.near.to].name.toLowerCase())}</b>.</div>` : ''}
     ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
+    ${k.next && !opt.visitor ? `<div class="disc-next">${esc(k.next)}</div>` : ''}
     <div class="disc-foot">${opt.visitor ? '' : '<button class="disc-btn share" data-discshare>Share this find</button>'}<a class="disc-link" href="${wikiUrl(k.art)}" target="_blank" rel="noopener">Wikipedia ↗</a>${opt.sky ? '<button class="disc-btn alt" id="discSky">Your sky</button>' : ''}</div>
     <div class="disc-tag">Space is cold. Warm it up.</div></div></div>`;
 }
@@ -709,7 +711,7 @@ function openSky(opt = {}) {
   let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
   const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
   openModal(`<div class="skyhead"><h2>Your sky</h2><p class="skytag">Space is cold. Warm it up.</p>
-      <div class="skyprog"><div class="skyprog-bar"><i style="width:${Math.max(2, Math.round(owned / total * 100))}%"></i></div><div class="skyprog-lab"><span><b>${owned}</b> of ${total} objects</span><span><b>${types}</b> of 9 types</span><span><b>${P.sky.total}</b> earned</span></div></div></div>
+      <div class="skyprog"><div class="skyprog-bar"><i style="width:${Math.max(2, Math.round(owned / total * 100))}%"></i></div><div class="skyprog-lab"><span><b>${owned}</b> of ${total} objects</span><span><b>${types}</b> of 9 types</span><span><b>${P.sky.total}</b> earned</span></div>${skyNext() ? `<div class="skynext">→ ${esc(skyNext())}</div>` : ''}</div></div>
     <div class="tabs sk" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your universe</button></div>
     <div id="skyPane"></div>`);
   $('#modal').classList.add('sky');
@@ -769,12 +771,29 @@ function pickNamed(typeId) {   // a real, famous object of that type: the first 
 }
 const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
-function skyTier(r) {
+const STREAK_BOOST = [[30, .12], [14, .08], [7, .05], [3, .02]];   // days of streak -> a small head start on the quality score
+const streakBoost = n => { for (const [d, v] of STREAK_BOOST) if (n >= d) return { v, d }; return { v: 0, d: 0 }; };
+function skyTier(r, boost = 0) {
   const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (10 * ref + 210 - r.secs) / 210));   // longer puzzles get proportionally more time for a full speed score
-  const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0); let idx = 0; SKY_CUT.forEach((c, i) => { if (q >= c) idx = i; });
-  idx = Math.min(idx, ref <= 1 ? 4 : ref === 2 ? 7 : 8);   // a one-click puzzle tops out at a blue-white star, a two-click one at a neutron star; only puzzles of par 3 or more can give a quasar
+  const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0), cap = ref <= 1 ? 4 : ref === 2 ? 7 : 8, pick = qq => { let i = 0; SKY_CUT.forEach((c, k) => { if (qq >= c) i = k; }); return Math.min(i, cap); };
+  let idx = pick(q + boost); const plain = pick(q); if (boost && idx === 8 && plain < 8) idx = 7;   // a streak never hands out a quasar: that one is earned
   const why = [r.clicks <= ref ? (r.clicks < ref ? 'beat par' : 'par route') : `${r.clicks - ref} over par`, bn.n && bn.warm === bn.n ? 'every click warmer' : bn.best >= 2 ? `burn ×${bn.best}` : '', r.purist ? 'no search or rewind' : ''].filter(Boolean).join(' · ');
-  return { idx, q, why, burn: bn.best };
+  return { idx, q, why, burn: bn.best, plain, boosted: idx - plain };
+}
+function skyNearMiss(r, sk) {   // what small change would have earned the next tier up: the smallest one that works
+  const ref = r.par || r.goal || r.clicks; if (sk.idx >= 8) return null; const tries = [];
+  if (r.clicks > ref) tries.push([{ ...r, clicks: r.clicks - 1 }, r.clicks - ref === 1 ? 'One click fewer (par)' : 'One click fewer']);
+  if (!r.purist) tries.push([{ ...r, purist: true }, 'A run with no link search or rewind']);
+  tries.push([{ ...r, secs: Math.max(5, Math.round(r.secs * .6)) }, 'A faster run']);
+  for (const [alt, how] of tries) { const s2 = skyTier(alt, 0); if (s2.idx > sk.idx) return { to: s2.idx, how, one: how.startsWith('One click') }; } return null;
+}
+const SKY_HINT = ['Any solved puzzle', 'A near-par route', 'A par route', 'A par route with warm steps', 'Par with a burn chain', 'A par route, every click warmer', 'Par or better with no detours', 'A flawless par route, no search or rewind', 'A flawless par route in about a minute'];
+function skyNext() {   // one line that says what to chase next
+  const cat = P.sky.cat, f = P.sky.found; let best = null;
+  SKY.OBJ.forEach((o, i) => { const n = SKY.POOL[o.id].length, have = SKY.POOL[o.id].filter(q => cat[q.n]).length, left = n - have; if (have && left && left <= 3 && (!best || left < best.left)) best = { left, o, i }; });
+  if (best) return `${best.left} more ${best.o.name.toLowerCase()}${best.left > 1 ? 's' : ''} completes your ${best.o.name.toLowerCase()} collection`;
+  const miss = SKY.OBJ.findIndex(o => !f[o.id]); if (miss >= 0) { const o = SKY.OBJ[miss]; return `You have not found a ${o.name.toLowerCase()} yet. ${SKY_HINT[miss]} can earn one`; }
+  const quasars = SKY.POOL.quasar.filter(q => cat[q.n]).length; return quasars < SKY.POOL.quasar.length ? `${SKY.POOL.quasar.length - quasars} quasars left. Each one becomes a galaxy in your universe` : '';
 }
 function finish(won) {
   if (G.done) return; G.done = true; clearInterval(tick);
@@ -802,8 +821,8 @@ function finish(won) {
     G.result.chal = { ...ch, outcome: win ? 'win' : tie ? 'tie' : 'lose' };
     if (win) P.challengeWins++;
   } else gain = Math.round(gain / 2);
-  if (skyOK) { const sk = skyTier(G.result), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
+  if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
+  G.result.sky = { boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }

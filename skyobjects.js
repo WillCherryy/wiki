@@ -309,7 +309,12 @@
     const A = [x + dx, y + dy, r * .62], B2 = [x - dx, y - dy, r * .5]; (front ? [B2, A] : [A, B2]).forEach(b => one(b[0], b[1], b[2]));
   }
   function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); paintBody(g, id, x, y, r * (q.s || 1), t, q); }
-  function starfield(g, w, h, t, n = 90, seed = 0) { g.save(); for (let i = 0; i < n; i++) { const x = hash(seed + i) * w, y = hash(seed + i + 500) * h, r = .4 + hash(seed + i + 900) * 1.3, a = .25 + .6 * hash(seed + i + 1300) * (.7 + .3 * Math.sin(t * (1 + hash(i) * 2) + i)); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.restore(); }
+  function starfield(g, w, h, t, n = 90, seed = 0) {   // many faint stars and a few bright ones (a power law), a hint of colour, clumped a little: not polka dots
+    g.save(); const tints = ['255,255,255', '255,238,215', '206,224,255', '255,214,190'];
+    for (let i = 0; i < n; i++) { const u = hash(seed + i + 900), v = hash(seed + i + 1300), cl = hash(Math.floor(hash(seed + i) * 6) + seed * 3.1), x = ((hash(seed + i) + (hash(seed + i + 77) - .5) * .12 * cl) % 1 + 1) % 1 * w, y = ((hash(seed + i + 500) + (hash(seed + i + 177) - .5) * .12 * cl) % 1 + 1) % 1 * h, big = Math.pow(u, 7), r = .28 + 1.5 * big + .25 * u, a = (.14 + .5 * Math.pow(v, 1.6) + .4 * big) * (.8 + .2 * Math.sin(t * (1 + hash(i) * 2) + i)), tn = tints[Math.floor(hash(seed + i + 2100) * tints.length)];
+      g.fillStyle = `rgba(${tn},${Math.min(1, a)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); if (big > .12) { g.fillStyle = `rgba(${tn},${a * .16})`; g.beginPath(); g.arc(x, y, r * 3.2, 0, TAU); g.fill(); } }
+    g.restore();
+  }
   function fade(g, w, h, inner = .55) { g.save(); g.globalCompositeOperation = 'destination-in'; const gr = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * inner * .5, w / 2, h / 2, Math.hypot(w, h) * .5); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.7, 'rgba(0,0,0,.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.restore(); }
   // the landing: particles converge, a flash and shock rings (more for hotter objects), then the object grows in with a small overshoot
   function land(g, w, h, id, idx, t, q) {
