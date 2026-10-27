@@ -288,7 +288,7 @@ let tick = null;
 const elapsed = () => G ? G.base + (G.t0 ? (Date.now() - G.t0) / 1000 : 0) : 0;
 function persistCur() { if (G && G.mode === 'live') return; if (!G || G.done) { try { localStorage.removeItem(CUR); } catch {} return; } try { localStorage.setItem(CUR, JSON.stringify({ mode: G.mode, day: G.day, from: G.from, to: G.to, path: G.path, steps: G.steps, timeline: G.timeline, rewinds: G.rewinds, usedFind: !!G.usedFind, moves: G.moves || 0, base: elapsed() })); } catch {} }
 
-function show(view) { if (view !== 'page') document.body.classList.remove('insky'); document.body.classList.toggle('ingame', view === 'game'); document.body.classList.toggle('inpage', view === 'page'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#page').style.display = view === 'page' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
+function show(view) { if (view === 'home' || view === 'game') setNav('play'); if (view !== 'page') document.body.classList.remove('insky'); document.body.classList.toggle('ingame', view === 'game'); document.body.classList.toggle('inpage', view === 'page'); if (view !== 'game') document.body.classList.remove('finding'); $('#home').style.display = view === 'home' ? '' : 'none'; $('#page').style.display = view === 'page' ? '' : 'none'; $('#game').classList.toggle('on', view === 'game'); window.scrollTo({ top: 0 }); }
 function setTemp(sg) {
   const r = document.documentElement; r.style.setProperty('--temp', tempCss(sg)); r.style.setProperty('--heat', String(Math.max(0, Math.min(1, sg))));
   r.dataset.heat = sg >= .97 ? 'sight' : sg > .72 ? 'scorching' : sg > .5 ? 'hot' : sg > .32 ? 'warm' : sg > .15 ? 'cool' : 'cold';
@@ -898,7 +898,7 @@ async function submitScore() {
 /* ------------------------------------------------------------------- modals */
 let pageUntil = 0, pageNav = '', prevView = 'home';
 const curView = () => $('#page').style.display !== 'none' ? 'page' : $('#game').classList.contains('on') ? 'game' : 'home';
-function setNav(n) { document.querySelectorAll('#topnav [data-go], #tabbar [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === n)); }
+function setNav(n) { document.querySelectorAll('#topnav [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === (n === 'packs' ? 'modes' : n))); document.querySelectorAll('#tabbar [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === n)); document.querySelectorAll('#topnav [data-go], #tabbar [data-go]').forEach(b => b.blur()); }
 function openPage(html, onclose) {   // the same content as a modal, laid out as a full page in the site chrome
   const m = /^\s*<h2[^>]*>([\s\S]*?)<\/h2>\s*(<p[^>]*>[\s\S]*?<\/p>)?/.exec(html), title = m ? m[1] : '', sub = m && m[2] ? m[2].replace(/^<p[^>]*>|<\/p>$/g, '') : '', rest = m ? html.slice(m[0].length) : html;
   if (curView() !== 'page') prevView = curView();
@@ -2329,7 +2329,7 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
-openPacks = asPage(openPacks, 'modes'); openPack = asPage(openPack, 'modes'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
+openPacks = asPage(openPacks, 'packs'); openPack = asPage(openPack, 'packs'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
 handleInvite();
 
 applyTheme();
