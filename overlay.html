@@ -13,10 +13,10 @@
   <header class="head panel">
     <div class="brand" id="brand"></div>
     <div class="goal" id="goal"></div>
-    <div class="code"><b id="code"></b><small id="stat"></small></div>
+    <div class="code"><small>Join with the code</small><b id="code"></b><small id="stat"></small></div>
   </header>
   <section class="panel"><h3><span>Leaderboard</span><span id="count"></span></h3><div id="board"></div></section>
-  <section class="panel"><h3><span>Stuck on the weirdest pages</span></h3><div class="stuck" id="stuck"></div></section>
+  <section class="side"><div class="tiles" id="tiles"></div><div class="panel grow"><h3><span>Stuck on the weirdest pages</span></h3><div class="stuck" id="stuck"></div></div></section>
 </main>
 <div class="big" id="big"></div>
 <div id="alert"></div>
@@ -50,7 +50,9 @@
     $('#stat').textContent = { open: 'Open · join with the code', countdown: 'Starting', racing: 'Racing', ended: 'Finished' }[st.phase];
     const b = bd || { n: 0, fin: 0, top: [], stuck: [] };
     $('#count').textContent = `${b.fin}/${b.n} finished`;
-    $('#board').innerHTML = b.top.slice(0, 8).map((r, i) => `<div class="row${r.d ? ' done' : ''}"><span class="pos">${i + 1}</span><span class="nm">${esc(r.n)}</span><span class="meta">${r.d ? `${r.c} clicks · ${fmt(r.s)}` : r.at ? esc(r.at) : ''}</span><div class="bar"><i style="width:${Math.round((r.d ? 1 : r.tp) * 100)}%;--c:${heat(r.tp)}"></i></div></div>`).join('') || '<div class="empty">Nobody has joined yet. Share the link!</div>';
+    $('#board').innerHTML = b.top.slice(0, 10).map((r, i) => `<div class="row${r.d ? ' done' : ''}"><span class="pos">${i + 1}</span><span class="nm">${esc(r.n)}</span><span class="meta">${r.d ? `${r.c} clicks · ${fmt(r.s)}` : r.at ? esc(r.at) : ''}</span><div class="bar"><i style="width:${Math.round((r.d ? 1 : r.tp) * 100)}%;--c:${heat(r.tp)}"></i></div></div>`).join('') || '<div class="empty">Nobody has joined yet. Share the link!</div>';
+    const fast = b.top.filter(r => r.d).sort((x, y) => x.c - y.c || x.s - y.s)[0];
+    $('#tiles').innerHTML = `<div class="tile"><b>${b.fin}<small>/${b.n}</small></b><span>Finished</span></div><div class="tile"><b>${fast ? fast.c : '–'}</b><span>Fewest clicks${fast ? ' · ' + esc(fast.n) : ''}</span></div><div class="tile"><b>${Math.max(0, b.n - b.fin)}</b><span>Still racing</span></div>`;
     const sk = (b.stuck || []).slice(0, 6);
     $('#stuck').innerHTML = sk.map(s => `<div class="chip" style="--c:${heat(s.tp)}"><b>${esc(s.title)}</b><span>${s.n > 1 ? s.n + ' players' : esc(s.names[0] || '')}</span></div>`).join('') || `<div class="empty">${st.phase === 'racing' ? 'Everyone is on the move.' : 'Appears once the race starts.'}</div>`;
     clearInterval(cdT);

@@ -1981,14 +1981,13 @@ function renderHost() {
   const act = s.phase === 'open' ? `<button class="btn" id="hStart">Start race · 5 s countdown</button>`
     : s.phase === 'racing' ? `<button class="btn" id="hEnd">End race</button>`
     : s.phase === 'ended' ? `<button class="btn" id="hSame">New round · same puzzle</button><button class="btn ghost" id="hNew">New round · new puzzle</button>` : '';
-  box.innerHTML = `<span class="eyebrow">Streamer lobby</span><div class="hostcode">${esc(Live.code)}</div>
-    <div class="field">Viewer link — paste in chat<div class="namebox" style="margin:0"><input id="hLink" readonly value="${esc(Live.link(Live.code))}"><button class="btn ghost" data-copy="hLink">Copy</button></div></div>
-    <div class="field">OBS overlay — add as a Browser Source (1920×1080)<div class="namebox" style="margin:0"><input id="hOv" readonly value="${esc(Live.overlay(Live.code))}"><button class="btn ghost" data-copy="hOv">Copy</button></div></div>
-    <div class="hoststat"><span><b>${n}</b> players</span><span><b>${b ? b.fin : 0}</b> finished</span><span>${phase}</span></div>
-    <div class="actions">${act}</div>
-    ${Live.play ? '' : `<div class="field" style="margin-top:14px">Play along yourself<div class="namebox" style="margin:0"><input id="hostName" maxlength="20" value="${esc(nameVal)}" placeholder="Your nickname"><button class="btn ghost" id="hPlay">Join as player</button></div></div>`}
-    ${b && b.players && b.players.length ? `<div class="hplayers">${b.players.slice(0, 60).map(p => `<span class="pill${p.on ? '' : ' off'}">${esc(p.n)}${p.d ? ' ✓' : ''} <button data-kick="${p.pid}" title="Remove">×</button></span>`).join('')}</div>` : ''}
-    <div class="actions" style="margin-top:14px"><button class="btn ghost" id="hClose">Close lobby</button></div>`;
+  box.innerHTML = `<div class="hostdash"><div class="hcard hmain"><span class="eyebrow">Streamer lobby</span><div class="hostcode">${esc(Live.code)}</div><span class="hphase ${s.phase}"><i></i>${phase}</span>
+      <div class="hoststat"><span><b>${n}</b> players</span><span><b>${b ? b.fin : 0}</b> finished</span></div>
+      <div class="actions">${act}</div><div class="actions"><button class="btn ghost" id="hClose">Close lobby</button></div></div>
+    <div class="hcard"><h4>Share</h4><div class="field">Viewer link: paste in chat<div class="namebox" style="margin:0"><input id="hLink" readonly value="${esc(Live.link(Live.code))}"><button class="btn ghost" data-copy="hLink">Copy</button></div></div>
+      <div class="field">OBS overlay: add as a Browser Source (1920×1080), shows the live leaderboard<div class="namebox" style="margin:0"><input id="hOv" readonly value="${esc(Live.overlay(Live.code))}"><button class="btn ghost" data-copy="hOv">Copy</button></div></div>
+      ${Live.play ? '' : `<div class="field">Play along yourself<div class="namebox" style="margin:0"><input id="hostName" maxlength="20" value="${esc(nameVal)}" placeholder="Your nickname"><button class="btn ghost" id="hPlay">Join as player</button></div></div>`}</div>
+    <div class="hcard hwide"><h4>Players <small>${n}</small></h4>${b && b.players && b.players.length ? `<div class="hplayers">${b.players.slice(0, 60).map(p => `<span class="pill${p.on ? '' : ' off'}">${esc(p.n)}${p.d ? ' ✓' : ''} <button data-kick="${p.pid}" title="Remove">×</button></span>`).join('')}</div>` : '<p class="mute" style="margin:0">Nobody has joined yet. Share the viewer link or the code.</p>'}</div></div>`;
   box.querySelectorAll('[data-copy]').forEach(c => c.onclick = async () => { const i = $('#' + c.dataset.copy); try { await navigator.clipboard.writeText(i.value); toast('Copied'); } catch { i.select(); } });
   box.querySelectorAll('[data-kick]').forEach(k => k.onclick = () => Live.send({ t: 'kick', pid: k.dataset.kick }));
   if ($('#hStart')) $('#hStart').onclick = () => Live.send({ t: 'start' });
