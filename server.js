@@ -285,7 +285,8 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'content-type': ft[2] === 'woff2' ? 'font/woff2' : 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=31536000, immutable' }); res.end(buf);
     });
   }
-  if (req.method === 'GET' && /^\/og\/find\/[a-z0-9-]+\.jpg$/.test(url.pathname)) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': 'image/jpeg' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }
+  if (req.method === 'GET' && /^\/p\/\d{4}-\d{2}-\d{2}$/.test(url.pathname)) { return import('./worker/find.js').then(({ dayPage }) => { const day = url.pathname.slice(3); let puz = null; try { puz = JSON.parse(fs.readFileSync(path.join(__dirname, 'puzzles.json'), 'utf8')).days[day]; } catch {} const img = '/og/day/' + day + '.jpg', html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8'); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(puz ? dayPage(html, 'http://' + req.headers.host, day, puz, fs.existsSync(path.join(__dirname, img)) ? img : null) : html); }); }
+  if (req.method === 'GET' && /^\/og\/(find\/[a-z0-9-]+|day\/\d{4}-\d{2}-\d{2})\.jpg$/.test(url.pathname)) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': 'image/jpeg' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }
   if (req.method === 'GET' && STATIC[url.pathname]) {
     return fs.readFile(path.join(__dirname, url.pathname), (e, buf) => {
       if (e) return json(res, 404, {});

@@ -936,7 +936,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'archive' ? 'archive' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'fastest' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'fastest' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL + (r.mode === 'daily' ? 'p/' + G.day : '') : BRAND.domain}`;
 }
 /* ----------------------------------------------------------------- result components (one visual language) */
 const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 : i / (n - 1)) * 4));
@@ -1109,7 +1109,7 @@ function openCloud() {
 }
 { const m = /^#restore=([A-Za-z0-9-]{16,24})$/.exec(location.hash); if (m) setTimeout(() => { history.replaceState(null, '', location.pathname + location.search); cloudRestore(m[1]); }, 900); }   // a restore link opened on a new device
 
-const SITE_URL = location.origin + (location.pathname.startsWith('/find/') ? '/' : location.pathname.replace(/[^/]*$/, ''));
+const SITE_URL = location.origin + (location.pathname.startsWith('/find/') || location.pathname.startsWith('/p/') ? '/' : location.pathname.replace(/[^/]*$/, ''));
 /* anonymous usage counts: one flag per player per day, no names or IPs. Players can switch it off in Settings. */
 /* ---- anonymous analytics: where visitors come from, never who they are. The founder's own devices and bots send nothing. */
 const Traffic = (() => {

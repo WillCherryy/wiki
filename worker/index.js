@@ -12,7 +12,7 @@ import { checkOverride } from './puzzle.js';
 export { Lobby } from './lobby.js';
 let ready;
 
-import { findPage, slugOf } from './find.js';
+import { findPage, slugOf, dayPage } from './find.js';
 
 export default {
   async fetch(request, env) {
@@ -21,6 +21,11 @@ export default {
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...cors } });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
+    if (/^\/p\/\d{4}-\d{2}-\d{2}$/.test(path) && env.ASSETS && request.method === 'GET') {
+      const day = path.slice(3), [r, pj] = await Promise.all([env.ASSETS.fetch(new Request(url.origin + '/', request)), env.ASSETS.fetch(new Request(url.origin + '/puzzles.json'))]); let puz = null; try { puz = (await pj.json()).days[day]; } catch {}
+      const img = '/og/day/' + day + '.jpg', has = puz && (await env.ASSETS.fetch(new Request(url.origin + img, { method: 'HEAD' }))).ok;
+      return new Response(puz ? dayPage(await r.text(), url.origin, day, puz, has ? img : null) : await r.text(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
+    }
     if (path.startsWith('/find/') && env.ASSETS && request.method === 'GET') { const r = await env.ASSETS.fetch(new Request(url.origin + '/', request)); let nm = ''; try { nm = decodeURIComponent(path.slice(6)); } catch {} const img = '/og/find/' + slugOf(nm) + '.jpg', has = nm && (await env.ASSETS.fetch(new Request(url.origin + img, { method: 'HEAD' }))).ok; return new Response(findPage(await r.text(), url.origin, path.slice(6), has ? img : null), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } }); }
     if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);   // everything else is the static site
     if (path.startsWith('/api/lobby')) return lobbyRoute(request, env, path, request.method, reply, now());

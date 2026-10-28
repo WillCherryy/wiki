@@ -7,3 +7,13 @@ export function findPage(html, origin, rawName, img) {   // img: a preview pictu
     .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${e(title)}"`).replace(/(<meta property="og:description" content=")[^"]*"/, `$1${e(desc)}"`).replace(/(<meta property="og:url" content=")[^"]*"/, `$1${origin}/find/${encodeURIComponent(name)}"`)
     .replace(/(<meta property="og:image" content=")[^"]*"/, img ? `$1${origin}${img}"` : '$&').replace(/(<meta name="twitter:image" content=")[^"]*"/, img ? `$1${origin}${img}"` : '$&');
 }
+
+// /p/<YYYY-MM-DD>: the app, with the preview of that day's puzzle (its own picture, route and plate number) so a shared result unfurls as the puzzle
+export const dayNumOf = k => { const [y, m, d] = k.split('-').map(Number); return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 864e5) + 1; };
+export function dayPage(html, origin, day, puz, img) {
+  const e = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'), title = `Scorcher #${dayNumOf(day)}: ${puz.from} → ${puz.to}`,
+    desc = `Can you get from ${puz.from} to ${puz.to} using only Wikipedia links?${puz.par ? ` The fastest route is ${puz.par} click${puz.par === 1 ? '' : 's'}.` : ''} Scorcher, the daily Wikipedia link race.`;
+  return html.replace('<head>', `<head><base href="${origin}/">`).replace(/<title>[^<]*<\/title>/, `<title>${e(title)}</title>`)
+    .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${e(title)}"`).replace(/(<meta property="og:description" content=")[^"]*"/, `$1${e(desc)}"`).replace(/(<meta property="og:url" content=")[^"]*"/, `$1${origin}/p/${day}"`)
+    .replace(/(<meta property="og:image" content=")[^"]*"/, img ? `$1${origin}${img}"` : '$&');
+}
