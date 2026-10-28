@@ -1,0 +1,10 @@
+// a cosmic web for the mockup: nodes, curved filaments of faint gas, and galaxies (tiny tilted spirals) strung along them
+function drawWeb(g,w,h,seed){let s=seed||9;const r=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  g.fillStyle='#030208';g.fillRect(0,0,w,h);drawField(g,w,h,700,3);
+  const nodes=[[w*.5,h*.5]];for(let i=0;i<6;i++){const a=i/6*6.28+r()*.6,d=h*(.3+.25*r());nodes.push([w*.5+Math.cos(a)*d*1.5,h*.5+Math.sin(a)*d])}
+  const fil=[];for(let i=1;i<nodes.length;i++){fil.push([0,i]);fil.push([i,i%6+1])}
+  g.globalCompositeOperation='lighter';
+  for(const [a,b] of fil){const A=nodes[a],B=nodes[b],bend=(r()-.5)*160;for(let k=0;k<900;k++){const t=r(),nx=-(B[1]-A[1]),ny=B[0]-A[0],L=Math.hypot(nx,ny),off=Math.sin(t*3.14)*bend+(r()+r()+r()-1.5)*70,x=A[0]+(B[0]-A[0])*t+nx/L*off,y=A[1]+(B[1]-A[1])*t+ny/L*off,sz=10+r()*46,gr=g.createRadialGradient(x,y,0,x,y,sz);gr.addColorStop(0,'rgba(110,130,255,.0075)');gr.addColorStop(1,'rgba(120,140,255,0)');g.fillStyle=gr;g.fillRect(x-sz,y-sz,sz*2,sz*2)}}
+  const gal=(x,y,R,col)=>{g.save();g.translate(x,y);g.rotate(r()*6.28);g.scale(1,.35+.5*r());let gr=g.createRadialGradient(0,0,0,0,0,R);gr.addColorStop(0,'rgba(255,240,215,.95)');gr.addColorStop(.2,`rgba(${col},.5)`);gr.addColorStop(1,`rgba(${col},0)`);g.fillStyle=gr;g.beginPath();g.arc(0,0,R,0,7);g.fill();g.strokeStyle=`rgba(${col},.35)`;g.lineWidth=.6;for(let k=0;k<2;k++){g.beginPath();for(let i=0;i<40;i++){const u=i/40,th=k*3.14+u*5,rr=R*(.15+.8*u);i?g.lineTo(Math.cos(th)*rr,Math.sin(th)*rr):g.moveTo(Math.cos(th)*rr,Math.sin(th)*rr)}g.stroke()}g.restore()};
+  const pts=[];nodes.forEach(n=>{for(let i=0;i<5;i++)pts.push([n[0]+(r()+r()-1)*40,n[1]+(r()+r()-1)*30])});for(const [a,b] of fil)for(let i=0;i<3;i++){const t=r(),A=nodes[a],B=nodes[b];pts.push([A[0]+(B[0]-A[0])*t+(r()-.5)*24,A[1]+(B[1]-A[1])*t+(r()-.5)*24])}
+  pts.forEach((p,i)=>gal(p[0],p[1],i===0?11:3+r()*5,['190,205,255','255,214,170','200,190,255'][i%3]));g.globalCompositeOperation='source-over';return pts}
