@@ -1075,9 +1075,11 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setTimeout(() => cloudSoon(100), 4000);   // players who already have progress get their first save soon after opening
 const agoText = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
 const FOUNDER_HASH = '9ee1887e3d8cdf52a64464557fd43e1fa549aac6bee4eb712d33fc9c85aaa1fd';   // SHA-256('scorcher-founder:' + code): the code itself is not in the source
-function founderFill() {   // gives the founder every sky object (and tops up whenever new ones are added)
-  let n = 0; SKY.OBJ.forEach(o => { const L = SKY.POOL[o.id]; L.forEach(q => { if (!P.sky.cat[q.n]) { P.sky.cat[q.n] = 1; n++; } }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, L.length); });
-  P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.keys(P.sky.cat).length); return n;
+const FOUNDER_MEAN = [12, 11, 9, 8, 6, 4, 3, 2.4, 1.4];   // typical copies per object by tier: common brown and red dwarfs pile up, quasars are one-offs (what a long-running account with everything looks like)
+function founderFill() {   // gives the founder every sky object with a natural spread of duplicates (and tops up whenever new ones are added)
+  let n = 0; const fh = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
+  SKY.OBJ.forEach((o, i) => { const L = SKY.POOL[o.id]; let tot = 0; L.forEach(q => { const want = Math.max(1, Math.round(FOUNDER_MEAN[i] * Math.exp((fh('f' + q.n) - .5) * 1.7))); if ((P.sky.cat[q.n] || 0) < want) { n++; P.sky.cat[q.n] = want; } tot += P.sky.cat[q.n]; }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, tot); });
+  P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.values(P.sky.cat).reduce((x, y) => x + y, 0)); return n;
 }
 async function founderGrant(code) {   // the founder's code adds every sky object on this device (it changes nothing on the server)
   try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('scorcher-founder:' + code)); if ([...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('') !== FOUNDER_HASH) return false; } catch { return false; }
