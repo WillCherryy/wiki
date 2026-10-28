@@ -551,6 +551,18 @@
   // The map is far larger than the view: pan with opt.cam = {x, y, z}; positions are world units with the primary at the origin.
   function kepler(M, e) { let E = M; for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
   const SPREAD = 2.2, BASE = .95;   // how far apart the orbits sit: bigger is grander (periods follow Kepler's law, so far orbits turn slowly)
+  // duplicates: each extra copy of an object is a companion that really orbits it (a Kepler-like ellipse, tilted, faster when closer); the first is the largest, the rest are smaller moons, with a count badge once the object is big enough to read
+  function companions(g, cx, cy, rr, name, count, t, K, SY, colr, big) {
+    const n = Math.min(4, (count || 1) - 1); if (n < 1) return;
+    for (let k = 0; k < n; k++) {
+      const a = rr * (1.7 + .55 * k) + 8 * K, e = .12 + .1 * hs2(name + 'e' + k), til = hs2(name + 't' + k) * Math.PI, period = 6 + 5 * Math.pow(a / (rr + 8 * K), 1.5), M = t * TAU / period + hs2(name + 'm' + k) * TAU;
+      let E = M; for (let i = 0; i < 4; i++) E = M + e * Math.sin(E);
+      const x = a * (Math.cos(E) - e), y = a * Math.sqrt(1 - e * e) * Math.sin(E), c = Math.cos(til), s2 = Math.sin(til), px = cx + (x * c - y * s2), py = cy + (x * s2 + y * c) * SY, mr = Math.max(k ? 1.5 * K : 2.2 * K, rr * (k ? .1 : .17));
+      g.save(); g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.translate(cx - a * e * c, cy - a * e * s2 * SY); g.rotate(0); g.beginPath(); g.ellipse(0, 0, a, a * Math.sqrt(1 - e * e) * SY, til, 0, TAU); g.stroke(); g.restore();
+      glowAt(g, px, py, mr * 3.4, colr, .55); g.fillStyle = rgba(colr, .95); g.beginPath(); g.arc(px, py, mr, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(px - mr * .25, py - mr * .25, mr * .38, 0, TAU); g.fill();
+    }
+    if (big && count > 1) { g.save(); g.font = `600 ${Math.round(12 * K)}px "Instrument Sans",system-ui,sans-serif`; const tx = '×' + count, wd = g.measureText(tx).width + 12 * K; g.fillStyle = 'rgba(10,8,22,.8)'; g.strokeStyle = rgba(colr, .7); g.lineWidth = K; g.beginPath(); (g.roundRect ? g.roundRect(cx + rr * .8, cy - rr * 1.05 - 10 * K, wd, 20 * K, 10 * K) : g.rect(cx + rr * .8, cy - rr * 1.05 - 10 * K, wd, 20 * K)); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(tx, cx + rr * .8 + 6 * K, cy - rr * 1.05); g.restore(); }
+  }
   function orbits(w, list, spread = SPREAD, base = BASE) {   // list sorted hottest first: [{n, id, idx, count}]; every body after the first orbits the primary
     return list.slice(1).map((b, i) => { const k = hs(b.n), a = (w * (base + 1.1 * Math.log(1 + .9 * i)) + (hash(k) - .5) * w * .06) * spread, T = 9 * Math.pow(a / (w * .44), 1.5); return { ...b, a, T, e: .05 + .3 * hash(k + 3.1), om: hash(k + 7.7) * TAU, M0: hash(k + 1.3) * TAU }; });
   }
@@ -571,7 +583,7 @@
       if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, i * .07), p = toS(bx + q[0], by + q[1] * SY); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(p[0], p[1], Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
       if (born < 1) ring(g, it.x, it.y, base * (.6 + 3 * born), OBJ[b.idx].c, .7 * (1 - born), 3);
       const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / 1500 * .5 + .5, 0, 1); if (r * sc < 15) { halo(g, it.x, it.y, Math.max(8, r * sc * 3.2), OBJ[b.idx].c, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.x, it.y, Math.max(1.6, r * sc * .32), 0, TAU); g.fill(); } else { g.save(); g.translate(it.x, it.y); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); if (b.tint && r * sc > 12) tintBody(g, b, Math.max(.5, r * sc)); g.restore(); }
-      for (let k = 0; k < Math.min(5, b.count - 1); k++) { const rs = r * sc * (1.9 + .4 * k) + 8, th = t * (2.3 - .25 * k) + hash(hs(b.n) + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.ellipse(it.x, it.y, rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(OBJ[b.idx].c, .95); g.beginPath(); g.arc(it.x + Math.cos(th) * rs, it.y + Math.sin(th) * rs * SY, 2.6 + (it.prim ? 1 : 0), 0, TAU); g.fill(); }
+      companions(g, it.x, it.y, r * sc, b.n, b.count, t, 1, SY, OBJ[b.idx].c, r * sc > 14);
       let lbl = null; if (Z > .45 || list.length <= 8 || opt.focus === b.n) { lbl = { text: b.n, x: it.x, y: it.y + r * sc * 1.25 + 40, size: clamp(24 * Math.sqrt(Z), 20, 36), color: opt.focus === b.n ? '#ffffff' : rgba(OBJ[b.idx].c, .92), focus: opt.focus === b.n }; if (!opt.noLabels) drawLabel(g, lbl); }
       pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: Math.max(r * sc, 18), lbl }); });
     // minimap: the whole system with the current view as a box
@@ -721,7 +733,7 @@
       if (bn < 1) ring(g, it.p[0], it.p[1], base * (.6 + 3 * bn), col(b), .7 * (1 - bn), 3);
       if (rr < 15 * K) { glowAt(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
       else { if (r < 20) { const sc = r / 16, sp = bodySprite(b); g.drawImage(sp, it.p[0] - 128 * sc, it.p[1] - 128 * sc, 256 * sc, 256 * sc); } else { g.save(); g.translate(it.p[0], it.p[1]); paintBody(g, b.id, 0, 0, r, t + b.idx, b); g.restore(); } }
-      for (let k = 0; k < Math.min(4, (b.count || 1) - 1); k++) { const rs = rr * (1.9 + .4 * k) + 8 * K, th = t * (2.3 - .25 * k) + hs2(b.n + k) * TAU; g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = K; g.beginPath(); g.ellipse(it.p[0], it.p[1], rs, rs * SY, 0, 0, TAU); g.stroke(); g.fillStyle = rgba(col(b), .95); g.beginPath(); g.arc(it.p[0] + Math.cos(th) * rs, it.p[1] + Math.sin(th) * rs * SY, Math.max(1.8 * K, rr * .09), 0, TAU); g.fill(); }
+      companions(g, it.p[0], it.p[1], rr, b.n, b.count, t, K, SY, col(b), rr > 14 * K);
       const foc = opt.focus === b.n, orbPx = b.tier === 'member' ? (B[b.parent].a ? b.a * Z : 0) : 0, near = b.tier === 'member' ? b.a * (1 + b.e) * Z > 55 * K : true, showL = !dim && (foc || (nuc ? true : b.tier === 'anchor' ? b.a * Z > 90 * K || b.reach * Z > 30 * K : near && b.a * Z > 60 * K));
       let lbl = null; if (showL && !opt.noLabels) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
       if (dim) g.globalAlpha = 1;
