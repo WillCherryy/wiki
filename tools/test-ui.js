@@ -17,7 +17,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
   const srv = spawn('node', ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DEV: '1', DATA_FILE: path.join(os.tmpdir(), 'scorcher-ui-' + Date.now() + '.json') }, stdio: 'ignore' }); await new Promise(r => setTimeout(r, 1500));
   const exe = process.env.CHROME || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
   const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
-  const CALLS = ['openPacks()', "openPack('history')", 'liveMenu()', 'openHost()', 'openStudio()', 'leagueModal()', 'openLocker()', "openSky({tab:'sky'})", "openSky({tab:'sys'})", 'openProfile()', 'openSettings()', "openLeaderboard('day')", 'openCloud()', 'openMaker()'];
+  const CALLS = ['openPacks()', "openPack('history')", 'liveMenu()', 'openHost()', 'openStudio()', 'leagueModal()', 'openLocker()', "openSky({tab:'sky'})", "openSky({tab:'sys'})", 'openProfile()', 'openSettings()', "openLeaderboard('day')", 'openCloud()', 'openMaker()', 'openArchive()'];
   for (const [tag, vp, mob] of [['desktop', { width: 1360, height: 860 }, false], ['phone', { width: 390, height: 844 }, true]]) {
     const ctx = await browser.newContext({ viewport: vp, isMobile: mob, hasTouch: mob }); await ctx.addInitScript(() => { try { localStorage.setItem('wikiio:seen', '1'); } catch {} });
     const page = await ctx.newPage(), errs = []; page.on('pageerror', e => errs.push(e.message));
@@ -38,5 +38,5 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 14 pages x desktop and phone open cleanly, no sideways scroll)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll)');
 })().catch(e => { console.error(e); process.exit(1); });

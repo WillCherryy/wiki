@@ -372,6 +372,7 @@ const MODES = [
   ['stream', 'sky', '#6a4fa8', 'Livestream mode', 'A lobby your audience joins, with an OBS overlay', 'Streamers', () => openHost()],
   ['packs', 'grid', '#2a4f8a', 'Packs', 'Themed sets of puzzles: space, food, history and more', 'Packs', () => openPacks()],
   ['practice', 'target', '#2f7d46', 'Practice', 'Random puzzles: no streak, no sky objects', 'Unlimited', () => startGame('practice')],
+  ['archive', 'target', '#4a6a8a', 'Daily archive', 'Catch up on puzzles you missed', 'Past days', () => openArchive()],
   ['studio', 'grid', '#8a6a2a', 'Make a puzzle', 'Pick any two articles and share your own puzzle', 'Create', () => openMaker()],
   ['league', 'bolt', '#0f8b7e', 'Leagues', 'A private board with friends across daily puzzles', 'Social', () => leagueModal()]];
 function toggleModes(force) {
@@ -429,6 +430,7 @@ async function startGame(mode, resume, extra) {
   if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
   else if (mode === 'custom') { resume = null; from = extra.f; to = extra.t; meta = { par: extra.par || null, route: null }; }
+  else if (mode === 'archive') { resume = null; meta = await getDaily(extra.day); ({ from, to } = meta); }
   else if (mode === 'live') { resume = null; from = extra.from; to = extra.to; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
   else { resume = null; const v = await practicePuzzle(); from = v.from; to = v.to; meta = { par: v.par, route: v.route, alts: v.alts || [] }; }
@@ -876,6 +878,10 @@ function finish(won) {
     const ch = G.extra, win = won && (c < ch.c || (c === ch.c && secs < ch.s)), tie = won && c === ch.c && secs === ch.s;
     G.result.chal = { ...ch, outcome: win ? 'win' : tie ? 'tie' : 'lose' };
     if (win) P.challengeWins++;
+  } else if (G.mode === 'archive') {
+    P.archive = P.archive || {}; const prev = P.archive[G.extra.day] || (P.days[G.extra.day] && P.days[G.extra.day].won ? { clicks: P.days[G.extra.day].clicks } : null);
+    if (won && (!P.archive[G.extra.day] || c < P.archive[G.extra.day].clicks)) P.archive[G.extra.day] = { clicks: c, secs };
+    gain = won && !prev ? Math.round(gain / 2) : 0;   // half XP, once; no streak and no sky object for past days
   } else gain = Math.round(gain / 2);
   if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
   G.result.sky = { boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
@@ -923,10 +929,11 @@ function resultHead(r) {
   if (r.mode === 'pack') return 'Pack puzzle solved';
   if (r.mode === 'challenge') return r.chal && r.chal.outcome === 'win' ? 'Challenge won' : r.chal && r.chal.outcome === 'tie' ? 'Challenge tied' : 'Challenge lost';
   if (r.mode === 'custom') return 'Custom puzzle solved';
+  if (r.mode === 'archive') return 'Archive puzzle solved';
   return 'Practice solved';
 }
 function shareText() {
-  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'challenge' ? 'challenge' : 'practice';
+  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'archive' ? 'archive' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
   return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'fastest' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
@@ -1808,6 +1815,17 @@ function handleChallenge() {
 }
 
 
+
+/* ------------------------------------------------------------------ the daily archive: past puzzles, no streak or sky object */
+function openArchive() {
+  const today = dayKey(), days = PUZZLES ? Object.keys(PUZZLES).filter(d => d < today && PUZZLES[d].route).sort().reverse() : [];
+  const res = d => { const e = P.days[d], a = (P.archive || {})[d]; if (e && e.won) return { c: e.clicks, on: true }; if (a) return { c: a.clicks }; return null; };
+  const done = days.filter(d => res(d)).length, fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  openModal(`<h2>Daily archive</h2><p>Every past daily puzzle, any time. Archive solves earn half XP once, and do not count for your streak or Sky. <b>${done}</b> of <b>${days.length}</b> played.</p>
+    ${days.length ? `<div class="pkgrid arch">${days.map(d => { const z = PUZZLES[d], r = res(d); return `<button class="${r ? 'got' : ''}" data-d="${d}"><span class="ar-top"><b>#${dayNum(d)}</b><em>${fmtD(d)}</em></span><span class="ar-route">${esc(z.from)} <i>→</i> ${esc(z.to)}</span><span class="ar-s">${r ? '✓ ' + r.c + ' click' + (r.c === 1 ? '' : 's') + (r.on ? ' on the day' : '') : 'Fastest ' + (z.par || '?')}</span></button>`; }).join('')}</div>` : '<p class="mute">No past puzzles yet. Come back tomorrow.</p>'}`);
+  document.querySelectorAll('.arch button').forEach(b => b.onclick = () => { closeModal(); startGame('archive', null, { day: b.dataset.d }); });
+}
+
 /* ------------------------------------------------------------------ make a puzzle: any two articles, checked, shared as a link */
 const makerLink = (f, t, n, par) => `${SITE_URL}#p=${b64u(JSON.stringify({ v: 1, f, t, n: (n || 'A friend').slice(0, 20), p: par || 0 }))}`;
 function parsePuzzle(code) {
@@ -2410,7 +2428,7 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
-openPacks = asPage(openPacks, 'packs'); openPack = asPage(openPack, 'packs'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openMaker = asPage(openMaker, 'modes'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
+openPacks = asPage(openPacks, 'packs'); openPack = asPage(openPack, 'packs'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openMaker = asPage(openMaker, 'modes'); openArchive = asPage(openArchive, 'modes'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
 handleInvite();
 
 applyTheme();

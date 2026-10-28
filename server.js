@@ -285,6 +285,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'content-type': ft[2] === 'woff2' ? 'font/woff2' : 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=31536000, immutable' }); res.end(buf);
     });
   }
+  if (req.method === 'GET' && /^\/og\/find\/[a-z0-9-]+\.jpg$/.test(url.pathname)) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': 'image/jpeg' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }
   if (req.method === 'GET' && STATIC[url.pathname]) {
     return fs.readFile(path.join(__dirname, url.pathname), (e, buf) => {
       if (e) return json(res, 404, {});
@@ -300,7 +301,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname.startsWith('/find/')) {
     return fs.readFile(path.join(__dirname, 'index.html'), 'utf8', async (e, html) => {
       if (e) return json(res, 500, { error: 'missing index.html' });
-      const { findPage } = await import('./worker/find.js'); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(findPage(html, 'http://' + req.headers.host, url.pathname.slice(6)));
+      const { findPage, slugOf } = await import('./worker/find.js'); let nm = ''; try { nm = decodeURIComponent(url.pathname.slice(6)); } catch {} const img = '/og/find/' + slugOf(nm) + '.jpg', has = nm && fs.existsSync(path.join(__dirname, img)); res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(findPage(html, 'http://' + req.headers.host, url.pathname.slice(6), has ? img : null));
     });
   }
   json(res, 404, { error: 'not found' });
