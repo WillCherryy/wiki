@@ -558,22 +558,24 @@
   const SPREAD = 2.2, BASE = .95;   // how far apart the orbits sit: bigger is grander (periods follow Kepler's law, so far orbits turn slowly)
   // duplicates: every extra copy is the same object again, set among its siblings in a small cluster around the first (orbits with an even, sqrt-spread density).
   // Detail follows size on screen: a haze for a tight cluster, dots, then the real art. Positions are always computed so the UI can cycle through the copies.
-  const CPAR = new Map(); let CPB = 0;
+  const CPAR = new Map(); let CPB = 0, CPL = 0;
   function copyParams(name, n) { let a = CPAR.get(name); if (!a) CPAR.set(name, a = []); for (let k = a.length + 1; k <= n; k++) a.push({ e: .1 + .3 * hs2(name + 'e' + k), om: hs2(name + 'o' + k) * TAU, M0: hs2(name + 'm' + k) * TAU, u: Math.sqrt(k) }); return a; }
   function copies(g, cx, cy, wx, wy, rr, b, count, PH, o) {
-    const n = Math.max(0, (count || 1) - 1); if (!n) return null; const { K, SY, Z, colr, w, h, draw } = o, P = copyParams(b.n, n), out = new Array(n);
-    const spread = PREF.dup === 'spread';
-    for (let k = 0; k < n; k++) { const q = P[k], s0 = 2.2 + 1.5 * q.u, a = spread ? (380 + 260 * q.u) * Z : rr * s0, T = 16 * Math.pow(s0, 1.5) * (spread ? 6 : 1), M = q.M0 + PH * TAU / T, E = kepler(M, q.e), x = a * (Math.cos(E) - q.e), y = a * Math.sqrt(1 - q.e * q.e) * Math.sin(E), c = Math.cos(q.om), s = Math.sin(q.om), px = cx + x * c - y * s, py = cy + (x * s + y * c) * SY; out[k] = { x: px, y: py, wx: wx + (px - cx) / Z, wy: wy + (py - cy) / Z }; }
+    const n = Math.max(0, (count || 1) - 1); if (!n) return null; const { K, SY, Z, colr, tint, s: sz, w, h, draw, place } = o, P = copyParams(b.n, n), out = new Array(n), spread = !!place;
+    for (let k = 0; k < n; k++) {
+      if (spread) { out[k] = place(k + 1); continue; }
+      const q = P[k], s0 = 2.2 + 1.5 * q.u, a = rr * s0, T = 16 * Math.pow(s0, 1.5), M = q.M0 + PH * TAU / T, E = kepler(M, q.e), x = a * (Math.cos(E) - q.e), y = a * Math.sqrt(1 - q.e * q.e) * Math.sin(E), c = Math.cos(q.om), s = Math.sin(q.om), px = cx + x * c - y * s, py = cy + (x * s + y * c) * SY; out[k] = { x: px, y: py, wx: wx + (px - cx) / Z, wy: wy + (py - cy) / Z };
+    }
     if (!draw) return out;
-    const cl = spread ? 999 * K : rr * (2.2 + 1.5 * Math.sqrt(n)); if (!spread) glowAt(g, cx, cy, cl * 1.6, colr, Math.min(.24, .04 + .03 * Math.log2(count)));
-    if (cl < 26 * K) return out;
-    const small = rr < 15 * K, spr = !small && rr < 20 ? bodySprite(b) : null, sc = rr / 16; let live = 0, drawn = 0;
-    for (let k = 0; k < n && drawn < 60 && CPB < 500; k++) { const p = out[k]; if (p.x < -rr * 2 || p.x > w + rr * 2 || p.y < -rr * 2 || p.y > h + rr * 2) continue; drawn++; CPB++;
-      if (small) { glowAt(g, p.x, p.y, Math.max(8 * K, rr * 3.2), colr, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(p.x, p.y, Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
+    const cl = spread ? 999 * K : rr * (2.2 + 1.5 * Math.sqrt(n)); if (!spread && cl > 20 * K) glowAt(g, cx, cy, cl * 1.6, tint || colr, Math.min(.14, .02 + .02 * Math.log2(count)));
+    if (cl < 20 * K) return out;
+    const small = rr < 15 * K, spr = !small && rr < 20 ? bodySprite(b) : null, sc = rr / 16; let drawn = 0;
+    for (let k = 0; k < n && drawn < (spread ? 400 : 60) && CPB < 1500; k++) { const p = out[k]; if (p.x < -rr * 2 - 8 || p.x > w + rr * 2 + 8 || p.y < -rr * 2 - 8 || p.y > h + rr * 2 + 8) continue; drawn++; CPB++;
+      if (small) { glowAt(g, p.x, p.y, Math.max(2.6 * K, rr * 3.2 * (.3 + .7 * sz)), tint || colr, .22 + .5 * sz); g.fillStyle = `rgba(255,255,255,${.5 + .45 * sz})`; g.beginPath(); g.arc(p.x, p.y, Math.max(.9 * K, rr * .32), 0, TAU); g.fill(); }
       else if (spr) g.drawImage(spr, p.x - 128 * sc, p.y - 128 * sc, 256 * sc, 256 * sc);
-      else if (live < 4) { live++; g.save(); g.translate(p.x, p.y); paintBody(g, b.id, 0, 0, rr, PH + b.idx, b); g.restore(); }
+      else if (CPL < 10) { CPL++; g.save(); g.translate(p.x, p.y); paintBody(g, b.id, 0, 0, rr, PH + b.idx, b); g.restore(); }
       else { const sp = bodySprite(b); g.drawImage(sp, p.x - 128 * sc, p.y - 128 * sc, 256 * sc, 256 * sc); } }
-    if (o.fc > 0 && o.fc <= n) { const p = out[o.fc - 1]; ring(g, p.x, p.y, Math.max(rr * 1.5, 14 * K), '#ffffff', .85, 2 * K); }
+    if (o.fc > 0 && o.fc <= n) { const p = out[o.fc - 1]; if (rr < 7 * K) { const ph = (PH * .6) % 1; ring(g, p.x, p.y, (7 + 16 * ph) * K, '#ffffff', .6 * (1 - ph), K); } else ring(g, p.x, p.y, Math.max(rr * 1.5, 14 * K), '#ffffff', .85, 2 * K); }
     return out;
   }
   function orbits(w, list, spread = SPREAD, base = BASE) {   // list sorted hottest first: [{n, id, idx, count}]; every body after the first orbits the primary
@@ -614,19 +616,31 @@
     const W = nuclei.map(b => Math.max(.5, Math.log10(b.m || 1) - 7 + .5)), SW = W.reduce((a, b) => a + b, 0), galOf = b => { let u = hs2(b.n + 'g') * SW, i = 0; while (i < W.length - 1 && u > W[i]) { u -= W[i]; i++; } return i; };
     const bodies = [], idxOf = {}, add = (b, o) => { const e = { ...b, ...o }; idxOf[b.n] = bodies.length; bodies.push(e); return e; };
     const T = a => 30 * Math.pow(a / 300, 1.5), orb = (b, a, k) => ({ a, T: T(a), e: .05 + .3 * hs2(b.n + 'e'), om: hs2(b.n + 'o') * TAU, M0: hs2(b.n + 'm') * TAU, k });
-    nuclei.forEach((b, i) => { const a = 110000 * (1 + 1.0 * (i - 1)) * (1 + .15 * hs2(b.n + 'a')); add(b, i === 0 ? { tier: 'nucleus', parent: -1, gal: i, a: 0, T: 1, e: 0, om: 0, M0: 0 } : { tier: 'nucleus', parent: 0, gal: i, ...orb(b, a) }); });
-    const kA = nuclei.map(() => 0); anchors.forEach(b => { const g = galOf(b), a = (7500 + 3800 * kA[g]++) * (1 + .12 * hs2(b.n + 'a')); add(b, { tier: 'anchor', parent: nuclei.findIndex((n, i) => i === g) >= 0 ? idxOf[nuclei[g].n] : 0, gal: g, ...orb(b, a) }); });
-    const kM = {}; members.forEach(b => { const g = galOf(b), mine = anchors.filter(x => galOf(x) === g), toAnchor = mine.length && hs2(b.n + 'p') > .3, par = toAnchor ? idxOf[mine[Math.floor(hs2(b.n + 'q') * mine.length)].n] : idxOf[nuclei[g].n], j = kM[par] = (kM[par] || 0) + 1 - 1, base = toAnchor ? 1000 + 650 * j : 3200 + 1500 * j;
-      kM[par] = j + 1; add(b, { tier: 'member', parent: par, gal: g, ...orb(b, base * (1 + .1 * hs2(b.n + 'a'))) }); });
+    const rgOf = b => 14000 * (.8 + .14 * clamp(Math.log10(b.m || 1) - 9, 0, 2));   // a galaxy is huge next to a star: its own radius, in the same world units
+    nuclei.forEach((b, i) => { const a = 62000 * (1 + .3 * (i - 1)) * (1 + .15 * hs2(b.n + 'a')), rg = rgOf(b); add(b, i === 0 ? { tier: 'nucleus', parent: -1, gal: i, rg, a: 0, T: 1, e: 0, om: 0, M0: 0 } : { tier: 'nucleus', parent: 0, gal: i, rg, ...orb(b, a) }); });
+    const kA = nuclei.map(() => 0); anchors.forEach(b => { const g = galOf(b), a = (7500 + 3800 * kA[g]++) * (1 + .12 * hs2(b.n + 'a')); add(b, { tier: 'anchor', parent: nuclei.findIndex((n, i) => i === g) >= 0 ? idxOf[nuclei[g].n] : 0, gal: g, arm: true, ...orb(b, 3000 + 4000 * hs2(b.n + 'ra')) }); });   // anchors sit in the galaxy's arms
+    const kM = {}; members.forEach(b => { const g = galOf(b), mine = anchors.filter(x => galOf(x) === g), toAnchor = mine.length && hs2(b.n + 'p') > .3, par = toAnchor ? idxOf[mine[Math.floor(hs2(b.n + 'q') * mine.length)].n] : idxOf[nuclei[g].n], j = kM[par] = (kM[par] || 0) + 1 - 1, base = toAnchor ? 380 + 260 * j : 3200;
+      kM[par] = j + 1; add(b, toAnchor ? { tier: 'member', parent: par, gal: g, ...orb(b, base * (1 + .1 * hs2(b.n + 'a'))) } : { tier: 'member', parent: par, gal: g, arm: true, ...orb(b, 3000 + 4000 * hs2(b.n + 'ra')) }); });
     const kC = {}; comps.forEach(b => { const par = idxOf[b.comp], j = kC[par] = (kC[par] || 0) + 1; add(b, { tier: 'member', parent: par, gal: bodies[par].gal, ...orb(b, (320 + 170 * (j - 1)) * (1 + .1 * hs2(b.n + 'a'))) }); });   // companions orbit their real partner
     // extents: how far each body's own system reaches (for framing and for the galaxy glow)
     const ext = bodies.map(() => 0); for (let i = bodies.length - 1; i >= 0; i--) { const b = bodies[i]; b.reach = Math.max(ext[i], b.tier === 'member' ? 0 : 0); if (b.parent >= 0 && b.tier !== 'nucleus') ext[b.parent] = Math.max(ext[b.parent], b.a * (1 + b.e) + b.reach); }
-    bodies.forEach((b, i) => { b.reach = ext[i]; });
-    const R = Math.max(380, ...bodies.map((b, i) => { let r = 0, j = i; while (j >= 0) { r += bodies[j].a * (1 + bodies[j].e); j = bodies[j].parent; } return r + b.reach * 0; }));
+    bodies.forEach((b, i) => { b.reach = b.tier === 'nucleus' ? b.rg / 1.15 : ext[i]; b.gi = idxOf[nuclei[Math.min(b.gal, nuclei.length - 1)].n]; });
+    const dist = i => { const b = bodies[i]; if (b.parent < 0) return 0; return dist(b.parent) + (b.arm ? bodies[b.gi].rg : b.a * (1 + b.e)); };
+    const R = Math.max(380, ...bodies.map((b, i) => dist(i) + (b.tier === 'nucleus' ? b.rg : 0)));
     return { bodies, idxOf, R };
   }
   function lineage(lay, n) { const out = []; let i = lay.idxOf[n]; while (i != null && i >= 0) { const b = lay.bodies[i]; out.unshift(b); if (b.tier === 'nucleus') break; i = b.parent; } return out; }
   function kepAt(b, PH, ph) { const E = kepler(b.M0 + (ph != null ? ph : PH * TAU / b.T), b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
+  // galaxy frame: every body that lives in a galaxy's arms is placed from its name onto the same spiral the picture draws, so stars line up with the arms and turn with them
+  const gframe = (gb, PH) => ({ rot: hs2(gb.n + 'r0') * TAU + PH * .0007 * (hs2(gb.n + 'd') > .5 ? 1 : -1), sy: .4 + .46 * hs2(gb.n + 'inc') });
+  function armUnit(gb, name) {
+    const { arms, wind, type } = gparams(gb), h = k => hs2(name + k); let u = .1 + .86 * Math.pow(h('au'), .85), th;
+    if (type === 'ell') { u = .05 + .85 * Math.pow(h('au'), 1.3); th = h('at') * TAU; } else if (type === 'ring') { u = h('ar') > .7 ? .12 + .3 * h('au') : .5 + .12 * (h('au') - .5); th = h('at') * TAU; }
+    else { const arm = Math.floor(h('aa') * arms), sc = (h('ax') + h('ay') - 1) * (.26 - .1 * u); th = arm * TAU / arms + wind * u * 1.7 + sc; }
+    return [u * Math.cos(th), u * Math.sin(th)];
+  }
+  function armW(gb, gW, name, PH) { const f = gframe(gb, PH), [x, y] = armUnit(gb, name), c = Math.cos(f.rot), sn = Math.sin(f.rot); return [gW[0] + (x * c - y * sn) * gb.rg, gW[1] + (x * sn + y * c) * gb.rg * f.sy, 0]; }
+  const mixHex = (a, b2, t) => { const pa = parseInt(a.slice(1), 16), pb = parseInt(b2.slice(1), 16), m = (sh) => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t); return '#' + ((1 << 24) | (m(16) << 16) | (m(8) << 8) | m(0)).toString(16).slice(1); };
   // pre-rendered sprites keep the heavy art out of the frame loop: a galaxy (arms, dust lanes, HII regions, bulge), a dense star cluster, tiled star layers and label bitmaps
   const SPR = new Map(), TILES = new Map(), LBL = new Map(), mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
   const GPAL = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878'], ['#fff4dc', '#c8d8ff', '#ff9a8a'], ['#ffe9c4', '#9be8d6', '#ffd070'], ['#ffd9b0', '#ff9ec8', '#8cc8ff']];
@@ -676,7 +690,7 @@
   function galaxySprite(b, hex, need) {   // two sizes: a cheap 384 picture for galaxies that are small on screen, a 768 one for close views; the best one already painted is used while a better one waits its turn
     const want = need > 420 ? 768 : 384, hi = SPR.get(b.n + '|768'), lo = SPR.get(b.n + '|384'); if (hi) { SPR.delete(b.n + '|768'); SPR.set(b.n + '|768', hi); } const have = hi || lo; if (have && (have === hi || want === 384)) return have;
     if (BUILT >= 1) return have || null; BUILT++; if (SPR.size >= 30) SPR.delete(SPR.keys().next().value); const S = want, F = S / 768; let c = mk(S); const g = c.getContext('2d'), m = S / 2, R = S * .47, { arms, wind, pal, type } = gparams(b);
-    const H = k => hs2(b.n + k), bar = type === 'barred', barA = H('ba') * Math.PI, th0 = bar ? barA : 0, flocc = type === 'flocc', gauss = k => H(k + 'g1') + H(k + 'g2') + H(k + 'g3') - 1.5;
+    const H = k => hs2(b.n + k), bar = type === 'barred', barA = H('ba') * Math.PI, th0 = 0, flocc = type === 'flocc', gauss = k => H(k + 'g1') + H(k + 'g2') + H(k + 'g3') - 1.5;
     const armAt = (arm, u, off) => arm * TAU / arms + th0 + wind * u * 1.7 + off;
     g.translate(m, m); g.globalCompositeOperation = 'lighter';
     // a faint extended halo and a smooth disc under everything
@@ -697,7 +711,7 @@
         glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (16 + 46 * H(k + 'R')) * F * (1 - .35 * u), u < .3 ? pal[0] : pal[1], .07 * (1 - .55 * u) * Math.min(1, .25 + 1.6 * u)); }
       // star-forming knots along the arms
       for (let k = 0, N = Math.round(460 * F * F); k < N; k++) { const arm = k % arms, u = .26 + .72 * Math.pow(H(k + 'hu'), .9), r = R * u, sc = (H(k + 'hx') - .5) * .26, th = armAt(arm, u, sc);
-        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (3 + 9 * H(k + 'hr')) * F, pal[2], .36 * (.5 + .5 * H(k + 'hv'))); }
+        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (3 + 9 * H(k + 'hr')) * F, pal[2], .22 * (.5 + .5 * H(k + 'hv'))); }
     }
     { const bk = []; for (let i = 0; i < 12; i++) bk.push([]);   // stars batched by colour and brightness: twelve fills instead of eighteen thousand
       const diskless = type === 'ell' || type === 'ring';
@@ -705,7 +719,7 @@
         let th = diskless ? H(k + 'ea') * TAU : armAt(arm, u, sc), rr = r; if (type === 'ring') rr = H(k + 'rg') > .55 ? R * (.5 + .12 * H('rr')) + gauss(k + 'q') * R * .12 : r * .45;
         const hii = !diskless && H(k + 'h') > .965, cc = (type === 'ring' ? rr > R * .4 : u >= .22) ? (hii ? 2 : 1) : 0, a = Math.min(3, Math.floor(H(k + 'v') * 4 * (1 - .4 * u)));
         bk[cc * 4 + a].push(Math.cos(th) * rr, Math.sin(th) * rr * (type === 'ell' ? .84 : 1), (hii ? 1.3 + 1.6 * H(k + 's') : .55 + 1.0 * H(k + 's')) * Math.max(.7, F)); }
-      bk.forEach((pts, i) => { const cc = Math.floor(i / 4), a = i % 4; g.fillStyle = rgba(pal[cc], (cc === 2 ? .5 + a * .12 : .14 + a * .1) * 1.1); g.beginPath(); for (let j = 0; j < pts.length; j += 3) g.rect(pts[j] - pts[j + 2], pts[j + 1] - pts[j + 2], pts[j + 2] * 2, pts[j + 2] * 2); g.fill(); }); }
+      bk.forEach((pts, i) => { const cc = Math.floor(i / 4), a = i % 4; g.fillStyle = rgba(pal[cc], (cc === 2 ? .5 + a * .12 : .14 + a * .1) * 1.1); g.beginPath(); for (let j = 0; j < pts.length; j += 3) { g.moveTo(pts[j] + pts[j + 2], pts[j + 1]); g.arc(pts[j], pts[j + 1], pts[j + 2], 0, TAU); } g.fill(); }); }
     if (bar) { g.save(); g.rotate(barA); g.scale(1, .24); gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .56); gr.addColorStop(0, rgba(pal[0], .8)); gr.addColorStop(.5, rgba(pal[0], .3)); gr.addColorStop(1, rgba(pal[0], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .56, 0, TAU); g.fill(); g.restore(); }
     if (type !== 'ell' && type !== 'ring') {   // dust lanes: soft dark bands along the inner edge of each arm
       g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
@@ -745,17 +759,18 @@
     if (!opt.noStars) for (const [par, per, sd] of [[.04, 9000, 9], [.1, 7000, 27]]) { const tile = starTile(sd, per, sd === 9 ? 640 : 1013), T = tile.width, ox = Math.round(((cam.x * par) % T + T) % T), oy = Math.round(((cam.y * par) % T + T) % T); for (let x = -ox; x < w; x += T) for (let y = -oy; y < h; y += T) g.drawImage(tile, x, y); }
     if (!B.length) return [];
     const PH = (opt.tau != null ? opt.tau : t) * 1.5, toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2], W = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m, newT = opt.newId, born = n => newT === n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1;
-    B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH, opt.phases ? opt.phases[i] : null), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
+    B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } if (b.arm) { W[i] = armW(B[b.gi], W[b.gi], b.n, PH); return; } const q = kepAt(b, PH, opt.phases ? opt.phases[i] : null), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
+    const NU = []; B.forEach((b, i) => { if (b.tier === 'nucleus') NU.push(i); });
     const col = b => OBJ[b.idx].c;
     // galaxy glow and spiral dust, then sub-cluster halos
-    B.forEach((b, i) => { const reach = b.reach || (b.tier === 'nucleus' ? 340 : 0); if (b.tier === 'member' || !reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? reach * 1.15 * Z : (reach * 1.5 + 200) * Z, gal ? 52 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
+    B.forEach((b, i) => { const reach = b.reach || (b.tier === 'nucleus' ? 340 : 0); if (b.tier === 'member' || !reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? reach * 1.15 * Z : (reach * 1.5 + 200) * Z, gal ? 30 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
       if (!gal && R > w * 3) return;
       g.save(); g.translate(p[0], p[1]);
-      if (gal) { const rot0 = hs2(b.n + 'r0') * TAU, gSY = .4 + .46 * hs2(b.n + 'inc'), rot = rot0 + PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1), big = R / K, fadeS = clamp(1 - (R * 2.13 - 520) / 420), da = clamp((R * 2.13 - 360) / 360), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, gSY); g.rotate(rot0); g.globalAlpha = fadeS; const D = R * 2.13, sp = galaxySprite(b, col(b), D); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); else glowAt(g, 0, 0, R * 1.2, col(b), .5); g.restore(); } if (da > 0) { glowAt(g, 0, 0, R * 1.05, col(b), .16 * da * clamp(2.2 - big / 700)); g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, gSY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
+      if (gal) { const fr = gframe(b, PH), rot = fr.rot, gSY = fr.sy, big = R / K, fadeS = clamp(1 - (R * 2.13 - 520) / 420), da = clamp((R * 2.13 - 360) / 360), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, gSY); g.rotate(rot); g.globalAlpha = fadeS; const D = R * 2.13, sp = galaxySprite(b, col(b), D); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); else glowAt(g, 0, 0, R * 1.2, col(b), .5); g.restore(); } if (da > 0) { glowAt(g, 0, 0, R * 1.05, col(b), .16 * da * clamp(2.2 - big / 700)); g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, gSY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
       g.restore(); });
     // orbits: a faint ellipse around the parent, drawn only when big enough to read, at most a budget of them (nearest the view first), stroked in three batches
     {
-      const cand = []; B.forEach((b, i) => { if (b.parent < 0) return; const ap = b.a * (1 + b.e) * Z; if (ap < 10 * K || ap > w * 5) return; const c0 = toS(W[b.parent][0], W[b.parent][1]), dist = Math.hypot(Math.max(0, -c0[0], c0[0] - w), Math.max(0, -c0[1], c0[1] - h)); if (dist > ap * 1.3) return; cand.push({ b, ap, c0, foc: opt.focus === b.n || B[b.parent].n === opt.focus, pr: (opt.focus === b.n || B[b.parent].n === opt.focus ? -1e9 : 0) + Math.hypot(c0[0] - w / 2, c0[1] - h / 2) }); });
+      const cand = []; B.forEach((b, i) => { if (b.parent < 0 || b.arm) return; const ap = b.a * (1 + b.e) * Z; if (ap < 10 * K || ap > w * 5) return; const c0 = toS(W[b.parent][0], W[b.parent][1]), dist = Math.hypot(Math.max(0, -c0[0], c0[0] - w), Math.max(0, -c0[1], c0[1] - h)); if (dist > ap * 1.3) return; cand.push({ b, ap, c0, foc: opt.focus === b.n || B[b.parent].n === opt.focus, pr: (opt.focus === b.n || B[b.parent].n === opt.focus ? -1e9 : 0) + Math.hypot(c0[0] - w / 2, c0[1] - h / 2) }); });
       cand.sort((x, y) => x.pr - y.pr); const paths = { f: [], m: [], t: [] };
       cand.slice(0, 10).forEach(c => (c.foc ? paths.f : c.b.tier === 'member' ? paths.m : paths.t).push(c));
       for (const [key, st, lw] of [['m', 'rgba(255,255,255,.1)', 1], ['t', 'rgba(190,200,255,.14)', 1], ['f', 'rgba(255,255,255,.3)', 2]]) { if (!paths[key].length) continue; g.strokeStyle = st; g.lineWidth = lw * K; g.beginPath();
@@ -765,16 +780,18 @@
         g.stroke(); }
     }
     const labels = [], items = B.map((b, i) => ({ b, i, p: toS(W[i][0], W[i][1]), z: W[i][1] })).sort((x, y) => x.z - y.z), pos = [], zs = Math.pow(Z, .42) * Math.pow(.7, .58);
-    items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', base = (FR[b.id] || .2) * (b.s || 1) * U * (nuc ? .46 : b.tier === 'anchor' ? .36 : .28) * zs, bn = born(b.n);
-      let cps = null;
-      if (!vis(it.p[0], it.p[1], base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier, copies: (b.count || 1) > 1 ? copies(g, it.p[0], it.p[1], W[i][0], W[i][1], Math.max(.01, base), b, b.count, PH, { K, SY, Z, colr: col(b), w, h, draw: false }) : null }); return; }
+    CPL = 0; const spreadMode = PREF.dup === 'spread';
+    items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', gRs = B[b.gi].rg * Z, sz = nuc ? 1 : clamp(Math.log10(Math.max(1, gRs / (120 * K))) / Math.log10(40)), mscale = nuc ? 1 : .05 + .95 * Math.pow(sz, 1.5), base = (FR[b.id] || .2) * (b.s || 1) * U * (nuc ? .46 : b.tier === 'anchor' ? .36 : .28) * zs * mscale, bn = born(b.n), tint = mixHex(col(b), '#ffffff', .72);   // a star is tiny beside its galaxy: it only grows into view as you close in
+      let cps = null; const co = { K, SY, Z, colr: col(b), tint, s: sz, w, h, fc: opt.focus === b.n ? opt.fc : 0, place: spreadMode && (b.count || 1) > 1 ? k => { const gi = NU[Math.floor(hs2(b.n + 'cg' + k) * NU.length)], wp = armW(B[gi], W[gi], b.n + '#' + k, PH), sp = toS(wp[0], wp[1]); return { x: sp[0], y: sp[1], wx: wp[0], wy: wp[1] }; } : null };
+      if (!vis(it.p[0], it.p[1], base * 6 + 80)) { const rr0 = Math.max(.9 * K, base); pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier, copies: (b.count || 1) > 1 ? copies(g, it.p[0], it.p[1], W[i][0], W[i][1], rr0, b, b.count, PH, { ...co, draw: spreadMode }) : null }); return; }
       const dim = opt.filter && !opt.filter.has(b.id) && opt.focus !== b.n; if (dim) g.globalAlpha = .13;
-      const r = Math.max(.01, base * Math.max(.01, easeBack(bn))), rr = Math.max(r, nuc ? 6 * K : 3 * K);
+      const r = Math.max(.01, base * Math.max(.01, easeBack(bn))), rr = Math.max(r, nuc ? 6 * K : .9 * K);
       if (bn < 1) ring(g, it.p[0], it.p[1], base * (.6 + 3 * bn), col(b), .7 * (1 - bn), 3);
-      if (rr < 15 * K) { glowAt(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
+      if (rr < 15 * K) { if (nuc) glowAt(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); else glowAt(g, it.p[0], it.p[1], Math.max(2.6 * K, rr * 3.2 * (.3 + .7 * sz)), tint, .22 + .5 * sz); g.fillStyle = nuc ? '#fff' : `rgba(255,255,255,${.5 + .45 * sz})`; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(nuc ? 1.6 * K : .9 * K, rr * .32), 0, TAU); g.fill(); }
       else { if (r < 20) { const sc = r / 16, sp = bodySprite(b); g.drawImage(sp, it.p[0] - 128 * sc, it.p[1] - 128 * sc, 256 * sc, 256 * sc); } else { g.save(); g.translate(it.p[0], it.p[1]); paintBody(g, b.id, 0, 0, r, t + b.idx, b); g.restore(); } }
-      cps = copies(g, it.p[0], it.p[1], W[i][0], W[i][1], rr, b, b.count, PH, { K, SY, Z, colr: col(b), w, h, draw: true, fc: opt.focus === b.n ? opt.fc : 0 });
-      const foc = opt.focus === b.n, orbPx = b.tier === 'member' ? (B[b.parent].a ? b.a * Z : 0) : 0, near = b.tier === 'member' ? b.a * (1 + b.e) * Z > 55 * K : true, showL = !dim && (foc || (nuc ? true : b.tier === 'anchor' ? b.a * Z > 90 * K || b.reach * Z > 30 * K : near && b.a * Z > 60 * K));
+      if (opt.focus === b.n && rr < 7 * K) { const ph = (t * .9) % 1; ring(g, it.p[0], it.p[1], (7 + 16 * ph) * K, '#ffffff', .6 * (1 - ph), K); }   // a faint ping so the selected object can be found in the vastness
+      cps = copies(g, it.p[0], it.p[1], W[i][0], W[i][1], rr, b, b.count, PH, { ...co, draw: true });
+      const foc = opt.focus === b.n, showL = !dim && (foc || (nuc ? true : sz > .5));
       let lbl = null; if (showL && !opt.noLabels && PREF.on) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
       if (dim) g.globalAlpha = 1;
       pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 46 * K : 18 * K), lbl, tier: b.tier, copies: cps }); });
