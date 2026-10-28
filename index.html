@@ -373,7 +373,7 @@ const MODES = [
   ['stream', 'sky', '#6a4fa8', 'Livestream mode', 'A lobby your audience joins, with an OBS overlay', 'Streamers', () => openHost()],
   ['packs', 'grid', '#2a4f8a', 'Packs', 'Themed sets of puzzles: space, food, history and more', 'Packs', () => openPacks()],
   ['practice', 'target', '#2f7d46', 'Practice', 'Random puzzles: no streak, no sky objects', 'Unlimited', () => startGame('practice')],
-  ['studio', 'grid', '#8a6a2a', 'Make a puzzle', 'Pick any two articles and share your own puzzle', 'Create', () => openStudio()],
+  ['studio', 'grid', '#8a6a2a', 'Make a puzzle', 'Pick any two articles and share your own puzzle', 'Create', () => openMaker()],
   ['league', 'bolt', '#0f8b7e', 'Leagues', 'A private board with friends across daily puzzles', 'Social', () => leagueModal()]];
 function toggleModes(force) {
   const m = $('#modesMenu'), on = force != null ? force : m.hidden; if (!on) { m.hidden = true; $('#modesBtn').classList.remove('open'); return; }
@@ -429,6 +429,7 @@ async function startGame(mode, resume, extra) {
   let from, to, meta = { par: null, route: null };
   if (mode === 'daily') { meta = await getDaily(day); ({ from, to } = meta); if (resume && resume.from !== from) resume = null; }
   else if (mode === 'challenge') { resume = null; from = extra.f; to = extra.t; }
+  else if (mode === 'custom') { resume = null; from = extra.f; to = extra.t; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'live') { resume = null; from = extra.from; to = extra.to; meta = { par: extra.par || null, route: null }; }
   else if (mode === 'pack') { resume = null; const z = packPuzzle(extra.pack, extra.idx); from = z.from; to = z.to; meta = { par: z.par || null, route: z.route || null, goal: z.goal }; }
   else { resume = null; const v = await practicePuzzle(); from = v.from; to = v.to; meta = { par: v.par, route: v.route, alts: v.alts || [] }; }
@@ -922,10 +923,11 @@ function resultHead(r) {
   if (r.mode === 'live') return Live.bd && Live.bd.me ? 'Live race · you are ' + ordinal(Live.bd.me) : 'Live race finished';
   if (r.mode === 'pack') return 'Pack puzzle solved';
   if (r.mode === 'challenge') return r.chal && r.chal.outcome === 'win' ? 'Challenge won' : r.chal && r.chal.outcome === 'tie' ? 'Challenge tied' : 'Challenge lost';
+  if (r.mode === 'custom') return 'Custom puzzle solved';
   return 'Practice solved';
 }
 function shareText() {
-  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'challenge' ? 'challenge' : 'practice';
+  const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
   return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'fastest' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL : BRAND.domain}`;
@@ -1786,6 +1788,66 @@ function handleChallenge() {
   $('#chAccept').onclick = () => { closeModal(); startGame('challenge', null, ch); };
 }
 
+
+/* ------------------------------------------------------------------ make a puzzle: any two articles, checked, shared as a link */
+const makerLink = (f, t, n, par) => `${SITE_URL}#p=${b64u(JSON.stringify({ v: 1, f, t, n: (n || 'A friend').slice(0, 20), p: par || 0 }))}`;
+function parsePuzzle(code) {
+  try {
+    const o = JSON.parse(unb64u(code)), str = v => typeof v === 'string' && v.length > 0 && v.length <= 80;
+    if (o.v !== 1 || !str(o.f) || !str(o.t) || o.f === o.t) return null;
+    return { f: o.f, t: o.t, n: (typeof o.n === 'string' && o.n.trim() ? o.n : 'A friend').slice(0, 20), par: Number.isInteger(o.p) && o.p > 0 && o.p < 20 ? o.p : null };
+  } catch { return null; }
+}
+function handlePuzzleLink() {
+  const m = location.hash.match(/^#p=(.+)$/); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  const pz = parsePuzzle(m[1]); if (!pz) return toast('That puzzle link is not valid');
+  openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">A puzzle for you</span>
+    <h2 style="margin-top:12px">${esc(pz.n)} made you a puzzle</h2>
+    <div class="card" style="padding:16px;margin:14px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(pz.f)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700;color:var(--accent-ink)">${esc(pz.t)}</div>${pz.par ? `<div style="margin-top:12px"><span class="pill">Fastest known: ${pz.par} click${pz.par === 1 ? '' : 's'}</span></div>` : ''}</div>
+    <button class="btn" id="mkAccept" style="width:100%;font-size:17px;padding:16px">Play this puzzle →</button><div class="s mute" style="margin-top:10px">No account needed</div></div>`);
+  $('#mkAccept').onclick = () => { closeModal(); startGame('custom', null, pz); };
+}
+async function wikiSuggest(q) { const r = await fetch(`${API}?action=opensearch&search=${encodeURIComponent(q)}&limit=6&namespace=0&format=json&origin=*`); const j = await r.json(); return (Array.isArray(j) && j[1]) || []; }
+function openMaker() {
+  openModal(`<h2>Make a puzzle</h2><p>Pick any two Wikipedia articles. We check that it can be solved, then you get a link to share. Friends play it with no account.</p>
+    <div class="mk">
+      <div class="field mkf">Start article<input id="mkF" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. Tour de France"><div class="mk-sug" id="mkFs"></div></div>
+      <button class="mk-swap" id="mkSwap" aria-label="Swap start and target" type="button"><svg viewBox="0 0 24 24"><path d="M7 4v14M4 15l3 3 3-3M17 20V6M14 9l3-3 3 3"/></svg></button>
+      <div class="field mkf">Target article<input id="mkT" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. Volcano"><div class="mk-sug" id="mkTs"></div></div>
+    </div>
+    <div class="field">Your name (shown to friends)<input id="mkN" maxlength="20" value="${esc(P.name)}" placeholder="Optional"></div>
+    <div class="actions"><button class="btn" id="mkGo">Check and create →</button></div>
+    <div id="mkOut" class="mk-out"></div>`);
+  const sug = (iid, bid) => {
+    const inp = $('#' + iid), box = $('#' + bid); let tm = 0, seq = 0;
+    inp.oninput = () => { clearTimeout(tm); const q = inp.value.trim(); if (q.length < 2) { box.innerHTML = ''; return; } tm = setTimeout(async () => { const my = ++seq; let l = []; try { l = await wikiSuggest(q); } catch {} if (my !== seq) return; box.innerHTML = l.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join(''); box.querySelectorAll('button').forEach(b => b.onmousedown = b.ontouchstart = e => { e.preventDefault(); inp.value = b.dataset.t; box.innerHTML = ''; }); }, 180); };
+    inp.onblur = () => setTimeout(() => { box.innerHTML = ''; }, 150);
+  };
+  sug('mkF', 'mkFs'); sug('mkT', 'mkTs');
+  $('#mkSwap').onclick = () => { const a = $('#mkF'), b = $('#mkT'), v = a.value; a.value = b.value; b.value = v; };
+  $('#mkGo').onclick = async () => {
+    const f = $('#mkF').value.trim(), t = $('#mkT').value.trim(), out = $('#mkOut'), go = $('#mkGo');
+    if (!f || !t) return toast('Pick a start and a target article');
+    go.disabled = true; out.innerHTML = '<p class="mute">Finding the articles…</p>';
+    let a, b; try { [a, b] = await Promise.all([getSummary(f), getSummary(t)]); } catch { out.innerHTML = '<p class="mk-bad">One of those articles could not be found. Choose from the suggestions.</p>'; go.disabled = false; return; }
+    if (a.title === b.title) { out.innerHTML = '<p class="mk-bad">The start and the target are the same article.</p>'; go.disabled = false; return; }
+    out.innerHTML = '<p class="mute" id="mkChk">Checking that this can be solved…</p>';
+    let res = null; try { res = await checkRoute(a.title, b.title, m => { const e = $('#mkChk'); if (e) e.textContent = m + '…'; }); } catch {}
+    const par = res ? res.par : null, name = $('#mkN').value.trim() || P.name; P.name = name; saveP();
+    const link = () => makerLink(a.title, b.title, $('#mkN').value.trim() || P.name, par);
+    out.innerHTML = `<div class="mk-card"><div class="mk-route"><b>${esc(a.title)}</b><span>→</span><b>${esc(b.title)}</b></div>
+      <p class="${res ? 'mk-ok' : 'mk-bad'}">${res ? `Checked: solvable in ${par} click${par === 1 ? '' : 's'}.` : 'No route of four clicks or fewer was found, so this may be very hard. You can still share it.'}</p>
+      <div class="field" style="margin:0">Link<div class="namebox" style="margin:0"><input id="mkLink" readonly value="${esc(link())}"><button class="btn ghost" id="mkCopy">Copy</button></div></div>
+      <div class="actions" style="margin-top:12px"><button class="btn" id="mkShare">Share puzzle</button><button class="btn ghost" id="mkPlay">Play it yourself</button></div></div>`;
+    go.disabled = false; go.textContent = 'Check another →';
+    $('#mkN').oninput = () => { $('#mkLink').value = link(); };
+    $('#mkCopy').onclick = async () => { try { await navigator.clipboard.writeText(link()); toast('Link copied'); } catch { $('#mkLink').select(); } };
+    $('#mkShare').onclick = async () => { const text = `Can you get from ${a.title} to ${b.title} on ${BRAND.name}?`; try { if (navigator.share) await navigator.share({ title: BRAND.name + ' puzzle', text, url: link() }); else { await navigator.clipboard.writeText(text + ' ' + link()); toast('Puzzle copied'); } } catch {} };
+    $('#mkPlay').onclick = () => { closeModal(); startGame('custom', null, { f: a.title, t: b.title, n: name, par }); };
+  };
+}
+
 /* ------------------------------------------------------------------ reports */
 async function openReport(back) {
   let ctx = G && G.from ? { mode: G.mode, day: G.day, from: G.from, to: G.toTitle || G.to } : null;
@@ -2329,13 +2391,14 @@ function tickNext() {
   if (s <= 1 && !G) setTimeout(renderHome, 1500);
 }
 setInterval(tickNext, 1000); tickNext();
-openPacks = asPage(openPacks, 'packs'); openPack = asPage(openPack, 'packs'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
+openPacks = asPage(openPacks, 'packs'); openPack = asPage(openPack, 'packs'); liveMenu = asPage(liveMenu, 'modes'); openHost = asPage(openHost, 'modes'); openHostPanel = asPage(openHostPanel, 'modes'); openStudio = asPage(openStudio, 'studio'); leagueModal = asPage(leagueModal, 'ranks'); openMaker = asPage(openMaker, 'modes'); openLocker = asPage(openLocker, 'sky'); openSky = asPage(openSky, 'sky'); openProfile = asPage(openProfile, 'me'); openSettings = asPage(openSettings, 'me'); openLeaderboard = asPage(openLeaderboard, 'ranks'); showResult = asPage(showResult, 'play'); openPathMap = asPage(openPathMap, 'play'); openCloud = asPage(openCloud, 'me');
 handleInvite();
 
 applyTheme();
 applyCos(); applyLook();
-loadData().then(() => { renderHome(); handleChallenge(); handleLive(); refreshEntitlement(false); Ping.visit(); });
-const viaLink = /^#[cl]=/.test(location.hash) || /[?&]league=/.test(location.search);
+loadData().then(() => { renderHome(); handleChallenge(); handlePuzzleLink(); handleLive(); refreshEntitlement(false); Ping.visit(); });
+addEventListener('hashchange', () => { handleChallenge(); handlePuzzleLink(); });   // a link pasted into an already open tab
+const viaLink = /^#[clp]=/.test(location.hash) || /[?&]league=/.test(location.search);
 if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
 </script>
 </body>
