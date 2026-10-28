@@ -119,6 +119,7 @@
 <script src="cats.js"></script>
 <script src="packs.js"></script>
 <script src="skyobjects.js"></script>
+<script src="observatory.js"></script>
 <script src="clean.js"></script>
 <script>
 'use strict';
@@ -384,7 +385,8 @@ function toggleModes(force) {
 document.addEventListener('click', e => { const m = $('#modesMenu'); if (m && !m.hidden && !e.target.closest('#modesMenu') && !e.target.closest('#modesBtn')) toggleModes(false); });
 function renderQuiet() {
   const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + packStats(p.id).total, 0);
-  $('#quiet').innerHTML = MODES.filter(x => x[0] !== 'league').map(([id, ic, col, t, p, tag]) => `<button class="mode" data-m="${id}" style="--c:${col}"><span class="mtag">${id === 'packs' ? pt + ' puzzles' : tag}</span><span class="mic">${gicon(ic)}</span><b>${t}</b><small>${id === 'packs' ? solved + ' of ' + pt + ' solved' : p}</small><em>Start →</em></button>`).join('');
+  const ital = t => { const w = esc(t).split(' '); return w.length > 1 ? w.slice(0, -1).join(' ') + ' <i>' + w[w.length - 1] + '</i>' : '<i>' + w[0] + '</i>'; };
+  $('#quiet').innerHTML = MODES.filter(x => x[0] !== 'league').map(([id, ic, col, t, p, tag], k) => `<button class="mode" data-m="${id}" style="--c:${col}"><span class="mnum">${String(k + 1).padStart(2, '0')}</span><b>${ital(t)}</b><small>${id === 'packs' ? solved + ' of ' + pt + ' solved' : p}</small><em>${id === 'packs' ? pt + ' puzzles' : tag} →</em></button>`).join('');
   $('#quiet').querySelectorAll('.mode').forEach(b => b.onclick = () => MODES.find(x => x[0] === b.dataset.m)[6]());
 }
 function renderQuietV4() {
@@ -653,35 +655,35 @@ const clamp2 = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 function uniMap(cv, L, o) {
   const g = cv.getContext('2d'), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches, born = performance.now(), t0 = born, lay = SKY.layout(L);
   const fit = R => clamp2(Math.min(cv.width * .4 / R, cv.height * .4 / (R * .56)), .00004, 1.6), Zd = o.z || .7, Z0 = Math.min(fit(lay.R), Zd), Zmin = Z0 * .45;   // open with the whole universe in view
-  const cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false, last = 0, ema = 16, q = 1, cnt = 0, filter = null, tau = 40, speed = 1, phases = lay.bodies.map(b => b.parent >= 0 ? 60 * 6.2832 / b.T : 0), fl = null, vel = { x: 0, y: 0 }, tour = null, selCopy = 0, spinT = 0;
+  const ZMAX = 2e14, cam = { x: 0, y: 0, z: Z0, tz: Z0, follow: o.follow }; let pos = [], raf = 0, drag = null, sel = o.focus, dead = false, last = 0, ema = 16, q = 1, cnt = 0, filter = null, tau = 40, speed = 1, phases = lay.bodies.map(b => b.parent >= 0 ? 60 * 6.2832 / b.T : 0), fl = null, vel = { x: 0, y: 0 }, tour = null, selCopy = 0, spinT = 0, ccT = 0;
   const sds = [0, 1].map(i => { const d = document.createElement('div'); d.className = 'unistars'; d.style.backgroundImage = `url(${SKY.starTileURL(i)})`; if (i) { d.style.opacity = '.8'; d.style.backgroundColor = 'transparent'; } cv.before(d); return d; });   // two star layers with different tile sizes and parallax, so no pattern repeats; CSS backgrounds moved with the camera
   const ov = document.createElement('canvas'); ov.className = 'uniov'; cv.after(ov); const og = ov.getContext('2d'), ovDpr = Math.min(3, window.devicePixelRatio || 1);   // names and the minimap are drawn on their own full-resolution layer, so they stay sharp even when the map itself renders at reduced resolution
   const frame = now => { if (dead || !cv.isConnected) return;
     if (last && o.onQuality) { ema += (Math.min(now - last, 100) - ema) * .08; if (++cnt > 20 && ema > 24 && q > .5) { q = Math.max(.5, q * .78); cnt = 0; ema = 16; o.onQuality(q); } }   // slow device: render fewer pixels rather than drop frames
-    { const dt = Math.min(now - (last || now), 100) / 1000; tau += dt * speed; spinT += dt * Math.min(speed, 300); if (!calm) lay.bodies.forEach((b, i) => { if (b.parent >= 0) phases[i] += Math.min(1.5 * dt * speed * 6.2832 / b.T, dt * 5); }); } last = now;   // each body turns at its real rate but never faster than a smooth 5 rad/s, so very fast time never aliases or flickers
+    { const dt = Math.min(now - (last || now), 100) / 1000; tau += dt * speed; spinT += Math.min(dt * speed * 6.2832 / 7.9e15, dt * .35); ccT += Math.min(dt * speed * 6.2832 / 3e13, dt * 2); if (!calm) lay.bodies.forEach((b, i) => { if (b.parent >= 0) phases[i] += Math.min(dt * speed * 6.2832 / b.T, dt * 4); }); }   // every orbit runs at its real period (a galaxy turns once in about 250 million years), capped so fast time never strobes last = now;   // each body turns at its real rate but never faster than a smooth 5 rad/s, so very fast time never aliases or flickers
      const t = calm ? 40 : 40 + (now - t0) / 1000; const needOv = cv.clientWidth && cv.width < cv.clientWidth * ovDpr * .92;   // only when the map renders below the screen's resolution does the sharp layer earn its cost
     if (needOv) { const tw = Math.round(cv.clientWidth * ovDpr), th = Math.round(cv.clientHeight * ovDpr); if (ov.width !== tw || ov.height !== th) { ov.width = tw; ov.height = th; } if (ov.style.display) ov.style.display = ''; } else if (ov.style.display !== 'none') { ov.style.display = 'none'; og.clearRect(0, 0, ov.width, ov.height); }
     if (cv.clientWidth) sds.forEach((d, i) => { const TT = [640, 1013][i], par = [.04, .1][i], k = cv.clientWidth / cv.width, T = TT * k, ox = (((cam.x * par * k) % T) + T) % T, oy = (((cam.y * par * k) % T) + T) % T; d.style.backgroundSize = T + 'px ' + T + 'px'; d.style.backgroundPosition = `${-ox}px ${-oy}px`; });
-    pos = SKY.universe(g, cv.width, cv.height, t, lay, { phases: calm ? null : phases, tau: calm ? 40 : tau, noStars: true, ov: needOv ? { g: og, f: ov.width / cv.width } : null, cam, focus: sel, filter, newId: o.newId, tNew: (now - born) / 1000, fc: selCopy, spin: spinT * 1.5, mini: o.mini, miniTop: o.miniTop });
+    pos = SKY.universe(g, cv.width, cv.height, t, lay, { phases: calm ? null : phases, tau: calm ? 40 : tau, noStars: true, ov: needOv ? { g: og, f: ov.width / cv.width } : null, cam, focus: sel, filter, newId: o.newId, tNew: (now - born) / 1000, fc: selCopy, spin: spinT, cc: ccT, noMini: o.noMini, mini: o.mini, miniTop: o.miniTop });
     if (fl) {   // a flight: ease in and out, pulling back a little on long hops so the journey reads as travel
       const u = clamp2((now - fl.t0) / fl.dur, 0, 1), e = u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2, tp0 = fl.n ? pos.find(q => q.n === fl.n) : null, tp = tp0 && fl.ci > 0 ? (tp0.copies || [])[fl.ci - 1] || tp0 : tp0, ex = tp ? tp.wx : fl.x1, ey = tp ? tp.wy : fl.y1;
-      cam.x = fl.x0 + (ex - fl.x0) * e; cam.y = fl.y0 + (ey - fl.y0) * e; cam.z = Math.exp(Math.log(fl.z0) + (Math.log(fl.z1) - Math.log(fl.z0)) * e - fl.dip * Math.sin(Math.PI * e)); cam.tz = cam.z;
-      if (u >= 1) { fl = null; cam.follow = sel; cam.fc = selCopy; }
+      cam.z = Math.exp(Math.log(fl.z0) + (Math.log(fl.z1) - Math.log(fl.z0)) * e - fl.dip * Math.sin(Math.PI * e)); cam.tz = cam.z; if (fl.z1 > fl.z0 * 4) { const k = (1 - e) * fl.z0 / cam.z; cam.x = ex - (ex - fl.x0) * k; cam.y = ey - (ey - fl.y0) * k; } else { cam.x = fl.x0 + (ex - fl.x0) * e; cam.y = fl.y0 + (ey - fl.y0) * e; }   // diving in, the target closes on the centre at a steady pace on screen, across any number of powers of ten
+      if (u >= 1) { if (tp) { cam.x = tp.wx; cam.y = tp.wy; } cam.z = cam.tz = fl.z1; fl = null; cam.follow = sel; cam.fc = selCopy; }
     } else {
       if (vel.x || vel.y) { cam.x += vel.x / cam.z; cam.y += vel.y / cam.z; vel.x *= .93; vel.y *= .93; if (Math.abs(vel.x) + Math.abs(vel.y) < .02) vel.x = vel.y = 0; }
       cam.z = calm ? cam.tz : cam.z * Math.pow(cam.tz / cam.z, .12);
-      if (cam.follow) { const p0 = pos.find(q => q.n === cam.follow), p = p0 && selCopy > 0 ? (p0.copies || [])[selCopy - 1] || p0 : p0; if (p) { cam.x += (p.wx - cam.x) * (calm ? 1 : .12); cam.y += (p.wy - cam.y) * (calm ? 1 : .12); } }
+      if (cam.follow) { const p0 = pos.find(q => q.n === cam.follow), p = p0 && selCopy > 0 ? (p0.copies || [])[selCopy - 1] || p0 : p0; if (p) { const dx = p.wx - cam.x, dy = p.wy - cam.y; if (calm || Math.hypot(dx, dy) * cam.z < 1.5) { cam.x = p.wx; cam.y = p.wy; } else { cam.x += dx * .12; cam.y += dy * .12; } } }   // lock exactly once close: at stellar zoom one floating-point step is thousands of pixels
     }
     if (tour && now > tour.next) { tour.i = (tour.i + 1) % tour.list.length; tour.next = now + 7000; pick(tour.list[tour.i]); }
     raf = requestAnimationFrame(frame); };
   if (o.intro && L.length > 1 && !calm) { cam.z = Math.min(2, Z0 * 14); cam.tz = cam.z; }
   if (L.length) frame(t0);
   if (o.intro && L.length > 1 && !calm) setTimeout(() => { if (!dead) { fl = { n: null, t0: performance.now(), dur: 3000, x0: cam.x, y0: cam.y, z0: cam.z, z1: Z0, x1: 0, y1: 0, dip: 0 }; cam.follow = null; sel = o.focus; } }, 350);
-  const zoomFor = n => { const b = lay.bodies[lay.idxOf[n]]; if (!b) return Z0; return b.tier === 'nucleus' ? clamp2(fit(Math.max(900, b.reach * 1.25)), Z0, 1.25) : b.tier === 'anchor' ? clamp2(Math.min(fit(Math.max(700, b.reach * 1.6 + 300)), 1.25 / Math.pow(Math.max(1, SKY.relSize(b) / 4), 1.6)), Z0, 1.25) : Math.max(1.25 / Math.pow(Math.max(1, SKY.relSize(b) / 4), 1.6), cam.tz > Z0 * 40 ? Math.min(cam.tz, 1.25) : 0); };
+  const zoomFor = n => { const b = lay.bodies[lay.idxOf[n.split('#')[0]]] || lay.bodies[lay.idxOf[n]]; if (!b) return Z0; if (b.tier === 'nucleus' && b.id === 'quasar') return clamp2(fit(Math.max(900, b.reach * 1.25)), Z0, 1); return clamp2(cv.height * .17 / (SKY.physR(b) * SKY.RSU), Z0, ZMAX); };   // a galaxy fills the view; a star is framed at its true size
   const fly = (n, z1, ci = 0) => { const p0 = n && pos.find(q => q.n === n), p = p0 && ci > 0 ? (p0.copies || [])[ci - 1] || p0 : p0, d = p ? Math.hypot(p.wx - cam.x, p.wy - cam.y) * Math.min(cam.z, z1) / (cv.width * .5) : 1, far = Math.log(Math.max(1.01, Math.max(cam.z / z1, z1 / cam.z)));
-    if (calm) { cam.tz = z1; cam.follow = n; return; } cam.follow = null; vel.x = vel.y = 0; fl = { n, ci, t0: performance.now(), dur: clamp2(900 + 260 * far + 500 * Math.min(d, 3), 1100, 2600), x0: cam.x, y0: cam.y, z0: cam.z, z1, x1: p ? p.wx : cam.x, y1: p ? p.wy : cam.y, dip: Math.min(1.6, .18 * far * Math.min(1, d + .2)) }; };
+    if (calm) { cam.tz = z1; cam.follow = n; return; } cam.follow = null; vel.x = vel.y = 0; fl = { n, ci, t0: performance.now(), dur: clamp2(900 + 230 * far + 500 * Math.min(d, 3), 1100, 4600), x0: cam.x, y0: cam.y, z0: cam.z, z1, x1: p ? p.wx : cam.x, y1: p ? p.wy : cam.y, dip: Math.min(1.6, .18 * far * Math.min(1, d + .2)) }; };
   const pick = n => { sel = n; selCopy = 0; fly(n, zoomFor(n)); if (o.onPick) o.onPick(n); };
-  const zoomBy = f => { fl = null; cam.tz = clamp2(cam.tz * f, Zmin, 2.2); };
+  const zoomBy = f => { fl = null; cam.tz = clamp2(cam.tz * f, Zmin, ZMAX); };
   const ptrs = new Map(); let pinch = 0, lastTap = 0, lastMove = 0;
   cv.onpointerdown = e => { ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { cv.setPointerCapture(e.pointerId); } catch {} fl = null; vel.x = vel.y = 0; if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); drag = null; } else drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false, px: e.clientX, py: e.clientY }; };
   cv.onpointermove = e => { if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -690,10 +692,10 @@ function uniMap(cv, L, o) {
     if (drag.moved) { cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; const nw = performance.now(), dt = Math.max(8, nw - lastMove); vel.x = -(e.clientX - drag.px) * k / dt * 16; vel.y = -(e.clientY - drag.py) * k / dt * 16; drag.px = e.clientX; drag.py = e.clientY; lastMove = nw; } };
   cv.onpointerup = cv.onpointercancel = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = 0; const d = drag; drag = null; if (!d) return; if (d.moved) { if (performance.now() - lastMove > 90) vel.x = vel.y = 0; return; } const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * cv.width, y = (e.clientY - r.top) / r.height * cv.height, k = cv.width / 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < Math.max(p.r, 34 * k)), nw = performance.now();
     if (hit) { if (nw - lastTap < 320 && sel === hit.n) { fly(hit.n, Math.min(2, cam.tz * 4)); lastTap = 0; } else { pick(hit.n); lastTap = nw; } } };
-  cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(-e.deltaY * .002)); }, { passive: false });
-  return { camZ: () => cam.z, tour: on => { if (on) { const L2 = lay.bodies.filter(b => b.tier !== 'member').map(b => b.n); tour = { list: L2.length ? L2 : [lay.bodies[0].n], i: -1, next: 0 }; } else tour = null; return !!tour; }, isTour: () => !!tour, setSpeed: v => { speed = v; }, lay, pick, copyTo: (n, i) => { if (i > 0 && lay.idxOf[n + '#2'] != null) { const t = n + '#' + (i + 1); sel = t; selCopy = 0; fly(t, zoomFor(t)); return; } sel = n; selCopy = i; fly(n, Math.max(zoomFor(n), cam.tz > Z0 * 40 ? cam.tz : 1.25), i); }, stop: () => { dead = true; cancelAnimationFrame(raf); ov.remove(); sds.forEach(d => d.remove()); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(-clamp2(e.deltaY, -240, 240) * .0042)); }, { passive: false });
+  return { camZ: () => cam.z, fov: () => cv.width / cam.z * SKY.LYU, zoomTo: z => { fl = null; cam.tz = clamp2(z, Zmin, ZMAX); }, zRange: () => [Zmin, ZMAX], selected: () => sel, tour: on => { if (on) { const L2 = lay.bodies.filter(b => b.tier !== 'member').map(b => b.n); tour = { list: L2.length ? L2 : [lay.bodies[0].n], i: -1, next: 0 }; } else tour = null; return !!tour; }, isTour: () => !!tour, setSpeed: v => { speed = v; }, lay, pick, copyTo: (n, i) => { if (i > 0 && lay.idxOf[n + '#2'] != null) { const t = n + '#' + (i + 1); sel = t; selCopy = 0; fly(t, zoomFor(t)); return; } sel = n; selCopy = i; fly(n, Math.max(zoomFor(n), cam.tz > Z0 * 40 ? cam.tz : 1.25), i); }, stop: () => { dead = true; cancelAnimationFrame(raf); ov.remove(); sds.forEach(d => d.remove()); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
 }
-const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n, n: b.n })));
+const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n.split('#')[0] + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n, n: b.n })));
 const crumb = (lay, n) => ['Universe'].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => b.tier === 'nucleus' ? (b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.tier === 'anchor' ? b.n + ' cluster' : b.n)).join(' › ');
 const sfNamed = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
 const sfRows = (L, filter, sortBy, query) => { const a = L.filter(b => (!filter.size || filter.has(b.id)) && (!query || b.n.toLowerCase().includes(query))); a.sort(sortBy === 'az' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'heat' ? (x, y) => y.idx - x.idx || y.m - x.m : (x, y) => y.m - x.m || x.n.localeCompare(y.n)); return a; };
@@ -723,41 +725,7 @@ function dispMenu(host) {   // map display options: labels on/off, label typefac
 }
 function sfCardMount(el, n, map, L) { n = String(n).split('#')[0]; const q = sfNamed(n), was = el.classList.contains('min'); if (q) el.style.setProperty('--ac', q.o.c); el.innerHTML = sfCardHTML(n, map.lay);
   { const me = L.find(b => b.n === n), N = me ? me.count || 1 : 1; if (N > 1) { let ci = 1; const box = document.createElement('div'); box.className = 'sfcopies'; box.innerHTML = `<button data-d="-1" aria-label="Previous copy">‹</button><span>Copy <b>1</b> of ${N}</span><button data-d="1" aria-label="Next copy">›</button>`; box.querySelectorAll('button').forEach(bt => bt.onclick = () => { ci = ((ci - 1 + +bt.dataset.d + N) % N) + 1; box.querySelector('b').textContent = ci; map.copyTo(n, ci - 1); }); const h3 = el.querySelector('h3.skyn'); if (h3) h3.after(box); } } el.classList.toggle('min', was); const m = el.querySelector('.sfmin'); if (m) m.onclick = () => el.classList.toggle('min'); el.querySelectorAll('.crumb button').forEach(b => b.onclick = () => { if (b.dataset.c) map.pick(b.dataset.c); else map.home(L[0].n); }); }
-function openSkyFull(opt = {}) {   // the universe on the whole screen: filter by type, browse and sort every object, fly anywhere
-  closeModal(); const L = skySys(), cat = P.sky.cat, wide = () => window.matchMedia('(min-width: 900px)').matches; let host = document.createElement('div'); host.id = 'skyfull';
-  const ic = { list: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>', x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>', plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>', minus: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>', home: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>', search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>', chev: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>' };
-  const types = SKY.OBJ.map((o, i) => ({ o, n: L.filter(b => b.idx === i).length })).filter(t => t.n), galaxies = L.filter(b => b.id === 'quasar').length;
-  host.innerHTML = `<canvas id="sfCv"></canvas>
-    <div class="sfbar"><div class="sftitle"><b>Your universe</b><span>${L.length} objects${galaxies ? ' · ' + galaxies + (galaxies === 1 ? ' galaxy' : ' galaxies') : ''}</span></div><button class="sfib sfspd" id="sfSpeed" aria-label="Time speed">1×</button><button class="sfib" id="sfTour" aria-label="Auto tour"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><button class="sfib" id="sfList" aria-label="Browse objects">${ic.list}</button><button class="sfib" id="sfClose" aria-label="Exit full screen">${ic.x}</button></div>
-    <div class="sftypes" id="sfTypes"><button class="all on" data-t=""><i></i>All <em>${L.length}</em></button>${types.map(t => `<button data-t="${t.o.id}" style="--c:${t.o.c}"><i></i>${t.o.name} <em>${t.n}</em></button>`).join('')}</div>
-    <div class="sfcard" id="sfCard"></div>
-    <div class="sfz"><button class="sfib" id="sfIn" aria-label="Zoom in">${ic.plus}</button><div class="sflevel" id="sfLevel" title="Universe · galaxy · cluster · star"><i></i><i></i><i></i><i></i></div><button class="sfib" id="sfOut" aria-label="Zoom out">${ic.minus}</button><button class="sfib" id="sfHome" aria-label="Whole universe">${ic.home}</button><button class="sfib" id="sfDisp" aria-label="Display options">${dispIcon}</button></div><div class="sfhintbar" id="sfHint">Drag · pinch · double-tap to dive in</div>
-    <div class="sfdock"><button id="sfBrowse">${ic.list}Browse objects<em>${L.length}</em></button></div>
-    <div class="sfsheet" id="sfSheet"><div class="sfgrab" id="sfGrab"><i></i></div><div class="sfhead"><label class="sfsearch">${ic.search}<input id="sfQ" placeholder="Search ${L.length} objects" autocomplete="off" spellcheck="false"></label><div class="sfsort"><small>Sort</small><button data-s="mass" class="on">Mass</button><button data-s="heat">Heat</button><button data-s="az">A–Z</button><span id="sfN"></span></div></div><div class="sflist" id="sfListBody"></div></div>`;
-  document.body.appendChild(host); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
-  let qual = 1; const cv = $('#sfCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
-  let selN = opt.focus || (L[0] && L[0].n), filter = new Set(), sortBy = 'mass', query = '';
-  const card = n => { selN = n; sfCardMount($('#sfCard'), n, map, L); document.querySelectorAll('#sfListBody .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
-  const map = window.__map = uniMap(cv, L, { intro: !opt.focus || opt.focus === (L[0] && L[0].n), z: .4, mini: 'tl', miniTop: () => 130 * cv.width / host.clientWidth, onQuality: v => { qual = v; size(); }, follow: selN, focus: selN, newId: opt.newId, onPick: n => card(n) });
-  // browse + sort + filter
-  const fillList = () => { const a = sfRows(L, filter, sortBy, query); $('#sfN').textContent = a.length + (a.length === 1 ? ' object' : ' objects'); $('#sfListBody').innerHTML = sfListHTML(a, sortBy, filter); document.querySelectorAll('#sfListBody .sfrow').forEach(b => { b.classList.toggle('on', b.dataset.n === selN); b.onclick = () => { map.pick(b.dataset.n); if (!wide()) sheet(false); }; }); };
-  const sheet = on => { $('#sfSheet').classList.toggle('open', on); $('#sfList').classList.toggle('on', on); host.classList.toggle('shelf', on && wide()); if (on) { const r = $('#sfListBody .sfrow.on'); if (r) r.scrollIntoView({ block: 'nearest' }); } };
-  const setTypes = () => { document.querySelectorAll('#sfTypes button').forEach(b => b.classList.toggle('on', b.dataset.t ? filter.has(b.dataset.t) : !filter.size)); map.setFilter(filter); fillList(); };
-  document.querySelectorAll('#sfTypes button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (!t) filter.clear(); else if (filter.has(t)) filter.delete(t); else filter.add(t); setTypes(); if (filter.size && !$('#sfSheet').classList.contains('open')) sheet(true); });
-  document.querySelectorAll('.sfsort [data-s]').forEach(b => b.onclick = () => { sortBy = b.dataset.s; document.querySelectorAll('.sfsort [data-s]').forEach(x => x.classList.toggle('on', x === b)); fillList(); });
-  $('#sfQ').oninput = e => { query = e.target.value.trim().toLowerCase(); fillList(); };
-  $('#sfList').onclick = $('#sfBrowse').onclick = () => sheet(!$('#sfSheet').classList.contains('open')); $('#sfGrab').onclick = () => sheet(false);
-  fillList(); card(selN); if (wide()) sheet(true);
-  const lv = setInterval(() => { const k = map.level(); document.querySelectorAll('#sfLevel i').forEach((d, i) => d.classList.toggle('on', i === k)); }, 250);
-  const done = () => { clearInterval(lv); map.stop(); window.removeEventListener('resize', rs); document.removeEventListener('keydown', esc2); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} } host.remove(); if (opt.back) opt.back(); };
-  const rs = () => { size(); host.classList.toggle('shelf', $('#sfSheet').classList.contains('open') && wide()); };
-  window.addEventListener('resize', rs);
-  $('#sfClose').onclick = done; $('#sfIn').onclick = () => map.zoom(1.3); $('#sfOut').onclick = () => map.zoom(1 / 1.3); $('#sfHome').onclick = () => map.home(L[0].n); $('#sfDisp').onclick = () => dispMenu(host);
-  $('#sfTour').onclick = e => { const on = map.tour(!map.isTour()); e.currentTarget.classList.toggle('on', on); e.currentTarget.innerHTML = on ? '<svg viewBox="0 0 24 24"><path d="M7 5v14M17 5v14"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>'; toast(on ? 'Touring your universe' : 'Tour stopped'); };
-  setTimeout(() => { const h = $('#sfHint'); if (h) h.classList.add('gone'); }, 6000);
-  { const SP = [1, 100, 3000, 50000, 1000000, 20000000], fmtSp = v => v >= 1e6 ? v / 1e6 + 'M' : v >= 1000 ? v / 1000 + 'k' : v; let si = 0; $('#sfSpeed').onclick = e => { si = (si + 1) % SP.length; map.setSpeed(SP[si]); e.currentTarget.textContent = fmtSp(SP[si]) + '×'; e.currentTarget.classList.toggle('on', si > 0); toast(si ? 'Time ×' + SP[si].toLocaleString('en') + ': watch the orbits move' : 'Real time'); }; }
-  const esc2 = e => { if (e.key === 'Escape' && host.isConnected) { if ($('#sfSheet').classList.contains('open') && !wide()) sheet(false); else done(); } else if (e.key === '/' && document.activeElement !== $('#sfQ')) { e.preventDefault(); sheet(true); $('#sfQ').focus(); } }; document.addEventListener('keydown', esc2);
-}
+function openSkyFull(opt = {}) { return Observatory.open(opt); }   // the universe on the whole screen: see observatory.js
 
 function openInspect(name, back) {   // a close look: the object large on its own sky, drag to move it, pinch or scroll to zoom
   const q = sfNamed(name); if (!q) return; closeModal(); const host = document.createElement('div'); host.id = 'inspect'; host.style.setProperty('--c', q.o.c);
@@ -777,61 +745,12 @@ function openInspect(name, back) {   // a close look: the object large on its ow
   const done = () => { dead = true; document.removeEventListener('keydown', esc3); window.removeEventListener('resize', size); host.remove(); if (back) back(); };
   const esc3 = e => { if (e.key === 'Escape') done(); }; document.addEventListener('keydown', esc3); window.addEventListener('resize', size); $('#inX').onclick = done; setTimeout(() => { const h = $('#inHint'); if (h) h.classList.add('gone'); }, 5000);
 }
-function openSky(opt = {}) {
-  const f = P.sky.found, cat = P.sky.cat, owned = Object.keys(cat).length, types = SKY.OBJ.filter(o => f[o.id]).length, total = SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0);
-  let selT = opt.focus || (P.sky.best >= 0 ? SKY.OBJ[P.sky.best].id : null), tab = opt.tab || 'sky', selN = opt.newId || null;
-  const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5), k = d.toISOString().slice(0, 10), v = P.sky.log[k]; return v === undefined ? '<i></i>' : `<i style="--c:${SKY.OBJ[v].c}" class="on" title="${SKY.OBJ[v].name}"></i>`; }).join('');
-  openModal(`<div class="skyhead"><h2>Your sky</h2><p class="skytag">Space is cold. Warm it up.</p>
-      <div class="skyprog"><div class="skyprog-bar"><i style="width:${Math.max(2, Math.round(owned / total * 100))}%"></i></div><div class="skyprog-lab"><span><b>${owned}</b> of ${total} objects</span><span><b>${types}</b> of 9 types</span><span><b>${P.sky.total}</b> earned</span></div>${skyNext() ? `<div class="skynext">→ ${esc(skyNext())}</div>` : ''}</div></div>
-    <div class="tabs sk" id="skyTabs"><button data-t="sky">Collection</button><button data-t="sys">Your universe</button></div>
-    <div id="skyPane"></div>`);
+function openSky(opt = {}) {   // the Sky page is the catalogue; the universe itself opens full screen in the Observatory
+  if (opt.tab === 'sys') { closeModal(); return Observatory.open({ focus: opt.newId || opt.focus, newId: opt.newId }); }
+  openModal('<div class="catbox" id="catBox"></div>');
   const SKYBOX = $('#page').style.display !== 'none' ? $('#pageBody') : $('#modal'); SKYBOX.classList.add('sky'); document.body.classList.toggle('insky', SKYBOX.id === 'pageBody');
-  let raf = 0, t0 = performance.now();
-  const runBox = n => { const rn = (P.sky.runs || {})[n]; if (!rn) return '<div class="runbox"><div class="small">The run that earned it</div><p class="mute" style="margin:6px 0 0">Earned before runs were recorded.</p></div>'; const one = (x, lab) => `<div class="runr"><div class="small">${lab}</div><b>${esc(x.from || '?')} → ${esc(x.to || '?')}</b><div>${x.mode === 'daily' ? 'Daily #' + x.num : x.mode === 'pack' ? 'Companion pack' : 'Puzzle'} · ${new Date(x.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div><div>${x.clicks} click${x.clicks === 1 ? '' : 's'}${x.par ? ' (par ' + x.par + ')' : ''} · ${fmt(x.secs)}</div>${x.why ? `<div class="mute">${esc(x.why)}</div>` : ''}</div>`; return `<div class="runbox">${one(rn.first, 'The run that earned it')}${rn.last && rn.last.at !== rn.first.at ? one(rn.last, 'Most recent') : ''}</div>`; };
-  let stop = () => cancelAnimationFrame(raf);
-  const draw = () => {
-    stop(); document.querySelectorAll('#skyTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
-    if (tab === 'sky') {
-      const rep = {}; SKY.OBJ.forEach(o => { rep[o.id] = SKY.POOL[o.id].filter(q => cat[q.n]).sort((a, b) => b.m - a.m)[0]; });   // each cell shows the heaviest one you own of its type
-      $('#skyPane').innerHTML = `<div class="skygrid" id="skyGrid">${SKY.OBJ.map((o, i) => { const have = SKY.POOL[o.id].filter(q => cat[q.n]).length, n = SKY.POOL[o.id].length; return `<button class="skycell ${f[o.id] ? '' : 'lock'} ${selT === o.id ? 'sel' : ''}" data-id="${o.id}" style="--c:${o.c}"><canvas width="300" height="300"></canvas>${f[o.id] ? `<em class="tally">×${f[o.id]}</em>` : ''}<b>${f[o.id] ? o.name : '???'}</b><small>${f[o.id] ? have + ' of ' + n : 'not found yet'}</small><span class="skybar"><i style="width:${Math.round(have / n * 100)}%"></i></span></button>`; }).join('')}</div>
-        <div class="skypanel" id="skyD"></div>
-        <div class="skymini-h">Last 28 daily puzzles</div><div class="skycal">${days}</div>`;
-      const cells = [...document.querySelectorAll('#skyGrid .skycell')]; cells.forEach(b => b.onclick = () => { selT = b.dataset.id; cells.forEach(c => c.classList.toggle('sel', c === b)); typePanel(); $('#skyD').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
-      t0 = performance.now(); (function loop(now) { if (!cells[0].isConnected) return; if (now - (loop.l || 0) < 33) { raf = requestAnimationFrame(loop); return; } loop.l = now; const t = (now - t0) / 1000; cells.forEach((b, i) => { const id = SKY.OBJ[i].id; drawSkyCell(b.firstChild, f[id] ? id : null, t + i, 1, rep[id]); }); raf = requestAnimationFrame(loop); })(t0);
-      typePanel();
-    } else universeTab();
-  };
-  const typePanel = () => {   // the selected type: what it is, and every named object of it (found and still to find)
-    const box = $('#skyD'), o = SKY.OBJ.find(x => x.id === selT); if (!o) { box.innerHTML = '<p class="mute" style="margin:0">Solve a puzzle to find your first object.</p>'; return; } const i = SKY.OBJ.indexOf(o), list = SKY.POOL[o.id].slice().sort((a, b) => (cat[b.n] ? 1 : 0) - (cat[a.n] ? 1 : 0) || b.m - a.m);   // found first, then the ones still to find
-    box.style.setProperty('--c', o.c);
-    box.innerHTML = `<div class="skyp-top"><span class="skyp-rar r${i}">${RARITY[i]}</span><span class="skyp-tier">tier ${i + 1} of 9 · ${o.temp}</span></div><h3 class="skyn" style="color:${o.c}">${o.name}</h3><p class="skyp-fact">${esc(o.fact)}</p>
-      <div class="sflist inl">${list.map(q => cat[q.n] ? sfRowHTML({ ...q, idx: i, count: cat[q.n] }).replace('<button class="sfrow', '<button data-inspect="' + esc(q.n) + '" class="sfrow insp').replace('</button>', '<u class="insp-go">Inspect</u></button>') : `<div class="sfrow lock" style="--c:${o.c}"><i></i><div style="flex:1"><b>???</b><small>${f[o.id] ? 'a famous ' + o.name.toLowerCase() + ' still to find' : 'not found yet'}</small></div></div>`).join('')}</div>`;
-    box.querySelectorAll('[data-inspect]').forEach(b => b.onclick = () => openInspect(b.dataset.inspect, () => openSky({ tab: 'sky', focus: selT })));
-  };
-  const universeTab = () => {
-    const L = skySys(); if (!selN && L.length) selN = L[0].n; let filter = new Set(), sortBy = 'mass', query = '';
-    if (!L.length) { $('#skyPane').innerHTML = '<p class="mute sysempty">Solve a puzzle and your first object starts your universe.</p>'; return; }
-    const galaxies = L.filter(b => b.id === 'quasar').length;
-    $('#skyPane').innerHTML = `<div class="sftypes inl" id="uTypes">${sfChipsHTML(L)}</div>
-      <div class="skysys"><canvas id="sysCv" width="760" height="760"></canvas><span class="sysnote">Drag to explore · tap an object</span><div class="syszoom"><button class="sfib" id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="sfib" id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="sfib" id="zHome" aria-label="Whole universe"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button><button class="sfib" id="zDisp" aria-label="Display options">${dispIcon}</button><button class="sfib" id="zFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div><div class="sflevel" id="uLevel"><i></i><i></i><i></i><i></i></div></div>
-      <div class="sfcard inl" id="uCard"></div>
-      <div class="ubrowse"><div class="sfhead"><label class="sfsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="uQ" placeholder="Search ${L.length} objects" autocomplete="off" spellcheck="false"></label><div class="sfsort"><small>Sort</small><button data-s="mass" class="on">Mass</button><button data-s="heat">Heat</button><button data-s="az">A–Z</button><span id="uN"></span></div></div><div class="sflist inl" id="uList"></div></div>
-      <p class="skyfoot">${L.length} objects${galaxies ? ' · ' + galaxies + (galaxies === 1 ? ' galaxy' : ' galaxies') : ''}. Illustrative scale: each quasar is a galaxy nucleus, neutron stars and very heavy stars anchor clusters, everything else orbits one of them (T² ∝ a³).</p>`;
-    const cv = $('#sysCv'), card = n => { selN = n; sfCardMount($('#uCard'), n, map, L); document.querySelectorAll('#uList .sfrow').forEach(b => b.classList.toggle('on', b.dataset.n === n)); };
-    let qual = 1; const dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { const w = Math.round(cv.clientWidth * dpr * qual), h = Math.round(cv.clientHeight * dpr * qual); if (w && (cv.width !== w || cv.height !== h)) { cv.width = w; cv.height = h; } }; size();
-    const map = uniMap(cv, L, { follow: opt.newId || (L[0] && L[0].n), focus: selN, newId: opt.newId, onPick: card, onQuality: v => { qual = v; size(); } });
-    const onRs = () => { if (!cv.isConnected) removeEventListener('resize', onRs); else size(); }; addEventListener('resize', onRs);
-    const fill = () => { const a = sfRows(L, filter, sortBy, query); $('#uN').textContent = a.length + (a.length === 1 ? ' object' : ' objects'); $('#uList').innerHTML = sfListHTML(a, sortBy, filter); document.querySelectorAll('#uList .sfrow').forEach(b => { b.classList.toggle('on', b.dataset.n === selN); b.onclick = () => { map.pick(b.dataset.n); cv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }; }); };
-    document.querySelectorAll('#uTypes button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (!t) filter.clear(); else if (filter.has(t)) filter.delete(t); else filter.add(t); document.querySelectorAll('#uTypes button').forEach(x => x.classList.toggle('on', x.dataset.t ? filter.has(x.dataset.t) : !filter.size)); map.setFilter(filter); fill(); });
-    document.querySelectorAll('.ubrowse .sfsort [data-s]').forEach(b => b.onclick = () => { sortBy = b.dataset.s; document.querySelectorAll('.ubrowse .sfsort [data-s]').forEach(x => x.classList.toggle('on', x === b)); fill(); });
-    $('#uQ').oninput = e => { query = e.target.value.trim().toLowerCase(); fill(); };
-    stop = () => { clearInterval(lv); map.stop(); };
-    const lv = setInterval(() => { if (!cv.isConnected) { clearInterval(lv); return; } const k = map.level(); document.querySelectorAll('#uLevel i').forEach((d, i) => d.classList.toggle('on', i === k)); }, 250);
-    $('#zDisp').onclick = () => dispMenu($('.skysys'));
-    $('#zIn').onclick = () => map.zoom(1.3); $('#zOut').onclick = () => map.zoom(1 / 1.3); $('#zHome').onclick = () => map.home(L[0].n); $('#zFull').onclick = () => { stop(); openSkyFull({ focus: selN, newId: null, back: () => openSky({ tab: 'sys', focus: selN, newId: null }) }); };
-    fill(); card(selN);
-  };
-  document.querySelectorAll('#skyTabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); draw();
+  Observatory.catalogue($('#catBox'));
+  if (opt.focus) { const el = document.querySelector(`.cat-pl[data-n="${CSS.escape(opt.focus)}"]`) || document.querySelector(`.cat-pl[data-id="${CSS.escape(opt.focus)}"]`); if (el) setTimeout(() => el.scrollIntoView({ block: 'center' }), 60); }
 }
 /* ---- the sky: how well you played decides which astronomical object you earn (coolest brown dwarf to the quasar) */
 function burnOf(steps) {   // a click "burns" when it lands warmer than the page before

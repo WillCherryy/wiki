@@ -17,7 +17,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
   const srv = spawn('node', ['server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DEV: '1', DATA_FILE: path.join(os.tmpdir(), 'scorcher-ui-' + Date.now() + '.json') }, stdio: 'ignore' }); await new Promise(r => setTimeout(r, 1500));
   const exe = process.env.CHROME || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
   const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
-  const CALLS = ['openPacks()', "openPack('history')", 'liveMenu()', 'openHost()', 'openStudio()', 'leagueModal()', 'openLocker()', "openSky({tab:'sky'})", "openSky({tab:'sys'})", 'openProfile()', 'openSettings()', "openLeaderboard('day')", 'openCloud()', 'openMaker()', 'openArchive()'];
+  const CALLS = ['openPacks()', "openPack('history')", 'liveMenu()', 'openHost()', 'openStudio()', 'leagueModal()', 'openLocker()', "openSky({tab:'sky'})", 'openProfile()', 'openSettings()', "openLeaderboard('day')", 'openCloud()', 'openMaker()', 'openArchive()'];
   for (const [tag, vp, mob] of [['desktop', { width: 1360, height: 860 }, false], ['phone', { width: 390, height: 844 }, true]]) {
     const ctx = await browser.newContext({ viewport: vp, isMobile: mob, hasTouch: mob }); await ctx.addInitScript(() => { try { localStorage.setItem('wikiio:seen', '1'); } catch {} });
     const page = await ctx.newPage(), errs = []; page.on('pageerror', e => errs.push(e.message));
@@ -33,8 +33,10 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
       const m = await page.evaluate(() => ({ over: document.documentElement.scrollWidth - window.innerWidth, text: (document.querySelector('#page:not([style*="none"]) #pageBody, #scrim.on #modal') || {}).innerText || '' }));
       if (errs.length) bad(`${tag} ${call}: script error: ${errs[0]}`); if (m.over > 2) bad(`${tag} ${call}: page scrolls sideways by ${m.over}px`); if (m.text.trim().length < 20) bad(`${tag} ${call}: nothing visible`);
     }
-    const cv = await page.evaluate(() => { closeModal(); show('home'); openSky({ tab: 'sys' }); return null; }); await page.waitForTimeout(1500);
-    const sz = await page.evaluate(() => { const c = document.getElementById('sysCv'); return c ? [c.width, c.clientWidth] : null; }); if (!sz || sz[0] < sz[1] * .4) bad(`${tag} inline universe canvas is far below its screen size (${sz})`);
+    errs.length = 0; await page.evaluate(() => { closeModal(); show('home'); Observatory.open({}); }); await page.waitForTimeout(1800);
+    const sz = await page.evaluate(() => { const c = document.getElementById('obCv'); return c ? [c.width, c.clientWidth, document.getElementById('obInsp').innerText.length] : null; }); if (!sz || sz[0] < sz[1] * .4 || sz[2] < 20) bad(`${tag} observatory did not open properly (${sz})`); if (errs.length) bad(`${tag} observatory: ${errs[0]}`);
+    errs.length = 0; await page.evaluate(() => { document.getElementById('obClose').click(); Observatory.compare('The Sun'); }); await page.waitForTimeout(1200); if (!(await page.evaluate(() => !!document.getElementById('cmpInfo') && document.getElementById('cmpInfo').innerText.length > 10))) bad(`${tag} size comparison did not open`); if (errs.length) bad(`${tag} compare: ${errs[0]}`);
+    await page.evaluate(() => document.getElementById('cmpX').click());
     await ctx.close();
   }
   await browser.close(); srv.kill();
