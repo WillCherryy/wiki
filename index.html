@@ -44,8 +44,7 @@
 <main class="wrap">
   <section id="home">
     <div class="lede"><span class="eyebrow">A game played inside Wikipedia</span>
-      <p>Start on one real <b>Wikipedia article</b> and reach another using <b>only the links on the page</b>. Fewest clicks wins. A new puzzle every day.</p>
-      <ol class="steps3"><li><i style="background:#2a4f8a"></i>Start on a Wikipedia article</li><li><i style="background:#d6be8c"></i>Click links to travel</li><li><i style="background:#d63a1f"></i>Reach the target in fewer clicks</li></ol></div>
+      <p>Get from one Wikipedia article to another using <b>only its links</b>. Fewest clicks wins, and there is a new puzzle every day.</p></div>
     <div class="plate">
       <div class="plate-meta"><span id="plateDate">Today</span><span id="plateNo"></span></div>
       <div class="side from"><small class="plate-lab">Start on the Wikipedia article</small>
@@ -496,7 +495,7 @@ async function go0(title, initial, resume, kind = 'go') {
   $('#finder').value = ''; $('#finderN').textContent = ''; hits = []; hi = -1; buildContents();
   window.scrollTo(0, 0); Buddy.hop();
   updateHud();
-  persistCur();
+  persistCur(); coachTick();
   if (G.mode === 'live' && !win) Live.move(page.title, G.sig, clicks());
   if (win) finish(true);
 }
@@ -1334,6 +1333,26 @@ function showHelp() {
   <li>Solve daily and pack puzzles to earn real astronomical objects for <b>your sky</b>. The better the route, the hotter the object. Keep your <b>streak</b> and challenge friends in <b>leagues</b>.</li></ol>
   <p style="font-size:13px"><kbd>/</kbd> find a link &nbsp; <kbd>B</kbd> back &nbsp; <kbd>T</kbd> target &nbsp; <kbd>Esc</kbd> close</p>
   <button class="btn" data-close style="width:100%">Got it</button>`);
+}
+function showIntro() {   // first visit: a ten-second picture of the game instead of a wall of rules
+  openModal(`<div class="intro"><span class="eyebrow">Welcome</span><h2>Wikipedia, but it’s a race</h2>
+    <div class="intro-route"><span>Pizza</span><i></i><span>Italy</span><i></i><span>Egypt</span><i></i><span>Nile</span><i></i><b>Crocodile</b></div>
+    <ol class="intro-steps"><li><span><b>Click links</b> to travel from the start article to the target. Every puzzle can be solved in four clicks or fewer.</span></li>
+      <li><span><b>Watch it heat up.</b> Blue is far, red is scorching. The whole screen warms as you close in.</span></li>
+      <li><span><b>Fewer clicks, hotter find.</b> A good route earns a real star, galaxy or quasar for your sky.</span></li></ol>
+    <button class="btn" id="introGo" style="width:100%;font-size:17px;padding:15px">Play today’s puzzle →</button>
+    <button class="chip" id="introHow" style="margin:12px auto 0;display:flex">Full rules</button></div>`);
+  $('#introGo').onclick = () => { closeModal(); const b = $('#playBtn'); if (b) b.click(); };
+  $('#introHow').onclick = () => { closeModal(); showHelp(); };
+}
+function coach(msg) {   // a short tip that appears over the puzzle, only on a first-ever game
+  let el = $('#coach'); if (!el) { el = document.createElement('button'); el.id = 'coach'; el.type = 'button'; el.onclick = () => el.classList.remove('on'); document.body.appendChild(el); }
+  el.innerHTML = '<i>Tip</i>' + esc(msg); el.classList.add('on'); clearTimeout(coach.t); coach.t = setTimeout(() => el.classList.remove('on'), 6500);
+}
+function coachTick() {
+  if (!G || P.played > 0 || (typeof Traffic !== 'undefined' && Traffic.bot)) return;
+  const n = G.path.length - 1, tips = { 0: 'Tap an underlined link to travel. Each tap is one click.', 1: 'The bar shows how close you are. Aim for red, and follow links about the target’s topic.', 3: 'Stuck? Press / or tap Find to search every link on this page.' };
+  G.coachShown = G.coachShown || new Set(); if (tips[n] && !G.coachShown.has(n)) { G.coachShown.add(n); coach(tips[n]); }
 }
 async function showTarget() {
   if (!G) return; const s = G.summary || { title: G.to, desc: '', extract: '' };
@@ -2399,7 +2418,7 @@ applyCos(); applyLook();
 loadData().then(() => { renderHome(); handleChallenge(); handlePuzzleLink(); handleLive(); refreshEntitlement(false); Ping.visit(); });
 addEventListener('hashchange', () => { handleChallenge(); handlePuzzleLink(); });   // a link pasted into an already open tab
 const viaLink = /^#[clp]=/.test(location.hash) || /[?&]league=/.test(location.search);
-if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showHelp(); }, 400); }
+if (!P.played && !viaLink && !localStorage.getItem('wikiio:seen')) { try { localStorage.setItem('wikiio:seen', '1'); } catch {} setTimeout(() => { if (!$('#scrim').classList.contains('on')) showIntro(); }, 400); }
 </script>
 </body>
 </html>
