@@ -619,19 +619,20 @@
   }
   // ---- stars that exist at every scale: the field is generated from hashed world cells at three neighbouring levels of detail that cross-fade as you zoom, so a galaxy never turns into a picture
   const vnoise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy), h = (a, b) => hash(a * 127.1 + b * 311.7); return (h(xi, yi) * (1 - sx) + h(xi + 1, yi) * sx) * (1 - sy) + (h(xi, yi + 1) * (1 - sx) + h(xi + 1, yi + 1) * sx) * sy; };
+  const hn = (a, b, c) => { let h = Math.imul((a | 0) ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul((b | 0) + 0x7f4a7c15, 0xc2b2ae35) ^ Math.imul((c | 0) + 0x165667b1, 0x27d4eb2f); h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15; return (h >>> 0) / 4294967296; };   // integer hash: hs2 takes strings, so numbers fed to it gave every star the same offset (a perfect grid)
   function cellStars(g, b, cx, cy, R, rot, SY, w, h, K, pal, arms, wind, alpha) {
     const cr = Math.cos(rot), sr = Math.sin(rot), X0 = [0, w, 0, w], Y0 = [0, 0, h, h], gx = [], gy = [];
     for (let i = 0; i < 4; i++) { const dx = (X0[i] - cx) / R, dy = (Y0[i] - cy) / (R * SY); gx.push(dx * cr + dy * sr); gy.push(-dx * sr + dy * cr); }
     const minx = Math.max(-1.1, Math.min(...gx)), maxx = Math.min(1.1, Math.max(...gx)), miny = Math.max(-1.1, Math.min(...gy)), maxy = Math.min(1.1, Math.max(...gy)); if (minx >= maxx || miny >= maxy) return;
-    const lg = Math.log2(Math.max(1, R / (46 * K))), k0 = Math.floor(lg), fr = lg - k0, seed = hs2(b.n + 'cs') * 1000;
+    const lg = Math.log2(Math.max(1, R / (46 * K))), k0 = Math.floor(lg), fr = lg - k0, seed = hs2(b.n + 'cs') * 1000, SD = Math.floor(seed * 1000);
     for (const [lvl, wt] of [[k0 - 1, 1 - fr], [k0, 1], [k0 + 1, fr]]) { if (wt <= .01 || lvl < 0) continue;
       const cell = Math.pow(2, -lvl), sizeBase = (.55 + 1.0 * Math.pow(2, -(lvl - k0) * .5)) * K * .55, ix0 = Math.floor(minx / cell), ix1 = Math.floor(maxx / cell), iy0 = Math.floor(miny / cell), iy1 = Math.floor(maxy / cell);
       if ((ix1 - ix0 + 1) * (iy1 - iy0 + 1) > 2600) continue; const bk = [[], [], [], [], [], []], hz = lvl === k0 ? [] : null;
       for (let iy = iy0; iy <= iy1; iy++) for (let ix = ix0; ix <= ix1; ix++) { const cxu = (ix + .5) * cell, cyu = (iy + .5) * cell, r = Math.hypot(cxu, cyu); if (r > 1.08) continue;
         const th = Math.atan2(cyu, cxu), armF = Math.pow(.5 + .5 * Math.cos(arms * (th - wind * 1.7 * r)), 3), rho = (Math.exp(-r * 3.4) * 1.5 + .16) * (.22 + 1.0 * armF) * (.35 + 1.3 * vnoise(cxu * 9 + seed, cyu * 9 + seed * .7)) * (1 - Math.pow(Math.max(0, r - .85) / .23, 2)), hk = ix * 73856093 ^ iy * 19349663 ^ lvl * 83492791;
         if (hz) { const hr = cell * R * .95, hx = cx + (cxu * cr - cyu * sr) * R, hy = cy + (cxu * sr + cyu * cr) * R * SY; if (hx > -hr && hx < w + hr && hy > -hr && hy < h + hr) hz.push(hx, hy, hr, rho); }
-        let n = rho * 3.6, c = Math.floor(n), rem = n - c; if (hs2(seed + hk * .0001) < rem) c++; if (!c) continue;
-        for (let j = 0; j < c; j++) { const u1 = hs2(seed + hk * .001 + j * 1.3), u2 = hs2(seed + hk * .002 + j * 2.7), u3 = hs2(seed + hk * .003 + j * 3.1), px0 = (ix + u1) * cell, py0 = (iy + u2) * cell, sx = cx + (px0 * cr - py0 * sr) * R, sy = cy + (px0 * sr + py0 * cr) * R * SY;
+        const n = rho * 3.6, Lp = Math.exp(-n); let c = 0, pp = hn(hk, 50, SD); while (pp > Lp && c < 12) { c++; pp *= hn(hk, 50 + c, SD); }   /* Poisson count, so clumps and gaps look natural */ if (!c) continue;
+        for (let j = 0; j < c; j++) { const u1 = hn(hk, j * 3 + 1, SD), u2 = hn(hk, j * 3 + 2, SD), u3 = hn(hk, j * 3 + 3, SD), px0 = (ix + u1) * cell, py0 = (iy + u2) * cell, sx = cx + (px0 * cr - py0 * sr) * R, sy = cy + (px0 * sr + py0 * cr) * R * SY;
           if (sx < -4 || sx > w + 4 || sy < -4 || sy > h + 4) continue; const rr = Math.hypot(px0, py0), col = rr < .2 ? 0 : (u3 > .965 ? 2 : 1), br = u3 > .965 ? 2 : (u3 > .8 ? 1 : 0); bk[col * 2 + (br ? 1 : 0)].push(sx, sy, sizeBase * (br === 2 ? 1.8 + 1.6 * u2 : .55 + 1.1 * u1 * u1)); } }
       if (hz) for (let j = 0; j < hz.length; j += 4) glowAt(g, hz[j], hz[j + 1], hz[j + 2], pal[1], Math.min(.22, hz[j + 3] * .1) * alpha * wt);
       bk.forEach((pts, i) => { if (!pts.length) return; const c = i >> 1, bright = i & 1; g.fillStyle = rgba(bright ? '#ffffff' : pal[c], (bright ? .9 : .42) * wt * alpha); g.beginPath(); for (let j = 0; j < pts.length; j += 3) { g.moveTo(pts[j] + pts[j + 2], pts[j + 1]); g.arc(pts[j], pts[j + 1], pts[j + 2], 0, TAU); } g.fill(); }); }
