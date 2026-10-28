@@ -546,22 +546,35 @@
     const rings = idx >= 7 ? 3 : idx >= 4 ? 2 : 1; for (let i = 0; i < rings; i++) { const u = clamp((t - .38 - i * .1) / .8); if (u > 0 && u < 1) ring(g, cx, cy, R * (.4 + 4.4 * easeOut(u)), i % 2 ? '#ffffff' : o.c, .8 * (1 - u), R * .14 * (1 - u) + 1); }
     const fl = clamp(1 - (t - .38) / .4); if (t >= .38 && fl > 0) { const fg = g.createRadialGradient(cx, cy, 0, cx, cy, h * (.5 + .5 * pow)); fg.addColorStop(0, `rgba(255,255,255,${fl * (.2 + .32 * pow)})`); fg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = fg; { const rd = h * (.5 + .5 * pow); g.fillRect(cx - rd, cy - rd, rd * 2, rd * 2); } }
   }
-  function drawLabel(g, l) { g.save(); g.font = `400 ${l.size}px "EB Garamond", Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; try { g.letterSpacing = (l.size * .04) + 'px'; } catch (e) {} g.shadowColor = 'rgba(6,5,14,.95)'; g.shadowBlur = l.size * .35; g.fillStyle = l.color; g.fillText(l.text, l.x, l.y); g.shadowBlur = 0; g.fillText(l.text, l.x, l.y); g.restore(); }
+  // display options, kept between visits: labels on or off, the label typeface, and how duplicate copies sit (a tight cluster or spread through the neighbourhood)
+  const LBLFONTS = { fine: { name: 'Fine', f: '"Jost", "Instrument Sans", system-ui, sans-serif', w: 300, s: .66, ls: .14 }, elegant: { name: 'Elegant', f: '"Cormorant Garamond", "EB Garamond", Georgia, serif', w: 400, s: .9, ls: .1 }, classic: { name: 'Classic', f: '"EB Garamond", Georgia, serif', w: 400, s: 1, ls: .04 }, mono: { name: 'Technical', f: '"IBM Plex Mono", ui-monospace, monospace', w: 300, s: .56, ls: .06 } };
+  const PREF = { on: true, font: 'fine', dup: 'cluster' }; try { const o = JSON.parse(localStorage.getItem('wikiio:sky') || '{}'); if (o && typeof o === 'object') { if (typeof o.on === 'boolean') PREF.on = o.on; if (LBLFONTS[o.font]) PREF.font = o.font; if (o.dup === 'spread' || o.dup === 'cluster') PREF.dup = o.dup; } } catch (e) {}
+  const lf = () => LBLFONTS[PREF.font] || LBLFONTS.fine;
+  function setPref(o) { Object.assign(PREF, o); try { localStorage.setItem('wikiio:sky', JSON.stringify(PREF)); } catch (e) {} LBL.clear(); }
+  function drawLabel(g, l) { const F = lf(), sz = l.size * F.s; g.save(); g.font = `${F.w} ${sz}px ${F.f}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; try { g.letterSpacing = (sz * F.ls) + 'px'; } catch (e) {} g.lineJoin = 'round'; g.strokeStyle = 'rgba(5,4,12,.62)'; g.lineWidth = Math.max(1.5, sz * .16); g.strokeText(l.text, l.x, l.y); g.shadowColor = 'rgba(5,4,12,.8)'; g.shadowBlur = sz * .3; g.fillStyle = l.color; g.fillText(l.text, l.x, l.y); g.restore(); }
   // a system: Kepler orbits (T^2 ~ a^3, ellipses with the primary at a focus, faster at periapsis), a barycentre wobble, moons for duplicates.
   // The map is far larger than the view: pan with opt.cam = {x, y, z}; positions are world units with the primary at the origin.
   function kepler(M, e) { let E = M; for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
   const SPREAD = 2.2, BASE = .95;   // how far apart the orbits sit: bigger is grander (periods follow Kepler's law, so far orbits turn slowly)
-  // duplicates: each extra copy of an object is a companion that really orbits it (a Kepler-like ellipse, tilted, faster when closer); the first is the largest, the rest are smaller moons, with a count badge once the object is big enough to read
-  function companions(g, cx, cy, rr, name, count, t, K, SY, colr, big) {
-    const n = Math.min(4, (count || 1) - 1); if (n < 1) return;
-    for (let k = 0; k < n; k++) {
-      const a = rr * (1.7 + .55 * k) + 8 * K, e = .12 + .1 * hs2(name + 'e' + k), til = hs2(name + 't' + k) * Math.PI, period = 6 + 5 * Math.pow(a / (rr + 8 * K), 1.5), M = t * TAU / period + hs2(name + 'm' + k) * TAU;
-      let E = M; for (let i = 0; i < 4; i++) E = M + e * Math.sin(E);
-      const x = a * (Math.cos(E) - e), y = a * Math.sqrt(1 - e * e) * Math.sin(E), c = Math.cos(til), s2 = Math.sin(til), px = cx + (x * c - y * s2), py = cy + (x * s2 + y * c) * SY, mr = Math.max(k ? 1.5 * K : 2.2 * K, rr * (k ? .1 : .17));
-      g.save(); g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.translate(cx - a * e * c, cy - a * e * s2 * SY); g.rotate(0); g.beginPath(); g.ellipse(0, 0, a, a * Math.sqrt(1 - e * e) * SY, til, 0, TAU); g.stroke(); g.restore();
-      glowAt(g, px, py, mr * 3.4, colr, .55); g.fillStyle = rgba(colr, .95); g.beginPath(); g.arc(px, py, mr, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(px - mr * .25, py - mr * .25, mr * .38, 0, TAU); g.fill();
-    }
-    if (big && count > 1) { g.save(); g.font = `600 ${Math.round(12 * K)}px "Instrument Sans",system-ui,sans-serif`; const tx = '×' + count, wd = g.measureText(tx).width + 12 * K; g.fillStyle = 'rgba(10,8,22,.8)'; g.strokeStyle = rgba(colr, .7); g.lineWidth = K; g.beginPath(); (g.roundRect ? g.roundRect(cx + rr * .8, cy - rr * 1.05 - 10 * K, wd, 20 * K, 10 * K) : g.rect(cx + rr * .8, cy - rr * 1.05 - 10 * K, wd, 20 * K)); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(tx, cx + rr * .8 + 6 * K, cy - rr * 1.05); g.restore(); }
+  // duplicates: every extra copy is the same object again, set among its siblings in a small cluster around the first (orbits with an even, sqrt-spread density).
+  // Detail follows size on screen: a haze for a tight cluster, dots, then the real art. Positions are always computed so the UI can cycle through the copies.
+  const CPAR = new Map(); let CPB = 0;
+  function copyParams(name, n) { let a = CPAR.get(name); if (!a) CPAR.set(name, a = []); for (let k = a.length + 1; k <= n; k++) a.push({ e: .1 + .3 * hs2(name + 'e' + k), om: hs2(name + 'o' + k) * TAU, M0: hs2(name + 'm' + k) * TAU, u: Math.sqrt(k) }); return a; }
+  function copies(g, cx, cy, wx, wy, rr, b, count, PH, o) {
+    const n = Math.max(0, (count || 1) - 1); if (!n) return null; const { K, SY, Z, colr, w, h, draw } = o, P = copyParams(b.n, n), out = new Array(n);
+    const spread = PREF.dup === 'spread';
+    for (let k = 0; k < n; k++) { const q = P[k], s0 = 2.2 + 1.5 * q.u, a = spread ? (380 + 260 * q.u) * Z : rr * s0, T = 16 * Math.pow(s0, 1.5) * (spread ? 6 : 1), M = q.M0 + PH * TAU / T, E = kepler(M, q.e), x = a * (Math.cos(E) - q.e), y = a * Math.sqrt(1 - q.e * q.e) * Math.sin(E), c = Math.cos(q.om), s = Math.sin(q.om), px = cx + x * c - y * s, py = cy + (x * s + y * c) * SY; out[k] = { x: px, y: py, wx: wx + (px - cx) / Z, wy: wy + (py - cy) / Z }; }
+    if (!draw) return out;
+    const cl = spread ? 999 * K : rr * (2.2 + 1.5 * Math.sqrt(n)); if (!spread) glowAt(g, cx, cy, cl * 1.6, colr, Math.min(.24, .04 + .03 * Math.log2(count)));
+    if (cl < 26 * K) return out;
+    const small = rr < 15 * K, spr = !small && rr < 20 ? bodySprite(b) : null, sc = rr / 16; let live = 0, drawn = 0;
+    for (let k = 0; k < n && drawn < 60 && CPB < 500; k++) { const p = out[k]; if (p.x < -rr * 2 || p.x > w + rr * 2 || p.y < -rr * 2 || p.y > h + rr * 2) continue; drawn++; CPB++;
+      if (small) { glowAt(g, p.x, p.y, Math.max(8 * K, rr * 3.2), colr, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(p.x, p.y, Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
+      else if (spr) g.drawImage(spr, p.x - 128 * sc, p.y - 128 * sc, 256 * sc, 256 * sc);
+      else if (live < 4) { live++; g.save(); g.translate(p.x, p.y); paintBody(g, b.id, 0, 0, rr, PH + b.idx, b); g.restore(); }
+      else { const sp = bodySprite(b); g.drawImage(sp, p.x - 128 * sc, p.y - 128 * sc, 256 * sc, 256 * sc); } }
+    if (o.fc > 0 && o.fc <= n) { const p = out[o.fc - 1]; ring(g, p.x, p.y, Math.max(rr * 1.5, 14 * K), '#ffffff', .85, 2 * K); }
+    return out;
   }
   function orbits(w, list, spread = SPREAD, base = BASE) {   // list sorted hottest first: [{n, id, idx, count}]; every body after the first orbits the primary
     return list.slice(1).map((b, i) => { const k = hs(b.n), a = (w * (base + 1.1 * Math.log(1 + .9 * i)) + (hash(k) - .5) * w * .06) * spread, T = 9 * Math.pow(a / (w * .44), 1.5); return { ...b, a, T, e: .05 + .3 * hash(k + 3.1), om: hash(k + 7.7) * TAU, M0: hash(k + 1.3) * TAU }; });
@@ -583,8 +596,7 @@
       if (!it.prim) for (let i = 1; i < 12; i++) { const q = at(b, i * .07), p = toS(bx + q[0], by + q[1] * SY); g.fillStyle = rgba(OBJ[b.idx].c, .22 * (1 - i / 12)); g.beginPath(); g.arc(p[0], p[1], Math.max(1.5, r * .08 * (1 - i / 12)), 0, TAU); g.fill(); }
       if (born < 1) ring(g, it.x, it.y, base * (.6 + 3 * born), OBJ[b.idx].c, .7 * (1 - born), 3);
       const sc = it.prim ? 1 : .6 + .2 * clamp(it.z / 1500 * .5 + .5, 0, 1); if (r * sc < 15) { halo(g, it.x, it.y, Math.max(8, r * sc * 3.2), OBJ[b.idx].c, .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.x, it.y, Math.max(1.6, r * sc * .32), 0, TAU); g.fill(); } else { g.save(); g.translate(it.x, it.y); paint(g, b.id, 0, 0, Math.max(.5, r * sc), t + b.idx); if (b.tint && r * sc > 12) tintBody(g, b, Math.max(.5, r * sc)); g.restore(); }
-      companions(g, it.x, it.y, r * sc, b.n, b.count, t, 1, SY, OBJ[b.idx].c, r * sc > 14);
-      let lbl = null; if (Z > .45 || list.length <= 8 || opt.focus === b.n) { lbl = { text: b.n, x: it.x, y: it.y + r * sc * 1.25 + 40, size: clamp(24 * Math.sqrt(Z), 20, 36), color: opt.focus === b.n ? '#ffffff' : rgba(OBJ[b.idx].c, .92), focus: opt.focus === b.n }; if (!opt.noLabels) drawLabel(g, lbl); }
+      let lbl = null; if (Z > .45 || list.length <= 8 || opt.focus === b.n) { lbl = { text: b.n, x: it.x, y: it.y + r * sc * 1.25 + 40, size: clamp(24 * Math.sqrt(Z), 20, 36), color: opt.focus === b.n ? '#ffffff' : rgba(OBJ[b.idx].c, .92), focus: opt.focus === b.n }; if (!opt.noLabels && PREF.on) drawLabel(g, lbl); }
       pos.push({ n: b.n, id: b.id, x: it.x, y: it.y, wx: it.wx, wy: it.wy, r: Math.max(r * sc, 18), lbl }); });
     // minimap: the whole system with the current view as a box
     const big = Math.max(380, ...orb.map(b => b.a * (1 + b.e))), R = 58, mx = 18 + R, my = opt.mini === 'tl' ? 52 + R : h - 18 - R, k = R / big; g.save(); g.fillStyle = 'rgba(10,8,22,.78)'; g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, R + 2, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(mx, my, R, 0, TAU); g.clip();
@@ -595,7 +607,7 @@
 
   // ---- the universe: a gravitational hierarchy. Each quasar you own is a galaxy nucleus; neutron stars and very heavy stars anchor sub-clusters; the rest orbit an anchor or the nucleus.
   // Galaxies orbit the heaviest nucleus on enormous, near-imperceptibly slow ellipses; clusters orbit their nucleus; stars orbit their anchor (T^2 ~ a^3 at every tier). Deterministic from the names.
-  const hs2 = n => { let h = 2166136261; for (let i = 0; i < n.length; i++) h = Math.imul(h ^ n.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
+  const hs2 = n => { let h = 2166136261; for (let i = 0; i < n.length; i++) h = Math.imul(h ^ n.charCodeAt(i), 16777619); h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };   // FNV, then a murmur finaliser: names that differ only in their last character (k+'x', k+'y') now give unrelated numbers, which is what makes arms broad and stars scattered
   function layout(list) {
     const items = list.slice().sort((x, y) => (y.m || 1) - (x.m || 1) || y.idx - x.idx || (x.n < y.n ? -1 : 1)), quas = items.filter(b => b.id === 'quasar'), nuclei = quas.length ? quas : items.slice(0, 1);
     const rest = items.filter(b => !nuclei.includes(b)), owned = new Set(items.map(x => x.n)), comps = rest.filter(b => b.comp && owned.has(b.comp)), loose = rest.filter(b => !comps.includes(b)), anchors = loose.filter(b => b.id === 'neutron' || (b.m || 0) >= 8), members = loose.filter(b => !anchors.includes(b));
@@ -663,18 +675,33 @@
   function galaxySprite(b, hex, need) {   // two sizes: a cheap 384 picture for galaxies that are small on screen, a 768 one for close views; the best one already painted is used while a better one waits its turn
     const want = need > 420 ? 768 : 384, hi = SPR.get(b.n + '|768'), lo = SPR.get(b.n + '|384'); if (hi) { SPR.delete(b.n + '|768'); SPR.set(b.n + '|768', hi); } const have = hi || lo; if (have && (have === hi || want === 384)) return have;
     if (BUILT >= 1) return have || null; BUILT++; if (SPR.size >= 30) SPR.delete(SPR.keys().next().value); const S = want, F = S / 768; let c = mk(S); const g = c.getContext('2d'), m = S / 2, R = S * .47, { arms, wind, pal } = gparams(b);
+    const H = k => hs2(b.n + k), ell = H('ty') > .87, bar = !ell && H('bar') > .5, barA = H('ba') * Math.PI, warm = rgba(pal[0], 1);
     g.translate(m, m); g.globalCompositeOperation = 'lighter';
-    let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.05); gr.addColorStop(0, rgba(hex, .3)); gr.addColorStop(.4, rgba(pal[1], .07)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.05, 0, TAU); g.fill();
-    for (let k = 0, KB = Math.round(700 * F * F); k < KB; k++) { const arm = k % arms, u = Math.pow(hs2(b.n + k + 'U'), .85), r = R * (.08 + .9 * u), sc = (hs2(b.n + k + 'X') + hs2(b.n + k + 'Y') - 1) * (.5 - .2 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, col = u < .25 ? pal[0] : pal[1], rad = (18 + 46 * hs2(b.n + k + 'R')) * F;   // soft diffuse body of the arms
-      glowAt(g, Math.cos(th) * r, Math.sin(th) * r, rad, col, .1 * (1 - .5 * u)); }
+    // a faint extended halo and a smooth exponential disc under everything
+    let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.08); gr.addColorStop(0, rgba(hex, .26)); gr.addColorStop(.35, rgba(pal[1], .08)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.08, 0, TAU); g.fill();
+    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .95); gr.addColorStop(0, rgba(pal[0], .5)); gr.addColorStop(.12, rgba(pal[0], .3)); gr.addColorStop(.35, rgba(pal[1], .1)); gr.addColorStop(.7, rgba(pal[1], .035)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .95, 0, TAU); g.fill();
+    if (ell) {   // an elliptical or lenticular galaxy: a smooth swarm of old yellow stars, no arms, no dust
+      for (let k = 0, N = Math.round(2200 * F * F); k < N; k++) { const r = R * .85 * Math.pow(H(k + 'er'), 1.7), a = H(k + 'ea') * TAU; glowAt(g, Math.cos(a) * r, Math.sin(a) * r * .82, (6 + 22 * H(k + 'es')) * F, pal[0], .05 * (1 - r / (R * .9))); }
+    } else {
+      // the diffuse body of the arms: many soft glows, golden near the bulge, blue-white outside
+      for (let k = 0, KB = Math.round(1500 * F * F); k < KB; k++) { const arm = k % arms, u = Math.pow(H(k + 'U'), .82), r = R * (.09 + .88 * u), sc = (H(k + 'X') + H(k + 'Y') - 1) * (.6 - .3 * u), th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc;
+        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (16 + 44 * H(k + 'R')) * F * (1 - .35 * u), u < .3 ? pal[0] : pal[1], .085 * (1 - .55 * u)); }
+      // star-forming knots along the arms
+      for (let k = 0, N = Math.round(380 * F * F); k < N; k++) { const arm = k % arms, u = .28 + .7 * Math.pow(H(k + 'hu'), .9), r = R * u, sc = (H(k + 'hx') - .5) * .22, th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc;
+        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (3 + 8 * H(k + 'hr')) * F, pal[2], .34 * (.5 + .5 * H(k + 'hv'))); }
+    }
     { const bk = []; for (let i = 0; i < 12; i++) bk.push([]);   // stars batched by colour and brightness: twelve fills instead of eighteen thousand
-      for (let k = 0, KS = Math.round(18000 * F * F); k < KS; k++) { const arm = k % arms, u = Math.pow(hs2(b.n + k + 'u'), .8), r = R * (.05 + .95 * u), sc = (hs2(b.n + k + 'x') + hs2(b.n + k + 'y') - 1) * (.34 - .12 * u), th = arm * TAU / arms + wind * u * 1.7 + sc, hii = hs2(b.n + k + 'h') > .965, c = u < .22 ? 0 : hii ? 2 : 1, a = Math.min(3, Math.floor(hs2(b.n + k + 'v') * 4 * (1 - .4 * u)));
-        bk[c * 4 + a].push(Math.cos(th) * r, Math.sin(th) * r, (hii ? 1.4 + 1.6 * hs2(b.n + k + 's') : .6 + 1.1 * hs2(b.n + k + 's')) * Math.max(.7, F)); }
-      bk.forEach((pts, i) => { const c = Math.floor(i / 4), a = i % 4; g.fillStyle = rgba(pal[c], (c === 2 ? .5 + a * .12 : .12 + a * .09) * 1.1); g.beginPath(); for (let j = 0; j < pts.length; j += 3) g.rect(pts[j] - pts[j + 2], pts[j + 1] - pts[j + 2], pts[j + 2] * 2, pts[j + 2] * 2); g.fill(); }); }
-    g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
-    for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[18 * F, .16], [8 * F, .22]]) { g.strokeStyle = `rgba(8,6,18,${al})`; g.lineWidth = lw; g.beginPath(); for (let i = 0; i <= 44; i++) { const u = .14 + .76 * i / 44, r = R * u, th = arm * TAU / arms + wind * u * 1.7 + .3; i ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); }
-    g.globalCompositeOperation = 'lighter'; gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .34); gr.addColorStop(0, rgba(pal[0], .95)); gr.addColorStop(.35, rgba(hex, .38)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .34, 0, TAU); g.fill();
-    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .09); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .09, 0, TAU); g.fill();
+      for (let k = 0, KS = Math.round((ell ? 9000 : 17000) * F * F); k < KS; k++) { const arm = k % arms, u = Math.pow(H(k + 'u'), .8), r = R * (.04 + .96 * u), sc = ell ? 0 : (H(k + 'x') + H(k + 'y') - 1) * (.46 - .2 * u), th = ell ? H(k + 'ea') * TAU : barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc, hii = !ell && H(k + 'h') > .965, cc = u < .22 ? 0 : hii ? 2 : 1, a = Math.min(3, Math.floor(H(k + 'v') * 4 * (1 - .4 * u)));
+        bk[cc * 4 + a].push(Math.cos(th) * r, Math.sin(th) * r * (ell ? .82 : 1), (hii ? 1.3 + 1.6 * H(k + 's') : .55 + 1.0 * H(k + 's')) * Math.max(.7, F)); }
+      bk.forEach((pts, i) => { const cc = Math.floor(i / 4), a = i % 4; g.fillStyle = rgba(pal[cc], (cc === 2 ? .5 + a * .12 : .14 + a * .1) * 1.1); g.beginPath(); for (let j = 0; j < pts.length; j += 3) g.rect(pts[j] - pts[j + 2], pts[j + 1] - pts[j + 2], pts[j + 2] * 2, pts[j + 2] * 2); g.fill(); }); }
+    if (bar) { g.save(); g.rotate(barA); g.scale(1, .26); gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .5); gr.addColorStop(0, rgba(pal[0], .75)); gr.addColorStop(.5, rgba(pal[0], .28)); gr.addColorStop(1, rgba(pal[0], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .5, 0, TAU); g.fill(); g.restore(); }
+    if (!ell) {   // dust lanes: soft dark bands hugging the inner edge of each arm
+      g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
+      for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[26 * F, .1], [14 * F, .14], [6 * F, .2]]) { g.strokeStyle = `rgba(6,4,14,${al})`; g.lineWidth = lw; g.beginPath(); for (let i = 0; i <= 52; i++) { const u = .12 + .8 * i / 52, r = R * u, th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + .26; i ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); }
+    }
+    // the bulge: golden, then white, with a hot nucleus
+    g.globalCompositeOperation = 'lighter'; gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .3); gr.addColorStop(0, rgba(pal[0], 1)); gr.addColorStop(.25, rgba(pal[0], .62)); gr.addColorStop(.6, rgba(hex, .22)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .3, 0, TAU); g.fill();
+    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .085); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,248,230,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .085, 0, TAU); g.fill();
     SPR.set(b.n + '|' + S, c); return c;
   }
   function clusterSprite(b, hex) {
@@ -691,8 +718,8 @@
   }
   function starTile(sd, per, T = 640) { const key = sd + '|' + per + '|' + T; let c = TILES.get(key); if (!c) { c = mk(T); starfield(c.getContext('2d'), T, T, 0, Math.round(T * T / per), sd); TILES.set(key, c); } return c; }
   function labelImg(l) {
-    const sz = Math.round(l.size / 2) * 2, key = l.text + '|' + sz + '|' + l.color; let e = LBL.get(key);
-    if (!e) { if (LBL.size > 260) LBL.clear(); const probe = mk(8).getContext('2d'); probe.font = `400 ${sz}px "EB Garamond", Georgia, serif`; const wd = Math.ceil(probe.measureText(l.text).width + sz * 1.4), c = document.createElement('canvas'); c.width = wd; c.height = Math.ceil(sz * 2); drawLabel(c.getContext('2d'), { ...l, size: sz, x: wd / 2, y: sz * 1.3 }); e = { c, ox: wd / 2, oy: sz * 1.3 }; LBL.set(key, e); }
+    const sz = Math.round(l.size / 2) * 2, key = l.text + '|' + sz + '|' + l.color + '|' + PREF.font; let e = LBL.get(key);
+    if (!e) { if (LBL.size > 260) LBL.clear(); const probe = mk(8).getContext('2d'); const F = lf(); probe.font = `${F.w} ${sz * F.s}px ${F.f}`; try { probe.letterSpacing = (sz * F.s * F.ls) + 'px'; } catch (e) {} const wd = Math.ceil(probe.measureText(l.text).width + sz * 1.6), c = document.createElement('canvas'); c.width = wd; c.height = Math.ceil(sz * 2); drawLabel(c.getContext('2d'), { ...l, size: sz, x: wd / 2, y: sz * 1.3 }); e = { c, ox: wd / 2, oy: sz * 1.3 }; LBL.set(key, e); }
     return e;
   }
   const BSPR = new Map();
@@ -702,14 +729,14 @@
     c = mk(256); const k = c.getContext('2d'); paintBody(k, b.id, 128, 128, 16, 2 + b.idx, b); BSPR.set(b.n, c); return c;
   }
   function universe(g, w, h, t, lay, opt = {}) {
-    BUILT = 0; g.clearRect(0, 0, w, h); if (opt.ov) { opt.ov.g.setTransform(1, 0, 0, 1, 0, 0); opt.ov.g.clearRect(0, 0, opt.ov.g.canvas.width, opt.ov.g.canvas.height); } const cam = opt.cam || { x: 0, y: 0, z: .1 }, Z = cam.z, SY = .56, U = Math.min(w, h), K = Math.max(1, w / 760), B = lay.bodies;
+    BUILT = 0; CPB = 0; g.clearRect(0, 0, w, h); if (opt.ov) { opt.ov.g.setTransform(1, 0, 0, 1, 0, 0); opt.ov.g.clearRect(0, 0, opt.ov.g.canvas.width, opt.ov.g.canvas.height); } const cam = opt.cam || { x: 0, y: 0, z: .1 }, Z = cam.z, SY = .56, U = Math.min(w, h), K = Math.max(1, w / 760), B = lay.bodies;
     if (!opt.noStars) for (const [par, per, sd] of [[.04, 9000, 9], [.1, 7000, 27]]) { const tile = starTile(sd, per, sd === 9 ? 640 : 1013), T = tile.width, ox = Math.round(((cam.x * par) % T + T) % T), oy = Math.round(((cam.y * par) % T + T) % T); for (let x = -ox; x < w; x += T) for (let y = -oy; y < h; y += T) g.drawImage(tile, x, y); }
     if (!B.length) return [];
     const PH = (opt.tau != null ? opt.tau : t) * 1.5, toS = (wx, wy) => [(wx - cam.x) * Z + w / 2, (wy - cam.y) * Z + h / 2], W = [], vis = (x, y, m) => x > -m && x < w + m && y > -m && y < h + m, newT = opt.newId, born = n => newT === n ? clamp((opt.tNew == null ? 9 : opt.tNew) / 1.4) : 1;
     B.forEach((b, i) => { if (b.parent < 0) { W[i] = [0, 0, 0]; return; } const q = kepAt(b, PH, opt.phases ? opt.phases[i] : null), p = W[b.parent]; W[i] = [p[0] + q[0], p[1] + q[1] * SY, q[1]]; });
     const col = b => OBJ[b.idx].c;
     // galaxy glow and spiral dust, then sub-cluster halos
-    B.forEach((b, i) => { if (b.tier === 'member' || !b.reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? b.reach * 1.15 * Z : (b.reach * 1.5 + 200) * Z, gal ? 38 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
+    B.forEach((b, i) => { const reach = b.reach || (b.tier === 'nucleus' ? 340 : 0); if (b.tier === 'member' || !reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? reach * 1.15 * Z : (reach * 1.5 + 200) * Z, gal ? 52 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
       if (!gal && R > w * 3) return;
       g.save(); g.translate(p[0], p[1]);
       if (gal) { const rot = PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1), big = R / K, fadeS = clamp(1 - (R * 2.13 - 520) / 420), da = clamp((R * 2.13 - 360) / 360), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, SY); g.globalAlpha = fadeS; const D = R * 2.13, sp = galaxySprite(b, col(b), D); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); else glowAt(g, 0, 0, R * 1.2, col(b), .5); g.restore(); } if (da > 0) { glowAt(g, 0, 0, R * 1.05, col(b), .16 * da * clamp(2.2 - big / 700)); g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, SY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
@@ -727,17 +754,18 @@
     }
     const labels = [], items = B.map((b, i) => ({ b, i, p: toS(W[i][0], W[i][1]), z: W[i][1] })).sort((x, y) => x.z - y.z), pos = [], zs = Math.pow(Z, .42) * Math.pow(.7, .58);
     items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', base = (FR[b.id] || .2) * (b.s || 1) * U * (nuc ? .46 : b.tier === 'anchor' ? .36 : .28) * zs, bn = born(b.n);
-      if (!vis(it.p[0], it.p[1], base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier }); return; }
+      let cps = null;
+      if (!vis(it.p[0], it.p[1], base * 6 + 80)) { pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: 0, tier: b.tier, copies: (b.count || 1) > 1 ? copies(g, it.p[0], it.p[1], W[i][0], W[i][1], Math.max(.01, base), b, b.count, PH, { K, SY, Z, colr: col(b), w, h, draw: false }) : null }); return; }
       const dim = opt.filter && !opt.filter.has(b.id) && opt.focus !== b.n; if (dim) g.globalAlpha = .13;
       const r = Math.max(.01, base * Math.max(.01, easeBack(bn))), rr = Math.max(r, nuc ? 6 * K : 3 * K);
       if (bn < 1) ring(g, it.p[0], it.p[1], base * (.6 + 3 * bn), col(b), .7 * (1 - bn), 3);
       if (rr < 15 * K) { glowAt(g, it.p[0], it.p[1], Math.max(8 * K, rr * 3.2), col(b), .85); g.fillStyle = '#fff'; g.beginPath(); g.arc(it.p[0], it.p[1], Math.max(1.6 * K, rr * .32), 0, TAU); g.fill(); }
       else { if (r < 20) { const sc = r / 16, sp = bodySprite(b); g.drawImage(sp, it.p[0] - 128 * sc, it.p[1] - 128 * sc, 256 * sc, 256 * sc); } else { g.save(); g.translate(it.p[0], it.p[1]); paintBody(g, b.id, 0, 0, r, t + b.idx, b); g.restore(); } }
-      companions(g, it.p[0], it.p[1], rr, b.n, b.count, t, K, SY, col(b), rr > 14 * K);
+      cps = copies(g, it.p[0], it.p[1], W[i][0], W[i][1], rr, b, b.count, PH, { K, SY, Z, colr: col(b), w, h, draw: true, fc: opt.focus === b.n ? opt.fc : 0 });
       const foc = opt.focus === b.n, orbPx = b.tier === 'member' ? (B[b.parent].a ? b.a * Z : 0) : 0, near = b.tier === 'member' ? b.a * (1 + b.e) * Z > 55 * K : true, showL = !dim && (foc || (nuc ? true : b.tier === 'anchor' ? b.a * Z > 90 * K || b.reach * Z > 30 * K : near && b.a * Z > 60 * K));
-      let lbl = null; if (showL && !opt.noLabels) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
+      let lbl = null; if (showL && !opt.noLabels && PREF.on) { lbl = { text: b.n, x: it.p[0], y: it.p[1] + rr * 1.25 + 38 * K, size: clamp((nuc ? 30 : 24) * Math.sqrt(Math.min(Z * 6, 4)) * K, 16 * K, 40 * K), color: foc ? '#ffffff' : rgba(col(b), .92), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
       if (dim) g.globalAlpha = 1;
-      pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 46 * K : 18 * K), lbl, tier: b.tier }); });
+      pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 46 * K : 18 * K), lbl, tier: b.tier, copies: cps }); });
     { const taken = []; labels.sort((x, y) => x.pr - y.pr || y.m - x.m).forEach(({ lbl }) => { const wd = lbl.text.length * lbl.size * .5, bx = { x0: lbl.x - wd / 2, x1: lbl.x + wd / 2, y0: lbl.y - lbl.size, y1: lbl.y + lbl.size * .3 }; if (!lbl.focus && taken.some(q => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) return; taken.push(bx); if (opt.ov) { const f = opt.ov.f, im = labelImg({ ...lbl, size: lbl.size * f }); opt.ov.g.drawImage(im.c, lbl.x * f - im.ox, lbl.y * f - im.oy); } else { const im = labelImg(lbl); g.drawImage(im.c, lbl.x - im.ox, lbl.y - im.oy); } }); }
     // minimap: the whole universe with the view as a box
     const Rm = 40 * K, mx = 14 * K + Rm, my = opt.mini === 'tl' ? (opt.miniTop ? opt.miniTop() : 52 * K) + Rm : h - 18 * K - Rm, big = lay.R * 1.1, k = Rm / big; const mgx = opt.ov ? opt.ov.g : g; mgx.save(); if (opt.ov) mgx.setTransform(opt.ov.f, 0, 0, opt.ov.f, 0, 0); mgx.fillStyle = 'rgba(10,8,22,.78)'; mgx.strokeStyle = 'rgba(255,255,255,.2)'; mgx.lineWidth = 1.5 * K; mgx.beginPath(); mgx.arc(mx, my, Rm + 2 * K, 0, TAU); mgx.fill(); mgx.stroke(); mgx.beginPath(); mgx.arc(mx, my, Rm, 0, TAU); mgx.clip();
@@ -745,5 +773,5 @@
     mgx.strokeStyle = '#fff'; mgx.lineWidth = 1.5 * K; mgx.strokeRect(mx + (cam.x - w / 2 / Z) * k, my + (cam.y - h / 2 / Z) * k, w / Z * k, h / Z * k); mgx.restore();
     return pos;
   }
-  window.SKY = { starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();

@@ -3,6 +3,15 @@
    Colour: warm paper + ink, one brand accent (vermilion), and a "temperature" ramp (cold blue → hot vermilion)
    that the game drives live as you get warmer. */
 
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-300-italic.woff2) format('woff2'); font-weight: 300; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-400-italic.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Jost'; src: url(fonts/jost-latin-300-normal.woff2) format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Jost'; src: url(fonts/jost-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url(fonts/ibm-plex-mono-latin-300-normal.woff2) format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'EB Garamond'; src: url(fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'EB Garamond'; src: url(fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: 'EB Garamond'; src: url(fonts/eb-garamond-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
@@ -1175,3 +1184,12 @@ body.insky #page { padding-top:10px; }
 /* daily archive */
 .pkgrid.arch { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } .arch button { text-align: left; display: grid; gap: 8px; align-content: start; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; color: var(--ink); cursor: pointer; font-family: var(--sans); } .arch button:hover { border-color: var(--accent); } .arch button.got { background: color-mix(in srgb, var(--accent-soft) 55%, var(--sheet)); }
 .ar-top { display: flex; justify-content: space-between; align-items: baseline; } .ar-top b { font: 700 12px var(--sans); letter-spacing: .12em; color: var(--accent-ink); } .ar-top em { font: 500 12.5px var(--sans); font-style: normal; color: var(--mute); } .ar-route { font: 400 21px/1.15 var(--display); } .ar-route i { color: var(--accent); font-style: normal; } .ar-s { font: 600 12px var(--sans); color: var(--mute); letter-spacing: .04em; } .arch button.got .ar-s { color: #2f7d46; }
+/* cycling through your copies of one object */
+.sfcopies { display: inline-flex; align-items: center; gap: 4px; margin: 2px 0 8px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .1); } .sfcopies span { padding: 0 10px; font: 600 12px var(--sans); letter-spacing: .04em; color: #cfc8e6; } .sfcopies b { color: #fff; } .sfcopies button { width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; font: 700 17px/1 var(--sans); cursor: pointer; display: grid; place-items: center; } .sfcopies button:hover { background: rgba(255, 255, 255, .24); }
+
+/* map display options: labels, label font, duplicates */
+.dispmenu { position: absolute; right: 64px; bottom: 12px; z-index: 30; width: 250px; padding: 14px; border-radius: 12px; background: rgba(14, 12, 28, .94); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 18px 50px -12px rgba(0, 0, 0, .7); color: #eceaf8; display: none; } .dispmenu.on { display: grid; gap: 12px; }
+.dispmenu h6 { margin: 0 0 6px; font: 700 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: #8d86b0; } .dispmenu .row { display: flex; justify-content: space-between; align-items: center; font: 600 14px var(--sans); }
+.dispmenu .sw { width: 42px; height: 24px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .18); position: relative; cursor: pointer; transition: background .2s; } .dispmenu .sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; } .dispmenu .sw.on { background: #ff7a45; } .dispmenu .sw.on::after { transform: translateX(18px); }
+.dispmenu .opts { display: grid; gap: 6px; } .dispmenu .opts.two { grid-template-columns: 1fr 1fr; } .dispmenu .opts button { padding: 9px 10px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); color: #cfc8e6; font-size: 17px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: baseline; } .dispmenu .opts button small { font: 600 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #8d86b0; } .dispmenu .opts button.on { border-color: #ff7a45; background: rgba(255, 122, 69, .16); color: #fff; }
+#skyfull .dispmenu { bottom: 90px; right: 76px; }
