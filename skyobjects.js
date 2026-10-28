@@ -629,8 +629,9 @@
   function kepAt(b, PH, ph) { const E = kepler(b.M0 + (ph != null ? ph : PH * TAU / b.T), b.e), x = b.a * (Math.cos(E) - b.e), y = b.a * Math.sqrt(1 - b.e * b.e) * Math.sin(E), c = Math.cos(b.om), s = Math.sin(b.om); return [x * c - y * s, x * s + y * c]; }
   // pre-rendered sprites keep the heavy art out of the frame loop: a galaxy (arms, dust lanes, HII regions, bulge), a dense star cluster, tiled star layers and label bitmaps
   const SPR = new Map(), TILES = new Map(), LBL = new Map(), mk = n => { const c = document.createElement('canvas'); c.width = c.height = n; return c; };
-  const GPAL = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878']];
-  const gparams = b => ({ arms: 2 + Math.floor(hs2(b.n + 'a') * 3), wind: 2.4 + hs2(b.n + 'w') * 2.6, pal: GPAL[Math.floor(hs2(b.n + 'p') * 3)] });
+  const GPAL = [['#fff0cf', '#a6c8ff', '#ff90b8'], ['#ffe2b4', '#86ecff', '#ff80dc'], ['#ffdcae', '#b8a0ff', '#ffb878'], ['#fff4dc', '#c8d8ff', '#ff9a8a'], ['#ffe9c4', '#9be8d6', '#ffd070'], ['#ffd9b0', '#ff9ec8', '#8cc8ff']];
+  const gparams = b => { const h = k => hs2(b.n + k), t = h('gt'), a = h('a'), type = t < .1 ? 'ell' : t < .18 ? 'ring' : t < .38 ? 'flocc' : t < .62 ? 'barred' : 'grand';   // morphology: smooth elliptical, ring, many-armed flocculent, barred spiral, grand design
+    return { type, arms: type === 'flocc' ? 5 + Math.floor(h('a') * 3) : type === 'barred' ? 2 : type === 'grand' ? (a < .45 ? 2 : a < .75 ? 3 : 4) : 3, wind: type === 'flocc' ? 1.7 + h('w') * 1.5 : 1.6 + h('w') * 3.8, pal: GPAL[Math.floor(h('p') * GPAL.length)] }; };
   // the same galaxy as live geometry, for close-ups: ~36,000 stars, diffuse arm blobs and dust lanes in unit coordinates, drawn crisp at any zoom (the sprite only serves the distant view)
   const DET = new Map();
   function galaxyField(b) {
@@ -674,33 +675,44 @@
   let BUILT = 0;   // at most one galaxy picture is painted per frame; the rest show a plain glow until their turn
   function galaxySprite(b, hex, need) {   // two sizes: a cheap 384 picture for galaxies that are small on screen, a 768 one for close views; the best one already painted is used while a better one waits its turn
     const want = need > 420 ? 768 : 384, hi = SPR.get(b.n + '|768'), lo = SPR.get(b.n + '|384'); if (hi) { SPR.delete(b.n + '|768'); SPR.set(b.n + '|768', hi); } const have = hi || lo; if (have && (have === hi || want === 384)) return have;
-    if (BUILT >= 1) return have || null; BUILT++; if (SPR.size >= 30) SPR.delete(SPR.keys().next().value); const S = want, F = S / 768; let c = mk(S); const g = c.getContext('2d'), m = S / 2, R = S * .47, { arms, wind, pal } = gparams(b);
-    const H = k => hs2(b.n + k), ell = H('ty') > .87, bar = !ell && H('bar') > .5, barA = H('ba') * Math.PI, warm = rgba(pal[0], 1);
+    if (BUILT >= 1) return have || null; BUILT++; if (SPR.size >= 30) SPR.delete(SPR.keys().next().value); const S = want, F = S / 768; let c = mk(S); const g = c.getContext('2d'), m = S / 2, R = S * .47, { arms, wind, pal, type } = gparams(b);
+    const H = k => hs2(b.n + k), bar = type === 'barred', barA = H('ba') * Math.PI, th0 = bar ? barA : 0, flocc = type === 'flocc', gauss = k => H(k + 'g1') + H(k + 'g2') + H(k + 'g3') - 1.5;
+    const armAt = (arm, u, off) => arm * TAU / arms + th0 + wind * u * 1.7 + off;
     g.translate(m, m); g.globalCompositeOperation = 'lighter';
-    // a faint extended halo and a smooth exponential disc under everything
-    let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.08); gr.addColorStop(0, rgba(hex, .26)); gr.addColorStop(.35, rgba(pal[1], .08)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.08, 0, TAU); g.fill();
-    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .95); gr.addColorStop(0, rgba(pal[0], .5)); gr.addColorStop(.12, rgba(pal[0], .3)); gr.addColorStop(.35, rgba(pal[1], .1)); gr.addColorStop(.7, rgba(pal[1], .035)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .95, 0, TAU); g.fill();
-    if (ell) {   // an elliptical or lenticular galaxy: a smooth swarm of old yellow stars, no arms, no dust
-      for (let k = 0, N = Math.round(2200 * F * F); k < N; k++) { const r = R * .85 * Math.pow(H(k + 'er'), 1.7), a = H(k + 'ea') * TAU; glowAt(g, Math.cos(a) * r, Math.sin(a) * r * .82, (6 + 22 * H(k + 'es')) * F, pal[0], .05 * (1 - r / (R * .9))); }
+    // a faint extended halo and a smooth disc under everything
+    let gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 1.1); gr.addColorStop(0, rgba(hex, .26)); gr.addColorStop(.35, rgba(pal[1], .09)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * 1.1, 0, TAU); g.fill();
+    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .98); gr.addColorStop(0, rgba(pal[0], .5)); gr.addColorStop(.12, rgba(pal[0], .3)); gr.addColorStop(.35, rgba(pal[1], .15)); gr.addColorStop(.7, rgba(pal[1], .075)); gr.addColorStop(1, rgba(pal[1], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .98, 0, TAU); g.fill();
+    if (type === 'ell') {   // a smooth elliptical: a swarm of old golden stars
+      for (let k = 0, N = Math.round(2600 * F * F); k < N; k++) { const r = R * .88 * Math.pow(H(k + 'er'), 1.7), a = H(k + 'ea') * TAU; glowAt(g, Math.cos(a) * r, Math.sin(a) * r * .84, (6 + 24 * H(k + 'es')) * F, pal[0], .05 * (1 - r / (R * .9))); }
+    } else if (type === 'ring') {   // a collisional ring galaxy: a blue-white ring of new stars around a yellow nucleus
+      const r0 = R * (.5 + .12 * H('rr'));
+      for (let k = 0, N = Math.round(900 * F * F); k < N; k++) { const a = H(k + 'ra') * TAU, r = r0 + gauss(k + 'r') * R * .1, hot = H(k + 'rh') > .8; glowAt(g, Math.cos(a) * r, Math.sin(a) * r, (8 + 26 * H(k + 'rs')) * F, hot ? pal[2] : pal[1], hot ? .2 : .08); }
+      g.strokeStyle = rgba(pal[1], .16); g.lineWidth = 34 * F; g.beginPath(); g.arc(0, 0, r0, 0, TAU); g.stroke(); g.strokeStyle = rgba(pal[1], .22); g.lineWidth = 14 * F; g.beginPath(); g.arc(0, 0, r0, 0, TAU); g.stroke();
     } else {
-      // the diffuse body of the arms: many soft glows, golden near the bulge, blue-white outside
-      for (let k = 0, KB = Math.round(1500 * F * F); k < KB; k++) { const arm = k % arms, u = Math.pow(H(k + 'U'), .82), r = R * (.09 + .88 * u), sc = (H(k + 'X') + H(k + 'Y') - 1) * (.6 - .3 * u), th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc;
-        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (16 + 44 * H(k + 'R')) * F * (1 - .35 * u), u < .3 ? pal[0] : pal[1], .085 * (1 - .55 * u)); }
+      // continuous luminous ribbons along each arm (broad, soft, golden inside and blue outside), so the arms read as one flowing structure
+      g.lineCap = 'round';
+      for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[90 * F, .02], [54 * F, .03], [28 * F, .042]]) { let u0 = .1; while (u0 < .98) { const u1 = Math.min(.98, u0 + .05); if (!flocc || H(arm + 'f' + Math.round(u0 * 20)) > .3) { g.strokeStyle = rgba(u0 < .3 ? pal[0] : pal[1], al * (1 - .5 * u0) * Math.min(1, .25 + 1.6 * u0) * (flocc ? .8 : 1)); g.lineWidth = lw * (1 - .25 * u0); g.beginPath(); for (let j = 0; j <= 3; j++) { const u = u0 + (u1 - u0) * j / 3, r = R * u, th = armAt(arm, u, 0); j ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); } u0 = u1; } }
+      // the diffuse body of the arms: many soft glows
+      for (let k = 0, KB = Math.round(1700 * F * F); k < KB; k++) { const arm = k % arms, u = Math.pow(H(k + 'U'), .95), r = R * (.09 + .88 * u), sc = (H(k + 'X') + H(k + 'Y') - 1) * ((flocc ? .75 : .62) - .3 * u), th = armAt(arm, u, sc);
+        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (16 + 46 * H(k + 'R')) * F * (1 - .35 * u), u < .3 ? pal[0] : pal[1], .07 * (1 - .55 * u) * Math.min(1, .25 + 1.6 * u)); }
       // star-forming knots along the arms
-      for (let k = 0, N = Math.round(380 * F * F); k < N; k++) { const arm = k % arms, u = .28 + .7 * Math.pow(H(k + 'hu'), .9), r = R * u, sc = (H(k + 'hx') - .5) * .22, th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc;
-        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (3 + 8 * H(k + 'hr')) * F, pal[2], .34 * (.5 + .5 * H(k + 'hv'))); }
+      for (let k = 0, N = Math.round(460 * F * F); k < N; k++) { const arm = k % arms, u = .26 + .72 * Math.pow(H(k + 'hu'), .9), r = R * u, sc = (H(k + 'hx') - .5) * .26, th = armAt(arm, u, sc);
+        glowAt(g, Math.cos(th) * r, Math.sin(th) * r, (3 + 9 * H(k + 'hr')) * F, pal[2], .36 * (.5 + .5 * H(k + 'hv'))); }
     }
     { const bk = []; for (let i = 0; i < 12; i++) bk.push([]);   // stars batched by colour and brightness: twelve fills instead of eighteen thousand
-      for (let k = 0, KS = Math.round((ell ? 9000 : 17000) * F * F); k < KS; k++) { const arm = k % arms, u = Math.pow(H(k + 'u'), .8), r = R * (.04 + .96 * u), sc = ell ? 0 : (H(k + 'x') + H(k + 'y') - 1) * (.46 - .2 * u), th = ell ? H(k + 'ea') * TAU : barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + sc, hii = !ell && H(k + 'h') > .965, cc = u < .22 ? 0 : hii ? 2 : 1, a = Math.min(3, Math.floor(H(k + 'v') * 4 * (1 - .4 * u)));
-        bk[cc * 4 + a].push(Math.cos(th) * r, Math.sin(th) * r * (ell ? .82 : 1), (hii ? 1.3 + 1.6 * H(k + 's') : .55 + 1.0 * H(k + 's')) * Math.max(.7, F)); }
+      const diskless = type === 'ell' || type === 'ring';
+      for (let k = 0, KS = Math.round((diskless ? 10000 : 18000) * F * F); k < KS; k++) { const arm = k % arms, u = Math.pow(H(k + 'u'), .92), r = R * (.04 + .96 * u), sc = diskless ? 0 : (H(k + 'x') + H(k + 'y') - 1) * ((flocc ? .6 : .5) - .2 * u);
+        let th = diskless ? H(k + 'ea') * TAU : armAt(arm, u, sc), rr = r; if (type === 'ring') rr = H(k + 'rg') > .55 ? R * (.5 + .12 * H('rr')) + gauss(k + 'q') * R * .12 : r * .45;
+        const hii = !diskless && H(k + 'h') > .965, cc = (type === 'ring' ? rr > R * .4 : u >= .22) ? (hii ? 2 : 1) : 0, a = Math.min(3, Math.floor(H(k + 'v') * 4 * (1 - .4 * u)));
+        bk[cc * 4 + a].push(Math.cos(th) * rr, Math.sin(th) * rr * (type === 'ell' ? .84 : 1), (hii ? 1.3 + 1.6 * H(k + 's') : .55 + 1.0 * H(k + 's')) * Math.max(.7, F)); }
       bk.forEach((pts, i) => { const cc = Math.floor(i / 4), a = i % 4; g.fillStyle = rgba(pal[cc], (cc === 2 ? .5 + a * .12 : .14 + a * .1) * 1.1); g.beginPath(); for (let j = 0; j < pts.length; j += 3) g.rect(pts[j] - pts[j + 2], pts[j + 1] - pts[j + 2], pts[j + 2] * 2, pts[j + 2] * 2); g.fill(); }); }
-    if (bar) { g.save(); g.rotate(barA); g.scale(1, .26); gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .5); gr.addColorStop(0, rgba(pal[0], .75)); gr.addColorStop(.5, rgba(pal[0], .28)); gr.addColorStop(1, rgba(pal[0], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .5, 0, TAU); g.fill(); g.restore(); }
-    if (!ell) {   // dust lanes: soft dark bands hugging the inner edge of each arm
+    if (bar) { g.save(); g.rotate(barA); g.scale(1, .24); gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .56); gr.addColorStop(0, rgba(pal[0], .8)); gr.addColorStop(.5, rgba(pal[0], .3)); gr.addColorStop(1, rgba(pal[0], 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .56, 0, TAU); g.fill(); g.restore(); }
+    if (type !== 'ell' && type !== 'ring') {   // dust lanes: soft dark bands along the inner edge of each arm
       g.globalCompositeOperation = 'source-over'; g.lineCap = 'round';
-      for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[26 * F, .1], [14 * F, .14], [6 * F, .2]]) { g.strokeStyle = `rgba(6,4,14,${al})`; g.lineWidth = lw; g.beginPath(); for (let i = 0; i <= 52; i++) { const u = .12 + .8 * i / 52, r = R * u, th = barA * (bar ? 1 : 0) + arm * TAU / arms + wind * u * 1.7 + .26; i ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); }
+      for (let arm = 0; arm < arms; arm++) for (const [lw, al] of [[30 * F, .09], [16 * F, .13], [7 * F, .19]]) { g.strokeStyle = `rgba(6,4,14,${al * (flocc ? .7 : 1)})`; g.lineWidth = lw; g.beginPath(); for (let i = 0; i <= 52; i++) { const u = .12 + .8 * i / 52, r = R * u, th = armAt(arm, u, .27); i ? g.lineTo(Math.cos(th) * r, Math.sin(th) * r) : g.moveTo(Math.cos(th) * r, Math.sin(th) * r); } g.stroke(); }
     }
     // the bulge: golden, then white, with a hot nucleus
-    g.globalCompositeOperation = 'lighter'; gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .3); gr.addColorStop(0, rgba(pal[0], 1)); gr.addColorStop(.25, rgba(pal[0], .62)); gr.addColorStop(.6, rgba(hex, .22)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .3, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'lighter'; const bw = type === 'ell' ? .34 : type === 'ring' ? .2 : .3; gr = g.createRadialGradient(0, 0, 0, 0, 0, R * bw); gr.addColorStop(0, rgba(pal[0], 1)); gr.addColorStop(.25, rgba(pal[0], .62)); gr.addColorStop(.6, rgba(hex, .22)); gr.addColorStop(1, rgba(hex, 0)); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * bw, 0, TAU); g.fill();
     gr = g.createRadialGradient(0, 0, 0, 0, 0, R * .085); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,248,230,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R * .085, 0, TAU); g.fill();
     SPR.set(b.n + '|' + S, c); return c;
   }
@@ -739,7 +751,7 @@
     B.forEach((b, i) => { const reach = b.reach || (b.tier === 'nucleus' ? 340 : 0); if (b.tier === 'member' || !reach) return; const gal = b.tier === 'nucleus', R = Math.max(gal ? reach * 1.15 * Z : (reach * 1.5 + 200) * Z, gal ? 52 * K : 0), p = toS(W[i][0], W[i][1]); if (R < 9 * K || !vis(p[0], p[1], R * 1.2)) return;
       if (!gal && R > w * 3) return;
       g.save(); g.translate(p[0], p[1]);
-      if (gal) { const rot = PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1), big = R / K, fadeS = clamp(1 - (R * 2.13 - 520) / 420), da = clamp((R * 2.13 - 360) / 360), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, SY); g.globalAlpha = fadeS; const D = R * 2.13, sp = galaxySprite(b, col(b), D); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); else glowAt(g, 0, 0, R * 1.2, col(b), .5); g.restore(); } if (da > 0) { glowAt(g, 0, 0, R * 1.05, col(b), .16 * da * clamp(2.2 - big / 700)); g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, SY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
+      if (gal) { const rot0 = hs2(b.n + 'r0') * TAU, gSY = .4 + .46 * hs2(b.n + 'inc'), rot = rot0 + PH * .0007 * (hs2(b.n + 'd') > .5 ? 1 : -1), big = R / K, fadeS = clamp(1 - (R * 2.13 - 520) / 420), da = clamp((R * 2.13 - 360) / 360), haze = .1 + .9 * clamp(1 - (big - 1400) / 2600); if (fadeS > 0) { g.save(); g.scale(1, gSY); g.rotate(rot0); g.globalAlpha = fadeS; const D = R * 2.13, sp = galaxySprite(b, col(b), D); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); else glowAt(g, 0, 0, R * 1.2, col(b), .5); g.restore(); } if (da > 0) { glowAt(g, 0, 0, R * 1.05, col(b), .16 * da * clamp(2.2 - big / 700)); g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; galaxyDetail(g, b, p[0], p[1], R, rot, gSY, w, h, K, col(b), da, haze); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
       g.restore(); });
     // orbits: a faint ellipse around the parent, drawn only when big enough to read, at most a budget of them (nearest the view first), stroked in three batches
     {
