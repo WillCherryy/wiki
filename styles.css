@@ -1445,7 +1445,7 @@ body { font-family: var(--sans); }
 .lkgrid .item.on { box-shadow: inset 0 2px 0 var(--accent) !important; } .lkgrid .item.on small { color: var(--accent-ink) !important; } .lkgrid .item.lock { color: var(--mute) !important; }
 #lkPrev, .lkprev, .modal canvas#lkCv, .pagebody canvas#lkCv { border-radius: 0 !important; }
 /* the studio */
-.stu-c { border: 0 !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0 !important; background: none !important; outline: 0 !important; box-shadow: none !important; } .stu-c.on { border-bottom: 2px solid var(--accent) !important; } .stu-c small { font: 400 9.5px 'Jost', var(--sans) !important; letter-spacing: .16em; text-transform: uppercase; }
+.stu-c { border: 0 !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0 !important; outline: 0 !important; box-shadow: none !important; } .stu-c:not([style*="background"]) { background: none !important; } .stu-c.on { border-bottom: 2px solid var(--accent) !important; } .stu-c small { font: 400 9.5px 'Jost', var(--sans) !important; letter-spacing: .16em; text-transform: uppercase; }
 .stu-sw .stu-c { border-radius: 50% !important; border: 1px solid var(--rule) !important; } .stu-sw .stu-c.on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--accent) !important; border-color: transparent !important; }
 /* packs: a quiet word, not a sash */
 .pkrib { position: absolute !important; top: 18px !important; right: 0 !important; transform: none !important; width: auto !important; padding: 0 !important; background: none !important; color: var(--accent-ink) !important; font: 400 9.5px 'Jost', var(--sans) !important; letter-spacing: .26em !important; box-shadow: none !important; }
@@ -1489,3 +1489,21 @@ body { font-family: var(--sans); }
   .stage-stats { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); } .stage-stats > div { padding: 11px 10px 10px 0 !important; margin-right: 10px !important; min-width: 0; } .stage-stats b { font-size: 19px !important; } .stage-stats b small { font-size: 13px; }
   .stage-info { padding-left: 18px !important; padding-right: 18px !important; }
 }
+
+/* studio swatches: the colour itself, as a disc; the chosen one ringed */
+.stu-sw .stu-c[style*="background"] { width: 40px !important; height: 40px !important; min-height: 40px !important; border-radius: 50% !important; border: 1px solid rgba(0, 0, 0, .12) !important; }
+.stu-sw .stu-c[style*="background"] small { display: none; }
+.stu-sw .stu-c.on { box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink) !important; }
+.stu-sw .stu-c.txt, .stu-pick { border: 0 !important; border-bottom: 1px solid var(--ink) !important; border-radius: 0 !important; background: none !important; padding: 0 0 4px !important; height: auto !important; min-height: 0 !important; width: auto !important; font: 400 10.5px 'Jost', var(--sans) !important; letter-spacing: .24em !important; text-transform: uppercase; margin-left: 10px; }
+.stu-pick input { border-radius: 50% !important; }
+/* the close-up view: the Observatory's language */
+#inspect { font-family: 'Jost', var(--sans); }
+#inspect .inbar { padding: 80px 40px calc(34px + env(safe-area-inset-bottom, 0px)) !important; }
+#inspect .in-eye { font: 400 10.5px 'Jost', var(--sans) !important; letter-spacing: .28em !important; }
+#inspect .in-name { font: italic 400 clamp(46px, 7vw, 76px)/1 var(--display) !important; color: #fff !important; text-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent); margin: 10px 0 6px !important; }
+#inspect .in-sub { font: italic 400 18px var(--display) !important; letter-spacing: 0 !important; text-transform: none !important; color: #a9a2c8 !important; }
+#inspect .in-fact { font: 400 19px/1.45 var(--display) !important; color: #d6d0ec !important; max-width: 560px; }
+#inspect .sflink { display: inline-block; margin-top: 12px; padding: 0 0 5px !important; background: none !important; border: 0 !important; border-bottom: 1px solid rgba(255, 255, 255, .4) !important; border-radius: 0 !important; color: #fff !important; font: 400 10.5px 'Jost', var(--sans) !important; letter-spacing: .26em; text-transform: uppercase; text-decoration: none; }
+#inspect .in-hint { padding: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; font: 400 10px 'Jost', var(--sans) !important; letter-spacing: .26em; text-transform: uppercase; color: #8a84a3 !important; white-space: nowrap; }
+#inspect #inX { border: 0 !important; background: none !important; border-radius: 0 !important; right: 30px !important; top: 26px !important; } #inspect #inX svg { stroke-width: 1.2; width: 24px; height: 24px; }
+@media (max-width: 899px) { #inspect .inbar { padding: 60px 20px calc(24px + env(safe-area-inset-bottom, 0px)) !important; } #inspect .in-hint { white-space: normal; text-align: center; width: 80%; } }

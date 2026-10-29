@@ -309,6 +309,12 @@
     const A = [x + dx, y + dy, r * .62], B2 = [x - dx, y - dy, r * .5]; (front ? [B2, A] : [A, B2]).forEach(b => one(b[0], b[1], b[2]));
   }
   function paintV(g, id, x, y, r, t, q) { if (!q) return paint(g, id, x, y, r, t); paintBody(g, id, x, y, r * (q.s || 1), t, q); }
+  const SBG = new Map();
+  function starBg(g, w, h, n, seed, bg) {   // a still star field drawn once per size and reused: redrawing thousands of stars every frame was most of the cost of the comparison and close-up views
+    const key = w + 'x' + h + '|' + n + '|' + seed + '|' + bg; let c = SBG.get(key);
+    if (!c) { c = document.createElement('canvas'); c.width = w; c.height = h; const cg = c.getContext('2d'); if (bg) { cg.fillStyle = bg; cg.fillRect(0, 0, w, h); } starfield(cg, w, h, 0, n, seed); SBG.set(key, c); while (SBG.size > 6) SBG.delete(SBG.keys().next().value); }
+    g.drawImage(c, 0, 0);
+  }
   function starfield(g, w, h, t, n = 90, seed = 0) {   // a real random scatter (a seeded PRNG, not a lattice hash): many faint stars, a few bright ones, a hint of colour, mild clumping
     let a0 = (Math.floor(seed * 7919) + 1013904223) >>> 0; const rnd = () => { a0 = (a0 + 0x6D2B79F5) >>> 0; let t2 = a0; t2 = Math.imul(t2 ^ (t2 >>> 15), t2 | 1); t2 ^= t2 + Math.imul(t2 ^ (t2 >>> 7), t2 | 61); return ((t2 ^ (t2 >>> 14)) >>> 0) / 4294967296; };
     g.save(); const tints = ['255,255,255', '255,238,215', '206,224,255', '255,214,190'], clumps = []; for (let i = 0; i < 7; i++) clumps.push([rnd(), rnd(), .14 + .2 * rnd()]);
@@ -1156,5 +1162,5 @@
     const rp = (PFR[b.id] || .26) * Math.min(w, h), t0 = performance.now();
     return new Promise(res => { (function poll() { const c = surfKind(b.id) && b.id !== 'neutron' ? surfFor(b, rp) : true; if ((c && !SWbusy && !SWQ.length) || performance.now() - t0 > ms) return res(); setTimeout(poll, 60); })(); });
   }
-  window.SKY = { portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { starBg, portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();

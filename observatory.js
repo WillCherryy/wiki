@@ -31,7 +31,7 @@
       <div class="ob-hint" id="obHint">Scroll to zoom through twenty powers of ten · drag to move · tap anything</div>
       <div class="ob-search" id="obS" hidden><input id="obQ" placeholder="Find an object" autocomplete="off" spellcheck="false"><div class="ob-res" id="obRes"></div></div>`;
     document.body.appendChild(host); document.body.classList.add('obs-on'); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
-    let qual = 1; const cv = host.querySelector('#obCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
+    let qual = 1; const cv = host.querySelector('#obCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
     let sel = opt.focus || (L[0] && L[0].n), filter = new Set(), copyI = 1;
     const map = window.__map = uniMap(cv, L, { intro: !opt.focus, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: sel, focus: sel, newId: opt.newId, onPick: n => inspect(n) });
     const Q = s => host.querySelector(s);
@@ -117,7 +117,8 @@
     let x = 0; list.forEach((o, i) => { if (i) { const p = list[i - 1], gap = o => o.id === 'neutron' ? 6 : o.id === 'quasar' ? 14 : 1.3; x += p.r * gap(p) + o.r * gap(o); } o.x = x; });   // room for the field lines of neutron stars and the discs of black holes
     const host = document.createElement('div'); host.id = 'cmp'; host.innerHTML = `<canvas id="cmpCv"></canvas><div class="cmp-top"><div class="ob-brand"><span class="cmp-t">Size comparison</span><span>${list.length} objects, smallest to largest, all to one scale</span></div><div class="ob-links"><button id="cmpPick">Choose objects</button><button id="cmpMode">${allMode ? 'One by one' : 'All at once'}</button><button id="cmpX" class="ob-x" aria-label="Close"></button></div></div>
       <div class="cmp-info" id="cmpInfo"></div><div class="cmp-bar"><div class="cmp-scale"><i id="cmpSb"></i><span id="cmpSl"></span></div><div class="cmp-pos"><button id="cmpPrev">←</button><span id="cmpN"></span><button id="cmpNext">→</button></div></div><div class="ob-hint" id="cmpHint">Scroll, swipe or use the arrow keys</div>`;
-    document.body.appendChild(host); const cv = host.querySelector('#cmpCv'), g = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+    (document.fullscreenElement || document.body).appendChild(host); const OM = document.getElementById('obs') && window.__map; if (OM && OM.pause) OM.pause(true);   // inside the full-screen observatory, or the browser keeps it on top; the universe rests while this is open
+    const cv = host.querySelector('#cmpCv'), g = cv.getContext('2d'), dpr = Math.min(1.5, window.devicePixelRatio || 1);
     const size = () => { cv.width = host.clientWidth * dpr; cv.height = host.clientHeight * dpr; }; size(); window.addEventListener('resize', size);
     let idx = Math.max(0, list.findIndex(o => o.n === startName)), tgt = idx, raf = 0, shown = -1; if (idx < 0) idx = tgt = 0;
     const t0 = performance.now(), info = host.querySelector('#cmpInfo');
@@ -125,9 +126,11 @@
       info.innerHTML = `<div class="ob-k">${esc(o.ref ? o.kind : (o.kind || typeName(o.id)))}</div><h1>${esc(o.n)}</h1><dl><div><dt>${o.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rr[0]}<small>${rr[1]}</small></dd></div><div><dt>Against the Sun</dt><dd>${sun >= 1 ? '×' + sig(sun) : sig(sun) + ' ×'}</dd></div>${prev ? `<div><dt>Against ${esc(prev.n)}</dt><dd>×${sig(o.r / prev.r)}</dd></div>` : ''}</dl>`;
       host.querySelector('#cmpN').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(list.length).padStart(2, '0'); };
     const niceKm = km => { const p = Math.pow(10, Math.floor(Math.log10(km))), m = km / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; };
-    const frame = now => { if (!host.isConnected) return; idx += (tgt - idx) * .085; if (Math.abs(tgt - idx) < .0005) idx = tgt; const w = cv.width, h = cv.height, K = Math.max(1, w / 1400), i0 = Math.max(0, Math.min(list.length - 1, Math.floor(idx))), i1 = Math.min(list.length - 1, i0 + 1), f = idx - i0;
+    let drawn = 0, lastIdx = -1;
+    const frame = now => { if (!host.isConnected) return; if (idx === tgt && lastIdx === idx && now - drawn < 48) { raf = requestAnimationFrame(frame); return; } drawn = now; lastIdx = idx;   // at rest it redraws ~20 times a second (the stars still turn); while moving, every frame
+      idx += (tgt - idx) * .085; if (Math.abs(tgt - idx) < .0005) idx = tgt; const w = cv.width, h = cv.height, K = Math.max(1, w / 1400), i0 = Math.max(0, Math.min(list.length - 1, Math.floor(idx))), i1 = Math.min(list.length - 1, i0 + 1), f = idx - i0;
       const fr = o => o.r * (o.id === 'quasar' ? 6 : o.id === 'neutron' ? 2.2 : o.pk === 'saturn' ? 2.3 : 1), r0 = fr(list[i0]), r1 = fr(list[i1]), R = Math.exp(Math.log(r0) + (Math.log(r1) - Math.log(r0)) * f), cx = list[i0].x + (list[i1].x - list[i0].x) * f, s = h * .17 / R, mid = w * .6, cy = h * .5;   // pixels per solar radius
-      g.fillStyle = '#030208'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, 0, Math.round(w * h / 2600), 13);
+      SKY.starBg(g, w, h, Math.round(w * h / 2600), 13, '#030208');
       if (allMode) { const t = (now - t0) / 1000, X0 = w * .34, X1 = w * .97, gapMin = Math.min(110 * K, (w * .63) / list.length * .8), mx = Math.max(...list.map(fr)); let S2 = Math.min(h * .36 / mx, (X1 - X0) / list.reduce((a, o) => a + 2.1 * fr(o), 0)), slots;   // every chosen object in one frame, at one true scale
         for (let it = 0; it < 60; it++) { slots = list.map(o => Math.max(2.08 * fr(o) * S2, gapMin)); if (slots.reduce((a, b) => a + b, 0) <= X1 - X0 || list.every(o => 2.08 * fr(o) * S2 < gapMin)) break; S2 *= .93; }
         let xx = X0 + (X1 - X0 - slots.reduce((a, b) => a + b, 0)) / 2;
@@ -164,7 +167,7 @@
       pk.querySelector('#cpGo').onclick = () => { if (chosen.size < 2) return toast('Choose at least two objects'); const names = [...chosen]; close(); compare(names[0], names, 'all'); }; };
     host.querySelector('#cmpPrev').onclick = () => go(-1); host.querySelector('#cmpNext').onclick = () => go(1);
     const key = e => { if (host.querySelector('.cmp-pick') && e.key !== 'Escape') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); else if (e.key === 'Escape') { const pk = host.querySelector('.cmp-pick'); if (pk) pk.remove(); else close(); } };
-    const close = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); host.remove(); };
+    const close = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); host.remove(); if (OM && OM.pause) OM.pause(false); };
     document.addEventListener('keydown', key); host.querySelector('#cmpX').onclick = close; setTimeout(() => { const hh = host.querySelector('#cmpHint'); if (hh) hh.classList.add('gone'); }, 6000);
   }
 
