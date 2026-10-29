@@ -616,7 +616,7 @@ async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image
 }
 async function openDiscoveryShare(k, back) {
   const link = SITE_URL + 'find/' + encodeURIComponent(k.name), text = `${k.first ? 'I just discovered' : 'I found'} ${k.name} (${RARITY[k.idx]} ${SKY.OBJ[k.idx].name.toLowerCase()}) on ${BRAND.name}. Space is cold. Warm it up. ${link}`;
-  openModal(`<h2>Share your find</h2><p style="margin-bottom:12px">${esc(k.name)}, with a link to play.</p><img id="dsImg" alt="Your discovery card" style="width:100%;border-radius:18px;display:block;background:#0b0a18;aspect-ratio:4/5"><div class="actions" style="margin-top:14px"><button class="btn" id="dsShare">Share</button><button class="btn ghost" id="dsSave">Save image</button></div><div class="actions" style="margin-top:10px"><button class="btn ghost" id="dsTxt">Copy text + link</button>${back ? '<button class="btn ghost" id="dsBack">← Back</button>' : ''}</div>`);
+  openModal(`<h2>Share your find</h2><p style="margin-bottom:12px">${esc(k.name)}, with a link to play.</p><img id="dsImg" alt="Your discovery card" style="width:100%;border-radius:18px;display:block;background:#0b0a18;aspect-ratio:4/5"><div class="actions" style="margin-top:14px"><button class="btn" id="dsShare">Share</button><button class="btn ghost" id="dsSave">Save image</button></div><div class="actions" style="margin-top:10px"><button class="btn ghost" id="dsTxt">Copy text + link</button>${back ? '<button class="btn ghost" id="dsBack">Back</button>' : ''}</div>`);
   const canvas = await discoveryCanvas(k), blob = await new Promise(res => canvas.toBlob(res, 'image/png')), url = URL.createObjectURL(blob), name = `${BRAND.name}-${k.name.replace(/[^A-Za-z0-9]+/g, '-')}.png`, file = new File([blob], name, { type: 'image/png' });
   $('#dsImg').src = url;
   const save = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
@@ -941,19 +941,29 @@ async function fillCrowd(r) {
   if (dev) dev.innerHTML = left ? `You left the crowd at step ${left.step}: ${left.topPct}% went via <b>${esc(left.top)}</b>, you chose <b>${esc(left.mine)}</b> (${left.pct}%).` : 'You followed the crowd favourite all the way.';
 }
 // The heat of your route: a clean curve of temperature per click, with a heat-map ribbon underneath
-function heatChart(r) {
+function heatChart(r, Wpx) {
   const path = r.path || [], steps = r.steps || [], n = path.length; if (n < 2) return '';
   const sig = i => r.won && i === n - 1 ? 1 : steps[i] && steps[i].sig != null ? Math.max(0, Math.min(1, steps[i].sig)) : 0;
-  const W = 340, H = 128, L = 10, R = 10, T = 16, B = 26, X = i => L + (W - L - R) * i / (n - 1), Y = v => T + (1 - v) * (H - T - B), col = i => dotCss(sig(i), i / (n - 1));
+  const W = Wpx || 340, H = Wpx ? Math.round(Math.min(240, Math.max(150, W * .3))) : 128, L = 12, R = 12, T = 22, B = 30, X = i => L + (W - L - R) * i / (n - 1), Y = v => T + (1 - v) * (H - T - B), col = i => dotCss(sig(i), i / (n - 1));
   const pts = path.map((_, i) => [X(i), Y(sig(i))]); let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
   for (let i = 0; i < n - 1; i++) { const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c, t = .18; d += ` C${(b[0] + (c[0] - a[0]) * t).toFixed(1)} ${(b[1] + (c[1] - a[1]) * t).toFixed(1)},${(c[0] - (e[0] - b[0]) * t).toFixed(1)} ${(c[1] - (e[1] - b[1]) * t).toFixed(1)},${c[0].toFixed(1)} ${c[1].toFixed(1)}`; }
   const base = Y(0), area = `${d} L${pts[n - 1][0].toFixed(1)} ${base} L${pts[0][0].toFixed(1)} ${base} Z`, stops = path.map((_, i) => `<stop offset="${(i / (n - 1) * 100).toFixed(1)}%" stop-color="${col(i)}"/>`).join('');
   const dots = pts.map(([x, y], i) => i === n - 1 ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${col(i)}" opacity=".18"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${col(i)}" stroke="var(--paper)" stroke-width="2.5"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${col(i)}" stroke="var(--paper)" stroke-width="2"/>`).join('');
-  const every = n > 10 ? 2 : 1, ticks = pts.map(([x], i) => i % every === 0 || i === n - 1 ? `<text x="${x.toFixed(1)}" y="${H - 7}" text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--mute)" font-family="inherit">${i === 0 ? 'start' : i === n - 1 && r.won ? 'goal' : i}</text>` : '').join('');
-  const grid = [0, .5, 1].map(v => `<path d="M${L} ${Y(v).toFixed(1)}H${W - R}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="${v === 0 ? '0' : '2 5'}" opacity="${v === 0 ? .9 : .7}"/>`).join('') + `<text x="${W - R}" y="${(Y(1) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" letter-spacing=".12em" fill="var(--mute)" font-family="inherit">HOT</text><text x="${W - R}" y="${(Y(0) - 5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" letter-spacing=".12em" fill="var(--mute)" font-family="inherit">COLD</text>`;
+  const every = n > 10 ? 2 : 1, ticks = pts.map(([x], i) => i % every === 0 || i === n - 1 ? `<text x="${x.toFixed(1)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}" font-size="${i === 0 || (i === n - 1 && r.won) ? 9.5 : 11}" letter-spacing="${i === 0 || (i === n - 1 && r.won) ? '.22em' : '0'}" fill="var(--mute)" font-family="${i === 0 || (i === n - 1 && r.won) ? 'Jost, sans-serif' : 'IBM Plex Mono, monospace'}" font-weight="400">${i === 0 ? 'START' : i === n - 1 && r.won ? 'GOAL' : i}</text>` : '').join('');
+  const grid = [0, .5, 1].map(v => `<path d="M${L} ${Y(v).toFixed(1)}H${W - R}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="${v === 0 ? '0' : '2 5'}" opacity="${v === 0 ? .9 : .7}"/>`).join('') + `<text x="${L}" y="${(Y(1) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">HOT</text><text x="${L}" y="${(Y(0) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">COLD</text>`;
   const rid = 'hc' + Math.random().toString(36).slice(2, 6);
-  return `<div class="hchart"><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="${rid}l" x1="0" x2="1">${stops}</linearGradient><linearGradient id="${rid}a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".1"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#${rid}a)"/><path d="${d}" fill="none" stroke="url(#${rid}l)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${ticks}</svg>
+  return `<div class="hchart"><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="${rid}l" x1="0" x2="1">${stops}</linearGradient><linearGradient id="${rid}a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".1"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#${rid}a)"/><path d="${d}" fill="none" stroke="url(#${rid}l)" stroke-width="${Wpx ? 2.5 : 3.5}" stroke-linecap="round" stroke-linejoin="round"/>${dots}${ticks}</svg>
     <div class="hstrip" style="background:linear-gradient(90deg,${path.map((_, i) => col(i)).join(',')})"></div></div>`;
+}
+function resHero(r) {   // the headline of a finished run: what happened, in one line of type, with the numbers underneath
+  const ref = r.par || r.goal, d = r.clicks - (ref || r.clicks), bn = burnOf(r.steps || []).best;
+  const verdict = !r.won ? 'You can come back to it from the archive.' : !ref ? '' : d < 0 ? `${-d} under ${r.par ? 'par' : 'the goal'}` : d === 0 ? `Exactly ${r.par ? 'par' : 'the goal'}` : `${d} over ${r.par ? 'par' : 'the goal'}`;
+  const st = r.won ? [ref ? [ref, r.par ? 'Par' : 'Goal'] : null, [fmt(r.secs), 'Time'], ['×' + bn, 'Burn']].filter(Boolean) : [];
+  return `<header class="rhero"><div class="rh-k">${resultHead(r)}</div><h2>${r.won ? `${r.clicks} <em>${r.clicks === 1 ? 'click' : 'clicks'}</em>` : 'Not this <em>time</em>'}</h2>${verdict ? `<p class="rh-v">${verdict}${r.won && r.purist ? ' · a purist run, with no link search or rewind' : ''}.</p>` : ''}
+    ${st.length ? `<dl>${st.map(([v, l]) => `<div><dt>${l}</dt><dd>${v}</dd></div>`).join('')}</dl>` : ''}</header>`;
+}
+function fitHeat(r) {   // the chart is drawn in its real pixel width so its type stays at reading size on any screen
+  const el = document.querySelector('.hchart'); if (!el) return; const w = Math.round(el.clientWidth); if (w > 200) el.outerHTML = heatChart(r, w);
 }
 function routesCard(r) {
   const yours = r.path || [], steps = r.steps || [], key = k => k.map(norm).join('>'), sigOf = i => r.won && i === yours.length - 1 ? 1 : steps[i] && steps[i].sig != null ? steps[i].sig : 0;
@@ -998,25 +1008,19 @@ function showResult() {
   const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
   openModal(`
     ${r.sky ? skyReveal(r.sky, { id: 'skyCv' }) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
-    ${r.sky ? `<p class="resulthead">${resultHead(r)}</p>` : `<div class="win-top">
-      <p style="margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent-ink)">${resultHead(r)}</p>
-      <div class="big">${r.won ? r.clicks + (r.clicks === 1 ? ' click' : ' clicks') : '\u2014'}</div>
-    </div>`}
-    ${r.won && ref && !r.sky ? `<div class="parnote">${r.par ? 'Par' : 'Goal'} ${ref}${r.clicks <= ref ? ' \u2014 nailed it' : ` \u00b7 you +${r.clicks - ref}`}</div>` : ''}
-    ${r.won && r.purist ? '<div class="purist"><b>◆</b> Purist run: no link search, no rewind</div>' : ''}
+    ${resHero(r)}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
     ${routesCard(r)}
-    ${r.won ? `<div class="grid3"><div><b>${r.clicks}</b><span>Clicks${ref ? ' \u00b7 ' + (r.par ? 'par ' : 'goal ') + ref : ''}</span></div><div><b>${fmt(r.secs)}</b><span>Time</span></div><div><b>\u00d7${burnOf(r.steps || []).best}</b><span>Burn</span></div></div>` : ''}
     ${streakCard(r)}
     <section class="rcard" id="standing" hidden></section>
     ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
     ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
-    ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${i.cat}</b><small>New cosmetic unlocked · tap to equip in the Locker</small></span></div>`).join('')}
+    ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${({ theme: 'theme', trail: 'trail', confetti: 'confetti', dots: 'dot style', buddy: 'buddy' })[i.cat] || ''}</b><small>${i.label ? esc(i.label) + ' · ' : ''}tap to equip it in the Locker</small></span></div>`).join('')}
     ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
-    <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">▶ Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
+    <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && r.sky.id });
+  $('#repBtn').onclick = () => openReport(showResult); fitHeat(r); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && r.sky.id });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
@@ -1201,8 +1205,8 @@ function statsHTML() {
   <div class="grid3"><div><b>${P.streak}</b><span>Day streak</span></div><div><b>${P.maxStreak || P.streak}</b><span>Best streak</span></div><div><b>${P.won}</b><span>Solved</span></div></div>
   <div class="rcard" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="small">Your sky</div><div style="font:600 12px var(--sans)">${have} of ${total} objects</div></div><div class="meprog"><i style="width:${Math.round(have / total * 100)}%"></i></div>${skyLadderFound()}<div class="small" style="text-align:center;margin-top:8px;font-size:9.5px">${nextT ? 'Next tier: ' + nextT.name : 'You have found the hottest tier'}</div><div style="text-align:center;margin-top:10px"><button class="btn ghost" id="meSkyBtn" style="height:40px">Open your sky</button></div></div>
   ${recent ? `<div class="rcard" style="padding:14px"><div class="small">Recent finds</div>${recent}</div>` : ''}
-  <p style="margin:18px 0 0;font-size:13px;font-weight:700;color:var(--ink)">Last 14 days</p><div class="hist">${days.join('')}</div>
-  <p style="margin:20px 0 2px;font-size:13px;font-weight:700;color:var(--ink)">Milestones</p>${ach}`;
+  <p class="mh">Last 14 days</p><div class="hist">${days.join('')}</div>
+  <p class="mh">Milestones</p>${ach}`;
 }
 function skyLadderFound() { return `<div class="ladder" style="margin-top:12px">${SKY.OBJ.map((o, i) => `<i class="${P.sky.found[o.id] ? 'on' : ''} ${i === P.sky.best ? 'cur' : ''}" style="--c:${o.c}"></i>`).join('')}</div>`; }
 function paintMeSky() {
@@ -1527,7 +1531,7 @@ function openLocker(tab = 'theme') {
   const open = allCos().filter(isUnlocked).length, total = allCos().length; let sel = P.cos[tab], raf = 0;
   const restore = () => { cancelAnimationFrame(raf); applyCos(); };
   openModal(`<h2>Locker</h2><p>Cosmetics are earned by playing. Tap any style to preview it. ${open}/${total} unlocked. <button class="linkbtn" id="lkStudio">Open the Studio for fonts and colours →</button></p>
-    <canvas id="lkCv" width="680" height="190" style="width:100%;border-radius:16px;background:#14110d;display:block"></canvas>
+    <canvas id="lkCv" width="680" height="190" style="width:100%;background:#14110d;display:block"></canvas>
     <div class="tabs" id="lkTabs">${[['theme', 'Themes'], ['trail', 'Trails'], ['confetti', 'Confetti'], ['dots', 'Markers'], ['buddy', 'Buddies']].map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('')}</div><div id="lkBody"></div><div id="lkAct" class="actions" style="margin-top:12px"></div>`, restore);
   const preview = () => {
     const cv = $('#lkCv'), x = cv.getContext('2d'); cancelAnimationFrame(raf); applyCos();
@@ -1703,7 +1707,7 @@ async function openShareCard(r, back) {
   openModal(`<h2>Share card</h2><p style="margin-bottom:12px">Post it anywhere. Your route is the line.</p>
     <img id="scImg" alt="Your result card" style="width:100%;border-radius:18px;display:block;background:#111;aspect-ratio:4/5">
     <div class="actions" style="margin-top:14px"><button class="btn" id="scShare">Share</button><button class="btn ghost" id="scSave">Save image</button></div>
-    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="scTxt">Copy text</button><button class="btn ghost" id="scBack">← Back</button></div>`);
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="scTxt">Copy text</button><button class="btn ghost" id="scBack">Back</button></div>`);
   const canvas = await shareCardCanvas(r), blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
   const url = URL.createObjectURL(blob), name = `${BRAND.name}-${r.mode === 'daily' ? dayNum(G.day) : r.mode}.png`, file = new File([blob], name, { type: 'image/png' });
   $('#scImg').src = url;
@@ -2298,8 +2302,8 @@ function openReplay(back) {
   openModal(`<h2>Replay</h2><p style="margin-bottom:12px">${esc(d.from)} → ${esc(d.to)}</p>
     <canvas id="rpc" width="720" height="720" style="width:100%;aspect-ratio:1;border-radius:16px;display:block;background:#111"></canvas>
     <input id="rpSeek" type="range" min="0" max="1000" value="0" style="width:100%;margin:12px 0 2px;accent-color:var(--accent)" aria-label="Seek">
-    <div class="actions"><button class="btn ghost" id="rpPlay">⏸ Pause</button><button class="btn ghost" id="rpSpeed">1×</button>${canRec ? '<button class="btn ghost" id="rpSave">⬇ Save video</button>' : ''}</div>
-    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="rpBack">← Back</button></div>`, () => cancelAnimationFrame(raf));
+    <div class="actions"><button class="btn ghost" id="rpPlay">Pause</button><button class="btn ghost" id="rpSpeed">1×</button>${canRec ? '<button class="btn ghost" id="rpSave">Save video</button>' : ''}</div>
+    <div class="actions" style="margin-top:10px"><button class="btn ghost" id="rpBack">Back</button></div>`, () => cancelAnimationFrame(raf));
   const cv = $('#rpc'), ctx = cv.getContext('2d');
   const paint = () => drawFrame(ctx, 720, d, stateAt(d, S, t));
   const loop = now => {
@@ -2307,7 +2311,7 @@ function openReplay(back) {
     last = now; paint(); $('#rpSeek').value = Math.round(t / S.total * 1000); raf = requestAnimationFrame(loop);
   };
   raf = requestAnimationFrame(loop);
-  $('#rpPlay').onclick = () => { if (t >= S.total) t = 0; playing = !playing; $('#rpPlay').textContent = playing ? '⏸ Pause' : '▶ Play'; last = performance.now(); };
+  $('#rpPlay').onclick = () => { if (t >= S.total) t = 0; playing = !playing; $('#rpPlay').textContent = playing ? 'Pause' : 'Play'; last = performance.now(); };
   $('#rpSpeed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $('#rpSpeed').textContent = speed + '×'; };
   $('#rpSeek').oninput = e => { t = e.target.value / 1000 * S.total; playing = false; $('#rpPlay').textContent = '▶ Play'; };
   $('#rpBack').onclick = () => { closeModal(); if (back) back(); };
