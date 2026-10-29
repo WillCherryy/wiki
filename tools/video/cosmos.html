@@ -1,0 +1,244 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scorcher cosmos</title>
+<style>
+@font-face{font-family:EB;font-weight:400;src:url(../../fonts/eb-garamond-latin-400-normal.woff2)}
+@font-face{font-family:EB;font-weight:400;font-style:italic;src:url(../../fonts/eb-garamond-latin-400-italic.woff2)}
+@font-face{font-family:Jost;font-weight:300;src:url(../../fonts/jost-latin-300-normal.woff2)}
+@font-face{font-family:Jost;font-weight:400;src:url(../../fonts/jost-latin-400-normal.woff2)}
+html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
+</style></head><body><canvas id="c" width="1920" height="1080"></canvas>
+<script>try { localStorage.setItem('wikiio:sky', JSON.stringify({ on: false, font: 'fine', dup: 'cluster' })); } catch (e) {}</script>
+<script src="../../skyobjects.js"></script><script src="race-logo.js"></script>
+<script>
+/* "Cosmos": a cinematic introduction to Scorcher's universe. 16:9, letterboxed to 2.39:1. A pure function of time: render(t).
+   Shots: a night sky with the Milky Way over mountains; Earth, pulling back through the Solar System (the game's own renderer); the Milky Way from outside;
+   Betelgeuse; the Crab Pulsar; a dive into TON 618; a deep field of galaxies; the end card. The three painted scenes are baked once (bake()) and reused. */
+const W = 1920, H = 1080, BAR = Math.round((H - W / 2.39) / 2), cv = document.getElementById('c'), g = cv.getContext('2d');
+const DUR = 88, SH = { sky: [1.5, 13.6], earth: [12.0, 28.2], mw: [26.6, 42.2], bet: [40.6, 49.6], crab: [48.0, 57.2], ton: [55.6, 71.2], deep: [69.6, 84.5], end: [77.6, 88] };
+const CAP = [
+  [4.4, 8.9, 'For as long as we have been here,', 'it'], [9.3, 13.2, 'we have looked up.', 'it'],
+  [15.0, 20.2, 'One world, circling one star.', 'it'], [21.6, 26.6, 'One star, among hundreds of billions.', 'it'],
+  [29.4, 35.4, 'The Milky Way', 'cap'], [30.2, 35.6, 'A hundred thousand light-years across.', 'it'],
+  [42.2, 48.8, 'Betelgeuse  ·  548 light-years', 'cap'], [42.9, 48.8, 'So vast it would swallow the orbit of Mars.', 'it'],
+  [50.0, 56.2, 'The Crab Pulsar  ·  6,500 light-years', 'cap'], [50.7, 56.2, 'The size of a city, turning thirty times a second.', 'it'],
+  [57.6, 63.2, 'TON 618', 'cap'], [58.3, 63.2, 'Its light set out nearly eleven billion years ago.', 'it'],
+  [64.2, 70.4, 'At its heart, a black hole of tens of billions of suns.', 'it'],
+  [71.6, 77.6, 'Every one of them is real.', 'it']
+];
+window.DURATION = DUR; window.EVENTS = [{ t: SH.mw[0] + 1.4, kind: 'reveal' }, { t: SH.ton[0], kind: 'dive' }, { t: 66.2, kind: 'horizon' }, { t: SH.end[0] + 1.2, kind: 'logo' }];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k, ss = k => { k = clamp(k); return k * k * (3 - 2 * k); }, io = k => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const ramp = (t, a, b, fi = 1.6, fo = 1.6) => Math.min(ss((t - a) / fi), ss((b - t) / fo));
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const mul = s => () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const gaussOf = rnd => () => { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185 * rnd()); };
+// value noise and fbm, for the dust and the band of the Milky Way
+const PERM = (() => { const r = mul(99), p = new Uint8Array(512), a = [...Array(256).keys()]; for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } for (let i = 0; i < 512; i++) p[i] = a[i & 255]; return p; })();
+const VN = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), X = xi & 255, Y = yi & 255, h = (i, j) => PERM[PERM[(X + i) & 255] + ((Y + j) & 255)] / 255; const a = h(0, 0), b = h(1, 0), c = h(0, 1), d = h(1, 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+const fbm = (x, y, o = 5) => { let s = 0, a = .5, f = 1, n = 0; for (let i = 0; i < o; i++) { s += a * VN(x * f + i * 17.3, y * f - i * 9.1); n += a; a *= .5; f *= 2.03; } return s / n; };
+// light is gathered in float buffers, blurred into glow, dimmed by dust, then tone-mapped: the way a long exposure builds up
+function blur(src, w, h, r) {   // three box passes approximate a gaussian
+  if (r < 1) return src.slice(); let a = src.slice(), b = new Float32Array(src.length);
+  for (let pass = 0; pass < 3; pass++) {
+    for (let y = 0; y < h; y++) { const o = y * w; let acc = 0; for (let x = -r; x <= r; x++) acc += a[o + clamp(x, 0, w - 1)]; for (let x = 0; x < w; x++) { b[o + x] = acc / (2 * r + 1); acc += a[o + Math.min(w - 1, x + r + 1)] - a[o + Math.max(0, x - r)]; } }
+    for (let x = 0; x < w; x++) { let acc = 0; for (let y = -r; y <= r; y++) acc += b[clamp(y, 0, h - 1) * w + x]; for (let y = 0; y < h; y++) { a[y * w + x] = acc / (2 * r + 1); acc += b[Math.min(h - 1, y + r + 1) * w + x] - b[Math.max(0, y - r) * w + x]; } }
+  }
+  return a;
+}
+function blurBig(src, w, h, r) {   // wide glows are blurred at a quarter of the size and scaled back up
+  const f = 4, sw = Math.ceil(w / f), sh = Math.ceil(h / f), s = new Float32Array(sw * sh);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) s[((y / f) | 0) * sw + ((x / f) | 0)] += src[y * w + x] / (f * f);
+  const b = blur(s, sw, sh, Math.max(1, Math.round(r / f))), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) { const fy = clamp(y / f - .5, 0, sh - 1), y0 = fy | 0, y1 = Math.min(sh - 1, y0 + 1), ty = fy - y0; for (let x = 0; x < w; x++) { const fx = clamp(x / f - .5, 0, sw - 1), x0 = fx | 0, x1 = Math.min(sw - 1, x0 + 1), tx = fx - x0; out[y * w + x] = (b[y0 * sw + x0] * (1 - tx) + b[y0 * sw + x1] * tx) * (1 - ty) + (b[y1 * sw + x0] * (1 - tx) + b[y1 * sw + x1] * tx) * ty; } }
+  return out;
+}
+function develop(Rb, Gb, Bb, w, h, exposure, gamma = 1 / 1.15) {
+  const c = mk(w, h), x = c.getContext('2d'), im = x.createImageData(w, h), d = im.data;
+  for (let i = 0, j = 0; i < w * h; i++, j += 4) { d[j] = 255 * Math.pow(1 - Math.exp(-Rb[i] * exposure), gamma); d[j + 1] = 255 * Math.pow(1 - Math.exp(-Gb[i] * exposure), gamma); d[j + 2] = 255 * Math.pow(1 - Math.exp(-Bb[i] * exposure), gamma); d[j + 3] = 255; }
+  x.putImageData(im, 0, 0); return c;
+}
+const glowMix = (A, w, h, k) => { const a = blur(A, w, h, 2), b = blur(A, w, h, 7), c = blurBig(A, w, h, 28), d = blurBig(A, w, h, 90); for (let i = 0; i < A.length; i++) A[i] = A[i] + k[0] * a[i] + k[1] * b[i] + k[2] * c[i] + k[3] * d[i]; };
+
+/* ---------------------------------------------------------------- the Milky Way, from outside: a barred spiral, two major arms and two minor, dust along the inner edges */
+function bakeGalaxy(S) {
+  const N = S * S, R = new Float32Array(N), G = new Float32Array(N), B = new Float32Array(N), D = new Float32Array(N), rnd = mul(2718), gs = gaussOf(rnd), c = S / 2, Rg = S * .44, b = Math.tan(18 * Math.PI / 180), r0 = Rg * .18, barA = .42;
+  const put = (x, y, r, gg, bb, k) => { const xi = x | 0, yi = y | 0; if (xi < 1 || yi < 1 || xi >= S - 1 || yi >= S - 1) return; const fx = x - xi, fy = y - yi, i = yi * S + xi; const w00 = (1 - fx) * (1 - fy) * k, w10 = fx * (1 - fy) * k, w01 = (1 - fx) * fy * k, w11 = fx * fy * k; R[i] += r * w00; G[i] += gg * w00; B[i] += bb * w00; R[i + 1] += r * w10; G[i + 1] += gg * w10; B[i + 1] += bb * w10; R[i + S] += r * w01; G[i + S] += gg * w01; B[i + S] += bb * w01; R[i + S + 1] += r * w11; G[i + S + 1] += gg * w11; B[i + S + 1] += bb * w11; };
+  const arms = [[0, 1], [Math.PI, 1], [Math.PI * .5, .5], [Math.PI * 1.5, .5]], armTh = (ph, r) => ph + Math.log(r / r0) / b, cb = Math.cos(barA), sb = Math.sin(barA);
+  const pick = () => { let u = rnd() * 3, i = 0; while (u > arms[i][1]) { u -= arms[i][1]; i++; } return arms[i]; };
+  // the bulge and the bar: old, golden stars
+  for (let k = 0; k < 200000; k++) { const rr = Math.abs(gs()) * Rg * .075, a = rnd() * 6.2832, x = Math.cos(a) * rr * 1.25, y = Math.sin(a) * rr; put(c + x, c + y, 1, .76, .5, .11); }
+  for (let k = 0; k < 160000; k++) { const u = (rnd() * 2 - 1) * Rg * .2, v = gs() * Rg * .035 * (1 - .6 * Math.abs(u) / (Rg * .2)), x = u * cb - v * sb, y = u * sb + v * cb; put(c + x, c + y, 1, .8, .56, .17); }
+  // the thin disc between the arms
+  for (let k = 0; k < 1700000; k++) { const rr = -Math.log(1 - rnd() * .995) * Rg * .34 + Rg * .04, a = rnd() * 6.2832; if (rr > Rg * 1.25) continue; put(c + Math.cos(a) * rr, c + Math.sin(a) * rr, 1, .92, .82, .3); }
+  // the arms: a broad haze of young stars, broken into star clouds and clusters, with pink nebulae on their leading edges
+  const armPt = (arm, t, sp, lead = 0) => { const rr = r0 + (Rg * 1.02 - r0) * t, th = armTh(arm[0], rr), off = gs() * Rg * sp + lead * Rg, nx = Math.cos(th - .32), ny = Math.sin(th - .32); return [c + Math.cos(th) * rr + nx * off, c + Math.sin(th) * rr + ny * off]; };
+  for (let k = 0; k < 1300000; k++) { const arm = pick(), t = Math.pow(rnd(), .8) * 1.14, fade = t > .88 ? Math.exp(-(t - .88) * 9) : 1, [X, Y] = armPt(arm, t, (.024 + .04 * t) * (arm[1] < 1 ? 1.2 : 1)); if (rnd() > ss((fbm(X / S * 12, Y / S * 12, 4) - .3) / .34)) continue; const hot = rnd() < .3; put(X, Y, hot ? .62 : 1, hot ? .78 : .9, hot ? 1 : .8, (hot ? 1 : .6) * fade * Math.exp(-t * 1.0) * (arm[1] < 1 ? .7 : 1)); }   // the arms taper away at their outer ends
+  for (let k = 0; k < 3200; k++) { const arm = pick(), t = .05 + .95 * Math.pow(rnd(), .9), [X, Y] = armPt(arm, t, (.02 + .034 * t) * (arm[1] < 1 ? 1.2 : 1), .006), n = 12 + Math.floor(rnd() * 50), rad = 1.2 + rnd() * 3.5, br = .6 + rnd() * 1.1; for (let j2 = 0; j2 < n; j2++) put(X + gs() * rad, Y + gs() * rad, .7, .84, 1, br * Math.exp(-t * .8)); }
+  for (let k = 0; k < 1700; k++) { const arm = pick(), t = .06 + .86 * Math.pow(rnd(), .9), [x, y] = armPt(arm, t, .016 + .026 * t, .012), rad = 1 + rnd() * 3.5, n = Math.round(10 + rad * rad * 6);
+    for (let j2 = 0; j2 < n; j2++) put(x + gs() * rad, y + gs() * rad, 1, .32, .48, .8 * (1 - .5 * t)); }
+  // the dust: lanes along the inner edge of every arm, broken into filaments, and a ring of it round the bar
+  for (let k = 0; k < 900000; k++) { const arm = pick(), t = Math.pow(rnd(), .9), [x, y] = armPt(arm, t, .009 + .012 * t, -(.022 + .03 * t)), xi = x | 0, yi = y | 0; if (xi < 0 || yi < 0 || xi >= S || yi >= S) continue; D[yi * S + xi] += Math.max(0, fbm(x / S * 26, y / S * 26, 4) - .4) * 2.6 * (arm[1] < 1 ? .7 : 1); }
+  for (let k = 0; k < 400000; k++) { const rr = Rg * (.12 + .9 * Math.sqrt(rnd())), a = rnd() * 6.2832, x = c + Math.cos(a) * rr, y = c + Math.sin(a) * rr, xi = x | 0, yi = y | 0; D[yi * S + xi] += Math.max(0, fbm(x / S * 40, y / S * 40, 4) - .52) * 2.2; }
+  for (let k = 0; k < 120000; k++) { const a = rnd() * 6.2832, rr = Rg * (.2 + gs() * .02), x = c + Math.cos(a) * rr * 1.1, y = c + Math.sin(a) * rr, xi = x | 0, yi = y | 0; D[yi * S + xi] += Math.max(0, fbm(x / S * 30, y / S * 30, 3) - .45) * 2; }
+  let Db = blur(D, S, S, 2); const Db2 = blurBig(D, S, S, 10); for (let i = 0; i < N; i++) Db[i] = Db[i] * .9 + Db2[i] * 1.6;
+  glowMix(R, S, S, [.7, .5, .45, .4]); glowMix(G, S, S, [.7, .5, .45, .4]); glowMix(B, S, S, [.7, .5, .45, .4]);
+  for (let i = 0; i < N; i++) { const d = Db[i]; R[i] *= Math.exp(-d * .8); G[i] *= Math.exp(-d * 1.0); B[i] *= Math.exp(-d * 1.3); }
+  const lum = []; for (let i = 0; i < N; i += 97) lum.push(R[i] + G[i] + B[i]); lum.sort((a, b2) => a - b2); const p = lum[Math.floor(lum.length * .996)] / 3 || 1;
+  const out = develop(R, G, B, S, S, 1.6 / p), ox = out.getContext('2d'), cr = S * .06, gr = ox.createRadialGradient(c, c, 0, c, c, cr);   // a smooth, unclipped nucleus
+  gr.addColorStop(0, 'rgba(255,246,228,1)'); gr.addColorStop(.35, 'rgba(250,236,212,.85)'); gr.addColorStop(.7, 'rgba(240,226,204,.35)'); gr.addColorStop(1, 'rgba(240,226,204,0)'); ox.fillStyle = gr; ox.beginPath(); ox.arc(c, c, cr, 0, 6.2832); ox.fill();
+  return out;
+}
+
+/* ---------------------------------------------------------------- the night sky: the band of the Milky Way rising over a dark ridge, the Great Rift through its middle */
+function bakeSky(w, h) {
+  const N = w * h, R = new Float32Array(N), G = new Float32Array(N), B = new Float32Array(N), D = new Float32Array(N), rnd = mul(1977), gs = gaussOf(rnd);
+  const P0 = [w * .16, h * .86], P1 = [w * 1.02, -h * .2], len = Math.hypot(P1[0] - P0[0], P1[1] - P0[1]), dx = (P1[0] - P0[0]) / len, dy = (P1[1] - P0[1]) / len;   // the band rises from the horizon on the left to the top right
+  const UV = (x, y) => [((x - P0[0]) * dx + (y - P0[1]) * dy) / len, (-(x - P0[0]) * dy + (y - P0[1]) * dx)], wid = un => h * (.1 + .09 * Math.exp(-Math.pow((un - .1) / .22, 2)));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const [un, v] = UV(x, y), i = y * w + x, wv = wid(un), m = Math.exp(-(v * v) / (wv * wv)), m2 = Math.exp(-(v * v) / (wv * wv * 3.5));
+    const cloud = Math.pow(fbm(un * 7 + 2, v / h * 7, 5), 2.2) * 2.4, core = Math.exp(-Math.pow((un - .08) / .13, 2)), lit = (m * cloud * .2 + m2 * .03) * (1 + 2.4 * core);
+    R[i] += lit * (1 + .45 * core); G[i] += lit * (.93 + .12 * core); B[i] += lit * (1.02 - .3 * core);
+    const lane = Math.exp(-Math.pow((v + wv * .1 * Math.sin(un * 8) - wv * .04) / (wv * .16), 2)) * ss((fbm(un * 24 + 5, v / h * 30, 5) - .4) / .18) * 2.6 * clamp(1.15 - un * .8), blot = Math.max(0, fbm(un * 34 + 9, v / h * 44, 4) - .55) * 3.2 * m;
+    D[i] = lane + blot;
+    const air = Math.exp(-Math.pow((h * .9 - y) / (h * .12), 2)); R[i] += air * .02; G[i] += air * .034; B[i] += air * .03; }
+  for (let k = 0; k < 520000; k++) { let x, y; if (rnd() < .3) { x = rnd() * w; y = rnd() * h; } else { const un = rnd() * 1.1 - .05, v = gs() * wid(un) * .75; x = P0[0] + un * len * dx - v * dy; y = P0[1] + un * len * dy + v * dx; } if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const m = Math.pow(rnd(), 18) * 3 + Math.pow(rnd(), 5) * .06, tc = rnd(), i = (y | 0) * w + (x | 0); R[i] += m * (tc < .2 ? 1 : tc < .5 ? .95 : .82); G[i] += m * (tc < .2 ? .78 : .92); B[i] += m * (tc < .2 ? .6 : tc < .5 ? .9 : 1.05); }
+  glowMix(R, w, h, [.5, .22, .1, .05]); glowMix(G, w, h, [.5, .22, .1, .05]); glowMix(B, w, h, [.5, .22, .1, .05]);
+  const Db = blur(D, w, h, 2); for (let i = 0; i < N; i++) { const d = Db[i]; R[i] *= Math.exp(-d * .92); G[i] *= Math.exp(-d); B[i] *= Math.exp(-d * 1.12); }
+  return develop(R, G, B, w, h, 2.2);
+}
+function bakeRidge(w, h) {   // the mountains: a black silhouette with a faint rim of airglow on the crest, and a nearer, darker hill
+  const c = mk(w, h), x = c.getContext('2d'), pts = []; for (let i = 0; i <= w; i += 3) { const u = i / w; pts.push([i, h * (.76 - .07 * Math.pow(Math.sin(u * 2.4 + .9), 2) - .05 * fbm(u * 6, 1.7, 5) - .025 * fbm(u * 26, 4.2, 3))]); }
+  x.beginPath(); x.moveTo(0, h); pts.forEach(p => x.lineTo(p[0], p[1])); x.lineTo(w, h); x.closePath(); x.fillStyle = '#020205'; x.fill();
+  x.strokeStyle = 'rgba(130,160,175,.16)'; x.lineWidth = 1.1; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke();
+  const near = []; for (let i = 0; i <= w; i += 3) { const u = i / w; near.push([i, h * (.83 - .035 * fbm(u * 3 + 9, 2, 4) - .06 * Math.pow(Math.max(0, u - .62) / .38, 1.6))]); }
+  x.beginPath(); x.moveTo(0, h); near.forEach(p => x.lineTo(p[0], p[1])); x.lineTo(w, h); x.closePath(); x.fillStyle = '#000'; x.fill(); return c;
+}
+
+/* ---------------------------------------------------------------- a deep field: hundreds of galaxies, each a different shape, colour and distance, with a few foreground stars */
+function bakeDeep(w, h) {
+  const N = w * h, R = new Float32Array(N), G = new Float32Array(N), B = new Float32Array(N), rnd = mul(4242), gs = gaussOf(rnd);
+  const put = (x, y, r, gg, bb, k) => { const xi = x | 0, yi = y | 0; if (xi < 0 || yi < 0 || xi >= w || yi >= h) return; const i = yi * w + xi; R[i] += r * k; G[i] += gg * k; B[i] += bb * k; };
+  for (let n = 0; n < 900; n++) { const s = 2 + 70 * Math.pow(rnd(), 7), cx = rnd() * w, cy = rnd() * h, rot = rnd() * 6.28, inc = .2 + .8 * rnd(), cr = Math.cos(rot), sr = Math.sin(rot), far = s < 9, type = far ? 2 : rnd() < .55 ? 0 : rnd() < .7 ? 1 : 3, P = Math.min(26000, Math.round(s * s * 4) + 60), arms = rnd() < .7 ? 2 : 3, wind = 1.4 + rnd() * 1.8, br = (far ? .9 : 1) * (.4 + rnd() * .7);
+    const T = (x, y) => [cx + x * cr - y * inc * sr, cy + x * sr + y * inc * cr];
+    for (let j = 0; j < P; j++) { let x, y, col;
+      if (type === 0 && rnd() < .55) { const arm = Math.floor(rnd() * arms), t = Math.pow(rnd(), .9), r = s * (.12 + .88 * t), th = arm * 6.2832 / arms + wind * t + gs() * .42; x = Math.cos(th) * r; y = Math.sin(th) * r; col = rnd() < .65 ? [.62, .76, 1] : [1, .9, .8]; if (rnd() < .03) col = [1, .4, .55]; }
+      else if (type === 3) { x = gs() * s * .5; y = gs() * s * .3; col = rnd() < .5 ? [.7, .8, 1] : [1, .85, .7]; }
+      else { const r = Math.abs(gs()) * s * (type === 1 ? .38 : .22); const a = rnd() * 6.28; x = Math.cos(a) * r * (type === 1 ? 1 : 1); y = Math.sin(a) * r * (type === 1 ? .8 : 1); col = far ? [1, .62, .45] : [1, .82, .58]; }
+      const [px, py] = T(x, y); put(px, py, col[0], col[1], col[2], br * .13 * s * s / P); } }
+  glowMix(R, w, h, [.9, .6, .3, .12]); glowMix(G, w, h, [.9, .6, .3, .12]); glowMix(B, w, h, [.9, .6, .3, .12]);
+  const c = develop(R, G, B, w, h, 2.2), x = c.getContext('2d');
+  for (let n = 0; n < 26; n++) { const px = rnd() * w, py = rnd() * h, m = .4 + 2.2 * Math.pow(rnd(), 3), tint = rnd() < .5 ? '255,236,214' : '214,226,255'; x.save(); x.globalCompositeOperation = 'lighter';   // foreground stars of our own galaxy, with the telescope's diffraction spikes
+    let gr = x.createRadialGradient(px, py, 0, px, py, 7 * m); gr.addColorStop(0, `rgba(${tint},.95)`); gr.addColorStop(.25, `rgba(${tint},.35)`); gr.addColorStop(1, `rgba(${tint},0)`); x.fillStyle = gr; x.beginPath(); x.arc(px, py, 7 * m, 0, 6.283); x.fill();
+    for (const [dx, dy] of [[1, 0], [0, 1]]) { const L = 34 * m, lg = x.createLinearGradient(px - dx * L, py - dy * L, px + dx * L, py + dy * L); lg.addColorStop(0, `rgba(${tint},0)`); lg.addColorStop(.5, `rgba(${tint},.5)`); lg.addColorStop(1, `rgba(${tint},0)`); x.strokeStyle = lg; x.lineWidth = .9; x.beginPath(); x.moveTo(px - dx * L, py - dy * L); x.lineTo(px + dx * L, py + dy * L); x.stroke(); }
+    x.restore(); }
+  return c;
+}
+
+/* ---------------------------------------------------------------- the game's own universe, for Earth, the stars and TON 618 */
+const L0 = []; SKY.OBJ.forEach((o, i) => SKY.POOL[o.id].forEach(q => L0.push({ ...q, id: o.id, idx: i, count: 1 })));
+const lay = SKY.layout(L0); window.lay = lay;
+const eng = mk(W, H), eg = eng.getContext('2d');
+const uni = (cam, t, o = {}) => { eg.fillStyle = '#000'; eg.fillRect(0, 0, W, H); return SKY.universe(eg, W, H, t, lay, { cam: { ox: 0, oy: 0, ...cam }, noMini: true, tau: 40, pt: o.pt || 0, spin: o.spin || 0, cc: o.cc || 0 }); };
+const find = (pos, n) => pos.find(q => q.n === n);
+window.probe = names => { const pos = uni({ x: 0, y: 0, z: 1e-6 }, 40); return names.map(n => { const p = find(pos, n); return p ? { n, wx: p.wx, wy: p.wy, ax: p.ax, ay: p.ay, lx: p.lx, ly: p.ly } : { n, missing: true }; }); };
+let T = {};
+function locate() {   // where everything is, measured once: a planet's offset from its star is re-measured close up so it is exact
+  const [sun, bet, crab, ton] = probe(['The Sun', 'Betelgeuse', 'Crab Pulsar', 'TON 618']); let e = probe(['Earth'])[0];
+  for (const zz of [1e6, 1e9, 1e11]) { const p = find(uni({ x: e.ax, y: e.ay, ox: e.lx, oy: e.ly, z: zz }, 40), 'Earth'); if (p) e = { ...e, lx: p.lx, ly: p.ly }; }
+  const zf = n => { const b = lay.bodies[lay.idxOf[n]]; return H * .17 / (SKY.physR(b) * SKY.RSU); };
+  window.__T = T = { sun, earth: e, bet, crab, ton, zE: H * .2 / (1 * .009158 * SKY.RSU), zBet: zf('Betelgeuse'), zCrab: zf('Crab Pulsar'), zTon: zf('TON 618') };
+}
+
+/* ---------------------------------------------------------------- shots */
+let SKYC = null, RIDGE = null, GAL = null, DEEP = null;
+function shotSky(t, a) {   // the sky turns slowly about the pole, above the fixed ridge; the camera drifts upward and in
+  const u = (t - SH.sky[0]) / (SH.sky[1] - SH.sky[0]); g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const z = 1.0 + .07 * io(u), ty = lerp(-60, 30, io(u));
+  g.save(); g.translate(W / 2, H / 2 + ty); g.scale(z, z); g.rotate(-.022 * u); g.drawImage(SKYC, -W * .66, -H * .62, W * 1.32, H * 1.2); g.restore();
+  g.save(); g.translate(W / 2, H / 2 + ty * 1.25); g.scale(z * 1.01, z * 1.01); g.drawImage(RIDGE, -W * .66, -H * .6, W * 1.32, H * 1.2); g.restore();
+  g.restore();
+}
+function shotEarth(t, a) {   // from Earth to the edge of the Kuiper belt in one breath: the camera stays on Earth, then settles on the Sun
+  const u = clamp((t - SH.earth[0]) / (SH.earth[1] - SH.earth[0])), z0 = T.zE * 1.25, zM = 3.2e7, z1 = 1.9e6, L0 = Math.log(z0);   // linger on Earth, cross the empty millions of kilometres quickly, then settle over the Sun's family
+  const lz = u < .36 ? L0 - .7 * ss(u / .36) : u < .56 ? lerp(L0 - .7, Math.log(zM), io((u - .36) / .2)) : lerp(Math.log(zM), Math.log(z1), 1 - Math.pow(1 - (u - .56) / .44, 2.2)), z = Math.exp(lz);
+  const AU = Math.hypot(T.earth.lx, T.earth.ly), zA = 280 / AU, s = ss((Math.log(z) - Math.log(zA)) / Math.log(40));   // 1 while Earth fills the frame, 0 once the Sun's family is in view
+  uni({ x: T.sun.wx, y: T.sun.wy, ox: T.earth.lx * s, oy: T.earth.ly * s, z }, 40, { pt: 0 });
+  g.save(); g.globalAlpha = a; g.drawImage(eng, 0, 0); g.restore();
+}
+function shotMW(t, a) {   // the galaxy, seen almost edge-on and close, turning towards us as the camera pulls away
+  const u = clamp((t - SH.mw[0]) / (SH.mw[1] - SH.mw[0])), e = io(u), ci = lerp(.13, .6, e), sc = lerp(2.05, .98, Math.pow(e, .8)), rot = -.5 + .16 * u, D = W * sc, cx = W / 2, cy = H * lerp(.5, .5, e);
+  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); SKY.starBg(g, W, H, 2600, 31, null); g.globalAlpha = a;
+  g.translate(cx, cy); g.scale(1, ci); g.rotate(rot); g.globalCompositeOperation = 'lighter'; g.drawImage(GAL, -D / 2, -D / 2, D, D); g.restore();
+  // the bulge stays round however the disc is tilted
+  g.save(); g.globalAlpha = a * Math.pow(clamp((.45 - ci) / .32), 2) * .55; g.globalCompositeOperation = 'lighter'; const br = D * .07, gr = g.createRadialGradient(cx, cy, 0, cx, cy, br); gr.addColorStop(0, 'rgba(255,214,160,.85)'); gr.addColorStop(.4, 'rgba(255,190,130,.25)'); gr.addColorStop(1, 'rgba(255,170,110,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, br, br * .8, 0, 0, 6.283); g.fill(); g.restore();
+  // you are here: about 26,000 light-years from the centre, between two arms
+  const ya = ramp(t, 34.2, 41.2, 1.4, 1.2) * a; if (ya > 0) { const rs = .44 * .52 * D, th = 2.35, px = Math.cos(th) * rs, py = Math.sin(th) * rs, X = cx + px * Math.cos(rot) - py * Math.sin(rot), Y = cy + (px * Math.sin(rot) + py * Math.cos(rot)) * ci;
+    g.save(); g.globalAlpha = ya; g.strokeStyle = 'rgba(236,230,218,.75)'; g.lineWidth = 1; g.beginPath(); g.arc(X, Y, 7 + 3 * Math.sin((t - 34) * 2), 0, 6.283); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(X, Y, 1.6, 0, 6.283); g.fill();
+    g.beginPath(); g.moveTo(X + 10, Y - 10); g.lineTo(X + 54, Y - 54); g.lineTo(X + 92, Y - 54); g.stroke(); g.font = 'italic 400 21px EB'; g.fillStyle = 'rgba(236,230,218,.9)'; g.textAlign = 'left'; g.fillText('You are here', X + 100, Y - 48); g.restore(); }
+}
+function shotStar(t, a, which) {   // Betelgeuse turning slowly; the Crab Pulsar's beams sweeping
+  const k = which === 'bet' ? SH.bet : SH.crab, u = (t - k[0]) / (k[1] - k[0]), b = T[which], z0 = which === 'bet' ? T.zBet * 1.05 : T.zCrab * .42, z1 = z0 * (which === 'bet' ? 1.28 : 1.22), z = Math.exp(lerp(Math.log(z0), Math.log(z1), io(u)));
+  uni({ x: b.wx, y: b.wy, z }, which === 'bet' ? 40 + t * .2 : 40 + t * .15);
+  g.save(); g.globalAlpha = a; g.drawImage(eng, 0, 0); g.restore();
+}
+function shotTon(t, a) {   // TON 618's host galaxy, then a dissolve straight into its heart and a long push towards the black hole
+  const t0 = SH.ton[0], tm = 60.4, t1 = SH.ton[1], aA = 1 - ss((t - tm + 1.1) / 1.1), aB = ss((t - tm) / 1.5);   // one view at a time: the engine's cloud detail must not be shared between two zooms in one frame
+  if (aA > 0) { const z = Math.exp(lerp(Math.log(.145), Math.log(.26), io((t - t0) / (tm + 1.6 - t0)))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aA; g.drawImage(eng, 0, 0); g.restore(); }
+  if (aB > 0) { const u = clamp((t - tm) / (t1 - tm)), z = Math.exp(lerp(Math.log(T.zTon * .055), Math.log(T.zTon * .21), 1 - Math.pow(1 - u, 2.4))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aB; g.drawImage(eng, 0, 0); g.restore(); }
+}
+function shotDeep(t, a) {
+  const u = clamp((t - SH.deep[0]) / (SH.deep[1] - SH.deep[0])), z = lerp(1.32, 1.0, io(u));
+  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.translate(W / 2, H / 2); g.scale(z, z); g.drawImage(DEEP, -W * .55, -H * .55, W * 1.1, H * 1.1); g.restore();
+}
+const LOGOW = new Image(); LOGOW.src = window.LOGO.word;
+function endCard(t) {   // the mark arrives one dot at a time, then the name, the line and the address
+  const a0 = ramp(t, SH.end[0] + .4, DUR - .2, 2.2, 1.4); if (a0 <= 0) return; const lv = window.LOGO, sc = 1.15, ox = W / 2 - lv.vb[0] * sc / 2, oy = H / 2 - lv.vb[1] * sc / 2 - 40;
+  g.save(); lv.dots.forEach((d, i) => { const k = ss((t - (SH.end[0] + 1.0 + i * .22)) / .9) * a0; if (k <= 0) return; g.globalAlpha = k; g.fillStyle = d.c; g.shadowColor = d.c; g.shadowBlur = 18 * k; g.beginPath(); g.arc(ox + d.x * sc, oy + d.y * sc, d.r * sc * (.6 + .4 * k), 0, 6.283); g.fill(); });
+  g.shadowBlur = 0; const kw = ss((t - (SH.end[0] + 2.0)) / 1.6) * a0; if (kw > 0 && LOGOW.complete) { g.globalAlpha = kw; g.drawImage(LOGOW, ox, oy, lv.vb[0] * sc, lv.vb[1] * sc); }
+  const k2 = ss((t - (SH.end[0] + 3.6)) / 1.6) * a0; if (k2 > 0) { g.globalAlpha = k2; g.fillStyle = 'rgba(236,230,218,.92)'; g.textAlign = 'center'; g.font = 'italic 400 34px EB'; g.fillText('Find them, one Wikipedia link at a time.', W / 2, oy + lv.vb[1] * sc + 34); }
+  const k3 = ss((t - (SH.end[0] + 5.0)) / 1.6) * a0; if (k3 > 0) { g.globalAlpha = k3 * .85; g.fillStyle = '#b9b2cf'; g.font = '300 17px Jost'; g.letterSpacing = '9px'; g.fillText('PLAYSCORCHER.COM', W / 2 + 4, oy + lv.vb[1] * sc + 92); g.letterSpacing = '0px'; }
+  g.restore();
+}
+
+/* ---------------------------------------------------------------- finishing: bloom, grade, vignette, grain, letterbox, type */
+const bc = mk(480, 270), bx = bc.getContext('2d'), VIG = (() => { const c = mk(W, H), x = c.getContext('2d'), gr = x.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.62)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); return c; })();
+const GRAIN = (() => { const c = mk(512, 512), x = c.getContext('2d'), im = x.createImageData(512, 512), r = mul(5); for (let i = 0; i < im.data.length; i += 4) { const v = 128 + (r() + r() + r() - 1.5) * 90; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); return c; })();
+function finish(t) {
+  bx.filter = 'blur(5px)'; bx.clearRect(0, 0, 480, 270); bx.drawImage(cv, 0, 0, 480, 270); bx.filter = 'none';
+  g.save(); g.globalCompositeOperation = 'screen'; g.globalAlpha = .42; g.drawImage(bc, 0, 0, W, H); g.restore();
+  g.drawImage(VIG, 0, 0);
+  g.save(); g.globalCompositeOperation = 'overlay'; g.globalAlpha = .07; const gx = Math.floor((t * 977) % 512), gy = Math.floor((t * 613) % 512); for (let x = -gx; x < W; x += 512) for (let y = -gy; y < H; y += 512) g.drawImage(GRAIN, x, y); g.restore();
+  { const sg = g.createLinearGradient(0, H - BAR - 230, 0, H - BAR); sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = sg; g.fillRect(0, H - BAR - 230, W, 230); }   // a soft shade under the words
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, BAR); g.fillRect(0, H - BAR, W, BAR);
+}
+function captions(t) {
+  CAP.forEach(([a, b, text, kind]) => { const k = ramp(t, a, b, 1.5, 1.2); if (k <= 0) return; g.save(); g.textAlign = 'center';
+    if (kind === 'cap') { g.globalAlpha = k * .8; g.fillStyle = '#c9c3da'; g.font = '300 15px Jost'; g.letterSpacing = lerp(13, 8, ss((t - a) / 2.4)) + 'px'; g.fillText(text.toUpperCase(), W / 2 + 4, H - BAR - 118); }
+    else { g.globalAlpha = k; g.fillStyle = 'rgba(238,232,220,.94)'; g.font = 'italic 400 42px EB'; g.letterSpacing = '.3px'; g.fillText(text, W / 2, H - BAR - 64 + (1 - ss((t - a) / 1.8)) * 6); }
+    g.restore(); });
+}
+
+/* ---------------------------------------------------------------- the frame */
+window.render = t => {
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const A = n => ramp(t, SH[n][0], SH[n][1], n === 'sky' ? 3 : n === 'mw' ? 2.2 : 1.6, n === 'deep' ? 2.2 : 1.6);
+  const a = { sky: A('sky'), earth: A('earth'), mw: A('mw'), bet: A('bet'), crab: A('crab'), ton: A('ton'), deep: A('deep') };
+  if (a.sky > 0) shotSky(t, a.sky);
+  if (a.earth > 0) shotEarth(t, a.earth);
+  if (a.mw > 0) shotMW(t, a.mw);
+  if (a.bet > 0) shotStar(t, a.bet, 'bet');
+  if (a.crab > 0) shotStar(t, a.crab, 'crab');
+  if (a.ton > 0) shotTon(t, a.ton);
+  if (a.deep > 0) shotDeep(t, a.deep * (1 - .72 * ss((t - SH.end[0] - .4) / 2.4)));
+  finish(t); captions(t); endCard(t);
+};
+window.bake = async () => { const t0 = performance.now(); SKYC = bakeSky(2400, 1350); RIDGE = bakeRidge(2400, 1350); DEEP = bakeDeep(2400, 1350); GAL = bakeGalaxy(2800); return { ms: Math.round(performance.now() - t0), sky: SKYC.toDataURL('image/png'), ridge: RIDGE.toDataURL('image/png'), deep: DEEP.toDataURL('image/png'), gal: GAL.toDataURL('image/png') }; };
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+(async () => {
+  await document.fonts.load('italic 400 42px EB'); await document.fonts.load('300 15px Jost'); await document.fonts.load('400 15px EB');
+  locate();
+  const q = new URLSearchParams(location.search);
+  if (q.get('baked')) { const d = q.get('baked'); [SKYC, RIDGE, DEEP, GAL] = await Promise.all(['sky', 'ridge', 'deep', 'gal'].map(n => load(d + '/' + n + '.png'))); }
+  else if (!q.get('nobake')) { await window.bake(); }
+  window.__ready = true;
+})();
+</script></body></html>
