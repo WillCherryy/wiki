@@ -46,7 +46,7 @@
         ${N > 1 ? `<div class="ob-copy"><button data-d="-1" aria-label="Previous copy">←</button><span><b id="obCi">01</b> / ${String(N).padStart(2, '0')}</span><u><i id="obCt" style="width:${100 / N}%"></i></u><button data-d="1" aria-label="Next copy">→</button></div>` : ''}
         <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obCmp">Compare</button><button id="obIns">Inspect</button><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Wikipedia ↗</a></div>`;
       host.querySelectorAll('.ob-objs button').forEach(y => y.classList.toggle('cur', y.dataset.n === q.n));
-      Q('#obGo').onclick = () => map.pick(n); Q('#obCmp').onclick = () => compare(q.n); Q('#obIns').onclick = () => openInspect(q.n, () => {});
+      Q('#obGo').onclick = () => map.pick(n); Q('#obCmp').onclick = () => compare(q.n, [q.n, 'The Sun', 'Earth'].filter((v, i, a) => a.indexOf(v) === i), 'all'); Q('#obIns').onclick = () => openInspect(q.n, () => {});
       Q('#obInsp').querySelectorAll('.ob-copy button').forEach(x => x.onclick = () => { copyI = ((copyI - 1 + +x.dataset.d + N) % N) + 1; Q('#obCi').textContent = String(copyI).padStart(2, '0'); Q('#obCt').style.marginLeft = (copyI - 1) / N * 100 + '%'; map.copyTo(q.n, copyI - 1); });
     }
     // type index = filter
@@ -88,30 +88,46 @@
     const h2 = (x, y, s) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + s * 97; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; }, vn = (x, y, s) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), a = h2(xi, yi, s), b = h2(xi + 1, yi, s), cc = h2(xi, yi + 1, s), d = h2(xi + 1, yi + 1, s); return a + (b - a) * u + (cc - a) * v + (a - b - cc + d) * u * v; }, fb = (x, y, s) => vn(x, y, s) * .5 + vn(x * 2, y * 2, s + 1) * .25 + vn(x * 4, y * 4, s + 2) * .13 + vn(x * 8, y * 8, s + 3) * .07;
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const dx = (x + .5 - S / 2) / R, dy = (y + .5 - S / 2) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue; const mu = Math.sqrt(1 - r2), lon = Math.atan2(dx, mu) * 2, lat = Math.asin(Math.max(-1, Math.min(1, dy))) * 2, k = (y * S + x) * 4, sh = Math.max(.08, .25 + .75 * (mu * .6 + (-dx * .5 - dy * .3 + .4) * .7));
       let col; if (kind === 'earth') { const land = fb(lon * 1.4 + 3, lat * 1.4, 4), cl = fb(lon * 2.5, lat * 3.2, 9); const dry = fb(lon * 3 + 9, lat * 3, 2); col = land > .55 ? (dry > .55 ? [176, 150, 104] : [52 + 40 * dry, 96 + 30 * land, 46]) : [10, 34 + 20 * land, 92 + 50 * land]; if (Math.abs(lat) > 2.6) col = [235, 240, 250]; if (cl > .58) col = col.map(v => v + (245 - v) * Math.min(1, (cl - .58) * 4)); }
-      else { const band = Math.sin(lat * 7 + fb(lon * 2, lat * 6, 3) * 2.2); col = band > .2 ? [226, 196, 160] : band > -.4 ? [196, 140, 98] : [240, 226, 206]; const spot = Math.hypot((lon - .8) * 1.2, (lat + .7) * 2.4); if (spot < .32) col = [200, 100, 70]; }
+      else { const sw = fb(lon * 1.5, lat * 9, 3), v = lat * 5.2 + (sw - .5) * .9 + Math.sin(lon * 4 + lat * 12) * .05, band = .5 + .5 * Math.sin(v * 3.3), fine = fb(lon * 6 + sw * 2, lat * 30, 7), zone = [244, 232, 212], belt = [176, 118, 80], k2 = Math.pow(band, 1.4) * .85 + fine * .15;   // zones and belts, with turbulent edges
+        col = belt.map((b2, i) => b2 + (zone[i] - b2) * k2); if (Math.abs(lat) > 2.2) col = col.map(c => c * .82 + 20);   // greyer poles
+        const sx = (lon - .8) * 1.25, sy = (lat + .62) * 2.6, sp = Math.hypot(sx, sy); if (sp < .36) { const q = 1 - sp / .36; col = col.map((c, i) => c + ([206, 104, 70][i] - c) * Math.min(1, q * 2.2) * (.75 + .25 * Math.sin(Math.atan2(sy, sx) * 3 + sp * 30))); } }   // the Great Red Spot, with its swirl
       D[k] = col[0] * sh; D[k + 1] = col[1] * sh; D[k + 2] = col[2] * sh; D[k + 3] = 255 * Math.min(1, (1 - Math.sqrt(r2)) * R); }
     g.putImageData(img, 0, 0); PL.set(key, c); return c;
   }
-  function compare(startName) {
-    if (document.getElementById('cmp')) return; const own = skyList(), seen = new Set(), list = [];
+  function compare(startName, pick, mode) {   // pick: only these names (any objects you own, plus Earth, Jupiter and the Sun); mode 'all' shows them side by side in one frame
+    if (document.getElementById('cmp')) return; const own = skyList(), seen = new Set(); let list = [];
     own.forEach(b => { if (seen.has(b.n)) return; seen.add(b.n); list.push({ n: b.n, b, r: SKY.physR(b), kind: b.kind, c: SKY.OBJ[b.idx].c, id: b.id }); });
     REFS.forEach(x => list.push({ ...x, r: x.r })); if (!own.some(b => b.n === 'The Sun')) list.push({ n: 'The Sun', ref: 'sun', r: 1, kind: 'Our star, for scale', c: '#ffc83a', b: { n: 'The Sun', id: 'sun', t: '≈ 5,800 K', m: 1, idx: 3 } });
-    list.sort((a, b) => a.r - b.r);
+    const full = list.slice(); if (pick && pick.length) list = list.filter(o => pick.includes(o.n)); if (!list.length) list = full;
+    list.sort((a, b) => a.r - b.r); let allMode = mode === 'all' && list.length > 1;
     // lay them out edge to edge in solar radii, with a gap that scales with each object
     let x = 0; list.forEach((o, i) => { if (i) { const p = list[i - 1], gap = o => o.id === 'neutron' ? 6 : o.id === 'quasar' ? 14 : 1.3; x += p.r * gap(p) + o.r * gap(o); } o.x = x; });   // room for the field lines of neutron stars and the discs of black holes
-    const host = document.createElement('div'); host.id = 'cmp'; host.innerHTML = `<canvas id="cmpCv"></canvas><div class="cmp-top"><div class="ob-brand"><span class="cmp-t">Size comparison</span><span>${list.length} objects, smallest to largest, all to one scale</span></div><div class="ob-links"><button id="cmpX" class="ob-x" aria-label="Close"></button></div></div>
+    const host = document.createElement('div'); host.id = 'cmp'; host.innerHTML = `<canvas id="cmpCv"></canvas><div class="cmp-top"><div class="ob-brand"><span class="cmp-t">Size comparison</span><span>${list.length} objects, smallest to largest, all to one scale</span></div><div class="ob-links"><button id="cmpPick">Choose objects</button><button id="cmpMode">${allMode ? 'One by one' : 'All at once'}</button><button id="cmpX" class="ob-x" aria-label="Close"></button></div></div>
       <div class="cmp-info" id="cmpInfo"></div><div class="cmp-bar"><div class="cmp-scale"><i id="cmpSb"></i><span id="cmpSl"></span></div><div class="cmp-pos"><button id="cmpPrev">←</button><span id="cmpN"></span><button id="cmpNext">→</button></div></div><div class="ob-hint" id="cmpHint">Scroll, swipe or use the arrow keys</div>`;
     document.body.appendChild(host); const cv = host.querySelector('#cmpCv'), g = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
     const size = () => { cv.width = host.clientWidth * dpr; cv.height = host.clientHeight * dpr; }; size(); window.addEventListener('resize', size);
     let idx = Math.max(0, list.findIndex(o => o.n === startName)), tgt = idx, raf = 0, shown = -1; if (idx < 0) idx = tgt = 0;
     const t0 = performance.now(), info = host.querySelector('#cmpInfo');
-    const setInfo = i => { if (i === shown) return; shown = i; const o = list[i], rr = fmtRad(o.r), prev = list[i - 1], sun = o.r; info.style.setProperty('--c', o.c);
+    const setInfo = i => { if (i === shown) return; if (shown === -2) shown = -1; shown = i; const o = list[i], rr = fmtRad(o.r), prev = list[i - 1], sun = o.r; info.style.setProperty('--c', o.c);
       info.innerHTML = `<div class="ob-k">${esc(o.ref ? o.kind : (o.kind || typeName(o.id)))}</div><h1>${esc(o.n)}</h1><dl><div><dt>${o.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rr[0]}<small>${rr[1]}</small></dd></div><div><dt>Against the Sun</dt><dd>${sun >= 1 ? '×' + sig(sun) : sig(sun) + ' ×'}</dd></div>${prev ? `<div><dt>Against ${esc(prev.n)}</dt><dd>×${sig(o.r / prev.r)}</dd></div>` : ''}</dl>`;
       host.querySelector('#cmpN').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(list.length).padStart(2, '0'); };
     const niceKm = km => { const p = Math.pow(10, Math.floor(Math.log10(km))), m = km / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; };
     const frame = now => { if (!host.isConnected) return; idx += (tgt - idx) * .085; if (Math.abs(tgt - idx) < .0005) idx = tgt; const w = cv.width, h = cv.height, K = Math.max(1, w / 1400), i0 = Math.max(0, Math.min(list.length - 1, Math.floor(idx))), i1 = Math.min(list.length - 1, i0 + 1), f = idx - i0;
       const fr = o => o.r * (o.id === 'quasar' ? 6 : o.id === 'neutron' ? 2.2 : 1), r0 = fr(list[i0]), r1 = fr(list[i1]), R = Math.exp(Math.log(r0) + (Math.log(r1) - Math.log(r0)) * f), cx = list[i0].x + (list[i1].x - list[i0].x) * f, s = h * .17 / R, mid = w * .6, cy = h * .5;   // pixels per solar radius
       g.fillStyle = '#030208'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, 0, Math.round(w * h / 2600), 13);
+      if (allMode) { const t = (now - t0) / 1000, X0 = w * .34, X1 = w * .97, gapMin = 110 * K, mx = Math.max(...list.map(fr)); let S2 = Math.min(h * .36 / mx, (X1 - X0) / list.reduce((a, o) => a + 2.1 * fr(o), 0)), slots;   // every chosen object in one frame, at one true scale
+        for (let it = 0; it < 60; it++) { slots = list.map(o => Math.max(2.08 * fr(o) * S2, gapMin)); if (slots.reduce((a, b) => a + b, 0) <= X1 - X0) break; S2 *= .93; }
+        let xx = X0 + (X1 - X0 - slots.reduce((a, b) => a + b, 0)) / 2;
+        g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(X0 - 20 * K, cy); g.lineTo(w, cy); g.stroke();
+        list.forEach((o, i) => { const rp = o.r * S2, ext = fr(o) * S2, px = xx + slots[i] / 2; xx += slots[i];
+          if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.85)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else g.drawImage(planetTex(o.ref, Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1)))))), px - rp, cy - rp, rp * 2, rp * 2); }
+          else SKY.bodyAt(g, o.b, px, cy, rp, 1, K, t);
+          const big = ext > 60 * K, up = !big && i % 2, ly = big ? cy + ext + 40 * K : up ? cy - Math.max(ext, 8 * K) - 46 * K - (i % 4 > 1 ? 34 * K : 0) : cy + Math.max(ext, 8 * K) + 40 * K + (i % 4 > 1 ? 34 * K : 0);
+          g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = K; g.beginPath(); g.moveTo(px, cy + (ly < cy ? -1 : 1) * Math.max(rp + 3 * K, 6 * K)); g.lineTo(px, ly + (ly < cy ? 10 : -24) * K); g.stroke();
+          g.textAlign = 'center'; g.fillStyle = '#ece8f6'; g.font = `italic 400 ${Math.round(17 * K)}px "EB Garamond", Georgia, serif`; g.fillText(o.n, px, ly); g.fillStyle = 'rgba(200,195,225,.75)'; g.font = `300 ${Math.round(10.5 * K)}px "IBM Plex Mono", monospace`; g.fillText(fmtRad(o.r)[0], px, ly + 17 * K); });
+        const km = niceKm((w * .16) / S2 * RSUN_KM), bw = km / RSUN_KM * S2 / dpr; host.querySelector('#cmpSb').style.width = bw + 'px'; host.querySelector('#cmpSl').textContent = (km >= 1e8 ? sig(km / AU_KM) + ' AU' : nf(km) + ' km');
+        if (shown !== -2) { shown = -2; const big = list[list.length - 1]; info.style.setProperty('--c', big.c); info.innerHTML = `<div class="ob-k">${list.length} objects · one true scale</div><h1>${esc(big.n)}</h1><dl>${list.slice().reverse().map(o => `<div><dt>${esc(o.n)}</dt><dd>${o === big ? '×1' : '1 / ' + sig(big.r / o.r)}<small>${fmtRad(o.r)[0]}</small></dd></div>`).join('')}</dl>`; host.querySelector('#cmpN').textContent = 'All ' + list.length; }
+        raf = requestAnimationFrame(frame); return; }
       g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(0, cy); g.lineTo(w, cy); g.stroke();
       const t = (now - t0) / 1000;
       list.forEach((o, i) => { const px = mid + (o.x - cx) * s, rp = o.r * s; if (px + rp * 3 < 0 || px - rp * 3 > w) return;
@@ -125,8 +141,16 @@
     const go = d => { tgt = Math.max(0, Math.min(list.length - 1, Math.round(tgt) + d)); };
     let acc = 0; cv.addEventListener('wheel', e => { e.preventDefault(); acc += e.deltaY + e.deltaX; if (Math.abs(acc) > 60) { go(Math.sign(acc)); acc = 0; } }, { passive: false });
     let sx = null; cv.onpointerdown = e => { sx = e.clientX; }; cv.onpointerup = e => { if (sx != null && Math.abs(e.clientX - sx) > 30) go(e.clientX < sx ? 1 : -1); sx = null; };
+    host.querySelector('#cmpMode').onclick = e => { allMode = !allMode && list.length > 1; shown = -1; e.currentTarget.textContent = allMode ? 'One by one' : 'All at once'; };
+    host.querySelector('#cmpPick').onclick = () => { const chosen = new Set(pick && pick.length ? list.map(o => o.n) : []), pk = document.createElement('div'); pk.className = 'ob-search cmp-pick'; host.appendChild(pk);
+      pk.innerHTML = `<input id="cpQ" placeholder="Choose objects to compare" autocomplete="off" spellcheck="false"><div class="cp-bar"><span id="cpN"></span><button id="cpAll">Everything</button><button id="cpGo" class="p">Compare</button></div><div class="ob-res" id="cpRes"></div>`;
+      const byR = full.slice().sort((a, b) => b.r - a.r), draw = q => { pk.querySelector('#cpRes').innerHTML = byR.filter(o => !q || o.n.toLowerCase().includes(q)).map(o => `<button data-n="${esc(o.n)}" class="${chosen.has(o.n) ? 'on' : ''}" style="--c:${o.c}"><i></i><b>${esc(o.n)}</b><span>${esc(o.ref ? 'Reference' : typeName(o.id))}</span><em>${fmtRad(o.r)[0]}</em></button>`).join('');
+          pk.querySelector('#cpN').textContent = chosen.size ? chosen.size + ' chosen' : 'Tap objects to choose them'; pk.querySelectorAll('#cpRes button').forEach(b => b.onclick = () => { chosen.has(b.dataset.n) ? chosen.delete(b.dataset.n) : chosen.add(b.dataset.n); b.classList.toggle('on'); pk.querySelector('#cpN').textContent = chosen.size ? chosen.size + ' chosen' : 'Tap objects to choose them'; }); };
+      draw(''); pk.querySelector('#cpQ').oninput = e => draw(e.target.value.trim().toLowerCase()); setTimeout(() => pk.querySelector('#cpQ').focus(), 30);
+      pk.querySelector('#cpAll').onclick = () => { close(); compare(list[Math.round(idx)].n); };
+      pk.querySelector('#cpGo').onclick = () => { if (chosen.size < 2) return toast('Choose at least two objects'); const names = [...chosen]; close(); compare(names[0], names, 'all'); }; };
     host.querySelector('#cmpPrev').onclick = () => go(-1); host.querySelector('#cmpNext').onclick = () => go(1);
-    const key = e => { if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); else if (e.key === 'Escape') close(); };
+    const key = e => { if (host.querySelector('.cmp-pick') && e.key !== 'Escape') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); else if (e.key === 'Escape') { const pk = host.querySelector('.cmp-pick'); if (pk) pk.remove(); else close(); } };
     const close = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); host.remove(); };
     document.addEventListener('keydown', key); host.querySelector('#cmpX').onclick = close; setTimeout(() => { const hh = host.querySelector('#cmpHint'); if (hh) hh.classList.add('gone'); }, 6000);
   }

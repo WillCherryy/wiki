@@ -1322,3 +1322,8 @@ body { font-family: var(--sans); }
 .ob-objs button { display: flex !important; justify-content: space-between; gap: 14px; width: 184px; padding: 4px 0 4px 12px !important; text-align: left; font: italic 400 15px var(--display) !important; color: #b9b3cf !important; }
 .ob-objs button em { font: 300 10.5px var(--mono); font-style: normal; color: #6f6990; white-space: nowrap; } .ob-objs button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ob-objs button:hover, .ob-objs button.cur { color: #fff !important; } .ob-objs button.cur { box-shadow: inset 2px 0 0 #ff8a5c; }
+.cmp-pick { z-index: 6; } .cp-bar { display: flex; align-items: baseline; gap: 26px; margin-top: 16px; } .cp-bar span { flex: 1; font: var(--ob-lab); letter-spacing: .22em; text-transform: uppercase; color: #8a84a3; }
+.cp-bar button { font: var(--ob-lab) !important; letter-spacing: .24em !important; text-transform: uppercase; padding-bottom: 5px !important; border-bottom: 1px solid rgba(255,255,255,.4) !important; } .cp-bar button.p { color: #ffb08a !important; border-color: #ff8a5c !important; }
+.cmp-pick .ob-res button.on { background: linear-gradient(90deg, rgba(255,138,92,.12), transparent 60%); } .cmp-pick .ob-res button.on b { color: #fff; } .cmp-pick .ob-res button.on i { width: 16px; height: 2px; box-shadow: 0 0 8px var(--c); }
+#cmp .ob-links button { font: var(--ob-lab) !important; letter-spacing: .24em !important; text-transform: uppercase; color: #cfc9e2 !important; }
+.cmp-info dl div dt { text-transform: none; letter-spacing: 0; font: italic 400 15px var(--display); color: #cfc9e2; } .cmp-info { max-height: calc(100vh - 220px); overflow: auto; scrollbar-width: none; pointer-events: auto; }
