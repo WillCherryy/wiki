@@ -14,18 +14,18 @@ html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
    Shots: a night sky with the Milky Way over mountains; Earth, pulling back through the Solar System (the game's own renderer); the Milky Way from outside;
    Betelgeuse; the Crab Pulsar; a dive into TON 618; a deep field of galaxies; the end card. The three painted scenes are baked once (bake()) and reused. */
 const V = new URLSearchParams(location.search).get('v') === '1', W = V ? 1080 : 1920, H = V ? 1920 : 1080, BAR = V ? 0 : Math.round((H - W / 2.39) / 2), cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), M = Math.min(W, H);   // ?v=1: the vertical 9:16 cut for Reels and Shorts
-const DUR = 88, SH = { sky: [1.5, 13.6], earth: [12.0, 28.2], mw: [26.6, 42.2], bet: [40.6, 49.6], crab: [48.0, 57.2], ton: [55.6, 71.2], deep: [69.6, 84.5], end: [77.6, 88] };
+const DUR = 88, SH = { sky: [1.5, 13.6], earth: [12.0, 28.2], mw: [26.6, 42.2], tour: [40.6, 71.2], deep: [69.6, 84.5], end: [77.6, 88] };
 const CAP = [
   [4.4, 8.9, 'For as long as we have been here,', 'it'], [9.3, 13.2, 'we have looked up.', 'it'],
   [15.0, 20.2, 'One world, circling one star.', 'it'], [21.6, 26.6, 'One star, among hundreds of billions.', 'it'],
   [29.4, 35.4, 'The Milky Way', 'cap'], [30.2, 35.6, 'A hundred thousand light-years across.', 'it'],
-  [42.2, 48.8, 'Betelgeuse  ·  548 light-years', 'cap'], [42.9, 48.8, 'So vast it would swallow the orbit of Mars.', 'it'],
-  [50.0, 56.2, 'The Crab Pulsar  ·  6,500 light-years', 'cap'], [50.7, 56.2, 'The size of a city, turning thirty times a second.', 'it'],
-  [57.6, 63.2, 'TON 618', 'cap'], [58.3, 63.2, 'Its light set out nearly eleven billion years ago.', 'it'],
-  [64.2, 70.4, 'At its heart, a black hole of tens of billions of suns.', 'it'],
+  [42.0, 46.4, 'Betelgeuse  ·  548 light-years', 'cap'], [42.5, 46.4, 'So vast it would swallow the orbit of Mars.', 'it'],
+  [51.2, 55.8, 'The Crab Pulsar  ·  6,500 light-years', 'cap'], [51.7, 55.8, 'The size of a city, turning thirty times a second.', 'it'],
+  [62.6, 67.2, 'TON 618', 'cap'], [63.0, 67.2, 'Its light set out nearly eleven billion years ago.', 'it'],
+  [67.4, 71.4, 'At its heart, a black hole of tens of billions of suns.', 'it'],
   [71.6, 77.6, 'Every one of them is real.', 'it']
 ];
-window.DURATION = DUR; window.EVENTS = [{ t: SH.mw[0] + 1.4, kind: 'reveal' }, { t: SH.ton[0], kind: 'dive' }, { t: 66.2, kind: 'horizon' }, { t: SH.end[0] + 1.2, kind: 'logo' }];
+window.DURATION = DUR; window.EVENTS = [{ t: SH.mw[0] + 1.4, kind: 'reveal' }, { t: 55.6, kind: 'dive' }, { t: 66.2, kind: 'horizon' }, { t: SH.end[0] + 1.2, kind: 'logo' }];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k) => a + (b - a) * k, ss = k => { k = clamp(k); return k * k * (3 - 2 * k); }, io = k => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
 const ramp = (t, a, b, fi = 1.6, fo = 1.6) => Math.min(ss((t - a) / fi), ss((b - t) / fo));
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
@@ -134,6 +134,36 @@ function bakeDeep(w, h) {
   return c;
 }
 
+/* ---------------------------------------------------------------- the cosmic web: a long strip of thousands of galaxies strung along filaments, the Milky Way at
+   one end and TON 618 at the other, for the rush between them; and a sparse nearer layer that slides past faster, for depth */
+const WEBW = 7200, WEBH = 1800, KM = Math.max(.64, H * 1.04 / 1800), MWP = [WEBW * .22, WEBH * .52], TONP = [WEBW * .78, WEBH * .48], DMW = 64;
+function splatGalaxy(put, rnd, gs, cx, cy, s, type, br) {   // one galaxy of particles: a spiral, an elliptical or a faint red smudge
+  const rot = rnd() * 6.28, inc = .2 + .8 * rnd(), cr = Math.cos(rot), sr = Math.sin(rot), P = Math.min(9000, Math.round(s * s * 2.6) + 14), arms = rnd() < .7 ? 2 : 3, wind = 1.4 + rnd() * 1.8;
+  for (let j = 0; j < P; j++) { let x, y, col;
+    if (type === 0 && rnd() < .55) { const arm = Math.floor(rnd() * arms), t = Math.pow(rnd(), .9), r = s * (.12 + .88 * t), th = arm * 6.2832 / arms + wind * t + gs() * .42; x = Math.cos(th) * r; y = Math.sin(th) * r; col = rnd() < .65 ? [.62, .76, 1] : [1, .9, .8]; }
+    else { const r = Math.abs(gs()) * s * (type === 1 ? .38 : .22), a = rnd() * 6.28; x = Math.cos(a) * r; y = Math.sin(a) * r * (type === 1 ? .8 : 1); col = type === 2 ? [1, .62, .45] : [1, .82, .58]; }
+    put(cx + x * cr - y * inc * sr, cy + x * sr + y * inc * cr, col[0], col[1], col[2], br * .13 * s * s / P); }
+}
+function bakeWeb(w, h) {
+  const N = w * h, R = new Float32Array(N), G = new Float32Array(N), B = new Float32Array(N), rnd = mul(808), gs = gaussOf(rnd);
+  const put = (x, y, r, gg, bb, k) => { const xi = x | 0, yi = y | 0; if (xi < 0 || yi < 0 || xi >= w || yi >= h) return; const i = yi * w + xi; R[i] += r * k; G[i] += gg * k; B[i] += bb * k; };
+  const web = (x, y) => Math.exp(-Math.pow((fbm(x / 1100, y / 1100, 4) - .5) / .055, 2)) * .8 + Math.exp(-Math.pow((fbm(x / 420 + 7, y / 420, 3) - .5) / .05, 2)) * .5;   // ridges of noise: the filaments
+  for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) { const m = web(x, y) * .006, i = y * w + x; R[i] += m * .7; G[i] += m * .8; B[i] += m * 1.2; R[i + 1] += m * .7; G[i + 1] += m * .8; B[i + 1] += m * 1.2; }
+  for (let n = 0, tries = 0; n < 9000 && tries < 200000; tries++) { const x = rnd() * w, y = rnd() * h; if (Math.hypot(x - MWP[0], y - MWP[1]) < 150 || Math.hypot(x - TONP[0], y - TONP[1]) < 150) continue; if (rnd() > .06 + .94 * Math.min(1, web(x, y))) continue;
+    n++; const s = 1.2 + 15 * Math.pow(rnd(), 6) + (rnd() < .01 ? 18 : 0), far = s < 3, type = far ? 2 : rnd() < .5 ? 0 : 1; splatGalaxy(put, rnd, gs, x, y, s, type, (far ? .9 : 1) * (.45 + rnd() * .6)); }
+  splatGalaxy(put, rnd, gs, TONP[0], TONP[1], 26, 1, 1.4);   // TON 618's host: a large elliptical, with the quasar blazing at its centre
+  for (let j = 0; j < 400; j++) put(TONP[0] + gs() * .8, TONP[1] + gs() * .8, .85, .92, 1, 1.2);
+  glowMix(R, w, h, [.9, .6, .3, .14]); glowMix(G, w, h, [.9, .6, .3, .14]); glowMix(B, w, h, [.9, .6, .3, .14]);
+  return develop(R, G, B, w, h, 2.4);
+}
+function bakeNear(w, h) {
+  const N = w * h, R = new Float32Array(N), G = new Float32Array(N), B = new Float32Array(N), rnd = mul(919), gs = gaussOf(rnd);
+  const put = (x, y, r, gg, bb, k) => { const xi = x | 0, yi = y | 0; if (xi < 0 || yi < 0 || xi >= w || yi >= h) return; const i = yi * w + xi; R[i] += r * k; G[i] += gg * k; B[i] += bb * k; };
+  for (let n = 0; n < 46; n++) { const s = 12 + 34 * Math.pow(rnd(), 2), x = w * (.12 + .8 * rnd()), y = rnd() * h; splatGalaxy(put, rnd, gs, x, y, s, rnd() < .6 ? 0 : 1, .55 + .4 * rnd()); }
+  glowMix(R, w, h, [.9, .6, .3, .12]); glowMix(G, w, h, [.9, .6, .3, .12]); glowMix(B, w, h, [.9, .6, .3, .12]);
+  return develop(R, G, B, w, h, 2.2);
+}
+
 /* ---------------------------------------------------------------- the game's own universe, for Earth, the stars and TON 618 */
 const L0 = []; SKY.OBJ.forEach((o, i) => SKY.POOL[o.id].forEach(q => L0.push({ ...q, id: o.id, idx: i, count: 1 })));
 const lay = SKY.layout(L0); window.lay = lay;
@@ -150,7 +180,7 @@ function locate() {   // where everything is, measured once: a planet's offset f
 }
 
 /* ---------------------------------------------------------------- shots */
-let SKYC = null, RIDGE = null, GAL = null, DEEP = null, GALB = null;
+let SKYC = null, RIDGE = null, GAL = null, DEEP = null, GALB = null, WEB = null, NEAR = null;
 const blurOf = (img, n, r) => { const c = mk(n, n), x = c.getContext('2d'); x.filter = `blur(${r}px)`; x.drawImage(img, 0, 0, n, n); return c; };
 function shotSky(t, a) {   // the sky turns slowly about the pole, above the fixed ridge; the camera drifts upward and in
   const u = (t - SH.sky[0]) / (SH.sky[1] - SH.sky[0]); g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
@@ -181,15 +211,44 @@ function shotMW(t, a) {   // the galaxy, seen almost edge-on and close, turning 
     g.save(); g.globalAlpha = ya; g.strokeStyle = 'rgba(236,230,218,.75)'; g.lineWidth = 1; g.beginPath(); g.arc(X, Y, 7 + 3 * Math.sin((t - 34) * 2), 0, 6.283); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(X, Y, 1.6, 0, 6.283); g.fill();
     g.beginPath(); g.moveTo(X + 10, Y - 10); g.lineTo(X + 54, Y - 54); g.lineTo(X + 92, Y - 54); g.stroke(); g.font = 'italic 400 21px EB'; g.fillStyle = 'rgba(236,230,218,.9)'; g.textAlign = 'left'; g.fillText('You are here', X + 100, Y - 48); g.restore(); }
 }
-function shotStar(t, a, which) {   // Betelgeuse turning slowly; the Crab Pulsar's beams sweeping
-  const k = which === 'bet' ? SH.bet : SH.crab, u = (t - k[0]) / (k[1] - k[0]), b = T[which], z0 = which === 'bet' ? T.zBet * 1.05 : T.zCrab * .42, z1 = z0 * (which === 'bet' ? 1.28 : 1.22), z = Math.exp(lerp(Math.log(z0), Math.log(z1), io(u)));
-  uni({ x: b.wx, y: b.wy, z }, which === 'bet' ? 40 + t * .2 : 40 + t * .15);
-  g.save(); g.globalAlpha = a; g.drawImage(eng, 0, 0); g.restore();
+// Google Earth-style flights: climb out of the star, cross the Milky Way (the film's painted galaxy, in the same orientation as the hero shot) or the
+// cosmic web, and drop into the next object. The game's renderer draws the stars and the black hole; the painted views carry the journey between them.
+const GP = 2800, RGP = GP * .44, GROT = -.34, GCI = .6, gpt = (r, th) => [Math.cos(th) * r * RGP, Math.sin(th) * r * RGP];
+const SUNG = gpt(.52, 2.35), BETG = gpt(.531, 2.352), CRABG = gpt(.65, 2.43);   // Betelgeuse lies ~550 light-years from the Sun; the Crab ~6,500, out towards the anticentre
+const LZ = (z0, z1, k) => Math.exp(lerp(Math.log(z0), Math.log(z1), k)), ein = k => { k = clamp(k); return k * k * k; }, eout = k => 1 - Math.pow(1 - clamp(k), 3);
+function label(x, y, text, a) { if (a <= 0) return; g.save(); g.globalAlpha = a; g.strokeStyle = 'rgba(236,230,218,.8)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, 6, 0, 6.283); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, 1.5, 0, 6.283); g.fill(); g.font = `italic 400 ${V ? 24 : 21}px EB`; g.fillStyle = 'rgba(236,230,218,.92)'; g.textAlign = 'left'; g.fillText(text, x + 14, y + 7); g.restore(); }
+function galView(cg, wLy, a, labels = []) {   // the Milky Way seen from above, centred on a point in it, the view this many light-years across
+  const s = (V ? W * 1.4 : W) / (wLy * 2 * RGP / 100000), cr = Math.cos(GROT), sr = Math.sin(GROT), proj = p => { const dx = (p[0] - cg[0]) * s, dy = (p[1] - cg[1]) * s; return [W / 2 + dx * cr - dy * sr, H / 2 + (dx * sr + dy * cr) * GCI]; };
+  g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'lighter'; g.translate(W / 2, H / 2); g.scale(1, GCI); g.rotate(GROT); g.scale(s, s); g.translate(-cg[0], -cg[1]); g.drawImage(GAL, -GP / 2, -GP / 2); g.restore();
+  labels.forEach(([p, text, la]) => { const [x, y] = proj(p); label(x, y, text, la * a); });
 }
-function shotTon(t, a) {   // TON 618's host galaxy, then a dissolve straight into its heart and a long push towards the black hole
-  const t0 = SH.ton[0], tm = 60.4, zs = M / 1080, t1 = SH.ton[1], aA = 1 - ss((t - tm + 1.1) / 1.1), aB = ss((t - tm) / 1.5);   // one view at a time: the engine's cloud detail must not be shared between two zooms in one frame
-  if (aA > 0) { const z = zs * Math.exp(lerp(Math.log(.145), Math.log(.26), io((t - t0) / (tm + 1.6 - t0)))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aA; g.drawImage(eng, 0, 0); g.restore(); }
-  if (aB > 0) { const u = clamp((t - tm) / (t1 - tm)), z = Math.exp(lerp(Math.log(T.zTon * .055), Math.log(T.zTon * .21), 1 - Math.pow(1 - u, 2.4))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aB; g.drawImage(eng, 0, 0); g.restore(); }
+function webView(cam, k, a, t) {   // the strip of galaxies, the Milky Way drawn at its place in it, and the nearer layer sliding past faster
+  const wa = ss((Math.log(18) - Math.log(k)) / Math.log(5));
+  g.save(); g.globalAlpha = a * wa; g.translate(W / 2, H / 2); g.scale(k, k); g.translate(-cam[0], -cam[1]); g.drawImage(WEB, 0, 0); g.restore();
+  { const d = DMW * k; g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'lighter'; g.translate(W / 2 + (MWP[0] - cam[0]) * k, H / 2 + (MWP[1] - cam[1]) * k); g.scale(1, GCI); g.rotate(GROT); g.drawImage(GAL, -d / 2 / .88, -d / 2 / .88, d / .88, d / .88); g.restore(); }
+  const na = a * wa * ss((2.2 - k) / 1.4); if (na > 0) { const pk = 2.1, fx = cam[0] / WEBW, fy = cam[1] / WEBH; g.save(); g.globalAlpha = na * .8; g.globalCompositeOperation = 'lighter'; g.drawImage(NEAR, W / 2 - fx * NEAR.width * pk, H / 2 - fy * NEAR.height * pk, NEAR.width * pk, NEAR.height * pk); g.restore(); }   /* nearer galaxies slide past faster: depth */
+  const sp = (p) => [W / 2 + (p[0] - cam[0]) * k, H / 2 + (p[1] - cam[1]) * k];
+  { const [x, y] = sp(MWP); label(x + DMW * k * .45, y, 'The Milky Way', a * ramp(t, 57.7, 59.4, .5, .6)); }
+  { const [x, y] = sp(TONP); label(x, y, 'TON 618', a * ramp(t, 60.0, 61.9, .5, .5));
+    const qa = a * ss((k - 2) / 10); if (qa > 0) { const r = 40 + 6 * k, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,240,220,.9)'); gr.addColorStop(.2, 'rgba(255,200,150,.35)'); gr.addColorStop(1, 'rgba(255,170,110,0)'); g.save(); g.globalAlpha = qa; g.globalCompositeOperation = 'lighter'; g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); g.restore(); } }
+}
+function shotTour(t, a) {
+  const eng1 = (cam, al) => { if (al <= 0) return; uni(cam, 40 + t * .2); g.save(); g.globalAlpha = a * al; g.drawImage(eng, 0, 0); g.restore(); };
+  // Betelgeuse, then climbing out of it
+  if (t < 46.4) eng1({ x: T.bet.wx, y: T.bet.wy, z: LZ(T.zBet * 1.05, T.zBet * 1.25, ss((t - 40.6) / 5.8)) }, 1);
+  else if (t < 47.4) eng1({ x: T.bet.wx, y: T.bet.wy, z: T.zBet * 1.25 * Math.exp(-11 * ein((t - 46.4) / 1.0)) }, 1 - ss((t - 47.0) / .4));
+  // across the galaxy to the Crab
+  if (t > 46.95 && t < 50.45) { const f = (t - 46.95) / 3.5, cg = [lerp(BETG[0], CRABG[0], io(f)), lerp(BETG[1], CRABG[1], io(f))], wLy = Math.exp(lerp(Math.log(52000), Math.log(105000), Math.pow(Math.sin(Math.PI * f), .9)));
+    galView(cg, wLy, ss((t - 46.95) / .45) * (1 - ss((t - 50.0) / .45)), [[BETG, 'Betelgeuse', ramp(t, 47.2, 48.5, .4, .5)], [SUNG, 'The Sun', ramp(t, 47.5, 49.2, .4, .5)], [CRABG, 'The Crab Pulsar', ramp(t, 48.7, 50.4, .4, .4)]]); }
+  if (t >= 50.0 && t < 51.0) eng1({ x: T.crab.wx, y: T.crab.wy, z: T.zCrab * .42 * Math.exp(-13 * (1 - eout((t - 50.0) / 1.0))) }, ss((t - 50.0) / .4));
+  else if (t >= 51.0 && t < 55.6) eng1({ x: T.crab.wx, y: T.crab.wy, z: LZ(T.zCrab * .42, T.zCrab * .5, ss((t - 51.0) / 4.6)) }, 1);
+  // out of the Crab, out of the galaxy, across the web of galaxies, and down into TON 618
+  else if (t >= 55.6 && t < 56.6) eng1({ x: T.crab.wx, y: T.crab.wy, z: T.zCrab * .5 * Math.exp(-14 * ein((t - 55.6) / 1.0)) }, 1 - ss((t - 56.1) / .45));
+  if (t > 56.05 && t < 57.75) { const f = (t - 56.05) / 1.7, cg = [lerp(CRABG[0], 0, io(f)), lerp(CRABG[1], 0, io(f))]; galView(cg, Math.exp(lerp(Math.log(60000), Math.log(160000), eout(f))), ss((t - 56.05) / .4) * (1 - ss((t - 57.45) / .3)), [[CRABG, 'The Crab Pulsar', 1 - ss((t - 56.2) / .6)]]); }
+  if (t > 57.45 && t < 62.85) { const k0 = (W * 100 / 160) / DMW, p1 = 58.6, p2 = 60.7;
+    let cam, k; if (t < p1) { cam = MWP; k = LZ(k0, KM, io((t - 57.45) / (p1 - 57.45))); } else if (t < p2) { const f = io((t - p1) / (p2 - p1)); cam = [lerp(MWP[0], TONP[0], f), lerp(MWP[1], TONP[1], f)]; k = KM * (1 - .05 * Math.sin(Math.PI * (t - p1) / (p2 - p1))); } else { cam = TONP; k = LZ(KM, 60, ein((t - p2) / (62.85 - p2)) * .6 + .4 * ss((t - p2) / (62.85 - p2))); }
+    webView(cam, k, ss((t - 57.45) / .3) * (1 - ss((t - 62.45) / .4)), t); }
+  if (t >= 62.45) eng1({ x: T.ton.wx, y: T.ton.wy, z: LZ(T.zTon * .04, T.zTon * .21, 1 - Math.pow(1 - clamp((t - 62.45) / 8.75), 2.2)) }, ss((t - 62.45) / .45));
 }
 function shotDeep(t, a) {
   const u = clamp((t - SH.deep[0]) / (SH.deep[1] - SH.deep[0])), z = lerp(1.32, 1.0, io(u));
@@ -230,23 +289,21 @@ function captions(t) {
 window.render = t => {
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   const A = n => ramp(t, SH[n][0], SH[n][1], n === 'sky' ? 3 : n === 'mw' ? 2.2 : 1.6, n === 'deep' ? 2.2 : 1.6);
-  const a = { sky: A('sky'), earth: A('earth'), mw: A('mw'), bet: A('bet'), crab: A('crab'), ton: A('ton'), deep: A('deep') };
+  const a = { sky: A('sky'), earth: A('earth'), mw: A('mw'), tour: A('tour'), deep: A('deep') };
   if (a.sky > 0) shotSky(t, a.sky);
   if (a.earth > 0) shotEarth(t, a.earth);
   if (a.mw > 0) shotMW(t, a.mw);
-  if (a.bet > 0) shotStar(t, a.bet, 'bet');
-  if (a.crab > 0) shotStar(t, a.crab, 'crab');
-  if (a.ton > 0) shotTon(t, a.ton);
+  if (a.tour > 0) shotTour(t, a.tour);
   if (a.deep > 0) shotDeep(t, a.deep * (1 - .72 * ss((t - SH.end[0] - .4) / 2.4)));
   finish(t); captions(t); endCard(t);
 };
-window.bake = async () => { const t0 = performance.now(); SKYC = bakeSky(2400, 1350); RIDGE = bakeRidge(2400, 1350); DEEP = bakeDeep(2400, 1350); GAL = bakeGalaxy(2800); return { ms: Math.round(performance.now() - t0), sky: SKYC.toDataURL('image/png'), ridge: RIDGE.toDataURL('image/png'), deep: DEEP.toDataURL('image/png'), gal: GAL.toDataURL('image/png') }; };
+window.bake = async () => { const t0 = performance.now(); SKYC = bakeSky(2400, 1350); RIDGE = bakeRidge(2400, 1350); DEEP = bakeDeep(2400, 1350); GAL = bakeGalaxy(2800); WEB = bakeWeb(WEBW, WEBH); NEAR = bakeNear(WEBW / 2, WEBH / 2); return { web: WEB.toDataURL('image/png'), near: NEAR.toDataURL('image/png'), ms: Math.round(performance.now() - t0), sky: SKYC.toDataURL('image/png'), ridge: RIDGE.toDataURL('image/png'), deep: DEEP.toDataURL('image/png'), gal: GAL.toDataURL('image/png') }; };
 const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
 (async () => {
   await document.fonts.load('italic 400 42px EB'); await document.fonts.load('300 15px Jost'); await document.fonts.load('400 15px EB');
   locate();
   const q = new URLSearchParams(location.search);
-  if (q.get('baked')) { const d = q.get('baked'); [SKYC, RIDGE, DEEP, GAL] = await Promise.all(['sky', 'ridge', 'deep', 'gal'].map(n => load(d + '/' + n + '.png'))); }
+  if (q.get('baked')) { const d = q.get('baked'); [SKYC, RIDGE, DEEP, GAL, WEB, NEAR] = await Promise.all(['sky', 'ridge', 'deep', 'gal', 'web', 'near'].map(n => load(d + '/' + n + '.png'))); }
   else if (!q.get('nobake')) { await window.bake(); }
   if (GAL) GALB = blurOf(GAL, 720, 9);
   window.__ready = true;
