@@ -332,7 +332,7 @@ function renderHeroAct() {
           <div class="stage-stats"><div><b>${SKY.massText(dk.m)}</b><span>Mass</span></div><div><b>${esc(dk.temp)}</b><span>Temperature</span></div><div><b>${Object.keys(P.sky.cat).length}<small> / ${SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0)}</small></b><span>Collected</span></div></div>
           ${skyLadder(dk.idx)}<p class="stage-fact">${esc(dk.fact)}</p>
           ${dk.boost ? `<div class="stage-boost"><b>Streak boost</b> ${dk.boost.days}-day streak lifted this find</div>` : ''}${dk.near ? `<div class="stage-near"><span>So close</span>${esc(dk.near.how)} would have found a <b>${esc(SKY.OBJ[dk.near.to].name.toLowerCase())}</b>.</div>` : ''}
-          ${dk.why ? `<div class="stage-why">${esc(dk.why)}</div>` : ''}
+          ${dk.why ? `<div class="stage-why">${esc(dk.why)}</div>` : ''}${chartHtml(dk, 'stage')}
           <div class="stage-btns"><button class="disc-btn share" data-discshare>Share this find</button><button class="disc-btn alt" id="discSky">Your sky</button></div>${dk.next ? `<div class="stage-next">${esc(dk.next)}</div>` : ''}</div></div>` : `<div class="stamp"><b>${e.won ? 'Solved' : 'Not today'}</b>${e.won ? '' : '<span>Back tomorrow</span>'}</div>`}
       <div class="done-row">${e.won ? `<div class="done-stats">${st.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('')}</div>` : ''}${e.won && e.purist ? '<div class="done-purist">◆ Purist run: no link search, no rewind</div>' : ''}</div>
       <div class="done-btns">${e.won ? '<button class="btn" id="heroShare">Share card</button><button class="btn ghost" id="heroChal">Challenge</button><button class="btn ghost" id="heroMap">Path map</button>' : ''}<button class="btn ghost" id="heroResult">Full result</button><button class="btn ghost" id="heroPoster">Today’s poster</button></div>
@@ -346,6 +346,7 @@ function renderHeroAct() {
     box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
     $('#playBtn').onclick = playDaily;
     box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
+    { const tn = tonight(), have = P.sky.cat[tn.n]; box.insertAdjacentHTML('beforeend', `<div class="tonight" style="--c:${tn.o.c}"><span>Tonight’s object</span><b>${esc(tn.n)}</b><small>${have ? 'Already in your sky' : `Earn a ${esc(tn.o.name.toLowerCase())} today and it is yours`}</small></div>`); }
   }
 }
 const ICONS = { sky: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>', film: '<rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18M7 7L5 3M12 7L10 3M17 7l-2-4"/>', temple: '<path d="M3 20h18M5 20V10M9.7 20V10M14.3 20V10M19 20V10M3 10l9-6 9 6z"/>', flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M8 15h8"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>', ball: '<circle cx="12" cy="12" r="9"/><path d="M5.5 5.5c5 4 5 9 0 13M18.5 5.5c-5 4-5 9 0 13"/>', food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>', music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>', leaf: '<path d="M5 19C5 9 11 4 20 4c0 9-5 15-15 15z"/><path d="M5 19c3-5 6-8 10-10"/>', planet: '<circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)"/>', art: '<rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 16l5-5 4 4 3-3 4 4"/>', tech: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>', bolt: '<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>', trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 20h8M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>', grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>', target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' };
@@ -541,7 +542,7 @@ async function doRewind() {
 function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" style="--c:${o.c}">${SKY.OBJ.map((_, i) => `<i class="${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}"></i>`).join('')}</div>`; }
 const RARITY = ['Common', 'Common', 'Uncommon', 'Uncommon', 'Rare', 'Rare', 'Epic', 'Epic', 'Legendary'];
 function discoveryK(name, d = {}) {   // everything the discovery card shows, rebuilt from the catalogue so it stays current
-  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
+  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, via: d.via || '', first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
   return null;
 }
 function dayDiscovery(day) {
@@ -559,6 +560,7 @@ function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a 
     <h3 class="disc-name">${esc(k.name)}</h3><div class="disc-sub">${esc(k.kind)}</div>
     <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${opt.visitor ? RARITY[k.idx] : have + '<small> / ' + total + '</small>'}</b><span>${opt.visitor ? 'Rarity' : 'Collected'}</span></div></div>
     ${k.boost ? `<div class="disc-boost"><b>Streak boost</b> ${k.boost.days}-day streak lifted this find</div>` : ''}${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
+    ${opt.visitor ? '' : chartHtml(k, 'disc')}
     ${k.near && !opt.visitor ? `<div class="disc-near"><span>So close</span>${esc(k.near.how)} would have found a <b>${esc(SKY.OBJ[k.near.to].name.toLowerCase())}</b>.</div>` : ''}
     ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
     ${k.next && !opt.visitor ? `<div class="disc-next">${esc(k.next)}</div>` : ''}
@@ -759,10 +761,47 @@ function burnOf(steps) {   // a click "burns" when it lands warmer than the page
   for (let i = 1; i < steps.length; i++) { n++; if (steps[i].sig > steps[i - 1].sig + .01 || steps[i].sig >= .99) { chain++; warm++; best = Math.max(best, chain); } else chain = 0; }
   return { chain, best, warm, n };
 }
-function pickNamed(typeId) {   // a real, famous object of that type: the first ever is the most famous, then ones you do not have yet
+function pickNamed(typeId) {   // a real, famous object of that type: the first ever is the most famous; then tonight's object, then the one your telescope is aimed at, then ones that finish a chart
   const pool = SKY.POOL[typeId], cat = P.sky.cat, fresh = pool.filter(p => !cat[p.n]); if (!pool.some(p => cat[p.n])) return pool[0];
+  const tn = tonight(); if (tn.id === typeId && !cat[tn.n]) { const q = pool.find(p => p.n === tn.n); if (q) return Object.assign({ via: 'tonight' }, q); }
+  if (P.sky.aim && !cat[P.sky.aim]) { const q = fresh.find(p => p.n === P.sky.aim); if (q) { P.sky.aim = ''; return Object.assign({ via: 'aim' }, q); } }
+  const inChart = fresh.filter(p => CHARTS.some(c => c.m.includes(p.n) && c.m.some(n => cat[n])));   // a chart you have started pulls its missing stars forward
+  if (inChart.length && Math.random() < .6) return inChart[Math.floor(Math.random() * inChart.length)];
   const mn = Math.min(...pool.map(p => cat[p.n] || 0)), list = fresh.length ? fresh : pool.filter(p => (cat[p.n] || 0) === mn);   // once everything is found, repeats go to the one you have the fewest of
   return list[Math.floor(Math.random() * list.length)];
+}
+/* ---- star charts: hand-picked sets of real objects (a constellation, our neighbours, the stars that made history); each finished chart unlocks a trail */
+const CHARTS = [
+  { id: 'triangle', name: 'The Summer Triangle', d: 'Three bright stars of northern summer nights, each in a different constellation.', m: ['Vega', 'Altair', 'Deneb'] },
+  { id: 'crux', name: 'The Southern Cross', d: 'Crux and its two pointers, the guide to the south celestial pole.', m: ['Acrux', 'Mimosa', 'Gacrux', 'Hadar', 'Alpha Centauri A'] },
+  { id: 'orion', name: 'Orion', d: 'The hunter: a red supergiant shoulder, blue supergiant foot and the three belt stars.', m: ['Betelgeuse', 'Rigel', 'Bellatrix', 'Alnilam', 'Alnitak', 'Mintaka', 'Saiph', 'Meissa'] },
+  { id: 'hexagon', name: 'The Winter Hexagon', d: 'Seven of the brightest stars in the sky, strung across six constellations.', m: ['Sirius A', 'Procyon A', 'Pollux', 'Castor', 'Capella', 'Aldebaran', 'Rigel'] },
+  { id: 'hearth', name: 'The Sun’s neighbours', d: 'Everything here lies within 9 light-years of the Sun.', m: ['Alpha Centauri A', 'Alpha Centauri B', 'Proxima Centauri', 'Barnard’s Star', 'Luhman 16', 'WISE 0855−0714', 'Wolf 359', 'Lalande 21185', 'Sirius A', 'Sirius B'] },
+  { id: 'worlds', name: 'Suns with worlds', d: 'Stars whose planets changed the search: the first ever found, the first around a Sun-like star, the first imaged.', m: ['The Sun', 'PSR B1257+12', '51 Pegasi', 'HR 8799', 'Beta Pictoris', 'TRAPPIST-1', 'Proxima Centauri', 'Kepler-22'] },
+  { id: 'giant', name: 'The largest stars', d: 'Red supergiants and hypergiants over a thousand times the Sun’s radius.', m: ['UY Scuti', 'VY Canis Majoris', 'WOH G64', 'Mu Cephei', 'Betelgeuse', 'Antares'] },
+  { id: 'variable', name: 'Stars that change', d: 'Pulsating, eclipsing and breathing stars whose light rises and falls.', m: ['Mira', 'Delta Cephei', 'Polaris', 'Algol', 'R Doradus', 'Betelgeuse'] },
+  { id: 'dusk', name: 'Failed stars', d: 'The first brown dwarfs confirmed, the coldest known, and one with a planet in a photograph.', m: ['Teide 1', 'Gliese 229 B', 'Luhman 16', 'WISE 0855−0714', '2M1207'] },
+  { id: 'cinder', name: 'Embers of suns', d: 'White dwarfs: the first one found, the nearest, and one with a giant planet close in.', m: ['40 Eridani B', 'Sirius B', 'Procyon B', 'van Maanen’s Star', 'WD 1856+534'] },
+  { id: 'pulsar', name: 'Cosmic clocks', d: 'The first pulsar, the double pulsar, the binary that proved gravitational waves, and the fastest spinner.', m: ['PSR B1919+21', 'Crab Pulsar', 'Vela Pulsar', 'PSR B1913+16', 'PSR J0737−3039', 'PSR J1748−2446ad'] },
+  { id: 'horizon', name: 'Black holes that made history', d: 'The first quasar, the black hole at our centre, the first ever imaged, and the most distant known.', m: ['3C 273', 'Cygnus A', 'Sagittarius A*', 'Messier 87', 'TON 618', 'ULAS J1342+0928'] }
+];
+const chartHave = c => c.m.filter(n => P.sky.cat[n]).length, chartDone = id => { const c = CHARTS.find(x => x.id === id); return !!c && chartHave(c) === c.m.length; };
+const typeOfName = n => { for (const o of SKY.OBJ) if (SKY.POOL[o.id].some(q => q.n === n)) return o; return null; };
+function tonight(day = dayKey()) {   // one real object a night, the same for everyone: earn its type today and it is yours (quasars stay earned the hard way)
+  let h = 2166136261; for (const ch of 'tonight' + day) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); h >>>= 0;
+  const types = SKY.OBJ.filter(o => o.id !== 'quasar'), o = types[h % types.length], L = SKY.POOL[o.id], q = L[(h >>> 8) % L.length];
+  return { n: q.n, id: o.id, o };
+}
+const CHART_TRAIL = { triangle: ['#cfe0ff', '#ffffff', '#9ec0ff'], crux: ['#ffd28a', '#bcd6ff', '#6fa4ff'], orion: ['#ff7a3a', '#ffffff', '#6fa4ff'], hexagon: ['#ffffff', '#ffe2b4', '#f57a34'], hearth: ['#ffc83a', '#f0523a', '#d070a8'], worlds: ['#d8c8a8', '#7fd1c7', '#3a7bd5'], giant: ['#ffb070', '#e04a1a', '#8a1a00'], variable: ['#f57a34', '#ffc83a', '#f57a34'], dusk: ['#f6c4c4', '#d070a8', '#7a2a6a'], cinder: ['#ffffff', '#a9d0ff', '#4a6aa8'], pulsar: ['#e0f7ff', '#5fe0ff', '#e0f7ff'], horizon: ['#ffd08a', '#ff5a1f', '#8a1a00'] };
+function chartHtml(k, cls) {   // the find's place in a chart, and how it reached you
+  const L = chartLine(k.name), via = k.via === 'tonight' ? 'Tonight’s object: everyone could catch it today' : k.via === 'aim' ? 'Your telescope was aimed here' : '';
+  if (!L && !via) return ''; const tr = L && L.done ? (COS.trail.find(t => t.id === 'chart-' + L.c.id) || {}).name : '';
+  return `<div class="${cls}-chart">${via ? `<div class="chv">${esc(via)}</div>` : ''}${L ? `<div class="chl"><span>${L.done ? 'Chart complete' : 'Star chart'}</span><b>${esc(L.c.name)}</b><em>${L.h} of ${L.c.m.length}</em></div><div class="chd">${L.c.m.map(n => `<i class="${P.sky.cat[n] ? 'on' : ''} ${n === k.name ? 'cur' : ''}" title="${esc(n)}"></i>`).join('')}</div>${tr ? `<div class="chr">Unlocked the <b>${esc(tr)}</b> trail</div>` : ''}` : ''}</div>`;
+}
+function chartLine(name) {   // the chart this find moved forward, if any: the closest to completion
+  const cs = CHARTS.filter(c => c.m.includes(name)); if (!cs.length) return null;
+  const c = cs.sort((a, b) => (a.m.length - chartHave(a)) - (b.m.length - chartHave(b)))[0], h = chartHave(c);   // fewest missing first
+  return { c, h, done: h === c.m.length };
 }
 const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
@@ -785,6 +824,7 @@ function skyNearMiss(r, sk) {   // what small change would have earned the next 
 const SKY_HINT = ['Any solved puzzle', 'A near-par route', 'A par route', 'A par route with warm steps', 'Par with a burn chain', 'A par route, every click warmer', 'Par or better with no detours', 'A flawless par route, no search or rewind', 'A flawless par route in about a minute'];
 function skyNext() {   // one line that says what to chase next
   const cat = P.sky.cat, f = P.sky.found; let best = null;
+  { let bc = null; CHARTS.forEach(c => { const h = chartHave(c), left = c.m.length - h; if (h && left && left <= 2 && (!bc || left < bc.left)) bc = { c, left }; }); if (bc) { const miss = bc.c.m.filter(n => !cat[n]); return `${miss.join(' and ')} ${miss.length > 1 ? 'complete' : 'completes'} ${bc.c.name}`; } }
   SKY.OBJ.forEach((o, i) => { const n = SKY.POOL[o.id].length, have = SKY.POOL[o.id].filter(q => cat[q.n]).length, left = n - have; if (have && left && left <= 3 && (!best || left < best.left)) best = { left, o, i }; });
   if (best) return `${best.left} more ${best.o.name.toLowerCase()}${best.left > 1 ? 's' : ''} completes your ${best.o.name.toLowerCase()} collection`;
   const miss = SKY.OBJ.findIndex(o => !f[o.id]); if (miss >= 0) { const o = SKY.OBJ[miss]; return `You have not found a ${o.name.toLowerCase()} yet. ${SKY_HINT[miss]} can earn one`; }
@@ -821,7 +861,7 @@ function finish(won) {
     gain = won && !prev ? Math.round(gain / 2) : 0;   // half XP, once; no streak and no sky object for past days
   } else gain = Math.round(gain / 2);
   if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
+  G.result.sky = { via: pk.via || '', boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { via: pk.via || '', boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -1383,7 +1423,8 @@ const COS = {
     { id: 'lava', name: 'Lava', sw: 'linear-gradient(135deg,#fde047,#f97316,#b91c1c)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'lagoon', name: 'Lagoon', sw: 'linear-gradient(135deg,#a5f3fc,#0ea5e9,#1e3a8a)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'blossom', name: 'Blossom', sw: 'linear-gradient(135deg,#fbcfe8,#f472b6,#be185d)', need: { t: 'supporter' }, label: 'Supporter pack' },
-    { id: 'galaxy', name: 'Galaxy', sw: 'linear-gradient(135deg,#38bdf8,#6366f1,#c026d3)', need: { t: 'supporter' }, label: 'Supporter pack' }
+    { id: 'galaxy', name: 'Galaxy', sw: 'linear-gradient(135deg,#38bdf8,#6366f1,#c026d3)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    ...[['triangle', 'Summer night'], ['crux', 'Southern Cross'], ['orion', 'Orion'], ['hexagon', 'Winter hexagon'], ['hearth', 'Neighbours'], ['worlds', 'New worlds'], ['giant', 'Hypergiant'], ['variable', 'Cepheid'], ['dusk', 'Brown dwarf'], ['cinder', 'Ember of a sun'], ['pulsar', 'Pulsar'], ['horizon', 'Event horizon']].map(([c, name]) => ({ id: 'chart-' + c, name, sw: `linear-gradient(135deg,${CHART_TRAIL[c].join(',')})`, need: { t: 'chart', v: c }, label: 'Complete the chart: ' + CHARTS.find(x => x.id === c).name }))
   ],
   confetti: [
     { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#d63a1f,#16130f,#ee9a54)' },
@@ -1453,6 +1494,7 @@ const Buddy = (() => {
   return { set, hop, ok };
 })();
 const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'], prism: ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'], lava: ['#fde047', '#f97316', '#b91c1c'], lagoon: ['#a5f3fc', '#0ea5e9', '#1e3a8a'], blossom: ['#fbcfe8', '#f472b6', '#be185d'], galaxy: ['#38bdf8', '#6366f1', '#c026d3'] };
+Object.keys(CHART_TRAIL).forEach(c => { TRAILS['chart-' + c] = CHART_TRAIL[c]; });
 const CLASSIC_STOPS = ['rgb(42,79,138)', 'rgb(108,143,184)', 'rgb(216,200,168)', 'rgb(238,154,84)', 'rgb(214,58,31)'];
 const tempCss = sg => lerpStops(CLASSIC_STOPS, sg);
 const trailStops = id => TRAILS[id === undefined ? P.cos.trail : id] || CLASSIC_STOPS;
@@ -1463,7 +1505,7 @@ const dotCss = (sig, pos) => P.cos.trail === 'classic' ? tempCss(sig) : lerpStop
 const allCos = () => Object.entries(COS).flatMap(([cat, arr]) => arr.map(i => ({ ...i, cat })));
 function isUnlocked(i) {
   const n = i.need; if (!n) return true;
-  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'sky': return P.sky.best >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; case 'supporter': return !!P.supporter; default: return false; }
+  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'sky': return P.sky.best >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; case 'supporter': return !!P.supporter; case 'chart': return chartDone(n.v); default: return false; }
 }
 function checkCos() {
   const out = allCos().filter(i => isUnlocked(i) && !P.cosSeen.includes(i.cat + ':' + i.id));
