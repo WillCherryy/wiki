@@ -42,7 +42,7 @@
       const words = esc(q.n).split(' '), nm = words.length > 1 ? words.slice(0, -1).join(' ') + ' <span>' + words[words.length - 1] + '</span>' : `<span>${words[0]}</span>`;
       Q('#obInsp').style.setProperty('--c', o.c);
       Q('#obInsp').innerHTML = `<div class="ob-k">${esc(q.kind)} · ${RARITY[q.idx]}</div><h1>${nm}</h1><p>${esc(q.f)}</p>
-        <dl><div><dt>${q.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rad[0]}<small>${rad[1]}</small></dd></div><div><dt>Mass</dt><dd>${esc(SKY.massText(q.m))}</dd></div><div><dt>Temperature</dt><dd>${esc(q.t)}</dd></div>${rn ? `<div><dt>Earned</dt><dd>${rn.mode === 'daily' ? 'Daily ' + rn.num : rn.mode === 'pack' ? 'Pack' : 'Puzzle'} · ${rn.clicks} clicks</dd></div>` : ''}</dl>
+        <dl><div><dt>${q.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rad[0]}<small>${rad[1]}</small></dd></div><div><dt>Mass</dt><dd>${esc(SKY.massText(q.m))}</dd></div><div><dt>Temperature</dt><dd>${esc(q.t)}</dd></div>${SKY.NEAR[q.n] && SKY.NEAR[q.n][3] ? `<div><dt>Distance from the Sun</dt><dd>${sig(SKY.NEAR[q.n][3])} ly<small>its real place in the sky</small></dd></div>` : ''}${(SKY.PLANETS[q.n] || []).length ? `<div><dt>Planets</dt><dd>${SKY.PLANETS[q.n].length}<small>${SKY.PLANETS[q.n].map(p => p[0].replace(/ \(.*\)/, '')).slice(0, 4).join(', ')}${SKY.PLANETS[q.n].length > 4 ? '…' : ''}</small></dd></div>` : ''}${rn ? `<div><dt>Earned</dt><dd>${rn.mode === 'daily' ? 'Daily ' + rn.num : rn.mode === 'pack' ? 'Pack' : 'Puzzle'} · ${rn.clicks} clicks</dd></div>` : ''}</dl>
         ${N > 1 ? `<div class="ob-copy"><button data-d="-1" aria-label="Previous copy">←</button><span><b id="obCi">01</b> / ${String(N).padStart(2, '0')}</span><u><i id="obCt" style="width:${100 / N}%"></i></u><button data-d="1" aria-label="Next copy">→</button></div>` : ''}
         <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obCmp">Compare</button><button id="obIns">Inspect</button><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Wikipedia ↗</a></div>`;
       host.querySelectorAll('.ob-objs button').forEach(y => y.classList.toggle('cur', y.dataset.n === q.n));
@@ -98,6 +98,7 @@
     if (document.getElementById('cmp')) return; const own = skyList(), seen = new Set(); let list = [];
     own.forEach(b => { if (seen.has(b.n)) return; seen.add(b.n); list.push({ n: b.n, b, r: SKY.physR(b), kind: b.kind, c: SKY.OBJ[b.idx].c, id: b.id }); });
     REFS.forEach(x => list.push({ ...x, r: x.r })); if (!own.some(b => b.n === 'The Sun')) list.push({ n: 'The Sun', ref: 'sun', r: 1, kind: 'Our star, for scale', c: '#ffc83a', b: { n: 'The Sun', id: 'sun', t: '≈ 5,800 K', m: 1, idx: 3 } });
+    own.forEach(b => (SKY.PLANETS[b.n] || []).forEach(([pn, re, a, P, kind]) => { if (pn === 'Earth' || pn === 'Jupiter') return; list.push({ n: pn, ref: 'planet', kind: 'Planet of ' + b.n, pk: kind, r: re * .009158, c: '#cfe0ff' }); }));
     const full = list.slice(); if (pick && pick.length) list = list.filter(o => pick.includes(o.n)); if (!list.length) list = full;
     list.sort((a, b) => a.r - b.r); let allMode = mode === 'all' && list.length > 1;
     // lay them out edge to edge in solar radii, with a gap that scales with each object
@@ -113,14 +114,14 @@
       host.querySelector('#cmpN').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(list.length).padStart(2, '0'); };
     const niceKm = km => { const p = Math.pow(10, Math.floor(Math.log10(km))), m = km / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; };
     const frame = now => { if (!host.isConnected) return; idx += (tgt - idx) * .085; if (Math.abs(tgt - idx) < .0005) idx = tgt; const w = cv.width, h = cv.height, K = Math.max(1, w / 1400), i0 = Math.max(0, Math.min(list.length - 1, Math.floor(idx))), i1 = Math.min(list.length - 1, i0 + 1), f = idx - i0;
-      const fr = o => o.r * (o.id === 'quasar' ? 6 : o.id === 'neutron' ? 2.2 : 1), r0 = fr(list[i0]), r1 = fr(list[i1]), R = Math.exp(Math.log(r0) + (Math.log(r1) - Math.log(r0)) * f), cx = list[i0].x + (list[i1].x - list[i0].x) * f, s = h * .17 / R, mid = w * .6, cy = h * .5;   // pixels per solar radius
+      const fr = o => o.r * (o.id === 'quasar' ? 6 : o.id === 'neutron' ? 2.2 : o.pk === 'saturn' ? 2.3 : 1), r0 = fr(list[i0]), r1 = fr(list[i1]), R = Math.exp(Math.log(r0) + (Math.log(r1) - Math.log(r0)) * f), cx = list[i0].x + (list[i1].x - list[i0].x) * f, s = h * .17 / R, mid = w * .6, cy = h * .5;   // pixels per solar radius
       g.fillStyle = '#030208'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, 0, Math.round(w * h / 2600), 13);
-      if (allMode) { const t = (now - t0) / 1000, X0 = w * .34, X1 = w * .97, gapMin = 110 * K, mx = Math.max(...list.map(fr)); let S2 = Math.min(h * .36 / mx, (X1 - X0) / list.reduce((a, o) => a + 2.1 * fr(o), 0)), slots;   // every chosen object in one frame, at one true scale
-        for (let it = 0; it < 60; it++) { slots = list.map(o => Math.max(2.08 * fr(o) * S2, gapMin)); if (slots.reduce((a, b) => a + b, 0) <= X1 - X0) break; S2 *= .93; }
+      if (allMode) { const t = (now - t0) / 1000, X0 = w * .34, X1 = w * .97, gapMin = Math.min(110 * K, (w * .63) / list.length * .8), mx = Math.max(...list.map(fr)); let S2 = Math.min(h * .36 / mx, (X1 - X0) / list.reduce((a, o) => a + 2.1 * fr(o), 0)), slots;   // every chosen object in one frame, at one true scale
+        for (let it = 0; it < 60; it++) { slots = list.map(o => Math.max(2.08 * fr(o) * S2, gapMin)); if (slots.reduce((a, b) => a + b, 0) <= X1 - X0 || list.every(o => 2.08 * fr(o) * S2 < gapMin)) break; S2 *= .93; }
         let xx = X0 + (X1 - X0 - slots.reduce((a, b) => a + b, 0)) / 2;
         g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(X0 - 20 * K, cy); g.lineTo(w, cy); g.stroke();
         list.forEach((o, i) => { const rp = o.r * S2, ext = fr(o) * S2, px = xx + slots[i] / 2; xx += slots[i];
-          if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.85)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else g.drawImage(planetTex(o.ref, Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1)))))), px - rp, cy - rp, rp * 2, rp * 2); }
+          if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.85)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else g.drawImage(planetTex(o.ref, Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1)))))), px - rp, cy - rp, rp * 2, rp * 2); }
           else SKY.bodyAt(g, o.b, px, cy, rp, 1, K, t);
           const big = ext > 60 * K, up = !big && i % 2, ly = big ? cy + ext + 40 * K : up ? cy - Math.max(ext, 8 * K) - 46 * K - (i % 4 > 1 ? 34 * K : 0) : cy + Math.max(ext, 8 * K) + 40 * K + (i % 4 > 1 ? 34 * K : 0);
           g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = K; g.beginPath(); g.moveTo(px, cy + (ly < cy ? -1 : 1) * Math.max(rp + 3 * K, 6 * K)); g.lineTo(px, ly + (ly < cy ? 10 : -24) * K); g.stroke();
@@ -131,7 +132,7 @@
       g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(0, cy); g.lineTo(w, cy); g.stroke();
       const t = (now - t0) / 1000;
       list.forEach((o, i) => { const px = mid + (o.x - cx) * s, rp = o.r * s; if (px + rp * 3 < 0 || px - rp * 3 > w) return;
-        if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.8)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else { const S = Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1))))); g.drawImage(planetTex(o.ref, S), px - rp, cy - rp, rp * 2, rp * 2); } }
+        if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.8)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else { const S = Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1))))); g.drawImage(planetTex(o.ref, S), px - rp, cy - rp, rp * 2, rp * 2); } }
         else SKY.bodyAt(g, o.b, px, cy, rp, 1, K, t);
         const near = Math.abs(i - idx) < 3.5; if (near && (rp > 1 || Math.abs(i - idx) < .5)) { const a = Math.max(0, 1 - Math.abs(i - idx) / 3.5); g.save(); g.globalAlpha = a; g.fillStyle = '#ece8f6'; g.font = `italic 400 ${Math.round(18 * K)}px "EB Garamond", Georgia, serif`; g.textAlign = 'center'; const ly = cy + Math.max(rp, 4 * K) + 34 * K; if (ly < h - 60 * K) { g.fillText(o.n, px, ly); g.font = `300 ${Math.round(11 * K)}px "IBM Plex Mono", monospace`; g.fillStyle = 'rgba(200,195,225,.7)'; g.fillText(fmtRad(o.r)[0], px, ly + 18 * K); } g.restore(); } });
       // scale bar
