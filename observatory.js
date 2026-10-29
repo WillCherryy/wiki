@@ -35,7 +35,18 @@
     let sel = opt.focus || (L[0] && L[0].n), filter = new Set(), copyI = 1;
     const map = window.__map = uniMap(cv, L, { intro: !opt.focus, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: sel, focus: sel, newId: opt.newId, onPick: n => inspect(n) });
     const Q = s => host.querySelector(s);
+    const KINDS = { earth: 'Our home world', ocean: 'Possible ocean world', super: 'Super-Earth', desert: 'Hot rocky world', lava: 'Lava world: its dayside is molten rock', mercury: 'Airless rocky world', rock: 'Rocky world', venus: 'Rocky world under thick clouds', ice: 'Icy world', mars: 'Cold desert world', jupiter: 'Gas giant', saturn: 'Ringed gas giant', uranus: 'Ice giant, tipped on its side', neptune: 'Ice giant', gas: 'Gas giant', hot: 'Hot Jupiter', hotblue: 'Hot Jupiter where it rains glass' };
+    function inspectPlanet(n, pi) {
+      sel = n; const sz = fmtRad(pi.re * .009158), per = pi.P < 2 ? sig(pi.P * 24) + ' hours' : pi.P < 800 ? sig(pi.P) + ' days' : sig(pi.P / 365.25) + ' years', star = SKY.OBJ[(sfNamed(pi.host) || { idx: 3 }).idx];
+      Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="${esc(pi.host)}">${esc(pi.host)} system</button><i></i><button class="on">${esc(n)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else if (x.dataset.c === '') map.home(L[0].n); });
+      Q('#obInsp').style.setProperty('--c', '#bcd2ff'); const w = esc(n).split(' ');
+      Q('#obInsp').innerHTML = `<div class="ob-k">Planet · ${esc(KINDS[pi.kind] || 'Planet')}</div><h1>${w.length > 1 ? w.slice(0, -1).join(' ') + ' <span>' + w[w.length - 1] + '</span>' : '<span>' + w[0] + '</span>'}</h1>
+        <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${sig(pi.a)} AU<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div></dl>
+        <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obStar">Its star</button><button id="obCmp">Compare</button></div>`;
+      Q('#obGo').onclick = () => map.pick(n); Q('#obStar').onclick = () => map.pick(pi.host); Q('#obCmp').onclick = () => compare(n, [n, 'Earth', 'Jupiter'].filter((v, i, a) => a.indexOf(v) === i), 'all');
+    }
     function inspect(n) {
+      { const pi = SKY.planetInfo(n); if (pi) return inspectPlanet(n, pi); }
       sel = n; copyI = 1; const q = bodyOf(n); if (!q) return; const o = SKY.OBJ[q.idx], b = { ...q, id: q.id }, rad = fmtRad(SKY.physR(b)), me = L.find(x => x.n === q.n), N = me ? me.count || 1 : 1, rn = ((P.sky.runs || {})[q.n] || {}).first, parts = crumbParts(map.lay, q.n);
       Q('#obCrumbs').innerHTML = parts.map((c, i) => `${i ? '<i></i>' : ''}<button data-c="${c.n == null ? '' : esc(c.n)}" class="${i === parts.length - 1 ? 'on' : ''}">${esc(c.t)}</button>`).join('');
       Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else map.home(L[0].n); });
@@ -54,7 +65,8 @@
     let openT = '';
     const drawIndex = () => { const box = Q('#obIndex'); box.innerHTML = `<button data-t="" class="${openT ? '' : 'on'}"><i></i><span>Everything</span><em>${L.length}</em></button>` + types.map(t => { const on = openT === t.o.id, objs = on ? L.filter(b => b.id === t.o.id).sort((a, b) => SKY.physR(b) - SKY.physR(a)) : [];
         return `<button data-t="${t.o.id}" class="${on ? 'on' : ''}" style="--c:${t.o.c}"><i></i><span>${pluralType(t.o.name)}</span><em>${t.n}</em></button>${on ? `<div class="ob-objs">${objs.map(b => `<button data-n="${esc(b.n)}" class="${b.n === sel ? 'cur' : ''}"><span>${esc(b.n)}</span><em>${fmtRad(SKY.physR(b))[0]}</em></button>`).join('')}</div>` : ''}`; }).join('');
-      box.querySelectorAll('button[data-t]').forEach(x => x.onclick = () => { const t = x.dataset.t; openT = !t || openT === t ? '' : t; filter.clear(); if (openT) filter.add(openT); map.setFilter(filter); drawIndex(); });
+      { const pls = []; L.forEach(b => (SKY.PLANETS[b.n] || []).forEach(p => pls.push(p))); if (pls.length) { const on = openT === 'planet'; box.insertAdjacentHTML('beforeend', `<button data-t="planet" class="${on ? 'on' : ''}" style="--c:#bcd2ff"><i></i><span>Planets</span><em>${pls.length}</em></button>${on ? `<div class="ob-objs">${pls.map(p => `<button data-n="${esc(p[0])}" class="${p[0] === sel ? 'cur' : ''}"><span>${esc(p[0])}</span><em>${sig(p[1])} R⊕</em></button>`).join('')}</div>` : ''}`); } }
+      box.querySelectorAll('button[data-t]').forEach(x => x.onclick = () => { const t = x.dataset.t; openT = !t || openT === t ? '' : t; filter.clear(); if (openT && openT !== 'planet') filter.add(openT); map.setFilter(filter); drawIndex(); });
       box.querySelectorAll('button[data-n]').forEach(x => x.onclick = () => { map.pick(x.dataset.n); box.querySelectorAll('button[data-n]').forEach(y => y.classList.toggle('cur', y === x)); }); };
     drawIndex();
     // time
