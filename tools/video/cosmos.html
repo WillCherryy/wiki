@@ -13,7 +13,7 @@ html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
 /* "Cosmos": a cinematic introduction to Scorcher's universe. 16:9, letterboxed to 2.39:1. A pure function of time: render(t).
    Shots: a night sky with the Milky Way over mountains; Earth, pulling back through the Solar System (the game's own renderer); the Milky Way from outside;
    Betelgeuse; the Crab Pulsar; a dive into TON 618; a deep field of galaxies; the end card. The three painted scenes are baked once (bake()) and reused. */
-const W = 1920, H = 1080, BAR = Math.round((H - W / 2.39) / 2), cv = document.getElementById('c'), g = cv.getContext('2d');
+const V = new URLSearchParams(location.search).get('v') === '1', W = V ? 1080 : 1920, H = V ? 1920 : 1080, BAR = V ? 0 : Math.round((H - W / 2.39) / 2), cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), M = Math.min(W, H);   // ?v=1: the vertical 9:16 cut for Reels and Shorts
 const DUR = 88, SH = { sky: [1.5, 13.6], earth: [12.0, 28.2], mw: [26.6, 42.2], bet: [40.6, 49.6], crab: [48.0, 57.2], ton: [55.6, 71.2], deep: [69.6, 84.5], end: [77.6, 88] };
 const CAP = [
   [4.4, 8.9, 'For as long as we have been here,', 'it'], [9.3, 13.2, 'we have looked up.', 'it'],
@@ -65,10 +65,10 @@ function bakeGalaxy(S) {
   const arms = [[0, 1], [Math.PI, 1], [Math.PI * .5, .5], [Math.PI * 1.5, .5]], armTh = (ph, r) => ph + Math.log(r / r0) / b, cb = Math.cos(barA), sb = Math.sin(barA);
   const pick = () => { let u = rnd() * 3, i = 0; while (u > arms[i][1]) { u -= arms[i][1]; i++; } return arms[i]; };
   // the bulge and the bar: old, golden stars
-  for (let k = 0; k < 200000; k++) { const rr = Math.abs(gs()) * Rg * .075, a = rnd() * 6.2832, x = Math.cos(a) * rr * 1.25, y = Math.sin(a) * rr; put(c + x, c + y, 1, .76, .5, .11); }
+  for (let k = 0; k < 260000; k++) { const rr = Math.abs(gs()) * Rg * .1, a = rnd() * 6.2832, x = Math.cos(a) * rr * 1.25, y = Math.sin(a) * rr; put(c + x, c + y, 1, .76, .5, .11); }
   for (let k = 0; k < 160000; k++) { const u = (rnd() * 2 - 1) * Rg * .2, v = gs() * Rg * .035 * (1 - .6 * Math.abs(u) / (Rg * .2)), x = u * cb - v * sb, y = u * sb + v * cb; put(c + x, c + y, 1, .8, .56, .17); }
   // the thin disc between the arms
-  for (let k = 0; k < 1700000; k++) { const rr = -Math.log(1 - rnd() * .995) * Rg * .34 + Rg * .04, a = rnd() * 6.2832; if (rr > Rg * 1.25) continue; put(c + Math.cos(a) * rr, c + Math.sin(a) * rr, 1, .92, .82, .3); }
+  for (let k = 0; k < 1700000; k++) { const rr = -Math.log(1 - rnd() * .995) * Rg * .34, a = rnd() * 6.2832; if (rr > Rg * 1.25) continue; /* no hole in the middle: the disc runs right into the bulge */ put(c + Math.cos(a) * rr, c + Math.sin(a) * rr, 1, .92, .82, .3); }
   // the arms: a broad haze of young stars, broken into star clouds and clusters, with pink nebulae on their leading edges
   const armPt = (arm, t, sp, lead = 0) => { const rr = r0 + (Rg * 1.02 - r0) * t, th = armTh(arm[0], rr), off = gs() * Rg * sp + lead * Rg, nx = Math.cos(th - .32), ny = Math.sin(th - .32); return [c + Math.cos(th) * rr + nx * off, c + Math.sin(th) * rr + ny * off]; };
   for (let k = 0; k < 1300000; k++) { const arm = pick(), t = Math.pow(rnd(), .8) * 1.14, fade = t > .88 ? Math.exp(-(t - .88) * 9) : 1, [X, Y] = armPt(arm, t, (.024 + .04 * t) * (arm[1] < 1 ? 1.2 : 1)); if (rnd() > ss((fbm(X / S * 12, Y / S * 12, 4) - .3) / .34)) continue; const hot = rnd() < .3; put(X, Y, hot ? .62 : 1, hot ? .78 : .9, hot ? 1 : .8, (hot ? 1 : .6) * fade * Math.exp(-t * 1.0) * (arm[1] < 1 ? .7 : 1)); }   // the arms taper away at their outer ends
@@ -83,8 +83,9 @@ function bakeGalaxy(S) {
   glowMix(R, S, S, [.7, .5, .45, .4]); glowMix(G, S, S, [.7, .5, .45, .4]); glowMix(B, S, S, [.7, .5, .45, .4]);
   for (let i = 0; i < N; i++) { const d = Db[i]; R[i] *= Math.exp(-d * .8); G[i] *= Math.exp(-d * 1.0); B[i] *= Math.exp(-d * 1.3); }
   const lum = []; for (let i = 0; i < N; i += 97) lum.push(R[i] + G[i] + B[i]); lum.sort((a, b2) => a - b2); const p = lum[Math.floor(lum.length * .996)] / 3 || 1;
-  const out = develop(R, G, B, S, S, 1.6 / p), ox = out.getContext('2d'), cr = S * .06, gr = ox.createRadialGradient(c, c, 0, c, c, cr);   // a smooth, unclipped nucleus
-  gr.addColorStop(0, 'rgba(255,246,228,1)'); gr.addColorStop(.35, 'rgba(250,236,212,.85)'); gr.addColorStop(.7, 'rgba(240,226,204,.35)'); gr.addColorStop(1, 'rgba(240,226,204,0)'); ox.fillStyle = gr; ox.beginPath(); ox.arc(c, c, cr, 0, 6.2832); ox.fill();
+  const out = develop(R, G, B, S, S, 1.6 / p), ox = out.getContext('2d'), cr = S * .11, gr = ox.createRadialGradient(c, c, 0, c, c, cr);   // a smooth, unclipped nucleus
+  gr.addColorStop(0, 'rgba(255,246,230,.75)'); gr.addColorStop(.12, 'rgba(255,238,212,.42)'); gr.addColorStop(.35, 'rgba(250,228,196,.14)'); gr.addColorStop(.7, 'rgba(245,222,190,.04)'); gr.addColorStop(1, 'rgba(245,222,190,0)'); ox.globalCompositeOperation = 'screen'; ox.fillStyle = gr; ox.beginPath(); ox.arc(c, c, cr, 0, 6.2832); ox.fill();
+  ox.globalCompositeOperation = 'destination-in'; const fm = ox.createRadialGradient(c, c, Rg * .95, c, c, S * .5); fm.addColorStop(0, 'rgba(0,0,0,1)'); fm.addColorStop(1, 'rgba(0,0,0,0)'); ox.fillStyle = fm; ox.fillRect(0, 0, S, S);   /* no square edge */
   return out;
 }
 
@@ -144,34 +145,39 @@ let T = {};
 function locate() {   // where everything is, measured once: a planet's offset from its star is re-measured close up so it is exact
   const [sun, bet, crab, ton] = probe(['The Sun', 'Betelgeuse', 'Crab Pulsar', 'TON 618']); let e = probe(['Earth'])[0];
   for (const zz of [1e6, 1e9, 1e11]) { const p = find(uni({ x: e.ax, y: e.ay, ox: e.lx, oy: e.ly, z: zz }, 40), 'Earth'); if (p) e = { ...e, lx: p.lx, ly: p.ly }; }
-  const zf = n => { const b = lay.bodies[lay.idxOf[n]]; return H * .17 / (SKY.physR(b) * SKY.RSU); };
-  window.__T = T = { sun, earth: e, bet, crab, ton, zE: H * .2 / (1 * .009158 * SKY.RSU), zBet: zf('Betelgeuse'), zCrab: zf('Crab Pulsar'), zTon: zf('TON 618') };
+  const zf = n => { const b = lay.bodies[lay.idxOf[n]]; return M * .17 / (SKY.physR(b) * SKY.RSU); };
+  window.__T = T = { sun, earth: e, bet, crab, ton, zE: M * .2 / (1 * .009158 * SKY.RSU), zBet: zf('Betelgeuse'), zCrab: zf('Crab Pulsar'), zTon: zf('TON 618') };
 }
 
 /* ---------------------------------------------------------------- shots */
-let SKYC = null, RIDGE = null, GAL = null, DEEP = null;
+let SKYC = null, RIDGE = null, GAL = null, DEEP = null, GALB = null;
+const blurOf = (img, n, r) => { const c = mk(n, n), x = c.getContext('2d'); x.filter = `blur(${r}px)`; x.drawImage(img, 0, 0, n, n); return c; };
 function shotSky(t, a) {   // the sky turns slowly about the pole, above the fixed ridge; the camera drifts upward and in
   const u = (t - SH.sky[0]) / (SH.sky[1] - SH.sky[0]); g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   const z = 1.0 + .07 * io(u), ty = lerp(-60, 30, io(u));
-  g.save(); g.translate(W / 2, H / 2 + ty); g.scale(z, z); g.rotate(-.022 * u); g.drawImage(SKYC, -W * .66, -H * .62, W * 1.32, H * 1.2); g.restore();
-  g.save(); g.translate(W / 2, H / 2 + ty * 1.25); g.scale(z * 1.01, z * 1.01); g.drawImage(RIDGE, -W * .66, -H * .6, W * 1.32, H * 1.2); g.restore();
+  g.save(); g.translate(W / 2, H / 2 + ty); g.scale(z, z); g.rotate(-.022 * u); const k = Math.max(W * 1.32 / SKYC.width, H * 1.2 / SKYC.height), sw = SKYC.width * k, sh = SKYC.height * k, sx = V ? -sw * .42 : -sw / 2; g.drawImage(SKYC, sx, -sh / 2 - H * .02, sw, sh); g.restore();
+  g.save(); g.translate(W / 2, H / 2 + ty * 1.25); g.scale(z * 1.01, z * 1.01); { const k = Math.max(W * 1.32 / RIDGE.width, H * 1.2 / RIDGE.height), sw = RIDGE.width * k, sh = RIDGE.height * k; g.drawImage(RIDGE, V ? -sw * .42 : -sw / 2, -sh / 2, sw, sh); } g.restore();
   g.restore();
 }
 function shotEarth(t, a) {   // from Earth to the edge of the Kuiper belt in one breath: the camera stays on Earth, then settles on the Sun
-  const u = clamp((t - SH.earth[0]) / (SH.earth[1] - SH.earth[0])), z0 = T.zE * 1.25, zM = 3.2e7, z1 = 1.9e6, L0 = Math.log(z0);   // linger on Earth, cross the empty millions of kilometres quickly, then settle over the Sun's family
+  const u = clamp((t - SH.earth[0]) / (SH.earth[1] - SH.earth[0])), z0 = T.zE * 1.25, zM = 3.2e7 * M / 1080, z1 = 1.9e6 * M / 1080, L0 = Math.log(z0);   // linger on Earth, cross the empty millions of kilometres quickly, then settle over the Sun's family
   const lz = u < .36 ? L0 - .7 * ss(u / .36) : u < .56 ? lerp(L0 - .7, Math.log(zM), io((u - .36) / .2)) : lerp(Math.log(zM), Math.log(z1), 1 - Math.pow(1 - (u - .56) / .44, 2.2)), z = Math.exp(lz);
   const AU = Math.hypot(T.earth.lx, T.earth.ly), zA = 280 / AU, s = ss((Math.log(z) - Math.log(zA)) / Math.log(40));   // 1 while Earth fills the frame, 0 once the Sun's family is in view
   uni({ x: T.sun.wx, y: T.sun.wy, ox: T.earth.lx * s, oy: T.earth.ly * s, z }, 40, { pt: 0 });
   g.save(); g.globalAlpha = a; g.drawImage(eng, 0, 0); g.restore();
 }
 function shotMW(t, a) {   // the galaxy, seen almost edge-on and close, turning towards us as the camera pulls away
-  const u = clamp((t - SH.mw[0]) / (SH.mw[1] - SH.mw[0])), e = io(u), ci = lerp(.13, .6, e), sc = lerp(2.05, .98, Math.pow(e, .8)), rot = -.5 + .16 * u, D = W * sc, cx = W / 2, cy = H * lerp(.5, .5, e);
-  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); SKY.starBg(g, W, H, 2600, 31, null); g.globalAlpha = a;
-  g.translate(cx, cy); g.scale(1, ci); g.rotate(rot); g.globalCompositeOperation = 'lighter'; g.drawImage(GAL, -D / 2, -D / 2, D, D); g.restore();
+  const u = clamp((t - SH.mw[0]) / (SH.mw[1] - SH.mw[0])), e = io(u), ci = lerp(.13, .6, e), sc = lerp(2.05, .98, Math.pow(e, .8)), rot = -.5 + .16 * u, D = (V ? H * .62 : W) * sc, cx = W / 2, cy = H * lerp(.5, .5, e), VR = V ? -1.08 * (1 - .55 * e) : 0, turn = () => { if (VR) { g.translate(cx, cy); g.rotate(VR); g.translate(-cx, -cy); } };   /* vertical: the disc lies on a diagonal to fill the tall frame */
+  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); SKY.starBg(g, W, H, 2600, 31, null); g.globalAlpha = a; turn();
+  g.globalCompositeOperation = 'lighter'; const thick = D * .0055 * Math.sqrt(1 - ci * ci) * (1 - .85 * ss((ci - .18) / .3)), LAY = [-2, -1.5, -1, -.5, 0, .5, 1, 1.5, 2], LW = [.03, .07, .12, .17, .22, .17, .12, .07, .03];
+  if (GALB) { g.save(); g.globalAlpha = a * .5 * Math.pow(clamp((.5 - ci) / .37), 1.5); g.translate(cx, cy); g.scale(1, ci + .075); g.rotate(rot); g.drawImage(GALB, -D * .52, -D * .52, D * 1.04, D * 1.04); g.restore(); }   /* the thick disc and halo: a soft glow above and below the plane */   // the disc has depth: seen side-on its stars spread above and below the plane
+  LAY.forEach((o, k) => { g.save(); g.globalAlpha = a * LW[k]; g.translate(cx, cy + o * thick); g.scale(1, ci); g.rotate(rot); g.drawImage(GAL, -D / 2, -D / 2, D, D); g.restore(); }); g.restore();
+  const lane = clamp((.4 - ci) / .27); if (lane > 0) { g.save(); turn(); g.globalAlpha = a * lane * .8; g.globalCompositeOperation = 'multiply'; const lw = thick * 2.2 + 5, lg = g.createLinearGradient(0, cy - lw, 0, cy + lw); lg.addColorStop(0, 'rgb(255,255,255)'); lg.addColorStop(.38, 'rgb(150,128,112)'); lg.addColorStop(.52, 'rgb(70,52,44)'); lg.addColorStop(.66, 'rgb(150,128,112)'); lg.addColorStop(1, 'rgb(255,255,255)');   // the dust lane along the midplane
+    g.fillStyle = lg; g.beginPath(); g.ellipse(cx, cy + thick * .15, D * .47, lw, 0, 0, 6.283); g.fill(); g.restore(); }
   // the bulge stays round however the disc is tilted
-  g.save(); g.globalAlpha = a * Math.pow(clamp((.45 - ci) / .32), 2) * .55; g.globalCompositeOperation = 'lighter'; const br = D * .07, gr = g.createRadialGradient(cx, cy, 0, cx, cy, br); gr.addColorStop(0, 'rgba(255,214,160,.85)'); gr.addColorStop(.4, 'rgba(255,190,130,.25)'); gr.addColorStop(1, 'rgba(255,170,110,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, br, br * .8, 0, 0, 6.283); g.fill(); g.restore();
+  g.save(); turn(); g.globalAlpha = a * Math.pow(clamp((.45 - ci) / .32), 2) * .55; g.globalCompositeOperation = 'lighter'; const br = D * .1, gr = g.createRadialGradient(cx, cy, 0, cx, cy, br); gr.addColorStop(0, 'rgba(255,226,180,.7)'); gr.addColorStop(.15, 'rgba(255,206,150,.3)'); gr.addColorStop(.45, 'rgba(255,190,130,.08)'); gr.addColorStop(1, 'rgba(255,170,110,0)'); g.fillStyle = gr; g.save(); g.translate(cx, cy); g.scale(1, .62); g.translate(-cx, -cy); g.beginPath(); g.arc(cx, cy, br, 0, 6.283); g.fill(); g.restore(); g.restore(); /* the bulge: a soft light with no edge */
   // you are here: about 26,000 light-years from the centre, between two arms
-  const ya = ramp(t, 34.2, 41.2, 1.4, 1.2) * a; if (ya > 0) { const rs = .44 * .52 * D, th = 2.35, px = Math.cos(th) * rs, py = Math.sin(th) * rs, X = cx + px * Math.cos(rot) - py * Math.sin(rot), Y = cy + (px * Math.sin(rot) + py * Math.cos(rot)) * ci;
+  const ya = ramp(t, 34.2, 41.2, 1.4, 1.2) * a; if (ya > 0) { const rs = .44 * .52 * D, th = 2.35, px = Math.cos(th) * rs, py = Math.sin(th) * rs, X0 = px * Math.cos(rot) - py * Math.sin(rot), Y0 = (px * Math.sin(rot) + py * Math.cos(rot)) * ci, X = cx + X0 * Math.cos(VR) - Y0 * Math.sin(VR), Y = cy + X0 * Math.sin(VR) + Y0 * Math.cos(VR);
     g.save(); g.globalAlpha = ya; g.strokeStyle = 'rgba(236,230,218,.75)'; g.lineWidth = 1; g.beginPath(); g.arc(X, Y, 7 + 3 * Math.sin((t - 34) * 2), 0, 6.283); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(X, Y, 1.6, 0, 6.283); g.fill();
     g.beginPath(); g.moveTo(X + 10, Y - 10); g.lineTo(X + 54, Y - 54); g.lineTo(X + 92, Y - 54); g.stroke(); g.font = 'italic 400 21px EB'; g.fillStyle = 'rgba(236,230,218,.9)'; g.textAlign = 'left'; g.fillText('You are here', X + 100, Y - 48); g.restore(); }
 }
@@ -181,13 +187,13 @@ function shotStar(t, a, which) {   // Betelgeuse turning slowly; the Crab Pulsar
   g.save(); g.globalAlpha = a; g.drawImage(eng, 0, 0); g.restore();
 }
 function shotTon(t, a) {   // TON 618's host galaxy, then a dissolve straight into its heart and a long push towards the black hole
-  const t0 = SH.ton[0], tm = 60.4, t1 = SH.ton[1], aA = 1 - ss((t - tm + 1.1) / 1.1), aB = ss((t - tm) / 1.5);   // one view at a time: the engine's cloud detail must not be shared between two zooms in one frame
-  if (aA > 0) { const z = Math.exp(lerp(Math.log(.145), Math.log(.26), io((t - t0) / (tm + 1.6 - t0)))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aA; g.drawImage(eng, 0, 0); g.restore(); }
+  const t0 = SH.ton[0], tm = 60.4, zs = M / 1080, t1 = SH.ton[1], aA = 1 - ss((t - tm + 1.1) / 1.1), aB = ss((t - tm) / 1.5);   // one view at a time: the engine's cloud detail must not be shared between two zooms in one frame
+  if (aA > 0) { const z = zs * Math.exp(lerp(Math.log(.145), Math.log(.26), io((t - t0) / (tm + 1.6 - t0)))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aA; g.drawImage(eng, 0, 0); g.restore(); }
   if (aB > 0) { const u = clamp((t - tm) / (t1 - tm)), z = Math.exp(lerp(Math.log(T.zTon * .055), Math.log(T.zTon * .21), 1 - Math.pow(1 - u, 2.4))); uni({ x: T.ton.wx, y: T.ton.wy, z }, 40 + t * .25); g.save(); g.globalAlpha = a * aB; g.drawImage(eng, 0, 0); g.restore(); }
 }
 function shotDeep(t, a) {
   const u = clamp((t - SH.deep[0]) / (SH.deep[1] - SH.deep[0])), z = lerp(1.32, 1.0, io(u));
-  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.translate(W / 2, H / 2); g.scale(z, z); g.drawImage(DEEP, -W * .55, -H * .55, W * 1.1, H * 1.1); g.restore();
+  g.save(); g.globalAlpha = a; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.translate(W / 2, H / 2); g.scale(z, z); const k = Math.max(W * 1.1 / DEEP.width, H * 1.1 / DEEP.height); g.drawImage(DEEP, -DEEP.width * k / 2, -DEEP.height * k / 2, DEEP.width * k, DEEP.height * k); g.restore();
 }
 const LOGOW = new Image(); LOGOW.src = window.LOGO.word;
 function endCard(t) {   // the mark arrives one dot at a time, then the name, the line and the address
@@ -200,10 +206,10 @@ function endCard(t) {   // the mark arrives one dot at a time, then the name, th
 }
 
 /* ---------------------------------------------------------------- finishing: bloom, grade, vignette, grain, letterbox, type */
-const bc = mk(480, 270), bx = bc.getContext('2d'), VIG = (() => { const c = mk(W, H), x = c.getContext('2d'), gr = x.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.62)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); return c; })();
+const bc = mk(W / 4, H / 4), bx = bc.getContext('2d'), VIG = (() => { const c = mk(W, H), x = c.getContext('2d'), gr = x.createRadialGradient(W / 2, H / 2, M * .32, W / 2, H / 2, Math.hypot(W, H) * .52); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.62)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); return c; })();
 const GRAIN = (() => { const c = mk(512, 512), x = c.getContext('2d'), im = x.createImageData(512, 512), r = mul(5); for (let i = 0; i < im.data.length; i += 4) { const v = 128 + (r() + r() + r() - 1.5) * 90; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); return c; })();
 function finish(t) {
-  bx.filter = 'blur(5px)'; bx.clearRect(0, 0, 480, 270); bx.drawImage(cv, 0, 0, 480, 270); bx.filter = 'none';
+  bx.filter = 'blur(5px)'; bx.clearRect(0, 0, W / 4, H / 4); bx.drawImage(cv, 0, 0, W / 4, H / 4); bx.filter = 'none';
   g.save(); g.globalCompositeOperation = 'screen'; g.globalAlpha = .42; g.drawImage(bc, 0, 0, W, H); g.restore();
   g.drawImage(VIG, 0, 0);
   g.save(); g.globalCompositeOperation = 'overlay'; g.globalAlpha = .07; const gx = Math.floor((t * 977) % 512), gy = Math.floor((t * 613) % 512); for (let x = -gx; x < W; x += 512) for (let y = -gy; y < H; y += 512) g.drawImage(GRAIN, x, y); g.restore();
@@ -212,8 +218,11 @@ function finish(t) {
 }
 function captions(t) {
   CAP.forEach(([a, b, text, kind]) => { const k = ramp(t, a, b, 1.5, 1.2); if (k <= 0) return; g.save(); g.textAlign = 'center';
-    if (kind === 'cap') { g.globalAlpha = k * .8; g.fillStyle = '#c9c3da'; g.font = '300 15px Jost'; g.letterSpacing = lerp(13, 8, ss((t - a) / 2.4)) + 'px'; g.fillText(text.toUpperCase(), W / 2 + 4, H - BAR - 118); }
-    else { g.globalAlpha = k; g.fillStyle = 'rgba(238,232,220,.94)'; g.font = 'italic 400 42px EB'; g.letterSpacing = '.3px'; g.fillText(text, W / 2, H - BAR - 64 + (1 - ss((t - a) / 1.8)) * 6); }
+    const base = V ? H * .8 : H - BAR - 64;
+    if (kind === 'cap') { g.globalAlpha = k * .8; g.fillStyle = '#c9c3da'; g.font = `300 ${V ? 18 : 15}px Jost`; g.letterSpacing = lerp(13, 8, ss((t - a) / 2.4)) + 'px'; g.fillText(text.toUpperCase(), W / 2 + 4, base - (V ? 74 : 54)); }
+    else { g.globalAlpha = k; g.fillStyle = 'rgba(238,232,220,.94)'; g.font = `italic 400 ${V ? 46 : 42}px EB`; g.letterSpacing = '.3px'; const y = base + (1 - ss((t - a) / 1.8)) * 6, words = text.split(' '), lines = [''];
+      words.forEach(w2 => { const tr = lines[lines.length - 1] ? lines[lines.length - 1] + ' ' + w2 : w2; if (g.measureText(tr).width > W * .84 && lines[lines.length - 1]) lines.push(w2); else lines[lines.length - 1] = tr; });
+      lines.forEach((ln, i) => g.fillText(ln, W / 2, y + (i - (lines.length - 1)) * (V ? 56 : 50))); }
     g.restore(); });
 }
 
@@ -239,6 +248,7 @@ const load = src => new Promise(r => { const i = new Image(); i.onload = () => r
   const q = new URLSearchParams(location.search);
   if (q.get('baked')) { const d = q.get('baked'); [SKYC, RIDGE, DEEP, GAL] = await Promise.all(['sky', 'ridge', 'deep', 'gal'].map(n => load(d + '/' + n + '.png'))); }
   else if (!q.get('nobake')) { await window.bake(); }
+  if (GAL) GALB = blurOf(GAL, 720, 9);
   window.__ready = true;
 })();
 </script></body></html>
