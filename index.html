@@ -589,7 +589,7 @@ async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image
   const inner = g.createRadialGradient(W / 2, 330, 40, W / 2, 330, 900); inner.addColorStop(0, o.c + '55'); inner.addColorStop(.55, '#0d0b1c'); inner.addColorStop(1, '#090813'); g.fillStyle = inner; rr(54, 54, W - 108, H - 108, 50); g.fill();
   g.save(); rr(54, 54, W - 108, H - 108, 50); g.clip(); SKY.starfield(g, W, H, 3, 260, 5); g.restore();
   // the object on its own sky, clipped to the art window
-  { const t = document.createElement('canvas'); t.width = W; t.height = 700; const tg = t.getContext('2d'); SKY.drawV(tg, k.id, W / 2, 400, (SKY.FR[k.id] || .2) * 1100 * .62 * (q && q.s ? Math.min(1.1, q.s) : 1), 2.4, q);
+  { const t = document.createElement('canvas'); t.width = W; t.height = 700; const tg = t.getContext('2d'); const b = { ...q, id: k.id }; await SKY.portraitReady(b, W, 800); SKY.portrait(tg, W, 800, b, 2.4, 1, { cy: 400 });
     tg.globalCompositeOperation = 'destination-in'; const m = tg.createRadialGradient(W / 2, 400, 120, W / 2, 400, 470); m.addColorStop(0, '#000'); m.addColorStop(.7, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)'); tg.fillStyle = m; tg.fillRect(0, 0, W, 700); g.drawImage(t, 0, 56); }
   const fd = g.createLinearGradient(0, 690, 0, 740); fd.addColorStop(0, 'rgba(11,10,24,0)'); fd.addColorStop(1, 'rgba(11,10,24,.0)');
   // header
@@ -638,13 +638,13 @@ function mountDiscovery(root, k) {   // idle animation on the homepage card, onl
 }
 function drawSkyCell(cv, id, t, k = 1, q) {
   const g = cv.getContext('2d'), w = cv.width, h = cv.height; g.clearRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5500), 3);
-  if (id) SKY.drawV(g, id, w / 2, h * .52, (SKY.FR[id] || .2) * h * (.2 + .8 * k) * .85, t, q); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
+  if (id) SKY.portrait(g, w, h, { ...(q || SKY.POOL[id][0]), id }, t, k); else { g.fillStyle = 'rgba(180,170,220,.14)'; g.beginPath(); g.arc(w / 2, h / 2, h * .09, 0, 7); g.fill(); }
   SKY.fade(g, w, h);
 }
 function mountSky(id, idx, name) {   // the landing animation on the results card, then it idles
   const cv = $('#skyCv'); if (!cv) return; const q = SKY.POOL[id].find(p => p.n === name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   tiltCard(cv.closest('.disc')); bindDiscShare(cv.closest('.disc'), G.result && G.result.sky);
-  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; SKY.land(cv.getContext('2d'), cv.width, cv.height, id, idx, calm ? 3 : t, q); requestAnimationFrame(f); })(t0);
+  (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; drawSkyCell(cv, id, t, calm ? 1 : t / 1.6, q); requestAnimationFrame(f); })(t0);   // it arrives out of the dark, then idles: the same likeness as in the catalogue and the universe
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
 function skyList() {   // every named object you own, hottest first
@@ -738,7 +738,7 @@ function openInspect(name, back) {   // a close look: the object large on its ow
   document.body.appendChild(host); const cv = $('#inCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
   const g = cv.getContext('2d'), rec = SKY.POOL[q.id].find(p => p.n === name), t0 = performance.now(); let zoom = 1, px = 0, py = 0, dead = false, spin = 0, tilt = 0, roll = -.3, inc = 1, t00 = 0; const sphere = !!({ brown: 1, reddwarf: 1, redgiant: 1, sun: 1, bluewhite: 1, bluegiant: 1 })[q.id], disc = q.id === 'quasar' || q.id === 'neutron', turn = sphere || disc; const ptr = new Map(); let pd = 0, last = 0;
   const frame = now => { if (dead) return; const w = cv.width, h = cv.height, t = (now - t0) / 1000; g.clearRect(0, 0, w, h); g.fillStyle = '#07060f'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, t, Math.round(w * h / 5000), 3);
-    const r = (SKY.FR[q.id] || .2) * Math.min(w, h) * 1.05 * zoom; SKY.view = turn ? (sphere ? { spin: spin + t * .01, tilt } : { roll, inc }) : null; SKY.drawV(g, q.id, w / 2 + px * dpr, h * .4 + py * dpr, r, t + 1.5, rec); SKY.view = null; requestAnimationFrame(frame); };
+    const r = (SKY.FR[q.id] || .2) * Math.min(w, h) * 1.05 * zoom; SKY.portrait(g, w, h, { ...rec, id: q.id }, t + 1.5, 1, { cx: w / 2 + px * dpr, cy: h * .4 + py * dpr, z: zoom * 1.2 }); requestAnimationFrame(frame); };
   requestAnimationFrame(frame);
   const clampZ = z => Math.max(.4, Math.min(14, z));
   cv.onpointerdown = e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { cv.setPointerCapture(e.pointerId); } catch {} if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pd = Math.hypot(a.x - b.x, a.y - b.y); } const n = performance.now(); if (ptr.size === 1 && n - last < 300) { zoom = 1; px = py = 0; tilt = 0; roll = -.3; inc = 1; } last = n; };
@@ -1671,7 +1671,8 @@ async function shareCardCanvas(r) {
   const ref = r.par || r.goal;
   x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
   x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}${r.purist ? ' · purist' : ''}` : 'Gave up on this one', M, y);
-  if (r.sky) { const o = SKY.byId(r.sky.id), cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.draw(x, o.id, 98, 100, (SKY.FR[o.id] || .2) * 196 * .95, 1.4); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
+  if (r.sky) await SKY.portraitReady({ ...(SKY.POOL[r.sky.id].find(p => p.n === r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, 245, 245);
+  if (r.sky) { const o = SKY.byId(r.sky.id), sb = { ...(SKY.POOL[r.sky.id].find(p => p.n === r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.portrait(x, 196, 196, sb, 1.4, 1, { z: 1.25 }); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
     x.font = `italic 400 34px ${DISP}`; x.fillStyle = o.c === '#cfe2ff' || o.c === '#e6f1ff' ? '#6a86b8' : o.c; x.textAlign = 'left'; x.fillText(r.sky.name || o.name, M, y + 44); caps((r.sky.temp || o.temp), M, y + 82, 20, MUTE, 'left', 3); }
   // the route, drawn as a temperature curve
   let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));

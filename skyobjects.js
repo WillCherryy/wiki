@@ -1146,5 +1146,15 @@
     mgx.strokeStyle = '#fff'; mgx.lineWidth = 1.5 * K; mgx.strokeRect(mx + (cam.x + OX - w / 2 / Z) * k, my + (cam.y + OY - h / 2 / Z) * k, w / Z * k, h / Z * k); mgx.restore(); }
     return pos;
   }
-  window.SKY = { starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  // one object's likeness, the same everywhere it appears (discovery card, home card, profile, share images, catalogue, universe): the body as the universe renderer draws it, framed for a card
+  const PFR = { quasar: .035, neutron: .09 };
+  function portrait(g, w, h, b, t, k = 1, o = {}) {
+    const s = Math.min(w, h), e = k >= 1 ? 1 : 1 - Math.pow(1 - Math.max(0, k), 3), rp = (PFR[b.id] || .26) * s * (o.z || 1) * (.3 + .7 * e), K = s / 185;
+    g.save(); g.globalAlpha = Math.min(1, .1 + e); bodyAt(g, b, o.cx != null ? o.cx : w / 2, o.cy != null ? o.cy : h * .5, rp, 1, K, t); g.restore();
+  }
+  function portraitReady(b, w, h, ms = 2500) {   // a share image is drawn once: wait until the sharp surface for that size has arrived from the worker
+    const rp = (PFR[b.id] || .26) * Math.min(w, h), t0 = performance.now();
+    return new Promise(res => { (function poll() { const c = surfKind(b.id) && b.id !== 'neutron' ? surfFor(b, rp) : true; if ((c && !SWbusy && !SWQ.length) || performance.now() - t0 > ms) return res(); setTimeout(poll, 60); })(); });
+  }
+  window.SKY = { portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();
