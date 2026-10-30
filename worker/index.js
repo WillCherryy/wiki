@@ -171,8 +171,18 @@ async function pathTree(env, day) {
   for (const x of nodes.values()) { const pk = x.p.slice(0, -1).join('\u0001'); (kids.get(pk) || kids.set(pk, []).get(pk)).push(x); }
   const keep = []; for (const list of kids.values()) keep.push(...list.sort((a, b) => b.n - a.n).slice(0, 4));
   const clicks = rows.map(e => e.clicks), best = rows.length ? Math.min(...clicks) : 0;
-  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best, bestCount: clicks.filter(c => c === best).length, nodes: keep };
+  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best, bestCount: clicks.filter(c => c === best).length, nodes: keep, ...crowdStories(rows, nodes) };
 }
+// the crowd's stories: the most travelled whole routes, and the strangest route that still finished (the rarest turns, scored by surprise)
+function crowdStories(rows, nodes) {
+  const K = p => p.join('\u0001'), full = new Map();
+  for (const e of rows) { const k = K(e.path), x = full.get(k) || { p: e.path, n: 0, c: e.clicks }; x.n++; full.set(k, x); }
+  const routes = [...full.values()].sort((a, b) => b.n - a.n || a.c - b.c).slice(0, 3).map(x => ({ p: x.p, n: x.n, c: x.c }));
+  let odd = null, best = 0;
+  for (const x of full.values()) { let s = 0; for (let i = 1; i < x.p.length; i++) { const a = nodes.get(K(x.p.slice(0, i))), b = nodes.get(K(x.p.slice(0, i + 1))); if (a && b) s += Math.log(a.n / b.n); } if (x.n === 1 && s > best) { best = s; odd = { p: x.p, c: x.c, surprise: Math.round(s * 100) / 100 }; } }
+  return { routes, odd: rows.length >= 5 ? odd : null };
+}
+
 
 // ---- payments: signed webhooks from the payment provider record a purchase against the buyer's anonymous player ID
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');

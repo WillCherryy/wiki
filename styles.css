@@ -1605,3 +1605,5 @@ body.finding .finder-x { display: block; }
 #obSnd[aria-pressed="false"] { color: #5f5a78 !important; text-decoration: line-through; }
 
 .res-map { margin-top: 8px; }
+
+.rstory { margin: 6px 0 10px; font: italic 400 17px/1.4 var(--display); color: var(--ink-2); } .rstory b { font-style: normal; font-weight: 600; color: var(--ink); } .rstory.hot b:first-child { color: var(--accent-ink); }

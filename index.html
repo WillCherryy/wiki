@@ -1002,6 +1002,16 @@ async function fillCrowd(r) {
     el.classList.toggle('off', !fav); el.innerHTML = `<span class="pb"><i style="width:${Math.max(4, pct)}%"></i></span>${mine ? pct + '%' : 'rare'}`;
   });
   if (dev) dev.innerHTML = left ? `You left the crowd at step ${left.step}: ${left.topPct}% went via <b>${esc(left.top)}</b>, you chose <b>${esc(left.mine)}</b> (${left.pct}%).` : 'You followed the crowd favourite all the way.';
+  // 1. your rarest turn, as a share of everyone who finished
+  let rare = null; for (let i = 1; i < path.length - 1; i++) { const n = by.get(key(path.slice(0, i + 1))) || 0, pc = n / j.total * 100; if (!rare || pc < rare.pc) rare = { t: path[i], pc }; }
+  const pctT = v => v < 1 ? 'Under 1%' : v < 10 ? (Math.round(v * 10) / 10) + '%' : Math.round(v) + '%';
+  if (rare) prof.insertAdjacentHTML('afterbegin', `<p class="rstory${rare.pc < 25 ? ' hot' : ''}">${rare.pc < 25 ? `<b>${pctT(rare.pc)}</b> of players went through <b>${esc(rare.t)}</b>. That was your rarest turn.` : `Like <b>${pctT(rare.pc)}</b> of players, you went through <b>${esc(rare.t)}</b>.`}</p>`);
+  // 2. the most popular route and 3. the strangest one that still finished
+  const card = prof.closest('.rcard.routes'), same = p => key(p) === key(path), dots = p => { const rd = rampDots(p.length); return `<ol class="rl">${p.map((t, i) => `<li class="${i === p.length - 1 ? 'end' : ''}"><i class="d" style="--c:${DOT_C[rd[i]]}"></i><span class="t">${esc(t)}</span></li>`).join('')}</ol>`; };
+  const top = (j.routes || [])[0], odd = j.odd; let html = '';
+  if (top && top.n >= 2) html += `<div class="rsec rcrowd"><div class="rhd2"><b>Most popular route</b><span>${top.n} of ${j.total} players · ${top.c} click${top.c === 1 ? '' : 's'}</span></div>${same(top.p) ? '<p class="rtf">You took it too.</p>' : dots(top.p)}</div>`;
+  if (odd) html += `<div class="rsec rcrowd"><div class="rhd2"><b>Strangest route that still finished</b><span>${odd.c} click${odd.c === 1 ? '' : 's'}${same(odd.p) ? ' · yours!' : ''}</span></div>${same(odd.p) ? '<p class="rtf">That was you. Nobody else went your way.</p>' : dots(odd.p)}</div>`;
+  if (html && card && !card.querySelector('.rcrowd')) prof.insertAdjacentHTML('afterend', html);   // right after your own route
 }
 // The heat of your route: a clean curve of temperature per click, with a heat-map ribbon underneath
 function heatChart(r, Wpx) {
