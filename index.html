@@ -160,6 +160,7 @@ function cloudNewCode() { const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = ne
 P.cloud = Object.assign({ code: '', on: true, at: 0 }, P.cloud || {}); if (!/^[A-HJ-NP-Z2-9]{16}$/.test(P.cloud.code)) P.cloud.code = cloudNewCode();
 P.sky = Object.assign({ found: {}, best: -1, total: 0, log: {}, cat: {}, runs: {} }, P.sky || {}); P.sky.runs = P.sky.runs || {}; P.sky.found = P.sky.found || {}; P.sky.log = P.sky.log || {}; P.sky.cat = P.sky.cat || {};
 for (const id in P.sky.found) if (!SKY.POOL[id].some(q => P.sky.cat[q.n])) P.sky.cat[SKY.POOL[id][0].n] = P.sky.found[id];   // objects found before names existed take the first famous name
+P.sky.field = P.sky.field || {}; SKY.OBJ.forEach(o => SKY.POOL[o.id].forEach(q => { const c = P.sky.cat[q.n]; if (c > 1) { P.sky.field[o.id] = (P.sky.field[o.id] || 0) + c - 1; P.sky.cat[q.n] = 1; } }));   // repeats of a named object become unnamed field stars of its type
 const saveP = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} cloudSoon(); };
 const rankOf = xp => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r.xp) i = k; }); return i; };
 
@@ -543,6 +544,7 @@ function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" st
 const RARITY = ['Common', 'Common', 'Uncommon', 'Uncommon', 'Rare', 'Rare', 'Epic', 'Epic', 'Legendary'];
 function discoveryK(name, d = {}) {   // everything the discovery card shows, rebuilt from the catalogue so it stays current
   for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, via: d.via || '', first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
+  const f = SKY.fieldOf(name); if (f) return { idx: f.idx, id: f.id, name, kind: f.kind, temp: f.t, fact: f.f, art: f.a, m: f.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, via: '', first: true, field: true, count: 1 };
   return null;
 }
 function dayDiscovery(day) {
@@ -552,7 +554,7 @@ function dayDiscovery(day) {
 }
 function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a foil border that says exactly what you found
   const o = SKY.OBJ[k.idx], total = SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0), have = Object.keys(P.sky.cat).length, rar = RARITY[k.idx], sm = opt.compact;
-  const head = opt.visitor ? 'Discovered on Scorcher' : k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You found';
+  const head = opt.visitor ? 'Discovered on Scorcher' : k.field ? (k.id === 'quasar' ? 'A new galaxy for your universe' : 'A new star for your Milky Way') : k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + esc(k.name) + ' · ×' + k.count : 'You found';
   return `<div class="disc ${sm ? 'compact' : ''}" style="--c:${o.c};--c2:${k.idx > 4 ? '#ffffff' : '#ffd8a8'}"><div class="disc-in">
     <div class="disc-top"><span class="disc-eye">${head}</span><span class="disc-rar r${k.idx}">${rar}</span></div>
     <div class="disc-art"><canvas ${opt.id ? `id="${opt.id}"` : 'class="discCv"'} width="760" height="${sm ? 360 : 520}"></canvas></div>
@@ -579,7 +581,7 @@ function openFound(name) {   // someone followed a shared discovery link: show t
 if (/^\/find\//.test(location.pathname)) setTimeout(() => { let n = ''; try { n = decodeURIComponent(location.pathname.slice(6)); } catch {} openFound(n); }, 900);
 async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image, with the site address on it
   try { await document.fonts.ready; } catch {}
-  const W = 1080, H = 1350, o = SKY.OBJ[k.idx], q = SKY.POOL[k.id].find(p => p.n === k.name), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), rar = RARITY[k.idx];
+  const W = 1080, H = 1350, o = SKY.OBJ[k.idx], q = SKY.rec(k.id, k.name), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), rar = RARITY[k.idx];
   const total = SKY.OBJ.reduce((n, t) => n + SKY.POOL[t.id].length, 0), have = Object.keys(P.sky.cat).length, serif = '"EB Garamond", Georgia, serif', sans = '"Instrument Sans", system-ui, sans-serif';
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#0b0a18'); bg.addColorStop(1, '#14112a'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
@@ -632,7 +634,7 @@ function tiltCard(el) {   // a little foil-card parallax where there is a pointe
   el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); });
 }
 function mountDiscovery(root, k) {   // idle animation on the homepage card, only while it is on screen
-  const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.POOL[k.id].find(p => p.n === k.name), t0 = performance.now();
+  const cv = root.querySelector('.discCv'); if (!cv) return; const q = SKY.rec(k.id, k.name), t0 = performance.now();
   (function f(now) { if (!cv.isConnected) return; if (!cv.offsetParent || document.hidden) { setTimeout(() => requestAnimationFrame(f), 500); return; } if (now - (f.l || 0) < 33) { requestAnimationFrame(f); return; } f.l = now; drawSkyCell(cv, k.id, (now - t0) / 1000, 1, q); requestAnimationFrame(f); })(t0);
   { const el = root.querySelector('.disc') || root.querySelector('.stage'); tiltCard(el); bindDiscShare(el, k); }
 }
@@ -642,13 +644,13 @@ function drawSkyCell(cv, id, t, k = 1, q) {
   SKY.fade(g, w, h);
 }
 function mountSky(id, idx, name) {   // the landing animation on the results card, then it idles
-  const cv = $('#skyCv'); if (!cv) return; const q = SKY.POOL[id].find(p => p.n === name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cv = $('#skyCv'); if (!cv) return; const q = SKY.rec(id, name), t0 = performance.now(), calm = document.documentElement.dataset.calm === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   tiltCard(cv.closest('.disc')); bindDiscShare(cv.closest('.disc'), G.result && G.result.sky);
   (function f(now) { if (!cv.isConnected) return; const t = (now - t0) / 1000; drawSkyCell(cv, id, t, calm ? 1 : t / 1.6, q); requestAnimationFrame(f); })(t0);   // it arrives out of the dark, then idles: the same likeness as in the catalogue and the universe
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
 function skyList() {   // every named object you own, hottest first
-  const out = []; SKY.OBJ.forEach((o, i) => SKY.POOL[o.id].forEach(q => { const c = P.sky.cat[q.n]; if (c) out.push({ ...q, id: o.id, idx: i, count: c }); }));
+  const out = []; SKY.OBJ.forEach((o, i) => { SKY.POOL[o.id].forEach(q => { const c = P.sky.cat[q.n]; if (c) out.push({ ...q, id: o.id, idx: i, count: c }); }); for (let k = 1; k <= Math.min(400, (P.sky.field || {})[o.id] || 0); k++) out.push(SKY.field(o.id, k)); });
   return out.sort((x, y) => y.idx - x.idx || y.count - x.count || x.n.localeCompare(y.n));
 }
 
@@ -700,7 +702,7 @@ function uniMap(cv, L, o) {
 }
 const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.ghost === 'The Milky Way' || b.n === 'Sagittarius A*' ? 'Milky Way' : b.ghost ? b.ghost : b.id === 'quasar' ? b.n.split('#')[0] + ' galaxy' : b.n + ' system') : b.n, n: b.n })));
 const crumb = (lay, n) => ['Universe'].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => b.tier === 'nucleus' ? (b.n === 'Sagittarius A*' ? 'Milky Way' : b.ghost ? b.ghost : b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.n)).join(' › ');
-const sfNamed = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } return null; };
+const sfNamed = n => { for (const o of SKY.OBJ) { const q = SKY.POOL[o.id].find(p => p.n === n); if (q) return { ...q, o, id: o.id, idx: SKY.OBJ.indexOf(o) }; } const f = SKY.fieldOf(n); return f ? { ...f, o: SKY.OBJ[f.idx] } : null; };
 const sfRows = (L, filter, sortBy, query) => { const a = L.filter(b => (!filter.size || filter.has(b.id)) && (!query || b.n.toLowerCase().includes(query))); a.sort(sortBy === 'az' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'heat' ? (x, y) => y.idx - x.idx || y.m - x.m : (x, y) => y.m - x.m || x.n.localeCompare(y.n)); return a; };
 const sfRowHTML = (b, selN) => { const o = SKY.OBJ[b.idx]; return `<button class="sfrow ${b.n === selN ? 'on' : ''}" data-n="${esc(b.n)}" style="--c:${o.c}"><i></i><div style="flex:1;min-width:0"><b>${esc(b.n)}</b><small>${esc(b.kind)}</small></div><span>${SKY.massText(b.m)}${b.count > 1 ? `<br><em>×${b.count}</em>` : ''}</span></button>`; };
 const sfListHTML = (a, sortBy, filter) => { if (!a.length) return '<div class="sfnone">Nothing matches.</div>'; if (sortBy === 'heat' && filter.size !== 1) { let h = '', last = -1; a.forEach(b => { if (b.idx !== last) { last = b.idx; const o = SKY.OBJ[b.idx]; h += `<h6 style="--c:${o.c}"><i></i>${o.name}<em>${a.filter(x => x.idx === b.idx).length}</em></h6>`; } h += sfRowHTML(b); }); return h; } return a.map(b => sfRowHTML(b)).join(''); };
@@ -737,7 +739,7 @@ function openInspect(name, back) {   // a close look: the object large on its ow
     <div class="in-hint" id="inHint">${['brown','reddwarf','redgiant','sun','bluewhite','bluegiant','quasar','neutron'].includes(q.id) ? 'Drag to move it' : 'Drag to move it'} · pinch or scroll to zoom · double-tap to reset</div>`;
   (document.fullscreenElement || document.body).appendChild(host); const OM = document.getElementById('obs') && window.__map; if (OM && OM.pause) OM.pause(true);
   const cv = $('#inCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
-  const g = cv.getContext('2d'), rec = SKY.POOL[q.id].find(p => p.n === name), t0 = performance.now(); let zoom = 1, px = 0, py = 0, dead = false, spin = 0, tilt = 0, roll = -.3, inc = 1, t00 = 0; const sphere = !!({ brown: 1, reddwarf: 1, redgiant: 1, sun: 1, bluewhite: 1, bluegiant: 1 })[q.id], disc = q.id === 'quasar' || q.id === 'neutron', turn = sphere || disc; const ptr = new Map(); let pd = 0, last = 0;
+  const g = cv.getContext('2d'), rec = SKY.rec(q.id, name), t0 = performance.now(); let zoom = 1, px = 0, py = 0, dead = false, spin = 0, tilt = 0, roll = -.3, inc = 1, t00 = 0; const sphere = !!({ brown: 1, reddwarf: 1, redgiant: 1, sun: 1, bluewhite: 1, bluegiant: 1 })[q.id], disc = q.id === 'quasar' || q.id === 'neutron', turn = sphere || disc; const ptr = new Map(); let pd = 0, last = 0;
   let drawn = 0, sig0 = '';
   const frame = now => { if (dead) return; const sg = zoom + ',' + px + ',' + py + ',' + cv.width; if (sg === sig0 && now - drawn < 40) { requestAnimationFrame(frame); return; } sig0 = sg; drawn = now;   // still: ~25 redraws a second; while you drag or zoom, every frame
     const w = cv.width, h = cv.height, t = (now - t0) / 1000; SKY.starBg(g, w, h, Math.round(w * h / 5000), 3, '#07060f');
@@ -864,8 +866,8 @@ function finish(won) {
     if (won && (!P.archive[G.extra.day] || c < P.archive[G.extra.day].clicks)) P.archive[G.extra.day] = { clicks: c, secs };
     gain = won && !prev ? Math.round(gain / 2) : 0;   // half XP, once; no streak and no sky object for past days
   } else gain = Math.round(gain / 2);
-  if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], pk = pickNamed(o.id), first = !P.sky.cat[pk.n]; P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { via: pk.via || '', boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: P.sky.cat[pk.n], idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { via: pk.via || '', boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, count: P.sky.cat[pk.n] }; }
+  if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], fresh = SKY.POOL[o.id].some(q => !P.sky.cat[q.n]), pk = fresh ? pickNamed(o.id) : SKY.field(o.id, (P.sky.field[o.id] || 0) + 1), first = !P.sky.cat[pk.n]; if (pk.field) P.sky.field[o.id] = (P.sky.field[o.id] || 0) + 1; else P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
+  G.result.sky = { via: pk.via || '', boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: pk.field ? 1 : P.sky.cat[pk.n], field: !!pk.field, idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { via: pk.via || '', boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, field: !!pk.field, count: pk.field ? 1 : P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -1675,8 +1677,8 @@ async function shareCardCanvas(r) {
   const ref = r.par || r.goal;
   x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
   x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}${r.purist ? ' · purist' : ''}` : 'Gave up on this one', M, y);
-  if (r.sky) await SKY.portraitReady({ ...(SKY.POOL[r.sky.id].find(p => p.n === r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, 245, 245);
-  if (r.sky) { const o = SKY.byId(r.sky.id), sb = { ...(SKY.POOL[r.sky.id].find(p => p.n === r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.portrait(x, 196, 196, sb, 1.4, 1, { z: 1.25 }); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
+  if (r.sky) await SKY.portraitReady({ ...(SKY.rec(r.sky.id, r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, 245, 245);
+  if (r.sky) { const o = SKY.byId(r.sky.id), sb = { ...(SKY.rec(r.sky.id, r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.portrait(x, 196, 196, sb, 1.4, 1, { z: 1.25 }); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
     x.font = `italic 400 34px ${DISP}`; x.fillStyle = o.c === '#cfe2ff' || o.c === '#e6f1ff' ? '#6a86b8' : o.c; x.textAlign = 'left'; x.fillText(r.sky.name || o.name, M, y + 44); caps((r.sky.temp || o.temp), M, y + 82, 20, MUTE, 'left', 3); }
   // the route, drawn as a temperature curve
   let pts = r.path.map((t, i) => ({ t, s: i === r.path.length - 1 && r.won ? 1 : ((r.steps[i] || {}).sig ?? .3) }));
