@@ -21,7 +21,7 @@ const CAP = [
   [29.4, 35.4, 'The Milky Way', 'cap'], [30.2, 35.6, 'A hundred thousand light-years across.', 'it'],
   [49.8, 55.0, 'Betelgeuse  ·  548 light-years', 'cap'], [50.3, 55.0, 'So vast it would swallow the orbit of Mars.', 'it'],
   [66.4, 70.6, 'The Crab Nebula  ·  6,500 light-years', 'cap'], [66.9, 70.6, 'The wreck of a star seen to explode in the year 1054.', 'it'],
-  [74.2, 79.2, 'The Crab Pulsar', 'cap'], [74.7, 79.2, 'What is left of its heart: a star the size of a city, turning thirty times a second.', 'it'],
+  [74.2, 78.8, 'The Crab Pulsar', 'cap'], [74.7, 78.8, 'What is left of its heart: a star the size of a city, turning thirty times a second.', 'it'],
   [90.4, 95.6, 'The cosmic web', 'cap'], [90.9, 95.6, 'Galaxies by the hundred billion, strung along threads of dark matter.', 'it'],
   [101.2, 106.2, 'TON 618  ·  10.8 billion light-years', 'cap'], [101.7, 106.2, 'Its light set out before the Earth existed.', 'it'],
   [109.6, 115.6, 'At its heart, a black hole of tens of billions of suns.', 'it'],
@@ -237,7 +237,7 @@ const LY_KM = 9.461e12, R_BET = 764 * 695700 / LY_KM, R_NS = 12 / LY_KM, R_SH = 
 let FOV = null;
 function buildFov() {
   const f0 = M * 100000 / (.88 * (V ? H * .62 : W) * .98);   // matches the last frame of the Milky Way shot
-  FOV = curve([[41.0, f0], [49.4, R_BET / .2], [55.2, R_BET / .2 * .8, ss], [58.4, 18000, ein], [61.6, 18000], [66.2, 11], [70.4, 9.4, ss], [73.8, R_NS / .12, k => io(k)], [79.2, R_NS / .12 * .8, ss], [83.2, 18000, ein]]);
+  FOV = curve([[41.0, f0], [49.4, R_BET / .2], [55.2, R_BET / .2 * .8, ss], [58.4, 18000], [61.6, 18000], [66.2, 11], [70.4, 9.4, ss], [71.9, 1.1], [74.4, R_NS / .12], [78.6, R_NS / .12 * .8, ss], [80.8, 1.1], [82.6, 13], [84.8, 18000]]);   // each dive into the pulsar pauses inside the nebula, so it can dissolve rather than vanish
 }
 // ---- 3D fields of stars around a target: log-spread in distance, so at every scale some pass the camera; the distant ones flatten into the galactic plane
 const STARSPR = (() => { const out = {}; [['w', '235,240,255'], ['b', '170,200,255'], ['y', '255,236,200'], ['o', '255,196,140'], ['r', '255,150,110']].forEach(([k, c]) => { const n = 64, cc = mk(n, n), x = cc.getContext('2d'), gr = x.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2); gr.addColorStop(0, `rgba(${c},1)`); gr.addColorStop(.12, `rgba(${c},.85)`); gr.addColorStop(.3, `rgba(${c},.22)`); gr.addColorStop(1, `rgba(${c},0)`); x.fillStyle = gr; x.fillRect(0, 0, n, n); out[k] = cc; }); return out; })();
@@ -272,7 +272,7 @@ function drawBet(r, t, a) {   // r: Betelgeuse's radius in pixels at this zoom
 const BEAM = mk(Math.round(W / 3), Math.round(H / 3)), bmx = BEAM.getContext('2d');
 function drawCrab(fov, t, a) {
   if (a <= 0) return; const x = W / 2, y = H / 2, nebR = 5.5 * M / fov, r = R_NS * M / fov;
-  if (nebR > 4 && nebR < M * 9) { const D = nebR * 2 / .8, na = a * ss((nebR - 4) / 40) * (1 - ss((nebR - M * 1.6) / (M * 6))); g.save(); g.globalAlpha = na; g.globalCompositeOperation = 'lighter'; g.drawImage(CRAB, x - D / 2, y - D / 2 * .75, D, D * .75); g.restore(); }
+  if (nebR > 4 && nebR < M * 9) { const D = nebR * 2 / .8, na = a * ss((nebR - 4) / 40) * (1 - ss((nebR - M * 1.4) / (M * 3.4))); g.save(); g.globalAlpha = na; g.globalCompositeOperation = 'lighter'; g.drawImage(CRAB, x - D / 2, y - D / 2 * .75, D, D * .75); g.restore(); }
   g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'lighter'; const pr = Math.max(r, .4);
   glow(x, y, 10 + Math.min(60, pr * 9), '190,215,255', .55); glow(x, y, 3 + pr * 2.4, '230,240,255', .9);
   if (r > 3) {   // the beams: radiation from the magnetic poles lighting the plasma around the star, broad, soft and fading outward, swept round as it turns
@@ -316,7 +316,7 @@ const WEBF = (() => { const r = mul(2025), gs = gaussOf(r), F = []; const ZL = 7
   for (let k = 0; k < 900; k++) F.push([gs() * 45, gs() * 30, 8 + r() * (ZL - 16), .2 + .7 * Math.pow(r(), 3), Math.floor(r() * 48), r() * 6.28]);
   for (const [x, y, z, s2] of [[2.6, -1.3, 210, 1.3], [-3.2, 1.9, 380, 1.5], [1.9, 2.3, 540, 1.2], [-2.2, -2.1, 650, 1.1]]) F.push([x, y, z, s2, Math.floor(r() * 26), r() * 6.28]);   // close passes
   return F.filter(q => !(Math.abs(q[0]) < 1.4 && Math.abs(q[1]) < 1.4 && q[3] < 1)).sort((a2, b2) => b2[2] - a2[2]); })();
-const ZTON = 760, TF0 = 87.2, TF1 = 103.6;
+const ZTON = 760, TF0 = 87.2, TF1 = 103.6, TG = 84.8;
 function web3D(t, a) {
   if (a <= 0) return; const D0 = FPX / (M / (6.2e5) * 100000) /* the Milky Way as the galaxy view leaves it */, De = FPX * 1.5 / (M * .89), u = clamp((t - TF0) / (TF1 - TF0)), zc = lerp(-D0, ZTON - De, io(u)), v = (ZTON - De + D0) * Math.PI / (TF1 - TF0) * Math.sin(Math.PI * u) * .6;
   const wx = Math.sin(u * Math.PI) * 4 * Math.sin(u * 5.3), wy = Math.sin(u * Math.PI) * 2.5 * Math.cos(u * 3.7), proj = (X, Y, dz) => { const p = FPX / dz; return [W / 2 + (X - wx) * p, H / 2 + (Y - wy) * p, p]; };
@@ -341,13 +341,13 @@ function shotTour(t, a) {
     if (t < 55.2) { cg = [lerp(0, BETG[0], io((t - 41) / 5.2)), lerp(0, BETG[1], io((t - 41) / 5.2))]; spin = t * .004; }
     else if (t < 58.4) cg = BETG;
     else if (t < 61.6) { const f = io((t - 58.4) / 3.2); cg = [lerp(BETG[0], CRABG[0], f), lerp(BETG[1], CRABG[1], f)]; }
-    else if (t < 83.2) cg = CRABG;
-    else { const f = io((t - 83.2) / 4.4); cg = [lerp(CRABG[0], 0, f), lerp(CRABG[1], 0, f)]; }
-    let fv = fov; if (t > 58.4 && t < 61.6) fv = 18000 * (1 + .7 * Math.sin(Math.PI * (t - 58.4) / 3.2)); if (t >= 83.2) fv = LZ(18000, 6.2e5, ein((t - 83.2) / 4.4) * .5 + .5 * io((t - 83.2) / 4.4));
-    const ga = t >= 58.4 && t < 61.6 || t >= 83.2 ? 1 : gA;
-    galView(cg, fv, a * ga, t < 58.4 ? [[SUNG, 'The Sun', ramp(t, 42.6, 45.2, .5, .6)], [BETG, 'Betelgeuse', ramp(t, 43.2, 46.0, .5, .5)]] : t < 62 ? [[BETG, 'Betelgeuse', ramp(t, 58.6, 60.4, .4, .5)], [CRABG, 'The Crab Nebula', ramp(t, 59.8, 61.9, .4, .4)]] : [[CRABG, 'The Crab Nebula', ramp(t, 83.4, 85.2, .3, .6)], [SUNG, 'The Sun', ramp(t, 83.8, 85.6, .3, .6)]]);
+    else if (t < TG) cg = CRABG;
+    else { const f = io((t - TG) / (TF0 + .4 - TG)); cg = [lerp(CRABG[0], 0, f), lerp(CRABG[1], 0, f)]; }
+    let fv = fov; if (t > 58.4 && t < 61.6) fv = 18000 * (1 + .7 * Math.sin(Math.PI * (t - 58.4) / 3.2)); if (t >= TG) fv = LZ(18000, 6.2e5, ein((t - TG) / (TF0 + .4 - TG)) * .5 + .5 * io((t - TG) / (TF0 + .4 - TG)));
+    const ga = t >= 58.4 && t < 61.6 || t >= TG ? 1 : gA;
+    galView(cg, fv, a * ga, t < 58.4 ? [[SUNG, 'The Sun', ramp(t, 42.6, 45.2, .5, .6)], [BETG, 'Betelgeuse', ramp(t, 43.2, 46.0, .5, .5)]] : t < 62 ? [[BETG, 'Betelgeuse', ramp(t, 58.6, 60.4, .4, .5)], [CRABG, 'The Crab Nebula', ramp(t, 59.8, 61.9, .4, .4)]] : [[CRABG, 'The Crab Nebula', ramp(t, TG + .1, TG + 1.6, .3, .5)], [SUNG, 'The Sun', ramp(t, TG + .3, TG + 1.9, .3, .5)]]);
     if (t >= 58.4 && t < 61.6) drawStars(fov, a * fA, 23);   // the stars stay through the glide
-    else if (t < 83.2 + 1.2) { const fa = a * (t >= 83.2 ? 1 - ss((t - 83.2) / .8) : fA);
+    else if (t < TG + 1.2) { const fa = a * (t >= TG ? 1 - ss((t - TG) / .8) : fA);
       if (t < 58.4) { drawStars(fov, fa, 17); drawBet(R_BET * M / fov, t, fa); }
       else { drawStars(fov, fa, 29); drawCrab(fov, t, fa); } }
   }
