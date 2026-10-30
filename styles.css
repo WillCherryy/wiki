@@ -1316,7 +1316,7 @@ body { font-family: var(--sans); }
 #playBtn svg { width: 26px; height: 26px; stroke-width: 1.2; }
 .hxs b, .hxd { font-family: var(--display); } .hxd i { border-radius: 50%; }
 @media (max-width: 899px) { .ob-insp { bottom: 140px; max-height: 46vh; } .ob-insp p, .ob-insp .ob-copy u { display: none; } .ob-insp h1 { font-size: 36px; margin-top: 6px; } .ob-insp dl { grid-template-columns: repeat(3, 1fr); gap: 0 12px; margin-top: 12px; } .ob-insp dl div { display: block; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.12); } .ob-insp dl div:nth-child(n+4) { display: none; } .ob-insp dd { text-align: left; font-size: 12px; } .ob-insp dd small { display: none; } .ob-acts { gap: 10px 18px; margin-top: 14px; } .ob-copy { margin-top: 12px; } .ob-crumbs button:not(.on), .ob-crumbs i { display: none; } }
-@media (max-width: 899px) { #obs canvas#obCv { top: -20%; height: 100%; } }
+@media (max-width: 899px) { #obs canvas#obCv, #obs canvas.uniov { top: -20%; height: 100%; } }   /* the name layer moves with the map, or every label sits a fifth of the screen below its object */
 .ob-index { max-height: calc(100vh - 330px); overflow-y: auto; scrollbar-width: none; pointer-events: auto; } .ob-index::-webkit-scrollbar { display: none; }
 .ob-objs { display: grid; margin: 2px 0 10px 26px; border-left: 1px solid rgba(255, 255, 255, .14); }
 .ob-objs button { display: flex !important; justify-content: space-between; gap: 14px; width: 184px; padding: 4px 0 4px 12px !important; text-align: left; font: italic 400 15px var(--display) !important; color: #b9b3cf !important; }
