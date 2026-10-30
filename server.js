@@ -140,6 +140,7 @@ const server = http.createServer((req, res) => {
     if (day > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) return json(res, 404, { error: 'none' });   // picks stay secret until the day before
     const o = (db.overrides || {})[day]; return o ? json(res, 200, o) : json(res, 404, { error: 'none' });
   }
+  if (url.pathname === '/api/past' && req.method === 'GET') { const today = new Date().toISOString().slice(0, 10); return json(res, 200, Object.values(db.overrides || {}).filter(o => o.day < today).sort((a, b) => (a.day < b.day ? 1 : -1))); }   // past founder picks, for the archive
   if (url.pathname === '/api/admin/daily' && req.method === 'GET') {
     const key = process.env.ADMIN_KEY; if (!key) return json(res, 404, { error: 'not found' });
     if ((req.headers.authorization || '') !== 'Bearer ' + key) return json(res, 401, { error: 'unauthorised' });

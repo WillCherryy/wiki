@@ -1877,12 +1877,17 @@ function handleChallenge() {
 
 
 /* ------------------------------------------------------------------ the daily archive: past puzzles, no streak or sky object */
-function openArchive() {
-  const today = dayKey(), days = PUZZLES ? Object.keys(PUZZLES).filter(d => d < today && PUZZLES[d].route).sort().reverse() : [];
+async function pastPicks() {   // founder picks for past days override the built schedule, exactly as they did on the day
+  if (pastPicks.v) return pastPicks.v; try { const r = await fetch(API_BASE + '/api/past', { cache: 'no-store' }); if (r.ok) { const L = await r.json(); pastPicks.v = {}; for (const o of L) { pastPicks.v[o.day] = o; overrideCache[o.day] = o; } return pastPicks.v; } } catch {} return {};
+}
+async function openArchive() {
+  const today = dayKey(), ov = await pastPicks(), all = { ...(PUZZLES || {}) }; for (const [d, o] of Object.entries(ov)) all[d] = { ...o, route: o.route || (all[d] && all[d].route) };
+  for (const d of Object.keys(P.days || {})) { const e = P.days[d]; if (!all[d] && e && e.from && e.to) all[d] = { from: e.from, to: e.to, par: e.par, route: e.route }; }   // a day you played that neither list remembers
+  const PZ = all, days = Object.keys(PZ).filter(d => d < today && (PZ[d].route || ov[d] || P.days[d])).sort().reverse();
   const res = d => { const e = P.days[d], a = (P.archive || {})[d]; if (e && e.won) return { c: e.clicks, on: true }; if (a) return { c: a.clicks }; return null; };
   const done = days.filter(d => res(d)).length, fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   openModal(`<h2>Daily archive</h2><p>Every past daily puzzle, any time. Archive solves earn half XP once, and do not count for your streak or Sky. <b>${done}</b> of <b>${days.length}</b> played.</p>
-    ${days.length ? `<div class="pkgrid arch">${days.map(d => { const z = PUZZLES[d], r = res(d); return `<button class="${r ? 'got' : ''}" data-d="${d}"><span class="ar-top"><b>#${dayNum(d)}</b><em>${fmtD(d)}</em></span><span class="ar-route">${esc(z.from)} <i>→</i> ${esc(z.to)}</span><span class="ar-s">${r ? '✓ ' + r.c + ' click' + (r.c === 1 ? '' : 's') + (r.on ? ' on the day' : '') : 'Fastest ' + (z.par || '?')}</span></button>`; }).join('')}</div>` : '<p class="mute">No past puzzles yet. Come back tomorrow.</p>'}`);
+    ${days.length ? `<div class="pkgrid arch">${days.map(d => { const z = PZ[d], r = res(d); return `<button class="${r ? 'got' : ''}" data-d="${d}"><span class="ar-top"><b>#${dayNum(d)}</b><em>${fmtD(d)}</em></span><span class="ar-route">${esc(z.from)} <i>→</i> ${esc(z.to)}</span><span class="ar-s">${r ? '✓ ' + r.c + ' click' + (r.c === 1 ? '' : 's') + (r.on ? ' on the day' : '') : 'Fastest ' + (z.par || '?')}</span></button>`; }).join('')}</div>` : '<p class="mute">No past puzzles yet. Come back tomorrow.</p>'}`);
   document.querySelectorAll('.arch button').forEach(b => b.onclick = () => { closeModal(); startGame('archive', null, { day: b.dataset.d }); });
 }
 

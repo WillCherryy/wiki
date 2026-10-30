@@ -23,7 +23,8 @@ export default {
     const url = new URL(request.url), q = url.searchParams, path = url.pathname;
     if (/^\/p\/\d{4}-\d{2}-\d{2}$/.test(path) && env.ASSETS && request.method === 'GET') {
       const day = path.slice(3), [r, pj] = await Promise.all([env.ASSETS.fetch(new Request(url.origin + '/', request)), env.ASSETS.fetch(new Request(url.origin + '/puzzles.json'))]); let puz = null; try { puz = (await pj.json()).days[day]; } catch {}
-      const img = '/og/day/' + day + '.jpg', has = puz && (await env.ASSETS.fetch(new Request(url.origin + img, { method: 'HEAD' }))).ok;
+      let picked = false; if (env.DB && day <= new Date().toISOString().slice(0, 10)) { try { const o = await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day = ?').bind(day).first(); if (o) { puz = { ...rowOut(o), from: o.from_title, to: o.to_title }; picked = true; } } catch {} }   // the founder's pick wins, as it did in the game
+      const img = '/og/day/' + day + '.jpg', has = puz && !picked && (await env.ASSETS.fetch(new Request(url.origin + img, { method: 'HEAD' }))).ok;
       return new Response(puz ? dayPage(await r.text(), url.origin, day, puz, has ? img : null) : await r.text(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
     }
     if (path.startsWith('/find/') && env.ASSETS && request.method === 'GET') { const r = await env.ASSETS.fetch(new Request(url.origin + '/', request)); let nm = ''; try { nm = decodeURIComponent(path.slice(6)); } catch {} const img = '/og/find/' + slugOf(nm) + '.jpg', has = nm && (await env.ASSETS.fetch(new Request(url.origin + img, { method: 'HEAD' }))).ok; return new Response(findPage(await r.text(), url.origin, path.slice(6), has ? img : null), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } }); }
@@ -42,6 +43,7 @@ export default {
         if (path === '/api/reports') return await getReports(env, request, reply);
         if (path === '/api/admin/stats') return await adminStats(env, request, q, now(), reply);
         if (path === '/api/daily') return await getDaily(env, q.get('day') || '', reply);
+        if (path === '/api/past') return await pastOverrides(env, now(), reply);
         if (path === '/api/admin/daily') return await listOverrides(env, request, now(), reply);
         return reply({ error: 'not found' }, 404);
       }
@@ -339,6 +341,10 @@ async function getDaily(env, day, reply) {
   if (day > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) return reply({ error: 'none' }, 404);   // picks stay secret until the day before
   const r = await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day = ?').bind(day).first();
   return r ? reply(rowOut(r)) : reply({ error: 'none' }, 404);
+}
+async function pastOverrides(env, t, reply) {   // the founder's picks for days already played, so the archive shows the puzzle that was really set (future picks stay secret)
+  const today = new Date(t).toISOString().slice(0, 10);
+  return reply((await env.DB.prepare('SELECT day, from_title, to_title, par, route, alts FROM daily_override WHERE day < ? ORDER BY day DESC LIMIT 1000').bind(today).all()).results.map(rowOut));
 }
 async function listOverrides(env, request, t, reply) {
   if (!env.ADMIN_KEY) return reply({ error: 'not found' }, 404);
