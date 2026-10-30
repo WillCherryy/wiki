@@ -657,9 +657,10 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     if (b.n.split('#')[0] === 'Eta Carinae' && rpx * 36000 > 20 && rpx * 36000 < 4000) { const D = rpx * 36000;   /* the Homunculus is ~0.6 light-years across: 36,000 times the star */ g.save(); g.translate(x, y); g.rotate(-.7); g.drawImage(homunculus(), -D / 2, -D / 2, D, D); g.restore(); }
     if (b.id === 'neutron') drawSNR(g, b, x, y, rpx);
     if (b.id === 'quasar') { if (rpx * 2.6 >= 4 * K) { drawBH(g, b, x, y, rpx, K, t); return; } if (rpx * 4 < 26 * K) { glowAt(g, x, y, (7 + 5 * sz) * K, '#ffd9a8', .9); glowAt(g, x, y, 2.6 * K, '#ffffff', 1); return; } g.save(); g.translate(x, y); paintBody(g, 'quasar', 0, 0, rpx * 4, t + b.idx, b); g.restore(); g.restore(); return; }
-    if (rpx < 1.4) { const L = lumOf(b), e = eyeK(b), gr = K * (1.1 + .7 * Math.log10(1 + L * 3)) * (.6 + .4 * sz) * (.5 + .5 * e); glowAt(g, x, y, Math.min(gr, 4.5 * K), pale, (.2 + .35 * sz) * e);   /* point sources stay small and grow only gently: no ballooning as you zoom */
+    if (rpx < 1.4) { const vis = Math.pow(sz, 1.6); if (vis < .03) return; g.save(); g.globalAlpha *= vis;   /* single stars cannot be told apart from across a galaxy: they fade in as the galaxy grows on screen */
+      const L = lumOf(b), e = eyeK(b), gr = K * (1.1 + .7 * Math.log10(1 + L * 3)) * (.6 + .4 * sz) * (.5 + .5 * e); glowAt(g, x, y, Math.min(gr, 4.5 * K), pale, (.2 + .35 * sz) * e);   /* point sources stay small and grow only gently: no ballooning as you zoom */
       if (L > 2000 && sz > .4 && e > .6) { const sl = Math.min(26 * K, gr * 2.2) * sz; g.strokeStyle = rgba(pale, .35 * sz); g.lineWidth = Math.max(.5, .6 * K); g.beginPath(); g.moveTo(x - sl, y); g.lineTo(x + sl, y); g.moveTo(x, y - sl); g.lineTo(x, y + sl); g.stroke(); }   // diffraction spikes on the most luminous stars, as a telescope sees them
-      g.fillStyle = `rgba(255,255,255,${(.5 + .45 * sz) * (.4 + .6 * e)})`; g.beginPath(); g.arc(x, y, Math.max(.55 * K, rpx) * (.75 + .25 * e), 0, TAU); g.fill(); return; }
+      g.fillStyle = `rgba(255,255,255,${(.5 + .45 * sz) * (.4 + .6 * e)})`; g.beginPath(); g.arc(x, y, Math.max(.55 * K, rpx) * (.75 + .25 * e), 0, TAU); g.fill(); g.restore(); return; }
     if (b.id === 'redgiant' && RSUN(b) > 250) { const ns = shellSprite(b), D = rpx * 7; g.save(); g.globalAlpha = .75; g.drawImage(ns, x - D / 2, y - D / 2, D, D); g.restore(); }   // a cool supergiant sheds dust: a faint lumpy shell several times its size
     const nm = b.n.split('#')[0], pu = PULSE[nm]; if (pu) rpx *= 1 + pu[1] * Math.sin(TAU * SIMT / pu[0] + hs2(nm) * TAU);   // pulsating variables breathe at their real period
     if (b.id === 'neutron') { glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .4); drawNS(g, b, x, y, rpx, K, t); return; }
@@ -1335,15 +1336,15 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     bk.forEach((pts, i) => { if (!pts.length) return; g.fillStyle = rgba(CATC[i / 3 | 0], [.25, .5, .85][i % 3]); g.beginPath(); for (let j = 0; j < pts.length; j += 3) { const r = pts[j + 2]; g.rect(pts[j] - r / 2, pts[j + 1] - r / 2, r, r); } g.fill(); });
     if (MK) { const ph = (performance.now() / 1300) % 1; g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = K; g.beginPath(); g.arc(MK[0], MK[1], 7 * K, 0, TAU); g.stroke(); g.strokeStyle = `rgba(255,255,255,${.5 * (1 - ph)})`; g.beginPath(); g.arc(MK[0], MK[1], (7 + 12 * ph) * K, 0, TAU); g.stroke(); }   /* the identified star */
   }
-  const LASTG = new Map();
+  const LASTG = new Map(), ROTT = new Map();
   function galaxySprite(b, hex, need, rot = 0, sy = 1) {   // tiers 128 -> 384 -> 768 -> 1024/1536 for the one you are close to; a tiny one is ready within a frame, so a galaxy never shows as anything but itself
     const face = sy > .985, rq = face ? 0 : Math.round(rot / .06), q = '|' + rq + '|' + Math.round(sy * 50), top = face ? 1536 : 1024, tiers = [128, 384, 768, top], want = need < 150 ? 128 : need < 420 ? 384 : need < 1000 ? 768 : top;
     let best = null; for (const T of tiers) { const st = SPR.get(b.n + '|' + T + q); if (st && st.done) { best = st.c; SPR.delete(b.n + '|' + T + q); SPR.set(b.n + '|' + T + q, st); if (T >= want) return best; } }
-    if (!best) best = LASTG.get(b.n) || null;
+    if (!best) best = LASTG.get(b.n + (face ? '|f' : '|t')) || null;
     for (const T of tiers) { if (T > want) break; const key = b.n + '|' + T + q; let st = SPR.get(key); if (st && st.done) continue; if (GBUD <= 0) break;
       if (!st) { let big = 0; for (const k of SPR.keys()) if (/\|(1024|1536)\|/.test(k)) big++; for (const k of [...SPR.keys()]) { if (SPR.size < 40 && !(T >= 1024 && big >= 2)) break; if (T >= 1024 && big >= 2 && !/\|(1024|1536)\|/.test(k)) continue; SPR.delete(k); if (/\|(1024|1536)\|/.test(k)) big--; }   // keep memory in check: at most two very large pictures
         st = galaxyBake(b, T, rq * .06, Math.round(sy * 50) / 50); SPR.set(key, st); }
-      const t0 = performance.now(); galaxyStep(st, Math.max(2, GBUD)); GBUD -= performance.now() - t0; if (st.done) { LASTG.set(b.n, st.c); best = st.c; } break; }
+      const t0 = performance.now(); galaxyStep(st, Math.max(2, GBUD)); GBUD -= performance.now() - t0; if (st.done) { LASTG.set(b.n + (face ? '|f' : '|t'), st.c); best = st.c; } break; }
     return best;
   }
   // close-ups: the part of a face-on galaxy that is in view, painted at about half screen resolution once the camera settles, kept in the galaxy's own frame
@@ -1457,7 +1458,9 @@ return [Rc + Ry, Gc + Gy, Bc + By, ext, IB, Ry, Gy, By]; };   /* young light (ar
       if (!gal && R > w * 3) return;
       g.save(); g.translate(p[0], p[1]);
       if (gal) { const fr = gframe(b, SPN), rot = fr.rot, gSY = fr.sy, D = R * 2.13, fadeS = Math.max(Math.pow(clamp(1 - (D - 5000) / 22000), 1.5), .16 * clamp(1 - (D - 30000) / 400000)), /* a face-on galaxy keeps its picture (sharp crops below) */   /* inside a galaxy you see its stars, not a stretched picture of it: the picture gives way smoothly */ da = clamp((D - 600) / 900) * clamp(1 - (D - 90000) / 120000), ell = gparams(b).type === 'ell', face = ell || gSY > .985;   /* one picture at every zoom: never swapped for a stand-in */
-        const sp = galaxySprite(b, col(b), D, face ? 0 : rot, ell ? 1 : gSY), inF = .12 + .2 * clamp(1 - (D - 10000) / 50000), A = face && !ell ? Math.max(fadeS, inF) : fadeS; g.save(); g.globalAlpha = A; if (face && !ell) g.rotate(rot); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); g.restore();
+        const rt = ROTT.get(b.n) || { r: rot, t: performance.now() }; if (Math.abs(rot - rt.r) > .02) { rt.r = rot; rt.t = performance.now(); } ROTT.set(b.n, rt); let turning = !face && performance.now() - rt.t < 700;   /* a tilted galaxy that is turning: its 3D picture would never finish, so draw its face-on picture tilted, then the 3D one once it settles */
+        let sp = turning ? galaxySprite(b, col(b), D, 0, 1) : galaxySprite(b, col(b), D, face ? 0 : rot, ell ? 1 : gSY); if (!sp && !face) { sp = galaxySprite(b, col(b), D, 0, 1); turning = true; }   /* no 3D picture yet: the flat one, tilted, never a gap */
+        const inF = .12 + .2 * clamp(1 - (D - 10000) / 50000), A = face && !ell ? Math.max(fadeS, inF) : fadeS; g.save(); g.globalAlpha = A; if (turning) { g.scale(1, gSY); g.rotate(rot); } else if (face && !ell) g.rotate(rot); if (sp) g.drawImage(sp, -D / 2, -D / 2, D, D); g.restore();
         if (face && !ell && D > 1600) { g.restore(); galaxyCrop(g, b, p[0], p[1], D, rot, w, h, Math.max(fadeS, inF) * clamp((D - 1600) / 900)); g.save(); g.translate(p[0], p[1]); }   /* close-up: the same design, painted sharp for the part in view */
         if (da > 0 && !ell) { g.restore(); g.save(); g.globalCompositeOperation = 'lighter'; cellStars(g, b, p[0], p[1], R, rot, gSY, w, h, K, gparams(b).pal, gparams(b).arms, gparams(b).wind, da * .5); g.restore(); g.save(); g.translate(p[0], p[1]); } } else { const D = R * 2.1, pal = [col(b), col(b), '#ffffff']; if (D < 360) g.drawImage(clusterSprite(b, col(b)), -D / 2, -D / 2, D, D); else { glowAt(g, 0, 0, R * 1.05, col(b), .22); g.restore(); g.save(); cellStars(g, b, p[0], p[1], R, 0, 1, w, h, K, pal, 3, 0, clamp((D - 360) / 300)); g.restore(); g.save(); g.translate(p[0], p[1]); } }
       g.restore(); });

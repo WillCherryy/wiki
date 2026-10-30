@@ -650,7 +650,7 @@ function mountSky(id, idx, name) {   // the landing animation on the results car
 }
 function skySys() { return skyList().sort((x, y) => y.m - x.m || y.idx - x.idx || x.n.localeCompare(y.n)); }   // the system map: heaviest at the centre, then outward in order of mass
 function skyList() {   // every named object you own, hottest first
-  const out = []; SKY.OBJ.forEach((o, i) => { SKY.POOL[o.id].forEach(q => { const c = P.sky.cat[q.n]; if (c) out.push({ ...q, id: o.id, idx: i, count: c }); }); for (let k = 1; k <= Math.min(400, (P.sky.field || {})[o.id] || 0); k++) out.push(SKY.field(o.id, k)); });
+  const out = []; SKY.OBJ.forEach((o, i) => { SKY.POOL[o.id].forEach(q => { if (P.sky.cat[q.n]) out.push({ ...q, id: o.id, idx: i, count: 1 }); });   /* a named object exists once; repeats are unnamed field objects */ for (let k = 1; k <= Math.min(400, (P.sky.field || {})[o.id] || 0); k++) out.push(SKY.field(o.id, k)); });
   return out.sort((x, y) => y.idx - x.idx || y.count - x.count || x.n.localeCompare(y.n));
 }
 
@@ -664,7 +664,7 @@ function uniMap(cv, L, o) {
   const ov = document.createElement('canvas'); ov.className = 'uniov'; cv.after(ov); const og = ov.getContext('2d'), ovDpr = Math.min(3, window.devicePixelRatio || 1);   // names and the minimap are drawn on their own full-resolution layer, so they stay sharp even when the map itself renders at reduced resolution
   const frame = now => { if (dead || !cv.isConnected) return; if (paused) { last = 0; raf = requestAnimationFrame(frame); return; }
     if (last && o.onQuality) { ema += (Math.min(now - last, 100) - ema) * .08; if (++cnt > 20 && ema > 24 && q > .5) { q = Math.max(.5, q * .78); cnt = 0; ema = 16; o.onQuality(q); } }   // slow device: render fewer pixels rather than drop frames
-    { const dt = Math.min(now - (last || now), 100) / 1000; tau += dt * speed; spinT += Math.min(dt * speed * 6.2832 / 7.9e15, dt * .35); ccT += Math.min(dt * speed, dt * 1e13); pT += Math.min(dt * speed, dt * 2e5); if (!calm) lay.bodies.forEach((b, i) => { if (b.parent >= 0) phases[i] += Math.min(dt * speed * 6.2832 / b.T, dt * 4); }); }   // every orbit runs at its real period (a galaxy turns once in about 250 million years), capped so fast time never strobes last = now;   // each body turns at its real rate but never faster than a smooth 5 rad/s, so very fast time never aliases or flickers
+    { const dt = Math.min(now - (last || now), 100) / 1000; tau += dt * speed; spinT += Math.min(dt * speed * 6.2832 / 7.9e15, dt * .35); ccT += Math.min(dt * speed, dt * 1e13); pT += Math.min(dt * speed, dt * 2e5); if (!calm) lay.bodies.forEach((b, i) => { if (b.parent >= 0) phases[i] += Math.min(dt * speed * 6.2832 / b.T, dt * 4); }); } last = now;   // every orbit runs at its real period (a galaxy turns once in about 250 million years), capped so fast time never strobes; each body turns at its real rate but never faster than a smooth 5 rad/s, so very fast time never aliases or flickers
      const t = calm ? 40 : 40 + (now - t0) / 1000; const needOv = cv.clientWidth && cv.width < cv.clientWidth * ovDpr * .92;   // only when the map renders below the screen's resolution does the sharp layer earn its cost
     if (needOv) { const tw = Math.round(cv.clientWidth * ovDpr), th = Math.round(cv.clientHeight * ovDpr); if (ov.width !== tw || ov.height !== th) { ov.width = tw; ov.height = th; } if (ov.style.display) ov.style.display = ''; } else if (ov.style.display !== 'none') { ov.style.display = 'none'; og.clearRect(0, 0, ov.width, ov.height); }
     if (cv.clientWidth) sds.forEach((d, i) => { const TT = [640, 1013][i], par = [.04, .1][i], k = cv.clientWidth / cv.width, T = TT * k, ox = (((ex0() * par * k) % T) + T) % T, oy = (((ey0() * par * k) % T) + T) % T; d.style.backgroundSize = T + 'px ' + T + 'px'; d.style.backgroundPosition = `${-ox}px ${-oy}px`; });
@@ -1109,7 +1109,7 @@ const FOUNDER_HASH = '9ee1887e3d8cdf52a64464557fd43e1fa549aac6bee4eb712d33fc9c85
 const FOUNDER_MEAN = [12, 11, 9, 8, 6, 4, 3, 2.4, 1.4];   // typical copies per object by tier: common brown and red dwarfs pile up, quasars are one-offs (what a long-running account with everything looks like)
 function founderFill() {   // gives the founder every sky object with a natural spread of duplicates (and tops up whenever new ones are added)
   let n = 0; const fh = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
-  SKY.OBJ.forEach((o, i) => { const L = SKY.POOL[o.id]; let tot = 0; L.forEach(q => { const want = Math.max(1, Math.round(FOUNDER_MEAN[i] * Math.exp((fh('f' + q.n) - .5) * 1.7))); if ((P.sky.cat[q.n] || 0) < want) { n++; P.sky.cat[q.n] = want; } tot += P.sky.cat[q.n]; }); P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, tot); });
+  SKY.OBJ.forEach((o, i) => { const L = SKY.POOL[o.id]; let tot = 0; L.forEach(q => { const want = Math.max(1, Math.round(FOUNDER_MEAN[i] * Math.exp((fh('f' + q.n) - .5) * 1.7))); if (!P.sky.cat[q.n]) { n++; P.sky.cat[q.n] = 1; } const extra = want - 1, had = (P.sky.fFill = P.sky.fFill || {})[q.n] || 0; if (extra > had) { P.sky.field = P.sky.field || {}; P.sky.field[o.id] = (P.sky.field[o.id] || 0) + extra - had; P.sky.fFill[q.n] = extra; } tot += want; });   /* one of each named object; the founder's duplicates become unnamed finds */ P.sky.found[o.id] = Math.max(P.sky.found[o.id] || 0, tot); });
   P.sky.best = SKY.OBJ.length - 1; P.sky.total = Math.max(P.sky.total || 0, Object.values(P.sky.cat).reduce((x, y) => x + y, 0)); return n;
 }
 async function founderGrant(code) {   // the founder's code adds every sky object on this device (it changes nothing on the server)
@@ -1944,6 +1944,10 @@ async function openReport(back) {
 
 /* --------------------------------------------------------------- live lobbies (streamer races) */
 const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
+function livePid() {   // one seat per tab: two tabs (or a host testing with a second tab) must not share a seat, or the newer one silently takes it over
+  let t = ''; try { t = sessionStorage.getItem('wikiio:tab') || ''; if (!t) { t = Math.random().toString(36).slice(2, 6); sessionStorage.setItem('wikiio:tab', t); } } catch { t = (livePid.t = livePid.t || Math.random().toString(36).slice(2, 6)); }
+  return (String(P.pid).replace(/[^a-z0-9]/g, '').slice(0, 11) + t).slice(0, 16);
+}
 const Live = {
   ws: null, code: '', key: '', play: false, st: null, bd: null, off: 0, round: -1, began: '', screen: '', tries: 0, closed: true, cd: null,
   url(code) { return (API_BASE || location.origin).replace(/^http/, 'ws') + '/api/lobby/' + code + '/ws'; },
@@ -1961,7 +1965,7 @@ const Live = {
     ws.onclose = () => { if (this.ws === ws && !this.closed) setTimeout(() => this.open(), Math.min(8000, 800 * 2 ** this.tries++)); };
   },
   send(o) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
-  hello() { if (this.play && P.name) this.send({ t: 'hello', pid: P.pid, name: P.name }); },
+  hello() { if (this.play && P.name) this.send({ t: 'hello', pid: livePid(), name: P.name }); },
   leave(quiet) {
     this.closed = true; this.play = false; clearInterval(this.cd);
     if (this.ws) { const w = this.ws; this.ws = null; try { w.close(); } catch {} }
@@ -2057,7 +2061,7 @@ async function roomSet(from, to) {   // set the race: resolve both titles, set i
   checkRoute(a.title, b.title).then(res => { const s = Live.st; if (res && s && s.puzzle && s.puzzle.from === a.title && s.puzzle.to === b.title) Live.send({ t: 'set', puzzle: { from: a.title, to: b.title, par: res.par } }); }).catch(() => {});
 }
 function renderRoom(box) {
-  const s = Live.st, b = Live.bd || { room: [], n: 0 }, me = (b.room || []).find(p => p.pid === P.pid), host = !!Live.key, key = Live.code + ':' + s.round + ':' + s.phase;
+  const s = Live.st, b = Live.bd || { room: [], n: 0 }, me = (b.room || []).find(p => p.pid === livePid()), host = !!Live.key, key = Live.code + ':' + s.round + ':' + s.phase;
   if (box.dataset.room !== key) { box.dataset.room = key;   // the frame is built once per phase, so typing is never interrupted; the parts below refresh live
     box.innerHTML = `<div class="room"><div class="room-top"><div><span class="eyebrow">Room</span><div class="room-code">${esc(Live.code)}</div></div><button class="btn ghost" id="rmCopy">Copy invite link</button></div>
       ${s.phase === 'ended' ? '<div id="rmRes"></div>' : ''}
@@ -2070,15 +2074,18 @@ function renderRoom(box) {
       <div class="actions room-act" id="rmAct"></div><div class="actions"><button class="btn ghost" id="rmLeave">Leave room</button></div></div>`;
     attachSuggest($('#rmF'), $('#rmFs')); attachSuggest($('#rmT'), $('#rmTs'));
     $('#rmCopy').onclick = async () => { try { await navigator.clipboard.writeText(Live.link(Live.code)); toast('Invite link copied'); } catch { toast(Live.link(Live.code)); } };
-    $('#rmSet').onclick = () => { const f = $('#rmF').value.trim(), t = $('#rmT').value.trim(); if (!f || !t) return toast('Choose a start and a target'); roomSet(f, t); $('.room-set').open = false; };
-    $('#rmRand').onclick = async () => { try { const v = verifiedPair(); if (v) Live.send({ t: 'set', puzzle: { from: v.from, to: v.to, par: v.par } }); else { const [f, t] = await resolvePair('p' + Math.random()); Live.send({ t: 'set', puzzle: { from: f, to: t } }); } } catch { toast('Could not pick a race'); } };
+    let pend = null;   // a random pick shown in the boxes first: set it, or press Random again for another
+    $('#rmSet').onclick = () => { const f = $('#rmF').value.trim(), t = $('#rmT').value.trim(); if (!f || !t) return toast('Choose a start and a target'); if (pend && pend.from === f && pend.to === t && pend.par) Live.send({ t: 'set', puzzle: pend }); else roomSet(f, t); pend = null; $('.room-set').open = false; };
+    $('#rmRand').onclick = async () => { try { const v = verifiedPair(); let pz; if (v) pz = { from: v.from, to: v.to, par: v.par }; else { const [f, t] = await resolvePair('p' + Math.random()); pz = { from: f, to: t }; }
+      pend = pz; $('#rmF').value = pz.from; $('#rmT').value = pz.to; $('.room-set').open = true; $('#rmSet').textContent = 'Use this race'; } catch { toast('Could not pick a race'); } };
+    ['rmF', 'rmT'].forEach(id => $('#' + id).addEventListener('input', () => { $('#rmSet').textContent = 'Set this race'; }));
     $('#rmDaily').onclick = async () => { try { const d = await getDaily(dayKey()); Live.send({ t: 'set', puzzle: { from: d.from, to: d.to, par: d.par || null } }); } catch { toast('Could not load today’s puzzle'); } };
     $('#rmLeave').onclick = () => { Live.leave(true); closeModal(); if (!$('#game').classList.contains('on')) renderHome(); };
     if (s.phase === 'ended') { const r = document.createElement('div'); renderLiveBoard(r); r.querySelector('#lbLeave') && r.querySelector('#lbLeave').closest('.actions').remove(); $('#rmRes').append(...r.childNodes); }
   }
   const people = b.room || [], here = people.filter(p => p.on), ready = here.filter(p => p.r).length;
   $('#rmN').textContent = `${here.length} here${s.phase === 'open' && here.length ? ` · ${ready} ready` : ''}`;
-  $('#rmPeople').innerHTML = people.length ? people.map(p => `<div class="rp${p.on ? '' : ' off'}${p.r ? ' ready' : ''}"><i></i><b>${esc(p.n)}</b>${p.pid === P.pid ? '<small>you</small>' : ''}${p.h ? '<em>host</em>' : ''}<span>${p.on ? (p.r ? 'Ready' : 'Not ready') : 'Away'}</span>${host && p.pid !== P.pid ? `<button data-kick="${p.pid}" title="Remove">×</button>` : ''}</div>`).join('') : '<p class="mute">Nobody here yet. Share the code or the link.</p>';
+  $('#rmPeople').innerHTML = people.length ? people.map(p => `<div class="rp${p.on ? '' : ' off'}${p.r ? ' ready' : ''}"><i></i><b>${esc(p.n)}</b>${p.pid === livePid() ? '<small>you</small>' : ''}${p.h ? '<em>host</em>' : ''}<span>${p.on ? (p.r ? 'Ready' : 'Not ready') : 'Away'}</span>${host && p.pid !== P.pid ? `<button data-kick="${p.pid}" title="Remove">×</button>` : ''}</div>`).join('') : '<p class="mute">Nobody here yet. Share the code or the link.</p>';
   $('#rmPeople').querySelectorAll('[data-kick]').forEach(k => k.onclick = () => Live.send({ t: 'kick', pid: k.dataset.kick }));
   $('#rmRace').innerHTML = s.puzzle ? `<div class="room-race"><span>From</span><b>${esc(s.puzzle.from)}</b><span>to</span><b class="to">${esc(s.puzzle.to)}</b><small>${s.puzzle.par ? `Can be done in ${s.puzzle.par} click${s.puzzle.par === 1 ? '' : 's'}` : 'Checking a route…'}${s.setBy ? ` · set by ${esc(s.setBy)}` : ''}</small></div>` : '<p class="mute">No race yet. Anyone in the room can set one.</p>';
   const hostName = (people.find(p => p.h) || {}).n || 'the host';
@@ -2090,7 +2097,7 @@ function renderRoom(box) {
 }
 function openLobby() {
   Live.screen = 'lobby';
-  openModal('<div id="lobbyBody"></div>', () => { if (Live.screen === 'lobby') { Live.screen = ''; if (!(G && G.mode === 'live' && !G.done)) Live.leave(true); } });
+  openModal('<div id="lobbyBody"></div>', () => { if (Live.screen === 'lobby') { Live.screen = ''; if (!(G && G.mode === 'live' && !G.done) && !(Live.st && Live.st.mode === 'friends')) Live.leave(true); } });   // closing a friends room keeps your seat (the Live pill reopens it); Leave room leaves
   renderLobby();
 }
 function renderLobby() {
@@ -2140,9 +2147,10 @@ async function openHost() {
     ${alive ? `<div class="unlock" id="hostResume" style="cursor:pointer"><span class="medal">▶</span><span><b>Resume lobby ${esc(saved.code)}</b><small>Your last lobby is still open</small></span></div>` : ''}
     <div class="tabs" id="hostSrc"><button data-s="daily" class="on">Today’s puzzle</button><button data-s="random">Random</button><button data-s="custom">Custom</button></div>
     <div id="hostCustom" hidden><div class="field">Start article<input id="hostFrom" maxlength="80" placeholder="e.g. Tour de France"></div><div class="field">Target article<input id="hostTo" maxlength="80" placeholder="e.g. India"></div><p class="s mute" id="hostChk" style="margin:0 0 6px">We check that a route of four clicks or fewer exists. This takes a little while.</p></div>
-    <div class="actions"><button class="btn" id="hostMake">Create lobby →</button></div>`);
+    <div id="hostPrev" hidden></div><div class="actions"><button class="btn" id="hostMake">Create lobby →</button></div>`);
   let src = 'daily';
-  document.querySelectorAll('#hostSrc button').forEach(b => b.onclick = () => { src = b.dataset.s; document.querySelectorAll('#hostSrc button').forEach(x => x.classList.toggle('on', x === b)); $('#hostCustom').hidden = src !== 'custom'; });
+  let rnd = null; const reroll = async () => { $('#hostPrev').innerHTML = '<p class="mute">Picking…</p>'; try { rnd = await hostPuzzle('random'); } catch { rnd = null; } $('#hostPrev').innerHTML = rnd ? `<div class="room-race"><span>From</span><b>${esc(rnd.from)}</b><span>to</span><b class="to">${esc(rnd.to)}</b><small>${rnd.par ? 'Can be done in ' + rnd.par + ' clicks' : 'Not route-checked'}</small></div><button class="btn ghost" id="hostReroll" type="button">Another random race</button>` : '<p class="mute">Could not pick a race.</p>'; if ($('#hostReroll')) $('#hostReroll').onclick = reroll; };   // see the random race first, and reroll if you like
+  document.querySelectorAll('#hostSrc button').forEach(b => b.onclick = () => { src = b.dataset.s; document.querySelectorAll('#hostSrc button').forEach(x => x.classList.toggle('on', x === b)); $('#hostCustom').hidden = src !== 'custom'; $('#hostPrev').hidden = src !== 'random'; if (src === 'random' && !rnd) reroll(); });
   if ($('#hostResume')) $('#hostResume').onclick = () => { Live.connect(saved.code, saved.key); openHostPanel(); };
   let chk = null;   // {key, res} for the last custom pair we checked
   $('#hostMake').onclick = async () => {
@@ -2160,7 +2168,7 @@ async function openHost() {
         }
         pz = { from: a.title, to: b.title, par: chk.res ? chk.res.par : null };
         if (chk.res) $('#hostChk').textContent = `Checked: solvable in ${chk.res.par} click${chk.res.par === 1 ? '' : 's'}.`;
-      } else pz = await hostPuzzle(src);
+      } else pz = src === 'random' && rnd ? rnd : await hostPuzzle(src);
       const r = await fetch(API_BASE + '/api/lobby', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pz) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'failed');
       const { code, key } = await r.json(); try { localStorage.setItem('wikiio:host', JSON.stringify({ code, key })); } catch {}
