@@ -36,7 +36,8 @@ export default {
       await ready;
       if (request.method === 'GET') {
         if (path === '/api/leaderboard') return reply(await leaderboard(env, q, now()));
-        if (path === '/api/paths') return reply(await pathTree(env, dayParam(q, now())));
+        if (path === '/api/paths') { const t2 = await pathTree(env, dayParam(q, now())); delete t2._odd; return reply(t2); }
+        if (path === '/api/strange') return await strangeWeek(env, now());
         if (path === '/api/league') { const L = await league(env, (q.get('code') || '').toUpperCase()); return L ? reply(L) : reply({ error: 'no such league' }, 404); }
         if (path === '/api/entitlements') { const pid = q.get('pid') || ''; return PID.test(pid) ? reply({ supporter: await isSupporter(env, pid) }) : reply({ error: 'invalid' }, 400); }
         if (path === '/api/health') return reply({ ok: true });
@@ -163,24 +164,35 @@ async function postDelete(env, b, reply) {
 }
 
 // Aggregated routes for the path map: every prefix of every finisher's route, with counts.
+// the week's strangest finishes: each day's rarest completed route, with the player's leaderboard name; cached for ten minutes
+async function strangeWeek(env, t) {
+  const c = caches.default, key = new Request('https://cache.local/strange/' + new Date(t).toISOString().slice(0, 13)); const hit = await c.match(key); if (hit) return hit;
+  const out = []; for (let i = 1; i <= 7; i++) { const day = new Date(t - i * 864e5).toISOString().slice(0, 10), tr = await pathTree(env, day), o = tr._odd; if (!o || tr.total < 5) continue;
+    const pl = await env.DB.prepare('SELECT name FROM players WHERE pid = ?').bind(o.pid).first(); out.push({ day, path: o.p, clicks: o.c, surprise: o.surprise, total: tr.total, name: (pl && pl.name) || '' }); }
+  out.sort((a, b) => b.surprise - a.surprise);
+  const res = new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=600', 'access-control-allow-origin': '*' } }); await c.put(key, res.clone()); return res;
+}
 async function pathTree(env, day) {
-  const rows = (await env.DB.prepare('SELECT clicks, path FROM scores WHERE day = ? LIMIT 5000').bind(day).all()).results.map(r => ({ clicks: r.clicks, path: JSON.parse(r.path) })).filter(r => r.path.length > 1);
+  const rows = (await env.DB.prepare('SELECT pid, clicks, path FROM scores WHERE day = ? LIMIT 5000').bind(day).all()).results.map(r => ({ pid: r.pid, clicks: r.clicks, path: JSON.parse(r.path) })).filter(r => r.path.length > 1);
   const nodes = new Map();
   for (const e of rows) for (let i = 1; i <= e.path.length; i++) { const k = e.path.slice(0, i).join('\u0001'), x = nodes.get(k) || { p: e.path.slice(0, i), n: 0 }; x.n++; nodes.set(k, x); }
   const kids = new Map();
   for (const x of nodes.values()) { const pk = x.p.slice(0, -1).join('\u0001'); (kids.get(pk) || kids.set(pk, []).get(pk)).push(x); }
-  const keep = []; for (const list of kids.values()) keep.push(...list.sort((a, b) => b.n - a.n).slice(0, 4));
+  const keep = []; for (const list of kids.values()) keep.push(...list.sort((a, b) => b.n - a.n).slice(0, list[0] && list[0].p.length === 2 ? 80 : 4));   // every first click (for the crowd heat map of the start page); the four busiest turns after that
   const clicks = rows.map(e => e.clicks), best = rows.length ? Math.min(...clicks) : 0;
-  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best, bestCount: clicks.filter(c => c === best).length, nodes: keep, ...crowdStories(rows, nodes) };
+  const stuck = env.DB ? (await env.DB.prepare("SELECT k, n FROM counters WHERE day = ? AND k LIKE 'x:%' ORDER BY n DESC LIMIT 6").bind(day).all().catch(() => ({ results: [] }))).results.map(r => ({ t: r.k.slice(2), n: r.n })) : [];
+  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best, bestCount: clicks.filter(c => c === best).length, nodes: keep, ...crowdStories(rows, nodes), stuck };
 }
 // the crowd's stories: the most travelled whole routes, and the strangest route that still finished (the rarest turns, scored by surprise)
 function crowdStories(rows, nodes) {
   const K = p => p.join('\u0001'), full = new Map();
-  for (const e of rows) { const k = K(e.path), x = full.get(k) || { p: e.path, n: 0, c: e.clicks }; x.n++; full.set(k, x); }
+  for (const e of rows) { const k = K(e.path), x = full.get(k) || { p: e.path, n: 0, c: e.clicks, pid: e.pid }; x.n++; full.set(k, x); }
   const routes = [...full.values()].sort((a, b) => b.n - a.n || a.c - b.c).slice(0, 3).map(x => ({ p: x.p, n: x.n, c: x.c }));
   let odd = null, best = 0;
-  for (const x of full.values()) { let s = 0; for (let i = 1; i < x.p.length; i++) { const a = nodes.get(K(x.p.slice(0, i))), b = nodes.get(K(x.p.slice(0, i + 1))); if (a && b) s += Math.log(a.n / b.n); } if (x.n === 1 && s > best) { best = s; odd = { p: x.p, c: x.c, surprise: Math.round(s * 100) / 100 }; } }
-  return { routes, odd: rows.length >= 5 ? odd : null };
+  for (const x of full.values()) { let s = 0; for (let i = 1; i < x.p.length; i++) { const a = nodes.get(K(x.p.slice(0, i))), b = nodes.get(K(x.p.slice(0, i + 1))); if (a && b) s += Math.log(a.n / b.n); } if (x.n === 1 && s > best) { best = s; odd = { p: x.p, c: x.c, surprise: Math.round(s * 100) / 100, pid: x.pid }; } }
+  const arts = {}; for (const e of rows) for (const t of new Set(e.path.slice(1, -1))) arts[t] = (arts[t] || 0) + 1;   // how many finishers passed through each article
+  const oddOut = rows.length >= 5 && odd ? { p: odd.p, c: odd.c, surprise: odd.surprise } : null;
+  return { routes, odd: oddOut, arts, _odd: odd };
 }
 
 
@@ -306,6 +318,10 @@ async function postEvent(env, b, request, t, reply) {
     await env.DB.batch([bump(env, day, 'visit'), bump(env, day, 's:' + (src || 'direct')), bump(env, day, b.ret ? 'vr' : 'vn'),
       ...(camp ? [bump(env, day, 'm:' + camp)] : []), ...(DEV_OK.includes(b.dev) ? [bump(env, day, 'd:' + b.dev)] : []), ...(/^[A-Z]{2}$/.test(cc) ? [bump(env, day, 'c:' + cc)] : [])]);   // aggregate only: no IP, no player id
     return reply({ ok: true });
+  }
+  if (b.e === 'stuck') {   // a daily given up on: the article it ended on, counted with no player id
+    const dd = DAY.test(b.day || '') ? b.day : '', tt = typeof b.title === 'string' ? b.title.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 80) : '', near = dd && Math.abs(Date.parse(dd) - Date.parse(day)) <= 2 * 864e5;
+    if (!near || !tt) return reply({ error: 'invalid' }, 400); await env.DB.batch([bump(env, dd, 'x:' + tt), bump(env, dd, 'xg')]); return reply({ ok: true });
   }
   if (!PID.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !MODES.includes(b.mode))) return reply({ error: 'invalid' }, 400);
   if (await env.DB.prepare('SELECT 1 FROM excluded WHERE pid = ?').bind(b.pid).first()) return reply({ ok: true, excluded: true });   // the founder's own devices

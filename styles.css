@@ -1607,3 +1607,13 @@ body.finding .finder-x { display: block; }
 .res-map { margin-top: 8px; }
 
 .rstory { margin: 6px 0 10px; font: italic 400 17px/1.4 var(--display); color: var(--ink-2); } .rstory b { font-style: normal; font-weight: 600; color: var(--ink); } .rstory.hot b:first-child { color: var(--accent-ink); }
+
+.rstuck { margin: 2px 0 6px; font: 400 17px/1.6 var(--display); } .rstuck b { font-weight: 500; } .rstuck em { font: 600 11px var(--sans); color: var(--mute); font-style: normal; margin-left: 3px; } .rstuck i { color: var(--rule); margin: 0 10px; font-style: normal; }
+.gem { margin-top: 16px; text-align: left; } .gem span { display: block; font: 600 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); } .gem b { display: block; font: italic 400 22px var(--display); margin-top: 2px; } .gem small { display: block; font: 400 13px/1.45 var(--sans); color: var(--mute); margin-top: 2px; }
+.crowdheat { max-height: 60vh; overflow: auto; padding-right: 6px; font-size: 16px; } .crowdheat h1 { font-size: 30px; }
+.crowdheat a.ch0 { color: var(--mute) !important; text-decoration: none !important; border: 0 !important; background: none !important; }
+.crowdheat a.chot { position: relative; color: var(--ink) !important; text-decoration: none !important; background: color-mix(in srgb, var(--hc) calc(var(--h) * 55% + 12%), transparent) !important; border-radius: 3px; padding: 0 3px; }
+.crowdheat a.chot::after { content: attr(data-pc); font: 600 9.5px var(--sans); vertical-align: super; margin-left: 2px; color: var(--ink-2); }
+.crowdheat a.chme { outline: 2px solid var(--ink); outline-offset: 1px; }
+.strange { padding: 12px 0; border-bottom: 1px solid var(--rule); } .sth { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; } .sth em { font: 400 12.5px var(--sans); color: var(--mute); font-style: normal; margin-left: auto; }
+.strange p { margin: 6px 0 0 34px; font: italic 400 16px/1.5 var(--display); color: var(--ink-2); } .strange p i { color: var(--mute); font-style: normal; margin: 0 4px; }

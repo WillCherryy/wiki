@@ -345,10 +345,10 @@ function renderHeroAct() {
   } else {
     const resume = cur && cur.mode === 'daily' && cur.day === day;
     box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
-    $('#playBtn').onclick = playDaily;
+    $('#playBtn').onclick = playDaily; hiddenGem().then(g => { const b = $('#gemBox'); if (!g || !b) return; b.innerHTML = `<div class="gem"><span>Yesterday’s hidden gem</span><b>${esc(g.t)}</b><small>${esc(g.from)} → ${esc(g.to)} went through it in ${g.clicks} clicks, the shortest way. ${g.n ? `Only ${g.n} of ${g.total} players found it.` : `None of the ${g.total} players found it.`}</small></div>`; }).catch(() => {});
     box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
     { const tn = tonight(), have = P.sky.cat[tn.n]; box.insertAdjacentHTML('beforeend', `<div class="rewardhow"><span>Your prize</span><div class="rh-lad">${SKY.OBJ.map(o => `<i style="--c:${o.c}" title="${esc(o.name)}"></i>`).join('')}</div><small>Your run decides it: any finish earns a cool star; the fewer clicks, the faster, the hotter. A par route with no search or rewind, in about a minute, earns a quasar.</small></div>
-      <div class="tonight" style="--c:${tn.o.c}"><span>Tonight’s object · a bonus</span><b>${esc(tn.n)}</b><small>${have ? 'Already in your sky' : `If today’s run earns a ${esc(tn.o.name.toLowerCase())}, it will be ${esc(tn.n)}. Not a guarantee: your run decides the type.`}</small></div>`); }
+      <div id="gemBox"></div><div class="tonight" style="--c:${tn.o.c}"><span>Tonight’s object · a bonus</span><b>${esc(tn.n)}</b><small>${have ? 'Already in your sky' : `If today’s run earns a ${esc(tn.o.name.toLowerCase())}, it will be ${esc(tn.n)}. Not a guarantee: your run decides the type.`}</small></div>`); }
   }
 }
 const ICONS = { sky: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>', film: '<rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18M7 7L5 3M12 7L10 3M17 7l-2-4"/>', temple: '<path d="M3 20h18M5 20V10M9.7 20V10M14.3 20V10M19 20V10M3 10l9-6 9 6z"/>', flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M8 15h8"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>', ball: '<circle cx="12" cy="12" r="9"/><path d="M5.5 5.5c5 4 5 9 0 13M18.5 5.5c-5 4-5 9 0 13"/>', food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>', music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>', leaf: '<path d="M5 19C5 9 11 4 20 4c0 9-5 15-15 15z"/><path d="M5 19c3-5 6-8 10-10"/>', planet: '<circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)"/>', art: '<rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 16l5-5 4 4 3-3 4 4"/>', tech: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>', bolt: '<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>', trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 20h8M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>', grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>', target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' };
@@ -904,6 +904,7 @@ function finish(won) {
   P.played++; P.clicksTotal += c;
   if (won) { P.won++; if (!P.best || c < P.best) P.best = c; if (c <= 3) P.lowWins++; if (secs < 60) P.fastWins++; if (G.par && c <= G.par) P.parWins++; if (!G.usedFind && !G.rewinds) P.puristWins++; gain = Math.round(score / 10); }
   else gain = 5;
+  if (G.mode === 'daily' && !won && !P.days[G.day] && G.cur) Ping.send({ e: 'stuck', day: G.day, title: G.cur.title });   // where a daily was given up: counted with no player id, to show the day's traps
   if (G.mode === 'daily') {
     if (!P.days[G.day]) {
       P.days[G.day] = { won, clicks: c, secs, score, path: G.path.slice(), steps: G.steps.map(s => s.sig), par: G.par, stars, timeline: G.timeline.slice(), from: G.from, to: G.toTitle || G.to, rewinds: G.rewinds, purist: !G.usedFind && !G.rewinds, route: G.route || null, alts: G.alts || [] };
@@ -976,7 +977,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'archive' ? 'archive' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL + (r.mode === 'daily' ? 'p/' + G.day : '') : BRAND.domain}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}${r.rare ? `\n💎 A route only ${r.rare.pc < 1 ? 'under 1%' : Math.max(1, Math.round(r.rare.pc)) + '%'} found` : ''}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL + (r.mode === 'daily' ? 'p/' + G.day : '') : BRAND.domain}`;
 }
 /* ----------------------------------------------------------------- result components (one visual language) */
 const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 : i / (n - 1)) * 4));
@@ -1005,13 +1006,33 @@ async function fillCrowd(r) {
   // 1. your rarest turn, as a share of everyone who finished
   let rare = null; for (let i = 1; i < path.length - 1; i++) { const n = by.get(key(path.slice(0, i + 1))) || 0, pc = n / j.total * 100; if (!rare || pc < rare.pc) rare = { t: path[i], pc }; }
   const pctT = v => v < 1 ? 'Under 1%' : v < 10 ? (Math.round(v * 10) / 10) + '%' : Math.round(v) + '%';
+  if (rare && rare.pc < 15) r.rare = { t: rare.t, pc: rare.pc };   // the share card brags about a rare route
   if (rare) prof.insertAdjacentHTML('afterbegin', `<p class="rstory${rare.pc < 25 ? ' hot' : ''}">${rare.pc < 25 ? `<b>${pctT(rare.pc)}</b> of players went through <b>${esc(rare.t)}</b>. That was your rarest turn.` : `Like <b>${pctT(rare.pc)}</b> of players, you went through <b>${esc(rare.t)}</b>.`}</p>`);
   // 2. the most popular route and 3. the strangest one that still finished
   const card = prof.closest('.rcard.routes'), same = p => key(p) === key(path), dots = p => { const rd = rampDots(p.length); return `<ol class="rl">${p.map((t, i) => `<li class="${i === p.length - 1 ? 'end' : ''}"><i class="d" style="--c:${DOT_C[rd[i]]}"></i><span class="t">${esc(t)}</span></li>`).join('')}</ol>`; };
   const top = (j.routes || [])[0], odd = j.odd; let html = '';
   if (top && top.n >= 2) html += `<div class="rsec rcrowd"><div class="rhd2"><b>Most popular route</b><span>${top.n} of ${j.total} players · ${top.c} click${top.c === 1 ? '' : 's'}</span></div>${same(top.p) ? '<p class="rtf">You took it too.</p>' : dots(top.p)}</div>`;
   if (odd) html += `<div class="rsec rcrowd"><div class="rhd2"><b>Strangest route that still finished</b><span>${odd.c} click${odd.c === 1 ? '' : 's'}${same(odd.p) ? ' · yours!' : ''}</span></div>${same(odd.p) ? '<p class="rtf">That was you. Nobody else went your way.</p>' : dots(odd.p)}</div>`;
+  const stk = (j.stuck || []).filter(x => x.n >= 2).slice(0, 4); if (stk.length) html += `<div class="rsec rcrowd"><div class="rhd2"><b>Where players got stuck</b><span>the articles people gave up on</span></div><p class="rstuck">${stk.map(x => `<b>${esc(x.t)}</b> <em>${x.n}</em>`).join('<i>·</i>')}</p></div>`;
   if (html && card && !card.querySelector('.rcrowd')) prof.insertAdjacentHTML('afterend', html);   // right after your own route
+  if (card && !card.querySelector('#heatBtn') && (j.nodes || []).some(x => x.p.length === 2)) { const mb = $('#mapBtn'); (mb ? mb.parentNode : card).insertAdjacentHTML(mb ? 'beforeend' : 'beforeend', `<button class="btn ghost" id="heatBtn">Where everyone clicked first on ${esc(path[0])}</button>`); $('#heatBtn').onclick = () => openCrowdHeat(path[0], j, path[1]); }
+}
+/* the crowd on the start article: every link coloured by how many finishers clicked it first */
+async function openCrowdHeat(start, j, mine) {
+  openModal(`<h2>The crowd on ${esc(start)}</h2><p>Every link, coloured by how many of the ${j.total} finishers clicked it first.${mine ? ` Your first click: <b>${esc(mine)}</b>.` : ''}</p><div class="article crowdheat" id="chArt"><div class="loading">Loading…</div></div>`);
+  let pg; try { pg = await getPage(start); } catch { $('#chArt').innerHTML = '<p class="mute">Could not load the article.</p>'; return; }
+  const first = new Map(j.nodes.filter(x => x.p.length === 2).map(x => [norm(x.p[1]), x.n])), mx = Math.max(1, ...first.values()), art = $('#chArt'); if (!art) return;
+  art.innerHTML = `<h1>${esc(pg.title)}</h1>${pg.html}`;
+  art.querySelectorAll('a[data-t]').forEach(a => { const n = first.get(norm(a.dataset.t)) || 0; a.removeAttribute('href'); if (!n) { a.classList.add('ch0'); return; } const f = n / mx; a.classList.add('chot'); a.style.setProperty('--h', f.toFixed(2)); a.style.setProperty('--hc', tempCss(.25 + .75 * f)); a.dataset.pc = Math.round(n / j.total * 100) + '%'; if (mine && norm(a.dataset.t) === norm(mine)) a.classList.add('chme'); });
+  art.addEventListener('click', e => e.preventDefault());
+}
+/* yesterday's hidden gem: an article on a shortest route that hardly anyone went through */
+async function hiddenGem() {
+  const yd = yesterday(dayKey()); let d, j; try { [d, j] = await Promise.all([getDaily(yd), crowdData(yd)]); } catch { return null; }
+  if (!d || !j || !j.total || j.total < 3) return null; const arts = j.arts || {}, routes = [d.route, ...(d.alts || [])].filter(a => Array.isArray(a) && a.length > 2), best = Math.min(...[...routes.map(r => r.length - 1), j.best || 99]);
+  for (const x of j.routes || []) if (x.c === best) routes.push(x.p);
+  let gem = null; for (const r of routes) if (r.length - 1 === best) for (const t of r.slice(1, -1)) { const n = arts[t] || 0; if (!gem || n < gem.n) gem = { t, n, clicks: best, from: d.from, to: d.to }; }
+  return gem && gem.n <= Math.max(1, j.total * .1) ? { ...gem, total: j.total } : null;
 }
 // The heat of your route: a clean curve of temperature per click, with a heat-map ribbon underneath
 function heatChart(r, Wpx) {
@@ -1234,7 +1255,7 @@ function openLeaderboard(mode = 'day', scope = 'global') {
   const draw = async () => {
     const my = ++n;
     $('#scopes').innerHTML = `<button class="chip sc ${st.scope === 'global' ? 'on' : ''}" data-s="global">Global</button>` + P.leagues.map(l => `<button class="chip sc ${st.scope === l.code ? 'on' : ''}" data-s="${l.code}">${esc(l.name)}</button>`).join('') + `<button class="chip sc ${st.purist ? 'on' : ''}" id="puristTog" title="Only runs with no link search and no rewind">◆ Purist</button><button class="chip" id="addLg">＋ League</button>`;
-    $('#lbTabs').innerHTML = [['day', 'Today'], ['week', 'Week'], ['all', 'All-time'], ['streak', 'Streaks'], ['me', 'Me']].map(([m, l]) => `<button data-m="${m}" class="${st.mode === m ? 'on' : ''}">${l}</button>`).join('');
+    $('#lbTabs').innerHTML = [['day', 'Today'], ['week', 'Week'], ['all', 'All-time'], ['streak', 'Streaks'], ['strange', 'Strangest'], ['me', 'Me']].map(([m, l]) => `<button data-m="${m}" class="${st.mode === m ? 'on' : ''}">${l}</button>`).join('');
     document.querySelectorAll('#scopes [data-s]').forEach(b => b.onclick = () => { st.scope = b.dataset.s; draw(); });
     document.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
     $('#addLg').onclick = () => leagueModal();
@@ -1242,6 +1263,11 @@ function openLeaderboard(mode = 'day', scope = 'global') {
     const body = $('#lbBody');
     if (st.mode === 'me') { body.innerHTML = statsHTML() + '<button class="btn ghost" id="meSet" style="width:100%;margin-top:18px">Settings &amp; data</button>'; paintMeSky(); $('#meSet').onclick = () => openSettings(); return; }
     body.innerHTML = '<div class="empty">Loading…</div>';
+    if (st.mode === 'strange') {   // the week's strangest finishes: the rarest route that still reached the target, each day
+      try { const r = await fetch(API_BASE + '/api/strange'); const L = r.ok ? await r.json() : []; if (my !== n) return;
+        body.innerHTML = `<p class="mute" style="margin:0 0 10px">The rarest route that still finished, each day this week. Speed doesn't count here: surprise does.</p>` + (L.length ? L.map((e, i) => `<div class="strange"><div class="sth"><span class="pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}</span><b>${esc(e.name || 'An anonymous player')}</b><em>${new Date(e.day + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} · ${e.clicks} clicks · 1 of ${e.total}</em></div><p>${e.path.map(esc).join(' <i>›</i> ')}</p></div>`).join('') : '<div class="empty">The hall fills once at least five players finish a day’s puzzle.</div>');
+      } catch { if (my === n) body.innerHTML = OFFLINE; } return;
+    }
     const league = st.scope === 'global' ? '' : st.scope;
     try {
       const rows = await fetchBoard(st.mode, league, st.purist); if (my !== n) return;
@@ -1783,6 +1809,7 @@ async function shareCardCanvas(r) {
   const ref = r.par || r.goal;
   x.font = `italic 400 38px ${SERIF}`; x.fillStyle = INK2;
   x.fillText(r.won ? `Reached in ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` · ${r.par ? 'par' : 'goal'} ${ref}` : ''}${r.purist ? ' · purist' : ''}` : 'Gave up on this one', M, y);
+  if (r.rare && r.won) caps(`A route only ${r.rare.pc < 1 ? 'under 1%' : Math.max(1, Math.round(r.rare.pc)) + '%'} of players found · via ${r.rare.t}`.slice(0, 64), M, y - 52, 20, ACC, 'left', 3);   // the rarity badge, above the score line
   if (r.sky) await SKY.portraitReady({ ...(SKY.rec(r.sky.id, r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, 245, 245);
   if (r.sky) { const o = SKY.byId(r.sky.id), sb = { ...(SKY.rec(r.sky.id, r.sky.name) || SKY.POOL[r.sky.id][0]), id: r.sky.id }, cx = W - M - 98, cy = y - 30, rad = 98; x.save(); x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.clip(); const bg = x.createRadialGradient(cx, cy, 10, cx, cy, rad); bg.addColorStop(0, '#1c1830'); bg.addColorStop(1, '#0b0a14'); x.fillStyle = bg; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.translate(cx - 98, cy - 98); SKY.starfield(x, 196, 196, 0, 14, 5); SKY.portrait(x, 196, 196, sb, 1.4, 1, { z: 1.25 }); x.restore(); x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, rad, 0, 7); x.stroke();
     x.font = `italic 400 34px ${DISP}`; x.fillStyle = o.c === '#cfe2ff' || o.c === '#e6f1ff' ? '#6a86b8' : o.c; x.textAlign = 'left'; x.fillText(r.sky.name || o.name, M, y + 44); caps((r.sky.temp || o.temp), M, y + 82, 20, MUTE, 'left', 3); }

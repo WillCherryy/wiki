@@ -67,7 +67,7 @@ function board(mode, day, league, purist) {
 
 // Aggregated routes for the "path map": every prefix of every finisher's route, with counts.
 function pathTree(day) {
-  const rows = Object.values(db.scores).filter(e => e.day === day && Array.isArray(e.path) && e.path.length > 1);
+  const rows = Object.values(db.scores).filter(e => e.day === day && Array.isArray(e.path) && e.path.length > 1).map(e => ({ ...e }));
   const nodes = new Map();
   for (const e of rows) for (let i = 1; i <= e.path.length; i++) {
     const k = e.path.slice(0, i).join('\u0001'), x = nodes.get(k) || { p: e.path.slice(0, i), n: 0 };
@@ -76,19 +76,21 @@ function pathTree(day) {
   const kids = new Map();   // keep the 4 busiest children per parent so the payload stays small
   for (const x of nodes.values()) { const pk = x.p.slice(0, -1).join('\u0001'); (kids.get(pk) || kids.set(pk, []).get(pk)).push(x); }
   const keep = [];
-  for (const list of kids.values()) keep.push(...list.sort((a, b) => b.n - a.n).slice(0, 4));
+  for (const list of kids.values()) keep.push(...list.sort((a, b) => b.n - a.n).slice(0, list[0] && list[0].p.length === 2 ? 80 : 4));
   const clicks = rows.map(e => e.clicks), best = Math.min(...clicks);
-  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best: rows.length ? best : 0, bestCount: clicks.filter(c => c === best).length, nodes: keep , ...crowdStories(rows, nodes) };
+  return { total: rows.length, avg: rows.length ? clicks.reduce((a, b) => a + b, 0) / rows.length : 0, best: rows.length ? best : 0, bestCount: clicks.filter(c => c === best).length, nodes: keep, ...crowdStories(rows, nodes), stuck: Object.entries((db.stuck || {})[day] || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t, n]) => ({ t, n })) };
 }
 
 // the crowd's stories: the most travelled whole routes, and the strangest route that still finished (the rarest turns, scored by surprise)
 function crowdStories(rows, nodes) {
   const K = p => p.join('\u0001'), full = new Map();
-  for (const e of rows) { const k = K(e.path), x = full.get(k) || { p: e.path, n: 0, c: e.clicks }; x.n++; full.set(k, x); }
+  for (const e of rows) { const k = K(e.path), x = full.get(k) || { p: e.path, n: 0, c: e.clicks, pid: e.pid }; x.n++; full.set(k, x); }
   const routes = [...full.values()].sort((a, b) => b.n - a.n || a.c - b.c).slice(0, 3).map(x => ({ p: x.p, n: x.n, c: x.c }));
   let odd = null, best = 0;
-  for (const x of full.values()) { let s = 0; for (let i = 1; i < x.p.length; i++) { const a = nodes.get(K(x.p.slice(0, i))), b = nodes.get(K(x.p.slice(0, i + 1))); if (a && b) s += Math.log(a.n / b.n); } if (x.n === 1 && s > best) { best = s; odd = { p: x.p, c: x.c, surprise: Math.round(s * 100) / 100 }; } }
-  return { routes, odd: rows.length >= 5 ? odd : null };
+  for (const x of full.values()) { let s = 0; for (let i = 1; i < x.p.length; i++) { const a = nodes.get(K(x.p.slice(0, i))), b = nodes.get(K(x.p.slice(0, i + 1))); if (a && b) s += Math.log(a.n / b.n); } if (x.n === 1 && s > best) { best = s; odd = { p: x.p, c: x.c, surprise: Math.round(s * 100) / 100, pid: x.pid }; } }
+  const arts = {}; for (const e of rows) for (const t of new Set(e.path.slice(1, -1))) arts[t] = (arts[t] || 0) + 1;
+  const oddOut = rows.length >= 5 && odd ? { p: odd.p, c: odd.c, surprise: odd.surprise } : null;
+  return { routes, odd: oddOut, arts, _odd: odd };
 }
 
 
@@ -193,6 +195,7 @@ const server = http.createServer((req, res) => {
       const ua = req.headers['user-agent'] || '', src = SRC_OK.test(b.src || '') ? String(b.src).toLowerCase() : '', camp = SRC_OK.test(b.camp || '') ? String(b.camp).toLowerCase() : '';
       if (BOT_UA.test(ua) || !ua) { bumpC(day, 'bot'); save(); return json(res, 200, { ok: true }); }
       if (b.e === 'visit') { bumpC(day, 'visit'); bumpC(day, 's:' + (src || 'direct')); bumpC(day, b.ret ? 'vr' : 'vn'); if (camp) bumpC(day, 'm:' + camp); if (['mobile', 'desktop'].includes(b.dev)) bumpC(day, 'd:' + b.dev); const cc = String(req.headers['cf-ipcountry'] || '').toUpperCase(); if (/^[A-Z]{2}$/.test(cc)) bumpC(day, 'c:' + cc); save(); return json(res, 200, { ok: true }); }
+      if (b.e === 'stuck') { const tt = typeof b.title === 'string' ? b.title.trim().slice(0, 80) : ''; if (!DAY.test(b.day || '') || !tt) return json(res, 400, { error: 'invalid' }); db.stuck = db.stuck || {}; const m = db.stuck[b.day] = db.stuck[b.day] || {}; m[tt] = (m[tt] || 0) + 1; save(); return json(res, 200, { ok: true }); }
       if (!/^[a-z0-9]{6,16}$/.test(b.pid) || !['start', 'finish', 'share'].includes(b.e) || (b.mode && !['daily', 'practice', 'pack', 'challenge', 'live'].includes(b.mode))) return json(res, 400, { error: 'invalid' });
       if ((db.excluded || {})[b.pid]) return json(res, 200, { ok: true, excluded: true });
       db.acq = db.acq || {}; if (!db.acq[b.pid]) db.acq[b.pid] = { src: src || 'direct', camp, first_day: day };
@@ -222,7 +225,11 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/api/paths' && req.method === 'GET') {
     const day = DAY.test(q.get('day') || '') ? q.get('day') : new Date().toISOString().slice(0, 10);
-    return json(res, 200, pathTree(day));
+    const t2 = pathTree(day); delete t2._odd; return json(res, 200, t2);
+  }
+  if (url.pathname === '/api/strange' && req.method === 'GET') {
+    const out = []; for (let i = 1; i <= 7; i++) { const day = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10), tr = pathTree(day), o = tr._odd; if (!o || tr.total < 5) continue; const pl = (db.players || {})[o.pid]; out.push({ day, path: o.p, clicks: o.c, surprise: o.surprise, total: tr.total, name: (pl && pl.name) || '' }); }
+    return json(res, 200, out.sort((a, b) => b.surprise - a.surprise));
   }
   if ((url.pathname === '/api/save' || url.pathname === '/api/load') && req.method === 'POST') {   // anonymous cloud save, same contract as worker/index.js
     if (limited('save:' + req.socket.remoteAddress)) return json(res, 429, { error: 'slow down' });
