@@ -202,7 +202,7 @@ async function getBacklinks(title, cap = 2000) {   // pages that link TO the tar
     for (const l of pg.linkshere || []) if (!l.redirect) out.add(norm(l.title));
     cont = out.size < cap ? j.continue : null;
   }
-  backC.set(k, out); return out;
+  out.complete = !cont; backC.set(k, out); return out;   // complete: every page that links to the target is known, so 'two clicks away' can be read exactly
 }
 const inflight = new Map();
 function getPage(title) {
@@ -459,25 +459,44 @@ async function startGame(mode, resume, extra) {
   clearInterval(tick); tick = setInterval(() => { $('#mTime').textContent = fmt(elapsed()); }, 500);
   await go(target, true, resume);
 }
+/* The heat is a distance gauge: how many clicks this page is from the target, relative to where you started.
+   1 click (links to the target) and 2 clicks (links to a page that links to it) are exact; pages on a known shortest route know their distance;
+   anything else is read as no closer than the start, unless the evidence is strong. So it starts cold and only warms when you truly get closer. */
+const NEAR2 = new Map();   // page -> true when one of its links links to the target (checked with Wikipedia when our backlink list is incomplete)
+function distOf(page) {
+  const tg = [norm(G.toTitle), norm(G.to)]; if (tg.some(t => page.links.has(t))) return 1;
+  const key = norm(page.title); let d = null;
+  for (const r of [G.route, ...(G.alts || [])]) if (Array.isArray(r)) { const i = r.findIndex(t => norm(t) === key); if (i >= 0) { const x = r.length - 1 - i; d = d === null ? x : Math.min(d, x); } }
+  const back = G.back1 || new Set(); let strong = 0; page.links.forEach(l => { if (back.has(l)) strong++; });
+  if (strong || NEAR2.get(key + '>' + norm(G.toTitle)) === true) return Math.min(d === null ? 2 : d, 2);
+  if (d !== null) return d;
+  for (const r of [G.route, ...(G.alts || [])]) if (Array.isArray(r) && r.length > 3) { const n3 = norm(r[r.length - 3]); if (page.links.has(n3)) return 3; }   // links onto a shortest route two clicks from the goal
+  return null;   // further than two clicks, distance unknown
+}
+function startDist() {   // how far the start was: the par when known, else measured on the first page
+  if (G.par) return G.par; if (G.d0) return G.d0; return 4;
+}
 function signalFor(page) {
-  const tg = [norm(G.toTitle), norm(G.to)];
-  if (tg.some(t => page.links.has(t))) return 1;                                           // one click away: in sight
-  // 1. exact: pages on a verified route know how far from the goal they are
-  const key = norm(page.title); let on = null;
-  for (const r of [G.route, ...(G.alts || [])]) if (Array.isArray(r)) { const i = r.findIndex(t => norm(t) === key); if (i >= 0) { const d = r.length - 1 - i; on = on === null ? d : Math.min(on, d); } }
-  let s = on === null ? 0 : on <= 1 ? 1 : on === 2 ? .86 : on === 3 ? .66 : .5;
-  // 2. two clicks away: this page links to a page that links to the goal (backlinks), or to a page the goal links to (weaker evidence)
-  let strong = 0, weak = 0; const back = G.back1 || new Set(), fwd = G.fwd || new Set();
-  page.links.forEach(l => { if (back.has(l)) strong++; else if (fwd.has(l)) weak++; });
-  const two = strong >= 2 ? .82 + Math.min(.13, .02 * (strong - 2)) : strong === 1 ? .7 : weak ? .52 + Math.min(.14, .03 * weak) : 0;
-  // 3. otherwise: shared vocabulary and shared neighbours, capped so a far-away page can never look close
-  let hit = 0; G.keywords.forEach(k => { if (page.tokens.has(k)) hit++; });
-  const kw = Math.pow(hit / Math.max(10, G.keywords.size * .7), .8) * .6; let sh = 0; if (fwd.size) page.links.forEach(l => { if (fwd.has(l)) sh++; });
-  const far = Math.min(.6, kw * .8 + .3 * Math.min(1, sh / 15));
-  return Math.min(.95, Math.max(s, two, far));
+  const D0 = Math.max(2, startDist()), d = distOf(page); let est = d;
+  if (est === null) {   // unknown: as far as the start, or one closer when shared vocabulary and neighbours are strong
+    let hit = 0; G.keywords.forEach(k => { if (page.tokens.has(k)) hit++; }); const fwd = G.fwd || new Set(); let sh = 0; if (fwd.size) page.links.forEach(l => { if (fwd.has(l)) sh++; });
+    const ev = Math.pow(hit / Math.max(10, G.keywords.size * .7), .8) * .7 + .3 * Math.min(1, sh / 15); est = D0 >= 4 && ev > .55 ? D0 - 1 : D0;
+  }
+  if (est <= 1) return 1;
+  if (est >= D0) return d === null ? .06 : .1;   // as far as the start, or further: cold
+  const p = (D0 - est) / (D0 - 1), s = .1 + .78 * p; return est === 2 ? Math.max(.76, s) : Math.min(.7, s);   // closer: warm; two clicks away: scorching
+}
+function checkNear2(page) {   // when the target is so popular that our list of pages linking to it is cut short, ask Wikipedia directly
+  const back = G.back1, k = norm(page.title) + '>' + norm(G.toTitle); if (!back || back.complete || NEAR2.has(k) || distOf(page) !== null && distOf(page) <= 2) return;
+  NEAR2.set(k, null); const L = [...page.links].slice(0, 400), gref = G;
+  (async () => { for (let i = 0; i < L.length; i += 50) { const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'links', titles: L.slice(i, i + 50).join('|'), pltitles: G.toTitle, pllimit: 'max', maxage: '3600', smaxage: '3600' });
+      try { const j = await (await fetch(`${API}?${q}`)).json(); if (((j.query || {}).pages || []).some(pg => pg.links && pg.links.length)) { NEAR2.set(k, true); break; } } catch { NEAR2.delete(k); return; } }
+    if (NEAR2.get(k) === null) NEAR2.set(k, false); if (G === gref && G.cur && norm(G.cur.title) + '>' + norm(G.toTitle) === k) recomputeHeat(); })();
 }
 function recomputeHeat() {   // the backlink data arrives a moment after the first page: refresh the reading
   if (!G || G.done || !G.cur || !G.toTitle) return;
+  if (!G.par && G.path.length === 1) { const d = distOf(G.cur); G.d0 = d === null ? 4 : d; if (G.steps[0]) G.steps[0].sig = signalFor(G.cur); }   // no known par: the start's own distance is the baseline
+  checkNear2(G.cur);
   const win = norm(G.cur.title) === norm(G.toTitle), sg = win ? 1 : signalFor(G.cur);
   G.sig = sg; if (G.steps.length) G.steps[G.steps.length - 1].sig = sg; updateHud();
 }
@@ -496,7 +515,7 @@ async function go0(title, initial, resume, kind = 'go') {
   if (!resume || !initial) G.steps.push({ title: page.title, sig });
   else if (!G.steps.length) G.steps.push({ title: page.title, sig });
   if (!(resume && initial && G.timeline.length)) G.timeline.push({ t: Math.round(elapsed() * 10) / 10, title: page.title, sig: win ? 1 : sig, k: initial ? 'start' : kind });
-  G.cur = page; G.sig = win ? 1 : sig;
+  G.cur = page; G.sig = win ? 1 : sig; if (!win) checkNear2(page);
   const wp = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(page.title.replace(/ /g, '_'));
   art.innerHTML = `<h1>${esc(page.title)}</h1>${page.html}<p class="attr">Text from <a href="${wp}" target="_blank" rel="noopener">Wikipedia</a>, available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p>`;
   art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
@@ -1371,7 +1390,7 @@ function ask(h, text, yes, cb) {
 function showHelp() {
   openModal(`<h2>How to play</h2><p>Race through Wikipedia from the start article to the target.</p>
   <ol><li><b>Click links</b> inside the article to travel. Each jump is one click. Every puzzle is checked by computer: a route of <b>four clicks or fewer</b> always exists.</li><li>Reach the <b>target</b> in as few clicks as possible. Time breaks ties.</li>
-  <li>The <b>Signal</b> meter shows how close you are in topic. The whole UI heats from blue to red as you get closer. When it says <b>Scorching</b>, you are nearly there.</li>
+  <li>The <b>temperature</b> measures clicks, not topic: it starts <b>Cold</b>, turns <b>Warm</b> when you are a click closer than you started, <b>Scorching</b> when you are two clicks away, and <b>In sight</b> when the target is one link away. The whole page heats with it.</li>
   <li>Use <b>Find a link</b> to search the article's links. <b>Back</b> costs +1 click.</li>
   <li>Solve daily and pack puzzles to earn real astronomical objects for <b>your sky</b>. The better the route, the hotter the object. Keep your <b>streak</b> and challenge friends in <b>leagues</b>.</li></ol>
   <p style="font-size:13px"><kbd>/</kbd> find a link &nbsp; <kbd>B</kbd> back &nbsp; <kbd>T</kbd> target &nbsp; <kbd>Esc</kbd> close</p>
