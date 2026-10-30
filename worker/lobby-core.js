@@ -7,7 +7,8 @@ const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g,
 const MAX_PLAYERS = 1000, COUNTDOWN_MS = 5000, FLUSH_MS = 1000, AUTO_END_MS = 45 * 60 * 1000;
 
 export class LobbyCore {
-  constructor({ code, hostKey, mode = 'stream', now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
+  // timers are called through wrappers, not stored and called as methods: in the Workers runtime a global timer called with the wrong `this` throws 'Illegal invocation'
+  constructor({ code, hostKey, mode = 'stream', now = () => Date.now(), setTimer = (f, ms) => setTimeout(f, ms), clearTimer = h => clearTimeout(h) }) {
     Object.assign(this, { code, hostKey, now, setTimer, clearTimer }); this.mode = mode === 'friends' ? 'friends' : 'stream'; this.hostPid = ''; this.setBy = '';
     this.puzzle = null; this.phase = 'open'; this.round = 0; this.startAt = 0;
     this.conns = new Set(); this.players = new Map();   // pid -> player

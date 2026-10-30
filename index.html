@@ -2124,7 +2124,7 @@ async function openLiveJoin(code) {
     <p>${info.n} ${info.n === 1 ? 'person' : 'people'} here now. Everyone races the same puzzle at the same moment. No account needed.</p>
     <div class="field" style="text-align:left">Your nickname<input id="ldName" maxlength="20" value="${esc(P.name)}" placeholder="Shown on the stream" autocomplete="off"></div>
     <button class="btn" id="ldJoin" style="width:100%;font-size:17px;padding:16px">Join the race →</button></div>`, () => { if (!Live.play) Live.leave(true); });
-  $('#ldJoin').onclick = () => ldName('#ldName', () => { Live.play = true; Live.hello(); openLobby(); });
+  $('#ldJoin').onclick = () => ldName('#ldName', () => { Live.play = true; Live.hello(); openLobby(); setTimeout(() => { if (!Live.st) toast('Still connecting to the room. If this persists, the code may have expired: ask for a new one'); }, 6000); });
   $('#ldName').onkeydown = e => { if (e.key === 'Enter') $('#ldJoin').click(); };
 }
 /* ---- friends rooms: a waiting room where everyone sees who is here, anyone can set the race from any two Wikipedia articles, the host starts it */

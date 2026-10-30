@@ -40,7 +40,7 @@ export default {
         if (path === '/api/strange') return await strangeWeek(env, now());
         if (path === '/api/league') { const L = await league(env, (q.get('code') || '').toUpperCase()); return L ? reply(L) : reply({ error: 'no such league' }, 404); }
         if (path === '/api/entitlements') { const pid = q.get('pid') || ''; return PID.test(pid) ? reply({ supporter: await isSupporter(env, pid) }) : reply({ error: 'invalid' }, 400); }
-        if (path === '/api/health') return reply({ ok: true });
+        if (path === '/api/health') return reply({ ok: true, lobbies: !!env.LOBBY });   // rooms and streams need the Lobby Durable Object; this shows whether it is bound
         if (path === '/api/reports') return await getReports(env, request, reply);
         if (path === '/api/admin/stats') return await adminStats(env, request, q, now(), reply);
         if (path === '/api/daily') return await getDaily(env, q.get('day') || '', reply);

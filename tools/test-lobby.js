@@ -113,4 +113,13 @@ async function rooms() {   // friends rooms: no race needed to open, anyone sets
   L.message(a, JSON.stringify({ t: 'set', puzzle: { from: 'X', to: 'Y' } })); assert.strictEqual(L.puzzle.to, 'Moon', 'the race cannot change once it is under way');
   console.log('ok: friends rooms (no race to open, anyone sets it, par added in place, ready, live head count, host starts)');
 }
-core().then(rooms).then(wire).catch(e => { console.error(e); process.exit(1); });
+async function timers() {   // regression: the Workers runtime rejects a global timer called with the lobby as `this` (the bug that stopped every join)
+  const { LobbyCore } = await import(path.join(__dirname, '..', 'worker', 'lobby-core.js'));
+  const real = globalThis.setTimeout, clear = globalThis.clearTimeout; let fired = 0;
+  globalThis.setTimeout = function (f, ms) { if (this !== globalThis && this !== undefined) throw new TypeError('Illegal invocation'); fired++; return real(f, 0); };
+  globalThis.clearTimeout = function (h) { if (this !== globalThis && this !== undefined) throw new TypeError('Illegal invocation'); return clear(h); };
+  try { const L = new LobbyCore({ code: 'TIMER', hostKey: 'k', mode: 'friends' }); const c = { send() {} }; L.join(c); L.message(c, JSON.stringify({ t: 'hello', pid: 'timerpid001', name: 'Tim' })); await new Promise(r => real(r, 1200)); assert(fired > 0, 'a flush was scheduled'); assert.strictEqual(L.players.get('timerpid001').online, true, 'the player is registered');
+  } finally { globalThis.setTimeout = real; globalThis.clearTimeout = clear; }
+  console.log('ok: lobby timers (the Workers runtime rejects an unbound global timer; players must still register)');
+}
+core().then(rooms).then(timers).then(wire).catch(e => { console.error(e); process.exit(1); });
