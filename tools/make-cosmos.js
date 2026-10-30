@@ -13,7 +13,7 @@ const ARGS = ['--no-sandbox', '--allow-file-access-from-files', '--disable-gpu-v
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium', args: ARGS });
   const probe = await b.newPage({ viewport: { width: VW, height: VH } }); await probe.goto('file://' + page + '?nobake=1' + Q); await probe.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-  const baked = await probe.evaluate(() => window.bake()); for (const k of ['sky', 'ridge', 'deep', 'gal', 'web', 'near']) fs.writeFileSync(path.join(BK, k + '.png'), Buffer.from(baked[k].split(',')[1], 'base64'));
+  const baked = await probe.evaluate(() => window.bake()); for (const k of ['sky', 'ridge', 'deep', 'gal', 'atl', 'crab']) fs.writeFileSync(path.join(BK, k + '.png'), Buffer.from(baked[k].split(',')[1], 'base64'));
   const info = await probe.evaluate(() => ({ duration: window.DURATION, events: window.EVENTS })); await probe.close(); console.log('baked in', baked.ms, 'ms');
   const audio = path.join(out, 'scorcher-cosmos.wav'); if (!SILENT) execFileSync('python3', [path.join(__dirname, 'make-cosmos-audio.py'), audio], { stdio: 'inherit' });
   const T0 = arg('from', 0), T1 = Math.min(info.duration, arg('to', info.duration)), F0 = Math.round(T0 * FPS), F1 = Math.round(T1 * FPS), dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scorcher-cosmos-'));

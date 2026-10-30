@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Original score for the Cosmos film (tools/video/cosmos.html): pipe organ, strings and a slow clock, written for this film and
 synthesised here, so it is ours to use anywhere. A minor, shaped to the picture:
-  0-12 a lone organ and a high ostinato over the night sky; 12-27 the clock starts and the chords walk down as Earth falls away;
-  27 the Milky Way: full organ; 41-56 thinning to a drone for Betelgeuse and the pulsar; 56-71 a long climb into TON 618, the
-  biggest chord at 66; 71-88 the deep field and the end card, resolving to A major and dying away.
+  0-12 a lone organ over the night sky; 12-27 the clock starts as Earth falls away; 27 the Milky Way: full organ; 41-87 quiet for
+  Betelgeuse, the Crab and the pulsar (whose clock quickens to a heartbeat); 87-104 the long flight, climbing; 109 the biggest chord at
+  TON 618's black hole; 115-133 the deep field and the end card, resolving to A major and dying away.
 usage: python3 tools/make-cosmos-audio.py [out.wav]   (numpy only)"""
 import os, sys, wave
 import numpy as np
-HERE = os.path.dirname(os.path.abspath(__file__)); SR = 44100; DUR = 88.0; N = int(SR * DUR); rng = np.random.default_rng(11)
+HERE = os.path.dirname(os.path.abspath(__file__)); SR = 44100; DUR = 133.0; N = int(SR * DUR); rng = np.random.default_rng(11)
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'brand', 'video', 'scorcher-cosmos.wav')
 NOTE = {'C': -9, 'C#': -8, 'Db': -8, 'D': -7, 'Eb': -6, 'E': -5, 'F': -4, 'F#': -3, 'G': -2, 'G#': -1, 'Ab': -1, 'A': 0, 'Bb': 1, 'B': 2}
 def hz(n):   # 'A4', 'C#3' ...
@@ -61,20 +61,23 @@ CH = [
     (1.5, 12.0, 'A1', ['A2', 'E3', 'A3', 'C4'], 'soft'),
     (12.0, 15.6, 'A1', ['A2', 'E3', 'C4', 'E4'], 'soft'), (15.6, 19.2, 'F1', ['F2', 'C3', 'A3', 'C4'], 'soft'), (19.2, 22.8, 'C2', ['C3', 'G3', 'C4', 'E4'], 'soft'), (22.8, 27.0, 'G1', ['G2', 'D3', 'B3', 'D4'], 'soft'),
     (27.0, 30.6, 'F1', ['F2', 'C3', 'F3', 'A3', 'C4', 'F4'], 'full'), (30.6, 34.2, 'E1', ['C3', 'G3', 'C4', 'E4', 'G4'], 'full'), (34.2, 37.8, 'D1', ['D3', 'A3', 'D4', 'F4', 'A4'], 'full'), (37.8, 41.6, 'A1', ['A2', 'E3', 'A3', 'C4', 'E4'], 'full'),
-    (41.6, 48.6, 'D1', ['D3', 'A3', 'F4'], 'soft'), (48.6, 56.0, 'Bb0', ['Bb2', 'F3', 'D4'], 'soft'),
-    (56.0, 59.4, 'A1', ['A2', 'E3', 'C4'], 'soft'), (59.4, 62.8, 'F1', ['F2', 'C3', 'A3', 'C4'], 'full'), (62.8, 66.2, 'D1', ['F2', 'D3', 'A3', 'D4', 'F4'], 'full'), (66.2, 71.4, 'E1', ['E2', 'B2', 'E3', 'G#3', 'B3', 'E4', 'G#4'], 'full'),
-    (71.4, 75.0, 'A1', ['A2', 'E3', 'C4', 'E4'], 'soft'), (75.0, 78.0, 'F1', ['F2', 'C3', 'A3', 'C4'], 'soft'), (78.0, 87.5, 'A1', ['A2', 'E3', 'A3', 'C#4', 'E4', 'A4'], 'soft'),
+    (41.6, 49.4, 'D1', ['D3', 'A3', 'F4'], 'soft'), (49.4, 55.2, 'D1', ['D3', 'A3', 'D4', 'F4'], 'soft'),   # the dive into Betelgeuse, and holding on it
+    (55.2, 61.6, 'Bb0', ['Bb2', 'F3', 'D4'], 'soft'), (61.6, 66.2, 'G1', ['G2', 'D3', 'Bb3', 'D4'], 'soft'),   # across the galaxy, down into the Crab
+    (66.2, 73.8, 'F1', ['F2', 'C3', 'A3', 'C4'], 'soft'), (73.8, 79.2, 'Bb0', ['Bb2', 'F3', 'D4'], 'soft'),   # the nebula, the pulsar
+    (79.2, 87.2, 'A1', ['A2', 'E3', 'A3', 'C4'], 'soft'), (87.2, 93.0, 'F1', ['F2', 'C3', 'F3', 'A3', 'C4'], 'full'), (93.0, 98.4, 'C2', ['C3', 'G3', 'C4', 'E4', 'G4'], 'full'), (98.4, 103.6, 'D1', ['D3', 'A3', 'D4', 'F4', 'A4'], 'full'),   # out of the galaxy and the long flight
+    (103.6, 109.2, 'D1', ['F2', 'D3', 'A3', 'D4', 'F4'], 'full'), (109.2, 115.6, 'E1', ['E2', 'B2', 'E3', 'G#3', 'B3', 'E4', 'G#4'], 'full'),   # into TON 618, and its heart
+    (115.6, 119.2, 'A1', ['A2', 'E3', 'C4', 'E4'], 'soft'), (119.2, 122.6, 'F1', ['F2', 'C3', 'A3', 'C4'], 'soft'), (122.6, 132.5, 'A1', ['A2', 'E3', 'A3', 'C#4', 'E4', 'A4'], 'soft'),
 ]
-LOUD = lambda t: np.interp(t, [0, 12, 26, 27, 41, 44, 56, 62, 66.2, 70, 72, 78, 88], [.13, .2, .38, 1.0, .85, .26, .3, .6, 1.12, .8, .26, .4, .3])
+LOUD = lambda t: np.interp(t, [0, 12, 26, 27, 41, 44, 49.4, 55, 61.6, 66.2, 73.8, 79.2, 87.2, 95, 103.6, 109.2, 113, 115.6, 122.6, 133], [.13, .2, .38, 1.0, .85, .26, .42, .3, .3, .38, .3, .3, .5, .66, .8, 1.12, .85, .3, .4, .3])
 for (a, b, root, notes, reg) in CH:
     d = b - a + .05; g = LOUD(a)
     add(a, organ(hz(root) * 2, d, 'full' if reg == 'full' else 'soft', a=.5, r=1.6), .16 * g)   # the pedal
     for k, nn in enumerate(notes):
         add(a, organ(hz(nn), d, reg, a=.6 if reg == 'soft' else .25, r=1.5), (.09 if reg == 'soft' else .085) * g, pan=(k / max(1, len(notes) - 1) - .5) * .7)
-    if a >= 26.5 and not (41 < a < 56):   # strings double the top voices where the picture is grand
+    if a >= 26.5 and not (41 < a < 87):   # strings double the top voices where the picture is grand
         for k, nn in enumerate(notes[-3:]):
             add(a, strings(hz(nn) * 2, d, a=1.8 if a < 27.5 else 1.0), .05 * g, pan=(k - 1) * .5)
-    if 41 < a < 56:   # a high, quiet string harmonic over the drone
+    if 41 < a < 87:   # a high, quiet string harmonic over the drone
         add(a, strings(hz(notes[-1]) * 4, d, a=2.5, r=3), .03)
 # --- the ostinato: two notes rocking, the figure of a clock; it changes with the harmony
 def chord_at(t):
@@ -83,8 +86,8 @@ def chord_at(t):
     return CH[-1][3]
 STEP = .3
 t = 4.0
-while t < 80.0:
-    if 41.6 < t < 46 or 71.4 < t < 73: t += STEP; continue
+while t < 125.0:
+    if 41.6 < t < 46 or 115.6 < t < 117.4: t += STEP; continue
     notes = chord_at(t); top = [hz(n) * 4 for n in notes[-2:]] if len(notes) >= 2 else [hz(notes[-1]) * 4]
     k = int(round((t - 4.0) / STEP)); f = top[k % len(top)] if k % 4 != 3 else top[0] * 1.5
     while f > 1900: f /= 2
@@ -93,12 +96,15 @@ while t < 80.0:
     add(t, bell(f, 1.4), .045 * dens, pan=.35 if k % 2 else -.35)
     t += STEP
 # --- the clock: a soft tick every 1.2 s from Earth to the end of the dive, faster for the pulsar
-for tt in np.arange(12.0, 71.4, 1.2): add(tt, tick(), .05 if tt < 48 else .035, pan=.15)
-for tt in np.arange(48.6, 56.0, 1 / 3.0): add(tt, tick(.05), .028 * (1 - abs(tt - 52.3) / 4.5), pan=-.2)   # the pulsar, slowed to a heartbeat
+for tt in np.arange(12.0, 115.6, 1.2):
+    if not (73.8 < tt < 79.2): add(tt, tick(), .05 if tt < 48 else .035, pan=.15)
+for tt in np.arange(73.8, 79.2, 1 / 3.0): add(tt, tick(.05), .028 * (1 - abs(tt - 76.5) / 3.3), pan=-.2)   # the pulsar, slowed to a heartbeat
 # --- the great moments: air rising into them, a low boom under them
 add(24.2, swell(2.8, 160, 3000), .07); add(27.0, boom(6.0, 36), .38)
-add(63.0, swell(3.2, 120, 3600), .09); add(66.2, boom(7.0, 30), .5)
-add(77.0, swell(1.4, 400, 2600), .04)
+add(46.6, swell(2.8, 200, 2600), .04); add(64.0, swell(2.2, 200, 2400), .035)
+add(87.2, swell(16.0, 90, 2400), .06)   # the long flight: air rising the whole way
+add(106.0, swell(3.2, 120, 3600), .09); add(109.2, boom(7.0, 30), .5)
+add(121.6, swell(1.4, 400, 2600), .04)
 # --- the hall: a long stereo reverb, bright early and dark late
 def ir(seed, T=5.0):
     rg = np.random.default_rng(seed); n = int(SR * T); t = np.arange(n) / SR; x = rg.standard_normal(n)
