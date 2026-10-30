@@ -35,7 +35,7 @@
     let qual = 1; const cv = host.querySelector('#obCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
     const tour1 = !opt.focus && !opt.newId && !P.sky.toured && !matchMedia('(prefers-reduced-motion: reduce)').matches, home0 = L.some(b => b.n === 'The Sun') ? 'The Sun' : L[0].n;   // first visit: a guided flight; a new find: a flight out to it
     let sel = opt.focus || 'Sagittarius A*', filter = new Set(), copyI = 1;   // with nothing chosen, open on the whole universe with the Milky Way, home, at its centre
-    const map = window.__map = uniMap(cv, L, { intro: !opt.focus && !tour1, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: opt.focus || null, focus: opt.focus || null, newId: opt.newId, onPick: n => inspect(n) });
+    const map = window.__map = uniMap(cv, L, { intro: !opt.focus && !tour1, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: opt.focus || null, focus: opt.focus || null, newId: opt.newId, onPick: n => { SKY.mark(null); inspect(n); }, onEmpty: (x, y, k) => identifyStar(x, y, k) });
     const Q = s => host.querySelector(s);
     const KINDS = { moon: 'Our Moon', io: 'The most volcanic world known', europa: 'Ice shell over a hidden ocean', ganymede: 'The largest moon, with its own magnetic field', callisto: 'The most cratered surface known', snow: 'Icy moon', titan: 'A moon with a thick nitrogen atmosphere and methane lakes', iapetus: 'Two-toned moon, one side dark as coal', triton: 'Orbits backwards: a captured dwarf planet',  earth: 'Our home world', ocean: 'Possible ocean world', super: 'Super-Earth', desert: 'Hot rocky world', lava: 'Lava world: its dayside is molten rock', mercury: 'Airless rocky world', rock: 'Rocky world', venus: 'Rocky world under thick clouds', ice: 'Icy world', mars: 'Cold desert world', jupiter: 'Gas giant', saturn: 'Ringed gas giant', uranus: 'Ice giant, tipped on its side', neptune: 'Ice giant', gas: 'Gas giant', hot: 'Hot Jupiter', hotblue: 'Hot Jupiter where it rains glass' };
     function inspectPlanet(n, pi) {
@@ -46,6 +46,16 @@
         <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${pi.moon ? nf(pi.km) + ' km' : sig(pi.a) + ' AU'}<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div></dl>
         <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obGlobe">Inspect</button><button id="obStar">Its star</button><button id="obCmp">Compare</button></div>`; Q('#obGlobe').onclick = () => openGlobe(n, () => {});
       Q('#obGo').onclick = () => map.pick(n); Q('#obStar').textContent = pi.moon ? 'Its planet' : 'Its star'; Q('#obStar').onclick = () => map.pick(pi.host); Q('#obCmp').onclick = () => compare(n, [n, 'Earth', 'Jupiter'].filter((v, i, a) => a.indexOf(v) === i), 'all');
+    }
+    function identifyStar(x, y, k) {   // tap a real star from the Gaia/HYG catalogue: what it is, how far, how bright
+      const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } SKY.mark(st.src);
+      const show = () => { const nm = st.name == null ? SKY.starName(st.src) : st.name, title = nm || 'A catalogue star', w = esc(title).split(' '), lyT = st.ly >= 1000 ? nf(Math.round(st.ly / 10) * 10) : sig(st.ly);
+        Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="Sagittarius A*">Milky Way</button><i></i><button class="on">${esc(title)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(b => b.onclick = () => { SKY.mark(null); if (b.dataset.c) map.pick(b.dataset.c); else map.home('Sagittarius A*'); });
+        Q('#obInsp').style.setProperty('--c', st.hex);
+        Q('#obInsp').innerHTML = `<div class="ob-k">${esc(st.kind)} · real star</div><h1>${w.length > 1 ? w.slice(0, -1).join(' ') + ' <span>' + w[w.length - 1] + '</span>' : '<span>' + w[0] + '</span>'}</h1>
+          <p>${nm ? '' : 'One of the 756,000 stars measured by the Gaia and Hipparcos missions. It has no name, only a catalogue entry. '}Its place, brightness and colour are measured, not modelled. Earn objects to collect stars; this one is part of the sky you explore.</p>
+          <dl><div><dt>Distance from the Sun</dt><dd>${lyT} ly</dd></div><div><dt>Luminosity</dt><dd>${st.L >= 100 ? nf(Math.round(st.L)) : sig(st.L)} Suns</dd></div><div><dt>Temperature</dt><dd>≈ ${nf(st.T)} K<small>from its colour</small></dd></div><div><dt>Absolute magnitude</dt><dd>${st.M.toFixed(1)}</dd></div></dl>`; };
+      show(); if (st.name == null) { const t0 = Date.now(), iv = setInterval(() => { if (SKY.namesReady() || Date.now() - t0 > 6000) { clearInterval(iv); show(); } }, 200); }
     }
     function inspect(n) {
       { const pi = SKY.planetInfo(n); if (pi) return inspectPlanet(n, pi); }
