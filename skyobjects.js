@@ -996,7 +996,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     MAPS[nm] = t = {}; const im = new Image(); im.decoding = 'async';
     im.onload = () => { try { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); t.w = im.width; t.h = im.height; t.d = x.getImageData(0, 0, t.w, t.h).data;
       const pre = nm.replace(' night', '') + '|'; for (const M of [PMAP, PLIT]) for (const k of [...M.keys()]) if (k.startsWith(pre)) M.delete(k); } catch (e) {} };
-    im.src = MAPDIR + f + '.jpg'; return null;
+    im.onerror = () => { t.err = 1; }; im.src = MAPDIR + f + '.jpg'; return null;
   }
   function mapAt(t, x, y, z) {   // bilinear sample at a point of the unit sphere: longitude 0 at +z, east towards +x, north up +y
     const u = (Math.atan2(x, z) / TAU + .5) * t.w - .5, v = Math.max(0, Math.min(t.h - 1.001, (.5 - Math.asin(Math.max(-1, Math.min(1, y))) / Math.PI) * t.h - .5)), u0 = Math.floor(u), v0 = Math.floor(v), fu = u - u0, fv = v - v0, w = t.w, D = t.d;
@@ -1075,6 +1075,56 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       if (at) { const rim = Math.pow(1 - dz, 2.6) * at[1] * sstep(-.25, .35, nd), tw = Math.pow(1 - dz, 6) * at[1] * .5 * sstep(-.45, -.05, nd) * (1 - sstep(.1, .4, nd)); r += at[0][0] * (rim + tw); gg += at[0][1] * (rim + tw); b += at[0][2] * (rim + tw); }   // the lit atmosphere at the limb, and a thin twilight arc just past the terminator
       D[k] = r; D[k + 1] = gg; D[k + 2] = b; D[k + 3] = 255 * Math.min(1, (1 - Math.sqrt(r2)) * R * 1.2); }
     g.putImageData(img, 0, 0); PLIT.set(key, c); return c;
+  }
+  // ---- the 3D globe for Inspect: a WebGL sphere ray-cast per pixel, wrapped in the planet's own surface (real maps where we have them), lit by its star,
+  //      with Saturn's rings as a true plane that takes the planet's shadow and casts its own. Drag turns it; the star stays put, so day and night stay honest.
+  const OBLQ = { 'Mercury': .03, 'Venus': 177.4, 'Earth': 23.44, 'The Moon': 6.7, 'Mars': 25.19, 'Jupiter': 3.13, 'Saturn': 26.73, 'Uranus': 97.77, 'Neptune': 28.32 };
+  function equirect(kind, nm, W, done) {   // the planet's surface unrolled: rgb + specular, and emission; baked in slices so the page never stalls
+    const H = W / 2, A = new Uint8Array(W * H * 4), E = new Uint8Array(W * H * 4), sd = (hs2(nm + 'sd') * 40) | 0; let row = 0, dead = false;
+    const step = () => { if (dead) return; const wait = n => MAPF[n] && !mapOf(n) && !MAPS[n].err; if (wait(nm) || nm === 'Earth' && wait('Earth night')) { setTimeout(step, 80); return; }   // a real map is still loading
+      const t0 = performance.now(); while (row < H && performance.now() - t0 < 12) { const lat = (.5 - (row + .5) / H) * Math.PI, cl = Math.cos(lat), y = Math.sin(lat);
+        for (let i = 0; i < W; i++) { const lon = ((i + .5) / W - .5) * TAU, x = cl * Math.sin(lon), z = cl * Math.cos(lon), [c, sp, em] = surfaceAt(kind, nm, x, y, z, sd), k = (row * W + i) * 4;
+          A[k] = c[0]; A[k + 1] = c[1]; A[k + 2] = c[2]; A[k + 3] = Math.min(255, sp * 255); if (em) { E[k] = Math.min(255, em[0]); E[k + 1] = Math.min(255, em[1]); E[k + 2] = Math.min(255, em[2]); } E[k + 3] = 255; } row++; }
+      if (row < H) setTimeout(step, 0); else done({ W, H, A, E }); };
+    step(); return () => { dead = true; };
+  }
+  const GLOBEFS = `precision highp float; varying vec2 vP; uniform sampler2D uA, uE; uniform mat3 uR; uniform vec3 uL, uAtm; uniform float uAtmK, uGiant, uNight0, uRing, uScale, uAsp, uPix;
+    float ringD(float r) { if (r < 1.24 || r > 2.29) return 0.; float d = r < 1.52 ? .22 : r < 1.95 ? .85 : r < 2.03 ? .05 : (r > 2.21 && r < 2.23) ? .08 : .6; return d * (.82 + .18 * sin(r * 431.) * sin(r * 157.)); }
+    vec3 ringC(float r) { return r < 1.52 ? vec3(.62, .57, .5) : r < 1.95 ? vec3(.93, .86, .7) : vec3(.84, .78, .65); }
+    void main() { vec2 p = vec2(vP.x * uAsp, vP.y) / uScale; float r2 = dot(p, p); vec3 col = vec3(0.); float al = 0.; vec3 RN = uR * vec3(0., 1., 0.);
+      float rz = -1e9, rd = 0.; vec3 rc = vec3(0.);
+      if (uRing > .5 && abs(RN.z) > .002) { rz = -(p.x * RN.x + p.y * RN.y) / RN.z; vec3 q = vec3(p, rz); float rho = length(q); rd = ringD(rho);
+        if (rd > 0.) { float b = dot(q, uL), c = dot(q, q) - 1., disc = b * b - c; float sh = (disc > 0. && -b - sqrt(disc) > 0.) ? .06 : 1.; rc = ringC(rho) * (.3 + .7 * abs(dot(RN, uL))) * sh; } }
+      if (r2 < 1.) { vec3 n = vec3(p, sqrt(1. - r2)); vec3 bd = n * uR; float lon = atan(bd.x, bd.z), lat = asin(clamp(bd.y, -1., 1.)); vec2 uv = vec2(lon / 6.2831853 + .5, .5 - lat / 3.1415927);
+        vec4 A = texture2D(uA, uv); vec3 E = texture2D(uE, uv).rgb; float nd = dot(n, uL), dif = smoothstep(-.12, .55, nd) * (.25 + .75 * max(nd, 0.)) + .012; vec3 h = normalize(uL + vec3(0., 0., 1.));
+        float sp = A.a * pow(max(dot(n, h), 0.), 60.) * smoothstep(0., .3, nd), ld = uGiant > .5 ? .5 + .5 * pow(n.z, .6) : 1.;
+        if (uRing > .5 && abs(dot(uL, RN)) > .01) { float t = -dot(n, RN) / dot(uL, RN); if (t > 0.) ld *= 1. - ringD(length(n + t * uL)) * .85; }   // the rings' shadow on the globe
+        vec3 c = A.rgb * dif * ld + vec3(1., .96, .9) * sp; float night = 1. - smoothstep(-.15, .2, nd); c += E * (uNight0 + (1. - uNight0) * night);
+        float rim = pow(1. - n.z, 2.6) * uAtmK * smoothstep(-.25, .35, nd), tw = pow(1. - n.z, 6.) * uAtmK * .5 * smoothstep(-.45, -.05, nd) * (1. - smoothstep(.1, .4, nd)); c += uAtm * (rim + tw);
+        float edge = clamp((1. - sqrt(r2)) * uScale * uPix, 0., 1.); col = c * edge; al = edge;
+        if (rd > 0. && rz > n.z) { col = mix(col, rc, rd); al = max(al, rd); } }
+      else if (rd > 0.) { col = rc * rd; al = rd; }
+      if (r2 >= 1. && uAtmK > 0.) { float d = sqrt(r2) - 1., hz = exp(-d * 28.) * uAtmK * .35 * smoothstep(-.3, .4, dot(normalize(vec3(p, 0.)), uL)); col += uAtm * hz; al = max(al, min(1., hz)); }   // the thin glow of air beyond the limb
+      gl_FragColor = vec4(col, al); }`;
+  function globe(cv, kind, nm) {   // returns { draw(spin, pitch, zoom), stop() }
+    const gl = cv.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false }); if (!gl) return null;
+    const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; }, pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 a; varying vec2 vP; void main(){ vP = a; gl_Position = vec4(a, 0., 1.); }')); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, GLOBEFS)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return null; gl.useProgram(pr);
+    const bf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); const la = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 2, gl.FLOAT, false, 0, 0);
+    const U = n => gl.getUniformLocation(pr, n), tex = unit => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([60, 60, 70, 0])); return t; };
+    const tA = tex(0), tE = tex(1); gl.uniform1i(U('uA'), 0); gl.uniform1i(U('uE'), 1);
+    const up = d => { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tA); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, d.W, d.H, 0, gl.RGBA, gl.UNSIGNED_BYTE, d.A); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tE); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, d.W, d.H, 0, gl.RGBA, gl.UNSIGNED_BYTE, d.E); api.ready = d.W; };
+    const at = ATM[kind], big = MAPF[nm] ? 2048 : 1024; let stopB = equirect(kind, nm, 256, d => { up(d); stopB = equirect(kind, nm, big, up); });   // a quick coarse surface first, then the sharp one
+    const api = { ready: 0, draw(spin, pitch, zoom) { const w = cv.width, h = cv.height; gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+        const ob = (OBLQ[nm] != null ? OBLQ[nm] : hs2(nm + 'ob') * 30) * Math.PI / 180, cy = Math.cos(spin), sy = Math.sin(spin), co = Math.cos(ob), so = Math.sin(ob), cp = Math.cos(pitch), spp = Math.sin(pitch);
+        const Ry = [cy, 0, -sy, 0, 1, 0, sy, 0, cy], Rz = [co, so, 0, -so, co, 0, 0, 0, 1], Rx = [1, 0, 0, 0, cp, spp, 0, -spp, cp], mul = (a, b) => { const o = []; for (let c = 0; c < 3; c++) for (let r = 0; r < 3; r++) o[c * 3 + r] = a[r] * b[c * 3] + a[3 + r] * b[c * 3 + 1] + a[6 + r] * b[c * 3 + 2]; return o; };
+        gl.uniformMatrix3fv(U('uR'), false, new Float32Array(mul(Rx, mul(Rz, Ry))));   // body -> view: spin about the axis, the axis tilted by the obliquity, then the viewer's pitch
+        const L = [-.62, .4, .68], ll = Math.hypot(...L); gl.uniform3f(U('uL'), L[0] / ll, L[1] / ll, L[2] / ll);
+        gl.uniform3f(U('uAtm'), at ? at[0][0] / 255 : 0, at ? at[0][1] / 255 : 0, at ? at[0][2] / 255 : 0); gl.uniform1f(U('uAtmK'), at ? at[1] : 0); gl.uniform1f(U('uGiant'), GIANT[kind] || kind === 'gas' ? 1 : 0);
+        gl.uniform1f(U('uNight0'), nm === 'Earth' ? 0 : .25); gl.uniform1f(U('uRing'), kind === 'saturn' ? 1 : 0); const sc = zoom * (kind === 'saturn' ? .36 : .78) * Math.min(1, w / h); gl.uniform1f(U('uScale'), sc); gl.uniform1f(U('uAsp'), w / h); gl.uniform1f(U('uPix'), h / 2);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }, stop() { stopB && stopB(); const x = gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } };
+    return api;
   }
   function rings(g, x, y, rp, half, la) {   // Saturn's rings: C ring, B ring, the Cassini division, A ring with the Encke gap, seen from 20 degrees
     g.save(); g.translate(x, y); g.rotate(-.32); g.scale(1, .34); const lit = la == null ? 1 : .75 + .25 * Math.abs(Math.cos(la));
@@ -1346,5 +1396,5 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     const rp = (PFR[b.id] || .26) * Math.min(w, h), t0 = performance.now();
     return new Promise(res => { (function poll() { const c = surfKind(b.id) && b.id !== 'neutron' ? surfFor(b, rp) : true; if ((c && !SWbusy && !SWQ.length) || performance.now() - t0 > ms) return res(); setTimeout(poll, 60); })(); });
   }
-  window.SKY = { galaxyPic: (b, S) => { const st = galaxyBake(b, S); galaxyStep(st, 1e9); return st.c; }, GALD, LANDS, LOCAL, STRUCT, field, fieldOf, rec, glBH, pending: () => SWbusy || SWQ.length > 0, starBg, portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { globe, galaxyPic: (b, S) => { const st = galaxyBake(b, S); galaxyStep(st, 1e9); return st.c; }, GALD, LANDS, LOCAL, STRUCT, field, fieldOf, rec, glBH, pending: () => SWbusy || SWQ.length > 0, starBg, portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();

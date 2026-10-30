@@ -732,6 +732,28 @@ function sfCardMount(el, n, map, L) { n = String(n).split('#')[0]; const q = sfN
   { const me = L.find(b => b.n === n), N = me ? me.count || 1 : 1; if (N > 1) { let ci = 1; const box = document.createElement('div'); box.className = 'sfcopies'; box.innerHTML = `<button data-d="-1" aria-label="Previous copy">‹</button><span>Copy <b>1</b> of ${N}</span><button data-d="1" aria-label="Next copy">›</button>`; box.querySelectorAll('button').forEach(bt => bt.onclick = () => { ci = ((ci - 1 + +bt.dataset.d + N) % N) + 1; box.querySelector('b').textContent = ci; map.copyTo(n, ci - 1); }); const h3 = el.querySelector('h3.skyn'); if (h3) h3.after(box); } } el.classList.toggle('min', was); const m = el.querySelector('.sfmin'); if (m) m.onclick = () => el.classList.toggle('min'); el.querySelectorAll('.crumb button').forEach(b => b.onclick = () => { if (b.dataset.c) map.pick(b.dataset.c); else map.home(L[0].n); }); }
 function openSkyFull(opt = {}) { return Observatory.open(opt); }   // the universe on the whole screen: see observatory.js
 
+function openGlobe(name, back) {   // a planet or moon as a globe you can turn: its real surface where one exists, lit by its star
+  const pi = SKY.planetInfo(name); if (!pi) return; const host = document.createElement('div'); host.id = 'inspect'; host.style.setProperty('--c', '#bcd2ff');
+  const per = pi.P < 2 ? (pi.P * 24).toFixed(1) + ' hours' : pi.P < 800 ? Math.round(pi.P) + ' days' : (pi.P / 365.25).toFixed(1) + ' years';
+  host.innerHTML = `<canvas id="inCv"></canvas><button class="sfib" id="inX" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="inbar"><div class="in-eye">${pi.moon ? 'Moon of ' + esc(pi.host) : 'Planet of ' + esc(pi.host)}</div><h3 class="in-name">${esc(name)}</h3><div class="in-sub">${pi.re < .1 ? Math.round(pi.re * 6371) + ' km radius' : (+pi.re.toPrecision(3)) + ' Earth radii'} · ${pi.moon ? 'orbits in ' : 'a year of '}${per}</div></div>
+    <div class="in-hint" id="inHint">Drag to turn it · pinch or scroll to zoom · double-tap to reset</div>`;
+  (document.fullscreenElement || document.body).appendChild(host); const OM = document.getElementById('obs') && window.__map; if (OM && OM.pause) OM.pause(true);
+  const cv = $('#inCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
+  const bg = document.createElement('canvas'); bg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'; cv.before(bg); bg.width = cv.width; bg.height = cv.height; SKY.starBg(bg.getContext('2d'), bg.width, bg.height, Math.round(bg.width * bg.height / 5000), 3, '#07060f');
+  const G = SKY.globe(cv, pi.kind, name); if (!G) { host.remove(); if (OM && OM.pause) OM.pause(false); return; }
+  let spin = 0, pitch = .12, zoom = 1, vs = .06, dead = false, last = performance.now(), lastTap = 0, pd = 0; const ptr = new Map();
+  const frame = now => { if (dead) return; const dt = Math.min(.05, (now - last) / 1000); last = now; if (!ptr.size) spin += vs * dt; G.draw(spin, pitch, zoom); requestAnimationFrame(frame); };   // it turns slowly by itself until you take hold of it
+  requestAnimationFrame(frame);
+  cv.onpointerdown = e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { cv.setPointerCapture(e.pointerId); } catch {} if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pd = Math.hypot(a.x - b.x, a.y - b.y); } const n = performance.now(); if (ptr.size === 1 && n - lastTap < 300) { zoom = 1; pitch = .12; } lastTap = n; };
+  cv.onpointermove = e => { const o = ptr.get(e.pointerId); if (!o) return; if (ptr.size === 2) { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pd) zoom = Math.max(.5, Math.min(4, zoom * d / pd)); pd = d; return; }
+    const k = 3 / Math.max(240, Math.min(host.clientWidth, host.clientHeight) * zoom); spin += (e.clientX - o.x) * k; pitch = Math.max(-1.45, Math.min(1.45, pitch + (e.clientY - o.y) * k)); vs = Math.sign(e.clientX - o.x || vs) * .06; ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); };
+  cv.onpointerup = cv.onpointercancel = e => { ptr.delete(e.pointerId); pd = 0; };
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.5, Math.min(4, zoom * Math.exp(-e.deltaY * .0015))); }, { passive: false });
+  const done = () => { dead = true; G.stop(); document.removeEventListener('keydown', esc3); window.removeEventListener('resize', rs); host.remove(); if (OM && OM.pause) OM.pause(false); if (back) back(); };
+  const rs = () => { size(); bg.width = cv.width; bg.height = cv.height; SKY.starBg(bg.getContext('2d'), bg.width, bg.height, Math.round(bg.width * bg.height / 5000), 3, '#07060f'); };
+  const esc3 = e => { if (e.key === 'Escape') done(); }; document.addEventListener('keydown', esc3); window.addEventListener('resize', rs); $('#inX').onclick = done; setTimeout(() => { const h = $('#inHint'); if (h) h.classList.add('gone'); }, 5000);
+}
 function openInspect(name, back) {   // a close look: the object large on its own sky, drag to move it, pinch or scroll to zoom
   const q = sfNamed(name); if (!q) return; closeModal(); const host = document.createElement('div'); host.id = 'inspect'; host.style.setProperty('--c', q.o.c);
   host.innerHTML = `<canvas id="inCv"></canvas><button class="sfib" id="inX" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>

@@ -42,7 +42,7 @@
       Q('#obInsp').style.setProperty('--c', '#bcd2ff'); const w = esc(n).split(' ');
       Q('#obInsp').innerHTML = `<div class="ob-k">${pi.moon ? 'Moon of ' + esc(pi.host) : 'Planet'} · ${esc(KINDS[pi.kind] || 'Planet')}</div><h1>${w.length > 1 ? w.slice(0, -1).join(' ') + ' <span>' + w[w.length - 1] + '</span>' : '<span>' + w[0] + '</span>'}</h1>
         <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${pi.moon ? nf(pi.km) + ' km' : sig(pi.a) + ' AU'}<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div></dl>
-        <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obStar">Its star</button><button id="obCmp">Compare</button></div>`;
+        <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obGlobe">Inspect</button><button id="obStar">Its star</button><button id="obCmp">Compare</button></div>`; Q('#obGlobe').onclick = () => openGlobe(n, () => {});
       Q('#obGo').onclick = () => map.pick(n); Q('#obStar').textContent = pi.moon ? 'Its planet' : 'Its star'; Q('#obStar').onclick = () => map.pick(pi.host); Q('#obCmp').onclick = () => compare(n, [n, 'Earth', 'Jupiter'].filter((v, i, a) => a.indexOf(v) === i), 'all');
     }
     function inspect(n) {
