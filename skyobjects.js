@@ -923,8 +923,35 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     uranus: [[0, [176, 222, 228]], [.5, [160, 214, 222]], [1, [150, 206, 216]]], neptune: [[0, [60, 96, 214]], [.4, [52, 84, 200]], [.6, [70, 108, 222]], [1, [48, 78, 190]]],
     gas: [[0, [190, 160, 120]], [.3, [214, 184, 140]], [.5, [160, 112, 80]], [.7, [222, 196, 156]], [1, [176, 140, 104]]], gas2: [[0, [150, 168, 186]], [.35, [196, 206, 212]], [.55, [120, 140, 160]], [.8, [210, 214, 216]], [1, [140, 156, 170]]],
     gas3: [[0, [172, 132, 150]], [.35, [214, 178, 180]], [.55, [140, 100, 120]], [.8, [222, 196, 196]], [1, [160, 120, 140]]], hot: [[0, [64, 30, 30]], [.4, [96, 44, 36]], [.6, [80, 36, 32]], [1, [60, 28, 28]]], hotblue: [[0, [30, 60, 140]], [.4, [46, 90, 180]], [.6, [36, 72, 160]], [1, [28, 54, 130]]] };
+  // ---- real surface maps for the Solar System's planets and the Moon (equirectangular JPEGs in maps/, credits in maps/CREDITS.md). Until one has
+  //      loaded the procedural surface stands in; on load the cached faces of that body are dropped and redrawn from the map.
+  const MAPDIR = ((typeof document !== 'undefined' && document.currentScript && document.currentScript.src) || '').replace(/[^/]*$/, '') + 'maps/';
+  const MAPF = { 'Earth': 'earth', 'Earth night': 'earth-night', 'The Moon': 'moon', 'Mercury': 'mercury', 'Mars': 'mars', 'Jupiter': 'jupiter', 'Saturn': 'saturn', 'Uranus': 'uranus', 'Neptune': 'neptune' }, MAPS = {};
+  function mapOf(nm) {
+    const f = MAPF[nm]; if (!f) return null; let t = MAPS[nm]; if (t) return t.d ? t : null;
+    MAPS[nm] = t = {}; const im = new Image(); im.decoding = 'async';
+    im.onload = () => { try { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); t.w = im.width; t.h = im.height; t.d = x.getImageData(0, 0, t.w, t.h).data;
+      const pre = nm.replace(' night', '') + '|'; for (const M of [PMAP, PLIT]) for (const k of [...M.keys()]) if (k.startsWith(pre)) M.delete(k); } catch (e) {} };
+    im.src = MAPDIR + f + '.jpg'; return null;
+  }
+  function mapAt(t, x, y, z) {   // bilinear sample at a point of the unit sphere: longitude 0 at +z, east towards +x, north up +y
+    const u = (Math.atan2(x, z) / TAU + .5) * t.w - .5, v = Math.max(0, Math.min(t.h - 1.001, (.5 - Math.asin(Math.max(-1, Math.min(1, y))) / Math.PI) * t.h - .5)), u0 = Math.floor(u), v0 = Math.floor(v), fu = u - u0, fv = v - v0, w = t.w, D = t.d;
+    const i00 = (v0 * w + ((u0 % w) + w) % w) * 4, i10 = (v0 * w + ((u0 + 1) % w + w) % w) * 4, i01 = i00 + w * 4, i11 = i10 + w * 4, o = [0, 0, 0];
+    for (let k = 0; k < 3; k++) o[k] = (D[i00 + k] * (1 - fu) + D[i10 + k] * fu) * (1 - fv) + (D[i01 + k] * (1 - fu) + D[i11 + k] * fu) * fv;
+    return o;
+  }
+  function mappedAt(nm, x, y, z, sd, lat, al) {   // the surface of a mapped body, or null while its map is loading
+    const t = mapOf(nm); if (!t) return null; const c = mapAt(t, x, y, z);
+    if (nm !== 'Earth') return [c, 0, null];
+    const sea = sstep(6, 22, c[2] - c[0]) * (1 - sstep(.78, .86, al)); let sp = .55 * sea, city = null;   // the blue marble: open ocean takes the sun's glint
+    const nt = mapOf('Earth night'); if (nt) { const n = mapAt(nt, x, y, z), L = (n[0] + n[1] + n[2]) / 765, lit = sstep(.1, .55, L) * (1 - sea * .8); if (lit > .01) city = [255 * lit, 190 * lit, 118 * lit]; }   // city lights from the Black Marble
+    const wx = f3(x * 2 + 40, y * 2, z * 2, 3) - .5, cl = f3(x * 3.2 + wx * 2.5 + sd, y * 5 + wx * 3, z * 3.2, 6), band = .6 + .4 * Math.cos(lat * 6), cov = sstep(.56 - .08 * band, .78, cl) * .8;   // a light veil of weather, so the continents still read
+    const out = mx3(c.map(q => Math.min(255, q * 1.08)), [242, 245, 250], cov * .9); sp *= 1 - cov; if (city) city = city.map(q => q * (1 - cov * .85));
+    return [out, sp, city];
+  }
   function surfaceAt(kind, nm, x, y, z, sd) {   // albedo, specular, emission at one point of the unit sphere (y is the spin axis)
     const lat = Math.asin(Math.max(-1, Math.min(1, y))), al = Math.abs(lat) / (Math.PI / 2);
+    if (MAPF[nm]) { const r = mappedAt(nm, x, y, z, sd, lat, al); if (r) return r; }
     if (GIANT[kind] || kind === 'gas') { const pal = kind === 'gas' ? GIANT[['gas', 'gas2', 'gas3'][Math.floor(hs2(nm + 'gp') * 3)]] : GIANT[kind], calm = kind === 'uranus' ? .25 : kind === 'neptune' ? .6 : kind === 'saturn' ? .55 : 1;
       const cyc = kind === 'jupiter' ? 3.8 : kind === 'saturn' ? 3 : kind === 'uranus' ? .8 : kind === 'neptune' ? 1.6 : 2.6 + hs2(nm + 'cy') * 1.6, w1 = f3(x * 1.4 + sd, y * 1.4, z * 1.4, 4) - .5, w2 = f3(x * 2.2 + sd, y * 14, z * 2.2, 5) - .5, lo2 = Math.atan2(x, z), edge = Math.sin(lat * cyc * 4) * .5, v0 = ((y + 1) / 2 + .06 * Math.sin(y * 4.3 + hs2(nm + 'bw') * 6) + .03 * Math.sin(y * 11)) * cyc + calm * (.045 * w1 + .03 * w2 + .012 * Math.sin(lo2 * 9 + lat * 30 + w1 * 10) * (1 - Math.abs(edge))), tri = Math.abs((((v0 % 1) + 1) % 1) * 2 - 1);   // bands mirror up the planet; their edges shear into festoons
       let c = ramp3(pal, tri); const fine = f3(x * 8 + sd, y * 36, z * 8, 3); c = c.map(q => q * (.93 + .14 * fine * calm + (1 - calm) * .05));
@@ -994,7 +1021,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
   function drawPlanet(g, x, y, rp, kind, name, light, K) {   // light: the angle towards the star; null in the comparison view
     if (rp < 1.3) { g.fillStyle = rgba((PCOL[kind] || PCOL.rock)[0], .95); g.beginPath(); g.arc(x, y, Math.max(.7 * K, rp), 0, TAU); g.fill(); return; }
     if (kind === 'saturn' && rp > 3) rings(g, x, y, rp, false, light);
-    const S = Math.min(512, Math.max(32, Math.pow(2, Math.ceil(Math.log2(rp * 2.1))))), q = light == null ? -1 : Math.round(((light % TAU) + TAU) % TAU / TAU * 24) % 24, now = performance.now();
+    const S = Math.min(MAPF[name] && mapOf(name) ? 1024 : 512, Math.max(32, Math.pow(2, Math.ceil(Math.log2(rp * 2.1))))), q = light == null ? -1 : Math.round(((light % TAU) + TAU) % TAU / TAU * 24) % 24, now = performance.now();
     let face = PLIT.get(name + '|' + S + '|' + q);
     if (!face) { if (now - PBT > 40 || !PMAP.has(name + '|' + S) && now - PBT > 40) { PBT = now; face = planetFace(kind, name, S, light); } else for (let s2 = S >> 1; s2 >= 32 && !face; s2 >>= 1) face = PLIT.get(name + '|' + s2 + '|' + q) || (PMAP.has(name + '|' + s2) ? planetFace(kind, name, s2, light) : null); }   // at most one new surface every 40 ms; a smaller cached one stands in meanwhile
     if (face) g.drawImage(face, x - rp, y - rp, rp * 2, rp * 2); else { const gr = g.createRadialGradient(x - rp * .3, y - rp * .3, 0, x, y, rp); gr.addColorStop(0, (PCOL[kind] || PCOL.rock)[0]); gr.addColorStop(1, '#050408'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rp, 0, TAU); g.fill(); }

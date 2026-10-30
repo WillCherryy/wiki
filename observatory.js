@@ -94,18 +94,6 @@
 
   /* ------------------------------------------------------------------ size comparison: everything you own, side by side at true scale */
   const REFS = [{ n: 'Earth', ref: 'earth', r: .00917, kind: 'Our planet, for scale', c: '#7fb4ff' }, { n: 'Jupiter', ref: 'jupiter', r: .1005, kind: 'The largest planet, for scale', c: '#e8c8a0' }];
-  const PL = new Map();
-  function planetTex(kind, S) {   // a quick sharp planet face for the two reference bodies
-    const key = kind + S; if (PL.has(key)) return PL.get(key); const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), img = g.createImageData(S, S), D = img.data, R = S / 2 - 1;
-    const h2 = (x, y, s) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + s * 97; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; }, vn = (x, y, s) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), a = h2(xi, yi, s), b = h2(xi + 1, yi, s), cc = h2(xi, yi + 1, s), d = h2(xi + 1, yi + 1, s); return a + (b - a) * u + (cc - a) * v + (a - b - cc + d) * u * v; }, fb = (x, y, s) => vn(x, y, s) * .5 + vn(x * 2, y * 2, s + 1) * .25 + vn(x * 4, y * 4, s + 2) * .13 + vn(x * 8, y * 8, s + 3) * .07;
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const dx = (x + .5 - S / 2) / R, dy = (y + .5 - S / 2) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue; const mu = Math.sqrt(1 - r2), lon = Math.atan2(dx, mu) * 2, lat = Math.asin(Math.max(-1, Math.min(1, dy))) * 2, k = (y * S + x) * 4, sh = Math.max(.08, .25 + .75 * (mu * .6 + (-dx * .5 - dy * .3 + .4) * .7));
-      let col; if (kind === 'earth') { const land = fb(lon * 1.4 + 3, lat * 1.4, 4), cl = fb(lon * 2.5, lat * 3.2, 9); const dry = fb(lon * 3 + 9, lat * 3, 2); col = land > .55 ? (dry > .55 ? [176, 150, 104] : [52 + 40 * dry, 96 + 30 * land, 46]) : [10, 34 + 20 * land, 92 + 50 * land]; if (Math.abs(lat) > 2.6) col = [235, 240, 250]; if (cl > .58) col = col.map(v => v + (245 - v) * Math.min(1, (cl - .58) * 4)); }
-      else { const sw = fb(lon * 1.5, lat * 9, 3), v = lat * 5.2 + (sw - .5) * .9 + Math.sin(lon * 4 + lat * 12) * .05, band = .5 + .5 * Math.sin(v * 3.3), fine = fb(lon * 6 + sw * 2, lat * 30, 7), zone = [244, 232, 212], belt = [176, 118, 80], k2 = Math.pow(band, 1.4) * .85 + fine * .15;   // zones and belts, with turbulent edges
-        col = belt.map((b2, i) => b2 + (zone[i] - b2) * k2); if (Math.abs(lat) > 2.2) col = col.map(c => c * .82 + 20);   // greyer poles
-        const sx = (lon - .8) * 1.25, sy = (lat + .62) * 2.6, sp = Math.hypot(sx, sy); if (sp < .36) { const q = 1 - sp / .36; col = col.map((c, i) => c + ([206, 104, 70][i] - c) * Math.min(1, q * 2.2) * (.75 + .25 * Math.sin(Math.atan2(sy, sx) * 3 + sp * 30))); } }   // the Great Red Spot, with its swirl
-      D[k] = col[0] * sh; D[k + 1] = col[1] * sh; D[k + 2] = col[2] * sh; D[k + 3] = 255 * Math.min(1, (1 - Math.sqrt(r2)) * R); }
-    g.putImageData(img, 0, 0); PL.set(key, c); return c;
-  }
   function compare(startName, pick, mode) {   // pick: only these names (any objects you own, plus Earth, Jupiter and the Sun); mode 'all' shows them side by side in one frame
     if (document.getElementById('cmp')) return; const own = skyList(), seen = new Set(); let list = [];
     own.forEach(b => { if (seen.has(b.n)) return; seen.add(b.n); list.push({ n: b.n, b, r: SKY.physR(b), kind: b.kind, c: SKY.OBJ[b.idx].c, id: b.id }); });
@@ -136,7 +124,7 @@
         let xx = X0 + (X1 - X0 - slots.reduce((a, b) => a + b, 0)) / 2;
         g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(X0 - 20 * K, cy); g.lineTo(w, cy); g.stroke();
         list.forEach((o, i) => { const rp = o.r * S2, ext = fr(o) * S2, px = xx + slots[i] / 2; xx += slots[i];
-          if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.85)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else g.drawImage(planetTex(o.ref, Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1)))))), px - rp, cy - rp, rp * 2, rp * 2); }
+          if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') SKY.drawPlanet(g, px, cy, rp, o.ref, o.ref === 'earth' ? 'Earth' : 'Jupiter', null, K);
           else SKY.bodyAt(g, o.b, px, cy, rp, 1, K, t);
           const big = ext > 60 * K, up = !big && i % 2, ly = big ? cy + ext + 40 * K : up ? cy - Math.max(ext, 8 * K) - 46 * K - (i % 4 > 1 ? 34 * K : 0) : cy + Math.max(ext, 8 * K) + 40 * K + (i % 4 > 1 ? 34 * K : 0);
           g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = K; g.beginPath(); g.moveTo(px, cy + (ly < cy ? -1 : 1) * Math.max(rp + 3 * K, 6 * K)); g.lineTo(px, ly + (ly < cy ? 10 : -24) * K); g.stroke();
@@ -147,7 +135,7 @@
       g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = K; g.beginPath(); g.moveTo(0, cy); g.lineTo(w, cy); g.stroke();
       const t = (now - t0) / 1000;
       list.forEach((o, i) => { const px = mid + (o.x - cx) * s, rp = o.r * s; if (px + rp * 3 < 0 || px - rp * 3 > w) return;
-        if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') { if (rp < 1.2) { g.fillStyle = 'rgba(220,230,255,.8)'; g.beginPath(); g.arc(px, cy, Math.max(.7 * K, rp), 0, 7); g.fill(); } else { const S = Math.min(2048, Math.max(64, Math.pow(2, Math.ceil(Math.log2(rp * 2.1))))); g.drawImage(planetTex(o.ref, S), px - rp, cy - rp, rp * 2, rp * 2); } }
+        if (o.ref === 'planet') SKY.drawPlanet(g, px, cy, rp, o.pk, o.n, null, K); else if (o.ref === 'earth' || o.ref === 'jupiter') SKY.drawPlanet(g, px, cy, rp, o.ref, o.ref === 'earth' ? 'Earth' : 'Jupiter', null, K);
         else SKY.bodyAt(g, o.b, px, cy, rp, 1, K, t);
         const near = Math.abs(i - idx) < 3.5; if (near && (rp > 1 || Math.abs(i - idx) < .5)) { const a = Math.max(0, 1 - Math.abs(i - idx) / 3.5); g.save(); g.globalAlpha = a; g.fillStyle = '#ece8f6'; g.font = `italic 400 ${Math.round(18 * K)}px "EB Garamond", Georgia, serif`; g.textAlign = 'center'; const ly = cy + Math.max(rp, 4 * K) + 34 * K; if (ly < h - 60 * K) { g.fillText(o.n, px, ly); g.font = `300 ${Math.round(11 * K)}px "IBM Plex Mono", monospace`; g.fillStyle = 'rgba(200,195,225,.7)'; g.fillText(fmtRad(o.r)[0], px, ly + 18 * K); } g.restore(); } });
       // scale bar
