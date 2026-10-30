@@ -1294,8 +1294,8 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
   //      coloured by their B-V index and as bright as their luminosity allows, loaded the first time you look into the neighbourhood
   const CAT = { st: 0, n: 0, x: null, y: null, L: null, col: null };
   function catalogue() { if (CAT.st) return CAT.st === 2 ? CAT : null; CAT.st = 1;
-    fetch(MAPDIR.replace(/maps\/$/, '') + 'stars/catalogue.bin').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(ab => { const dv = new DataView(ab), n = ab.byteLength / 10 | 0; CAT.n = n; CAT.x = new Float32Array(n); CAT.y = new Float32Array(n); CAT.L = new Float32Array(n); CAT.col = new Uint8Array(n);
-      for (let i = 0; i < n; i++) { const o = i * 10; CAT.x[i] = dv.getInt16(o, true) / 4; CAT.y[i] = dv.getInt16(o + 2, true) / 4; CAT.L[i] = Math.log10(Math.pow(10, -.4 * (dv.getInt16(o + 6, true) / 100 - 4.83))); const ci = dv.getInt8(o + 8) / 50; CAT.col[i] = ci < 0 ? 0 : ci < .3 ? 1 : ci < .6 ? 2 : ci < .9 ? 3 : ci < 1.3 ? 4 : 5; }
+    fetch(MAPDIR.replace(/maps\/$/, '') + 'stars/catalogue.bin').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(ab => { const v2 = ab.byteLength >= 8 && String.fromCharCode(...new Uint8Array(ab, 0, 4)) === 'SCT2', unit = v2 ? new DataView(ab).getFloat32(4, true) : .25, dv = new DataView(ab, v2 ? 8 : 0), n = (ab.byteLength - (v2 ? 8 : 0)) / 10 | 0; CAT.n = n; CAT.x = new Float32Array(n); CAT.y = new Float32Array(n); CAT.L = new Float32Array(n); CAT.col = new Uint8Array(n);
+      for (let i = 0; i < n; i++) { const o = i * 10; CAT.x[i] = dv.getInt16(o, true) * unit; CAT.y[i] = dv.getInt16(o + 2, true) * unit; CAT.L[i] = Math.log10(Math.pow(10, -.4 * (dv.getInt16(o + 6, true) / 100 - 4.83))); const ci = dv.getInt8(o + 8) / 50; CAT.col[i] = ci < 0 ? 0 : ci < .3 ? 1 : ci < .6 ? 2 : ci < .9 ? 3 : ci < 1.3 ? 4 : 5; }
       CAT.st = 2; }).catch(() => { CAT.st = 3; }); return null; }
   const CATC = ['#9bb4ff', '#cad8ff', '#f8f7ff', '#fff4e0', '#ffd9a8', '#ffb37a'];   // B-V bins: blue-white O/B, A, F, G, K, M
   function drawCatalogue(g, B, W, Z, w, h, toS, K, SPN, gal) {
