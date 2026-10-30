@@ -563,17 +563,95 @@
   function kepler(M, e) { let E = M; for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
   const SPREAD = 2.2, BASE = .95;   // how far apart the orbits sit: bigger is grander (periods follow Kepler's law, so far orbits turn slowly)
   // one object, drawn the way it would look: a point of light (sized by luminosity, coloured by temperature) until it is resolved, then a sharp shaded disc at its true size
+  // ---- high-detail helpers shared by every object (the Cosmos film's renderers, brought into the app)
+  const fbm2 = (x, y, o = 4) => { let s = 0, a = .5, f = 1, n = 0; for (let i = 0; i < o; i++) { s += a * vnoise(x * f + i * 17.3, y * f - i * 9.1); n += a; a *= .5; f *= 2.03; } return s / n; };
+  let PLUMEC = null;
+  function plumeSprite() {   // a red supergiant's extended atmosphere: lumpy, lopsided gas several times the star's size (as interferometers see Betelgeuse)
+    if (PLUMEC) return PLUMEC; const n = 384; PLUMEC = mk(n); const x = PLUMEC.getContext('2d'), im = x.createImageData(n, n);
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const u = (i - n / 2) / (n / 2), v = (j - n / 2) / (n / 2), r = Math.hypot(u, v), th = Math.atan2(v, u), lump = fbm2(Math.cos(th) * 2.2 + 3, Math.sin(th) * 2.2 + r * 3, 4), side = .55 + .45 * Math.cos(th - 2.3), a = Math.max(0, (1 - r) * (.25 + 1.1 * lump * side) - .05) * Math.exp(-r * 2.2), k = (j * n + i) * 4;
+      im.data[k] = 255; im.data[k + 1] = 110 + 60 * lump; im.data[k + 2] = 60; im.data[k + 3] = Math.min(255, a * 255); }
+    x.putImageData(im, 0, 0); return PLUMEC;
+  }
+  const BLOOM = new Map();
+  function bloomSprite(tint, lg) {   // a star's wide halo: a brighter inner bloom and a faint outer one, at the right ratio for its luminosity
+    const key = tint + lg; let c = BLOOM.get(key); if (c) return c; const n = 512, h2 = n / 2, k1 = (4 + 1.3 * lg) / (9 + 3 * lg); c = mk(n); const x = c.getContext('2d');
+    for (const [rr, a] of [[1, Math.min(.12, .03 + .016 * lg)], [k1, Math.min(.32, .12 + .035 * lg)]]) { const gr = x.createRadialGradient(h2, h2, 0, h2, h2, h2 * rr); gr.addColorStop(0, rgba(tint, a)); gr.addColorStop(.3, rgba(tint, a * .45)); gr.addColorStop(.65, rgba(tint, a * .12)); gr.addColorStop(1, rgba(tint, 0)); x.fillStyle = gr; x.fillRect(0, 0, n, n); }
+    if (BLOOM.size > 60) BLOOM.delete(BLOOM.keys().next().value); BLOOM.set(key, c); return c;
+  }
+  function starGlow(g, b, x, y, rpx, K, tint) {   // every star glows by its real luminosity: a bright core halo, a wide soft bloom, and for the most luminous a faint anamorphic streak, as a cinema lens sees them
+    if (b.id === 'brown') { glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .12); return; }
+    const lg = Math.log10(1 + lumOf(b)), L2 = Math.round(lg * 2) / 2, Ro = rpx * (9 + 3 * L2) + 18 * K;
+    glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .42);
+    g.drawImage(bloomSprite(tint, L2), x - Ro, y - Ro, Ro * 2, Ro * 2);   // the wide bloom: two falloffs baked into one soft image, drawn once
+    if (lg > 3.4 && rpx > 3) { const hw = Math.min(rpx * (10 + 2 * lg), 2400), a = Math.min(.22, .05 * (lg - 3)); g.save(); g.globalCompositeOperation = 'lighter'; const lgr = g.createLinearGradient(x - hw, 0, x + hw, 0); lgr.addColorStop(0, rgba(tint, 0)); lgr.addColorStop(.5, rgba(mixHex(tint, '#ffffff', .4), a)); lgr.addColorStop(1, rgba(tint, 0)); g.fillStyle = lgr; g.fillRect(x - hw, y - Math.max(.6, rpx * .025), hw * 2, Math.max(1.2, rpx * .05)); g.restore(); }
+  }
+  // ---- supernova remnants around their neutron stars: painted per pixel once, a few rows per frame, then kept
+  const SNR = { 'Crab Pulsar': [5.5, 'crab'], 'Cassiopeia A': [5, 'casa'] }, SNRC = new Map();
+  function snrTex(nm) {
+    let s = SNRC.get(nm); if (s && s.done) return s.c; const kind = SNR[nm][1], w = 640, h = kind === 'crab' ? 480 : 640;
+    if (!s) { s = { c: mk(w), row: 0, im: null, done: false }; s.c.height = h; s.im = s.c.getContext('2d').createImageData(w, h); SNRC.set(nm, s); }
+    const cx = w / 2, cy = h / 2, ax = w * .42, ay = h * .4, rot = kind === 'crab' ? -.42 : 0, cr = Math.cos(rot), sr = Math.sin(rot), D = s.im.data, t0 = performance.now();
+    while (s.row < h && performance.now() - t0 < 10) { const j = s.row++; for (let i = 0; i < w; i++) { const dx = i - cx, dy = j - cy, u = (dx * cr + dy * sr) / ax, v = (-dx * sr + dy * cr) / ay, q = Math.hypot(u, v), th = Math.atan2(v, u), k = (j * w + i) * 4;
+        const wob = 1 + .1 * (fbm2(Math.cos(th) * 2 + 4, Math.sin(th) * 2, 3) - .5) * 2, qq = q / wob; if (qq > 1.08) continue; let R = 0, G = 0, B = 0;
+        const n1 = fbm2(u * 5.5 + 3, v * 5.5, 5), n2 = fbm2(u * 11 + 9, v * 11 - 4, 4), ridge = Math.pow(1 - Math.abs(2 * n1 - 1), 16) * .9 + Math.pow(1 - Math.abs(2 * n2 - 1), 22) * .6;
+        if (kind === 'crab') { const shell = sm3(clamp((qq - .25) / .45)) * (1 - sm3(clamp((qq - .92) / .14))), radial = .6 + .4 * Math.abs(Math.cos((th + fbm2(u * 3, v * 3, 2) * 2) * 9)), fil = ridge * radial * shell * 1.4, green = sm3(clamp((fbm2(u * 2.5 - 7, v * 2.5, 3) - .63) / .1)) * .5, yel = fbm2(u * 4 + 2, v * 4 - 1, 3), sync = Math.exp(-qq * qq * 2.6) * .3 * (.55 + .7 * fbm2(u * 6 - 2, v * 6, 4));
+          R = fil * (1 - green * .5) + sync * .5; G = fil * (.3 + .35 * yel + green * .55) + sync * .62; B = fil * (.2 + green * .1) + sync; }   // a web of red and orange filaments around the pulsar's blue synchrotron glow
+        else { const shell = Math.exp(-Math.pow((qq - .74) / .13, 2)), knots = Math.pow(1 - Math.abs(2 * n1 - 1), 10) * shell * 1.6, hue = fbm2(u * 2 + 5, v * 2, 3);
+          const k2 = knots * 2.4 + Math.pow(1 - Math.abs(2 * n2 - 1), 14) * shell * 1.2; R = k2 * (.35 + .9 * sm3(clamp((hue - .5) / .2))) + shell * .025; G = k2 * (.45 + .55 * (1 - hue)) + shell * .03; B = k2 * (.85 - .45 * hue) + shell * .06; }   // a young shell of oxygen, silicon and iron knots, still expanding at 5,000 km/s
+        const ex = 1.7, f = c => 255 * Math.pow(1 - Math.exp(-c * ex), 1 / 1.15), edge = 1 - sm3(clamp((qq - .96) / .12)); D[k] = f(R); D[k + 1] = f(G); D[k + 2] = f(B); D[k + 3] = 255 * edge * Math.min(1, Math.max(f(R), f(G), f(B)) / 60); } }
+    if (s.row >= h) { s.c.getContext('2d').putImageData(s.im, 0, 0); s.done = true; return s.c; } return null;
+  }
+  function drawSNR(g, b, x, y, rpx) {
+    const nm = b.n.split('#')[0], d = SNR[nm]; if (!d) return; const D = rpx * (d[0] / LYU) / (physR(b) * RSU) * 2; if (D < 14 || D > 9000) return; const tx = snrTex(nm); if (!tx) return;
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sm3(clamp((D - 14) / 60)); g.drawImage(tx, x - D / 2, y - D / 2 * tx.height / tx.width, D, D * tx.height / tx.width); g.restore();
+  }
+  // ---- neutron star beams: soft, broad, fading outward: radiation lighting the plasma along the magnetic axis, not a hard cone
+  let BEAMC = null;
+  function beamSprite() { if (BEAMC) return BEAMC; BEAMC = mk(256); BEAMC.height = 640; const x = BEAMC.getContext('2d'); x.filter = 'blur(10px)'; const lg = x.createLinearGradient(128, 620, 128, 20); lg.addColorStop(0, 'rgba(210,222,255,.75)'); lg.addColorStop(.15, 'rgba(180,195,255,.3)'); lg.addColorStop(.55, 'rgba(160,170,255,.08)'); lg.addColorStop(1, 'rgba(150,160,255,0)'); x.fillStyle = lg; x.beginPath(); x.moveTo(122, 620); x.lineTo(134, 620); x.lineTo(232, 20); x.lineTo(24, 20); x.closePath(); x.fill(); return BEAMC; }
+  // ---- black holes on the graphics card: every pixel traced through a simple model of the bent light (the film's renderer, in WebGL)
+  let GLB = null;
+  const BHFS = `precision highp float; uniform vec2 uRes; uniform float uScale, uCi, uSi, uRin, uRout, uT, uAcc, uSeed;
+float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed) * 43758.5453); }
+float vn(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), u.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), u.x), u.y); }
+float fbm(vec2 p){ float s = 0.0, a = .5; for (int i = 0; i < 5; i++) { s += a * vn(p); p = p * 2.03 + 17.3; a *= .5; } return s / .97; }
+float disc(float R, float phi){ float rr = (R - uRin) / (uRout - uRin); if (rr < 0.0 || rr >= 1.0) return 0.0; float om = .3 * pow(R / uRin, -1.5) * uT, a = phi - om + log(R) * 1.6;
+  float st = fbm(vec2(R * 3.2 + cos(a) * 2.6, sin(a) * 2.6 + R * .9)), cl = fbm(vec2(R * 1.2 + cos(a) * 5.0 + 5.0, sin(a) * 5.0)), fine = fbm(vec2(R * 9.0 + cos(a) * 9.0, sin(a) * 9.0 - R * 3.0));
+  float prof = pow(uRin / R, 2.1) * (1.0 - sqrt(uRin / R) * .92) * 3.2, edge = smoothstep(0.0, .04, rr) * (1.0 - smoothstep(.7, 1.0, rr));
+  return (.25 + .8 * st * st + .45 * cl * cl + .25 * fine) * prof * edge * (.35 + .65 * uAcc); }
+vec3 col(float I, float D, float R){ float T = clamp(.35 + .5 * pow(uRin / R, .8) + .25 * (D - 1.0) - (1.0 - uAcc) * .35, 0.0, 1.0); float e = I * D * D * D; return e * vec3(min(1.0, .9 + T), .55 + .42 * T, .25 + .7 * T * T); }
+void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y = -p.y, b = length(p); vec3 c = vec3(0.0);
+  if (b > 1.005) { float R = uRin + (b - 1.02) / 1.05 * (uRout * .55 - uRin), sinT = abs(y) / b; if (R > uRin * .98) { float I = disc(max(R, uRin), atan(y, x)) * 1.35 * (.3 + .7 * sinT) * (1.0 - smoothstep(1.7, 3.2, b)) * clamp(uSi * 1.3, 0.0, 1.0); c += col(I, 1.0 + .45 * (-x / b) * uSi, max(R, uRin)); } }
+  float pr = exp(-pow((b - 1.015) / (.012 + .6 / uScale), 2.0)) * (.9 + .6 * (-x / b) * uSi); c += vec3(1.0, .9, .78) * pr;
+  float Y = y / max(uCi, .06), Rd = length(vec2(x, Y)); if (Rd > uRin && Rd < uRout && (y > 0.0 || b > 1.0)) { float I = disc(Rd, atan(Y, x)), op = clamp(I * 2.2, 0.0, 1.0) * (y > 0.0 ? 1.0 : .9); c = c * (1.0 - op * .6) + col(I, 1.0 + .47 * (-x / Rd) * uSi, Rd); }
+  c = min(c, vec3(1.0)); gl_FragColor = vec4(c, max(c.r, max(c.g, c.b))); }   // light only: transparent where there is none, so whatever lies behind still shows`;
+  function glbh() {
+    if (GLB !== null) return GLB;
+    try { const c = document.createElement('canvas'), gl = c.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, preserveDrawingBuffer: true }); if (!gl) throw 0;
+      const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s); return s; };
+      const pg = gl.createProgram(); gl.attachShader(pg, sh(gl.VERTEX_SHADER, 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }')); gl.attachShader(pg, sh(gl.FRAGMENT_SHADER, BHFS)); gl.linkProgram(pg); if (!gl.getProgramParameter(pg, gl.LINK_STATUS)) throw 0; gl.useProgram(pg);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); const al = gl.getAttribLocation(pg, 'a'); gl.enableVertexAttribArray(al); gl.vertexAttribPointer(al, 2, gl.FLOAT, false, 0, 0);
+      const U = {}; ['uRes', 'uScale', 'uCi', 'uSi', 'uRin', 'uRout', 'uT', 'uAcc', 'uSeed'].forEach(n => U[n] = gl.getUniformLocation(pg, n)); GLB = { c, gl, U };
+    } catch (e) { GLB = false; } return GLB;
+  }
+  function glBH(sh, ci, si, rin, rout, t, acc, seed) {   // sh: the shadow radius on screen; returns a canvas with the hole at its centre, or null
+    const G = glbh(); if (!G) return null; const ext = [rout * 1.02, Math.max(3.4, rout * ci * 1.2)], k = Math.min(1, (Math.min(screen.width || 1400, 1400) > 900 ? 1400 : 900) / (ext[0] * 2 * sh)), sc = sh * k, w = Math.ceil(ext[0] * 2 * sc), h = Math.ceil(ext[1] * 2 * sc), { c, gl, U } = G;
+    if (w < 4 || h < 4) return null; if (c.width !== w || c.height !== h) { c.width = w; c.height = h; } gl.viewport(0, 0, w, h);
+    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uScale, sc); gl.uniform1f(U.uCi, ci); gl.uniform1f(U.uSi, si); gl.uniform1f(U.uRin, rin); gl.uniform1f(U.uRout, rout); gl.uniform1f(U.uT, t); gl.uniform1f(U.uAcc, acc); gl.uniform1f(U.uSeed, seed);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); return { c, w: w / k, h: h / k };
+  }
   function bodyAt(g, b, x, y, rpx, sz, K, t) {
     const T = tempOf(b), tint = bbHex(T), pale = mixHex(tint, '#ffffff', .45);
     if (b.n.split('#')[0] === 'Eta Carinae' && rpx * 36000 > 20 && rpx * 36000 < 4000) { const D = rpx * 36000;   /* the Homunculus is ~0.6 light-years across: 36,000 times the star */ g.save(); g.translate(x, y); g.rotate(-.7); g.drawImage(homunculus(), -D / 2, -D / 2, D, D); g.restore(); }
+    if (b.id === 'neutron') drawSNR(g, b, x, y, rpx);
     if (b.id === 'quasar') { if (rpx * 2.6 >= 4 * K) { drawBH(g, b, x, y, rpx, K, t); return; } if (rpx * 4 < 26 * K) { glowAt(g, x, y, (7 + 5 * sz) * K, '#ffd9a8', .9); glowAt(g, x, y, 2.6 * K, '#ffffff', 1); return; } g.save(); g.translate(x, y); paintBody(g, 'quasar', 0, 0, rpx * 4, t + b.idx, b); g.restore(); g.restore(); return; }
     if (rpx < 1.4) { const L = lumOf(b), gr = K * (1.3 + 1.25 * Math.log10(1 + L * 3)) * (.45 + .55 * sz); glowAt(g, x, y, Math.min(gr, 9 * K), pale, .22 + .5 * sz);
       if (L > 2000 && sz > .4) { const sl = Math.min(26 * K, gr * 2.2) * sz; g.strokeStyle = rgba(pale, .35 * sz); g.lineWidth = Math.max(.5, .6 * K); g.beginPath(); g.moveTo(x - sl, y); g.lineTo(x + sl, y); g.moveTo(x, y - sl); g.lineTo(x, y + sl); g.stroke(); }   // diffraction spikes on the most luminous stars, as a telescope sees them
       g.fillStyle = `rgba(255,255,255,${.5 + .45 * sz})`; g.beginPath(); g.arc(x, y, Math.max(.55 * K, rpx), 0, TAU); g.fill(); return; }
     if (b.id === 'redgiant' && RSUN(b) > 250) { const ns = shellSprite(b), D = rpx * 7; g.save(); g.globalAlpha = .75; g.drawImage(ns, x - D / 2, y - D / 2, D, D); g.restore(); }   // a cool supergiant sheds dust: a faint lumpy shell several times its size
     const nm = b.n.split('#')[0], pu = PULSE[nm]; if (pu) rpx *= 1 + pu[1] * Math.sin(TAU * SIMT / pu[0] + hs2(nm) * TAU);   // pulsating variables breathe at their real period
-    glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, b.id === 'brown' ? .12 : .4);
-    if (b.id === 'neutron') { drawNS(g, b, x, y, rpx, K, t); return; }
+    if (b.id === 'neutron') { glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .4); drawNS(g, b, x, y, rpx, K, t); return; }
+    starGlow(g, b, x, y, rpx, K, tint);
+    if (b.id === 'redgiant' && RSUN(b) > 300 && rpx > 6) { const D = rpx * 7.5; g.save(); g.globalAlpha = sm3(clamp((rpx - 6) / 30)) * .7; g.translate(x, y); g.rotate(hs2(nm + 'pl') * TAU); g.drawImage(plumeSprite(), -D / 2, -D / 2, D, D); g.restore(); }   // its swollen, lopsided atmosphere
     const tex = rpx >= 8 ? surfFor(b, rpx) : null;
     const ob = OBLATE[nm] || 1, ry = rpx / ob;
     if (tex) g.drawImage(tex, x - rpx, y - ry, rpx * 2, ry * 2);
@@ -582,6 +660,7 @@
       if (nm === 'BPM 37093') { g.save(); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 12; i++) { const a = hs2(nm + i) * TAU, rr = Math.sqrt(hs2(nm + 'r' + i)) * rpx * .8; g.fillStyle = 'rgba(255,255,255,.35)'; g.save(); g.translate(x + Math.cos(a) * rr, y + Math.sin(a) * rr); g.rotate(a); g.fillRect(-rpx * .03, -rpx * .008, rpx * .06, rpx * .016); g.restore(); } g.restore(); }   /* 'Lucy': its carbon core has crystallised, a diamond the size of a planet */
       if (nm === 'PG 1159−035') glowAt(g, x, y, rpx * 4, '#b9a8ff', .25); }
     if (b.id === 'whitedwarf' && (nm === 'G 29-38' || nm === 'WD 1145+017')) { g.save(); g.translate(x, y); g.scale(1, .22); g.strokeStyle = 'rgba(255,214,170,.45)'; g.lineWidth = Math.max(.6, rpx * .5); g.beginPath(); g.arc(0, 0, rpx * 3.2, 0, TAU); g.stroke(); g.restore(); }   // the dusty debris discs of torn-apart planets
+    if ((b.id === 'redgiant' || b.id === 'sun' || b.id === 'reddwarf') && rpx > 20) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sm3(clamp((rpx - 20) / 60)); const rim = g.createRadialGradient(x, y, rpx * .86, x, y, rpx * 1.18); rim.addColorStop(0, rgba(tint, 0)); rim.addColorStop(.45, rgba(mixHex(tint, '#ffffff', .2), .3)); rim.addColorStop(1, rgba(tint, 0)); g.fillStyle = rim; g.beginPath(); g.arc(x, y, rpx * 1.2, 0, TAU); g.fill(); g.restore(); }   // a hot chromosphere glowing at the limb
     if (rpx > 30 && b.id !== 'brown') { g.strokeStyle = rgba(pale, .28); g.lineWidth = Math.max(.6, rpx * .005); g.beginPath(); g.ellipse(x, y, rpx * 1.004, ry * 1.004, 0, 0, TAU); g.stroke(); }
   }
 
@@ -600,7 +679,7 @@
     glowAt(g, x, y, R * (3 + 5 * flash), col, .35 + .5 * flash);
     // the dipole field: closed loops r = L sin^2(theta) in planes through the magnetic axis (magnetars: dense and twisted)
     const nL = mag ? 14 : 8; g.lineWidth = Math.max(.5, R * .012);
-    for (let k = 0; k < nL; k++) { const be = k / nL * TAU + h('b'), L = 2.2 + 2.6 * h('L' + k) + (mag ? 1.5 : 0), tw = mag ? .9 : 0; g.strokeStyle = rgba(mag ? '#b9a0ff' : '#8fd4ff', (mag ? .2 : .13) * (1 - k % 2 * .4)); g.beginPath(); let st0 = true;
+    for (let k = 0; k < nL; k++) { const be = k / nL * TAU + h('b'), L = 2.2 + 2.6 * h('L' + k) + (mag ? 1.5 : 0), tw = mag ? .9 : 0; g.strokeStyle = rgba(mag ? '#b9a0ff' : '#8fd4ff', (mag ? .12 : .06) * (1 - k % 2 * .4)); g.beginPath(); let st0 = true;
       for (let j = 1; j < 40; j++) { const th = .2 + (Math.PI - .4) * j / 40, r = L * Math.pow(Math.sin(th), 2); if (r < 1.02) { st0 = true; continue; } const b2 = be + tw * Math.cos(th), lx = r * Math.sin(th) * Math.cos(b2), ly = r * Math.cos(th), lz = r * Math.sin(th) * Math.sin(b2);
         // magnetic frame -> world: rotate the y axis onto m
         const ax = m, up = Math.abs(ax[1]) < .99 ? [0, 1, 0] : [1, 0, 0], e1n = [up[1] * ax[2] - up[2] * ax[1], up[2] * ax[0] - up[0] * ax[2], up[0] * ax[1] - up[1] * ax[0]], e1l = Math.hypot(...e1n), e1 = e1n.map(v => v / e1l), e2 = [ax[1] * e1[2] - ax[2] * e1[1], ax[2] * e1[0] - ax[0] * e1[2], ax[0] * e1[1] - ax[1] * e1[0]];
@@ -609,7 +688,7 @@
       g.stroke(); }
     // beams along the magnetic axis
     if (kind === 'radio' || kind === 'msp' || kind === 'gamma') for (const sg of [1, -1]) { const L2 = 14, [ex, ey] = P2(mv[0] * L2 * sg, mv[1] * L2 * sg), [bx, by] = P2(0, 0), ang = Math.atan2(ey - by, ex - bx), w = .16, len = Math.hypot(ex - bx, ey - by), toward = Math.max(0, mv[2] * sg);
-      const gr = g.createLinearGradient(bx, by, ex, ey); gr.addColorStop(0, rgba(kind === 'gamma' ? '#e0c8ff' : '#d8f2ff', .32 + .5 * toward)); gr.addColorStop(1, rgba('#9fd8ff', 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + Math.cos(ang - w) * len, by + Math.sin(ang - w) * len); g.lineTo(bx + Math.cos(ang + w) * len, by + Math.sin(ang + w) * len); g.closePath(); g.fill(); }
+      g.save(); g.translate(bx, by); g.rotate(ang + Math.PI / 2); g.globalAlpha = (.45 + .5 * toward) * (kind === 'gamma' ? .7 : 1); const bw2 = len * .55; g.drawImage(beamSprite(), -bw2 / 2, -len, bw2, len * 1.03); g.restore(); }   // soft and broad, fading outward
     g.restore();
     // the star: bent light flattens the limb (we see ~3/4 of the surface), very faint granular texture, and two hot polar caps
     const tx = R >= 10 ? surfFor({ ...b, id: 'neutron', t: '40000 K' }, R) : null; if (tx) { g.drawImage(tx, x - R, y - R, R * 2, R * 2); } else { const gr = g.createRadialGradient(x - R * .15, y - R * .15, 0, x, y, R); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.75, mixHex(bbHex(Math.min(T, 4e4)), '#ffffff', .35)); gr.addColorStop(1, mixHex(bbHex(Math.min(T, 4e4)), '#6a86c0', .3)); g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, TAU); g.fill(); }
@@ -640,16 +719,20 @@
   function drawBH(g, b, x, y, rs, K, t) {
     const nm = b.n.split('#')[0], d = BH[nm] || [1, .7, 0], [inc, acc, jet, ex] = d, h = k => hs2(nm + k), sh = rs * 2.6, ci = Math.cos(inc), tilt = (h('t') - .5) * .9, rin = rs * 3, rout = rs * (12 + 6 * h('o')), hot = acc > .7 ? [255, 246, 236] : [255, 226, 190], warm = acc > .7 ? [255, 168, 96] : [255, 120, 50], ph = t * (.5 + .4 * h('w'));
     g.save(); g.translate(x, y); g.rotate(tilt);
-    const tex = discTex(nm, acc, rin / rout), disc = front => { g.save(); g.beginPath(); if (front) g.rect(-rout * 1.1, 0, rout * 2.2, rout * 1.1); else g.rect(-rout * 1.1, -rout * 1.1, rout * 2.2, rout * 1.1); g.clip(); g.scale(1, ci); g.globalCompositeOperation = 'lighter'; g.drawImage(tex, -rout, -rout, rout * 2, rout * 2); g.restore(); };
+    let tex0 = null; const tex = () => tex0 || (tex0 = discTex(nm, acc, rin / rout)), disc = front => { g.save(); g.beginPath(); if (front) g.rect(-rout * 1.1, 0, rout * 2.2, rout * 1.1); else g.rect(-rout * 1.1, -rout * 1.1, rout * 2.2, rout * 1.1); g.clip(); g.scale(1, ci); g.globalCompositeOperation = 'lighter'; g.drawImage(tex(), -rout, -rout, rout * 2, rout * 2); g.restore(); };
     // halo of scattered light
     glowAt(g, 0, 0, rout * 1.25, acc > .7 ? '#ffd2a0' : '#ff9a5c', .14 * acc + .03);
     if (ex === 'dusty') { g.save(); g.scale(1, ci * .9 + .1); g.strokeStyle = 'rgba(20,10,8,.55)'; g.lineWidth = rout * .35; g.beginPath(); g.arc(0, 0, rout * 1.1, 0, TAU); g.stroke(); g.restore(); }   // a dusty torus / dust lane
-    if (jet) { g.save(); g.globalCompositeOperation = 'lighter'; for (const sg of [1, -1]) { const L = rs * (70 + 40 * h('j')), y0 = -sg * sh * .9; for (const [w0, w1, al] of [[.5, 3.2, .1], [.18, 1.1, .35], [.06, .35, .7]]) { const gr = g.createLinearGradient(0, y0, 0, -sg * L); gr.addColorStop(0, `rgba(215,232,255,${al})`); gr.addColorStop(.35, `rgba(170,200,255,${al * .45})`); gr.addColorStop(1, 'rgba(150,180,255,0)'); g.fillStyle = gr; g.globalAlpha = sg > 0 ? 1 : .4; g.beginPath(); g.moveTo(-rs * w0, y0); g.lineTo(-rs * w1, -sg * L); g.lineTo(rs * w1, -sg * L); g.lineTo(rs * w0, y0); g.closePath(); g.fill(); }   /* a bright spine inside a faint sheath; the counter-jet is beamed away from us and fainter */
+    if (jet) { g.save(); g.globalCompositeOperation = 'lighter'; for (const sg of [1, -1]) { const L = rs * (70 + 40 * h('j')), y0 = -sg * sh * .9; for (const [w0, w1, al] of [[.6, 4.2, .07], [.25, 1.6, .16], [.1, .6, .26]]) { const gr = g.createLinearGradient(0, y0, 0, -sg * L); gr.addColorStop(0, `rgba(215,232,255,${al})`); gr.addColorStop(.35, `rgba(170,200,255,${al * .45})`); gr.addColorStop(1, 'rgba(150,180,255,0)'); g.fillStyle = gr; g.globalAlpha = sg > 0 ? 1 : .4; g.beginPath(); g.moveTo(-rs * w0, y0); g.lineTo(-rs * w1, -sg * L); g.lineTo(rs * w1, -sg * L); g.lineTo(rs * w0, y0); g.closePath(); g.fill(); }   /* a bright spine inside a faint sheath; the counter-jet is beamed away from us and fainter */
         for (let k = 1; k < 7; k++) { const yy = -sg * L * (k / 7 + .03 * Math.sin(t * .7 + k)); glowAt(g, 0, yy, rs * (.5 + k * .2), '#d6e4ff', .22 * (1 - k / 8) * (sg > 0 ? 1 : .4)); } } g.globalAlpha = 1; g.restore(); }
+    { const gb = sh >= 5 ? glBH(sh, ci, Math.sin(inc), rin / sh, rout / sh, t * (.5 + .4 * h('w')) * 2, acc, h('s') * 97) : null;   // on the graphics card when it can: the full lensed picture, every pixel traced
+      if (gb) { g.fillStyle = '#000'; g.beginPath(); g.arc(0, 0, sh, 0, TAU); g.fill(); g.globalCompositeOperation = 'lighter'; g.drawImage(gb.c, -gb.w / 2, -gb.h / 2, gb.w, gb.h); g.globalCompositeOperation = 'source-over';
+        if (ex === 'binary') { const a = TAU * t / 14, dd = rs * 30, bx = Math.cos(a) * dd, by = Math.sin(a) * dd * ci; g.save(); g.translate(bx, by); const s2 = sh * .14; glowAt(g, 0, 0, s2 * 5, '#ffcf9a', .5); g.fillStyle = '#000'; g.beginPath(); g.arc(0, 0, s2, 0, TAU); g.fill(); g.restore(); }
+        g.restore(); return; } }
     disc(false);   // far side
     // the far side, lensed: light from behind the hole is bent up and over the top (and under the bottom) into a bright arch hugging the shadow
     if (ex !== 'ring') { const k2 = sh * 1.04 / rin, R2 = rout * k2 * .42; g.save(); g.globalCompositeOperation = 'lighter'; g.beginPath(); g.arc(0, 0, sh * 1.75, 0, TAU); g.arc(0, 0, sh * 1.015, 0, TAU, true); g.clip();
-      g.save(); g.scale(1, .55 + .45 * (1 - Math.sin(inc) * .6)); g.globalAlpha = .95; g.drawImage(tex, -R2 * 2.4, -R2 * 2.4, R2 * 4.8, R2 * 4.8); g.restore(); g.restore(); }
+      g.save(); g.scale(1, .55 + .45 * (1 - Math.sin(inc) * .6)); g.globalAlpha = .95; g.drawImage(tex(), -R2 * 2.4, -R2 * 2.4, R2 * 4.8, R2 * 4.8); g.restore(); g.restore(); }
     g.save(); g.globalCompositeOperation = 'lighter'; for (let k = 0; k < 8; k++) { const rl = sh * (1.02 + k * .018); g.strokeStyle = `rgba(255,236,214,${(.3 - k * .03) * Math.max(.3, acc)})`; g.lineWidth = Math.max(.4, sh * .008); g.beginPath(); g.arc(0, 0, rl, 0, TAU); g.stroke(); } g.restore();
     if (ex === 'ring' && g.createConicGradient) { g.save(); g.globalCompositeOperation = 'lighter'; for (let k = 0; k < 14; k++) { const cg = g.createConicGradient(-Math.PI / 2, 0, 0), q = 1 - Math.abs(k - 6) / 8; [0, .25, .5, .75, 1].forEach(st => { const br = .5 + .5 * Math.cos((st - .55) * TAU); cg.addColorStop(st, `rgba(255,${150 + 80 * br | 0},${70 + 70 * br | 0},${(.12 + .55 * br) * q})`); }); g.strokeStyle = cg; g.lineWidth = sh * .035; g.beginPath(); g.arc(0, 0, sh * (1.02 + k * .025), 0, TAU); g.stroke(); } g.restore(); }   // seen face-on (M87*, Sgr A*): the Event Horizon Telescope's lopsided ring, brighter where gas streams toward us
     g.fillStyle = '#000'; g.beginPath(); g.arc(0, 0, sh, 0, TAU); g.fill();   // the shadow
@@ -856,8 +939,9 @@
       else { const m = f3(x * 4 + 9, y * 4, z * 4, 4), hgt = (e - sea) / (1 - sea), dry = kind === 'desert' ? 1 : sstep(.45, .7, m * (1 - .5 * Math.cos(lat * 2)) + (1 - al) * .25 - .1);
         c = mx3(mx3([46, 84, 40], [74, 98, 52], m), mx3([176, 146, 98], [206, 170, 120], m), dry); if (kind === 'super') c = mx3(c, [96, 110, 88], .5); c = mx3(c, [130, 120, 112], sstep(.35, .7, hgt)); c = mx3(c, [236, 236, 240], sstep(.62, .8, hgt)); }
       const ice = al + .12 * (f3(x * 5, y * 5, z * 5, 3) - .5); if (ice > (kind === 'ocean' ? .7 : .8)) { c = mx3(c, [240, 246, 250], sstep(.8, .86, ice)); sp = 0; }
-      if (kind !== 'desert') { const wx = f3(x * 2 + 40, y * 2, z * 2, 3) - .5, cl = f3(x * 3.2 + wx * 2.5 + sd, y * 5 + wx * 3, z * 3.2, 6), band = .6 + .4 * Math.cos(lat * 6), cov = sstep(.52 - .08 * band, .72, cl) * (kind === 'ocean' ? 1 : .9); c = mx3(c, [244, 246, 250], cov * .92); sp *= 1 - cov; }   // clouds, swirled and gathered in bands
-      return [c, sp, null]; }
+      let city = null; if (nm === 'Earth' && e >= sea && al < .75) { const n1 = f3(x * 70 + 3, y * 70, z * 70, 2), n2 = f3(x * 6 - 7, y * 6, z * 6, 3), n3 = f3(x * 18 + 1, y * 18, z * 18, 2), lit = sstep(.66, .8, n1) * sstep(.5, .66, n2) * (.4 + .6 * sstep(.5, .7, n3)) * (1 - al) * .8; if (lit > .02) city = [255 * lit, 176 * lit, 90 * lit]; }   // the lights of cities, seen only at night
+      if (kind !== 'desert') { const wx = f3(x * 2 + 40, y * 2, z * 2, 3) - .5, cl = f3(x * 3.2 + wx * 2.5 + sd, y * 5 + wx * 3, z * 3.2, 6), band = .6 + .4 * Math.cos(lat * 6), cov = sstep(.52 - .08 * band, .72, cl) * (kind === 'ocean' ? 1 : .9); c = mx3(c, [244, 246, 250], cov * .92); sp *= 1 - cov; if (city) city = city.map(v => v * (1 - cov * .85)); }   // clouds, swirled and gathered in bands
+      return [c, sp, city]; }
     if (kind === 'mars') { const e = f3(x * 2 + sd, y * 2, z * 2, 6), d = f3(x * 6, y * 6, z * 6, 4); let c = mx3([132, 56, 30], [206, 112, 66], e); c = mx3(c, [86, 46, 34], sstep(.55, .7, d) * .6); const [cd] = cell3(x * 9, y * 9, z * 9); c = c.map(q => q * (cd < .18 ? .82 : cd < .24 ? 1.08 : 1)); if (al > .86) c = mx3(c, [242, 238, 232], sstep(.86, .9, al + .03 * (d - .5))); return [c, 0, null]; }
     if (kind === 'venus') { const w = f3(x * 1.5 + sd, y * 3, z * 1.5, 4), v = y * 3 + w * 1.8 + Math.atan2(x, z) * .3, b2 = .5 + .5 * Math.sin(v * 3); return [mx3([206, 170, 108], [246, 230, 190], .45 + .4 * b2 + .15 * f3(x * 6, y * 6, z * 6, 3)), 0, null]; }
     if (kind === 'lava') { const cr = r3(x * 3 + sd, y * 3, z * 3, 5), crack = sstep(.78, .95, cr), crust = f3(x * 6, y * 6, z * 6, 4); const c = mx3([34, 26, 24], [70, 56, 50], crust); return [mx3(c, [255, 150, 60], crack * .7), .05, [255 * crack, 110 * crack, 30 * crack]]; }
@@ -889,12 +973,15 @@
   const ATM = { titan: [[255, 190, 110], 1.4], triton: [[200, 210, 255], .2], io: [[255, 230, 160], .08],  earth: [[110, 160, 255], .9], ocean: [[110, 170, 255], 1], super: [[150, 180, 230], .7], venus: [[255, 236, 190], 1.1], neptune: [[120, 170, 255], .8], uranus: [[170, 236, 240], .8], jupiter: [[230, 220, 210], .35], saturn: [[240, 224, 190], .35], gas: [[210, 210, 230], .4], hot: [[255, 140, 90], .5], hotblue: [[130, 170, 255], .7], mars: [[230, 170, 140], .25], desert: [[220, 190, 150], .4] };
   function planetFace(kind, nm, S, la) {   // la: the direction of the star (radians, screen space) or null for the comparison view's soft key light
     const q = la == null ? -1 : Math.round(((la % TAU) + TAU) % TAU / TAU * 24) % 24, key = nm + '|' + S + '|' + q; let c = PLIT.get(key); if (c) { PLIT.delete(key); PLIT.set(key, c); return c; } if (PLIT.size > 40) PLIT.delete(PLIT.keys().next().value);
-    const m = planetMaps(kind, nm, S), ang = q < 0 ? -2.35 : q / 24 * TAU, lz = q < 0 ? .62 : .32, lxy = Math.sqrt(1 - lz * lz), Lx = Math.cos(ang) * lxy, Ly = Math.sin(ang) * lxy, at = ATM[kind];
+    const m = planetMaps(kind, nm, S), ang = q < 0 ? -2.35 : q / 24 * TAU, lz = q < 0 ? .62 : .32, lxy = Math.sqrt(1 - lz * lz), Lx = Math.cos(ang) * lxy, Ly = Math.sin(ang) * lxy, at = ATM[kind], giant = !!GIANT[kind] || kind === 'gas', night0 = nm === 'Earth' ? 0 : .25;
+    const rc = Math.cos(-.32), rs2 = Math.sin(-.32), RN = [-.94 * rs2, .94 * rc, -.34], nL = RN[0] * Lx + RN[1] * Ly + RN[2] * lz;   // Saturn's ring plane, as the rings are drawn (tilted 20 degrees, turned -0.32 rad)
     c = mk(S); const g = c.getContext('2d'), img = g.createImageData(S, S), D = img.data, R = S / 2;
     for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) { const dx = (px + .5 - R) / R, dy = (py + .5 - R) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue; const dz = Math.sqrt(1 - r2), i = py * S + px, k = i * 4;
       const nd = dx * Lx + dy * Ly + dz * lz, dif = sstep(-.12, .55, nd) * (.25 + .75 * Math.max(0, nd)) + .02, hv = dz + lz, hx = Lx, hy = Ly, hl = Math.hypot(hx, hy, hv), sp = m.Sp[i] * Math.pow(Math.max(0, (dx * hx + dy * hy + dz * hv) / hl), 60) * sstep(0, .3, nd);
-      let r = m.A[i * 3] * dif + 255 * sp, gg = m.A[i * 3 + 1] * dif + 245 * sp, b = m.A[i * 3 + 2] * dif + 230 * sp; const night = 1 - sstep(-.15, .2, nd); r += m.E[i * 3] * (.25 + .75 * night); gg += m.E[i * 3 + 1] * (.25 + .75 * night); b += m.E[i * 3 + 2] * (.25 + .75 * night);
-      if (at) { const rim = Math.pow(1 - dz, 2.6) * at[1] * sstep(-.25, .35, nd); r += at[0][0] * rim; gg += at[0][1] * rim; b += at[0][2] * rim; }
+      let ld = giant ? .5 + .5 * Math.pow(dz, .6) : 1;   // gas giants darken towards the limb: we look through more of the cloud-top haze there
+      if (kind === 'saturn' && Math.abs(nL) > .02) { const s2 = -(RN[0] * dx + RN[1] * dy + RN[2] * dz) / nL; if (s2 > 0) { const qx = dx + s2 * Lx, qy = dy + s2 * Ly, qz = dz + s2 * lz, rho = Math.hypot(qx, qy, qz); if (rho > 1.24 && rho < 2.29) ld *= 1 - (rho < 1.52 ? .25 : rho < 1.95 ? .8 : rho < 2.03 ? .05 : .55) * .9; } }   // the rings cast their shadow across the globe
+      let r = m.A[i * 3] * dif * ld + 255 * sp, gg = m.A[i * 3 + 1] * dif * ld + 245 * sp, b = m.A[i * 3 + 2] * dif * ld + 230 * sp; const night = 1 - sstep(-.15, .2, nd); r += m.E[i * 3] * (night0 + (1 - night0) * night); gg += m.E[i * 3 + 1] * (night0 + (1 - night0) * night); b += m.E[i * 3 + 2] * (night0 + (1 - night0) * night);
+      if (at) { const rim = Math.pow(1 - dz, 2.6) * at[1] * sstep(-.25, .35, nd), tw = Math.pow(1 - dz, 6) * at[1] * .5 * sstep(-.45, -.05, nd) * (1 - sstep(.1, .4, nd)); r += at[0][0] * (rim + tw); gg += at[0][1] * (rim + tw); b += at[0][2] * (rim + tw); }   // the lit atmosphere at the limb, and a thin twilight arc just past the terminator
       D[k] = r; D[k + 1] = gg; D[k + 2] = b; D[k + 3] = 255 * Math.min(1, (1 - Math.sqrt(r2)) * R * 1.2); }
     g.putImageData(img, 0, 0); PLIT.set(key, c); return c;
   }
@@ -1162,5 +1249,5 @@
     const rp = (PFR[b.id] || .26) * Math.min(w, h), t0 = performance.now();
     return new Promise(res => { (function poll() { const c = surfKind(b.id) && b.id !== 'neutron' ? surfFor(b, rp) : true; if ((c && !SWbusy && !SWQ.length) || performance.now() - t0 > ms) return res(); setTimeout(poll, 60); })(); });
   }
-  window.SKY = { pending: () => SWbusy || SWQ.length > 0, starBg, portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
+  window.SKY = { glBH, pending: () => SWbusy || SWQ.length > 0, starBg, portrait, portraitReady, starTileURL: (i = 0) => { const L = [[9, 9000, 640], [27, 7000, 1013]][i], t = starTile(L[0], L[1], L[2]); return t._url || (t._url = t.toDataURL()); }, layout, lineage, universe, massText, drawV: paintV, SPREAD, BASE, OBJ, FR, POOL, landFx, drawLabel, galaxySprite, planetInfo: n => { for (const [host, L] of Object.entries(PLANETS)) for (const p of L) if (p[0] === n) return { host, re: p[1], a: p[2], P: p[3], kind: p[4] }; for (const [host, L] of Object.entries(MOONS)) for (const m of L) if (m[0] === n) return { host, re: m[1] / 6371, a: m[2] / 1.496e8, P: Math.abs(m[3]), kind: m[4], moon: true, km: m[2] }; return null; }, MOONS, PLANETS, NEAR, drawPlanet, planetFace, physR, tempOf, bbHex, lumOf, surfFor, LYU, RSU, AUU, bodyAt, relSize: b => clamp(Math.pow(RSUN(b), .45), .004, 40), PREF, LBLFONTS, setPref, draw: (g, id, x, y, r, t = 0) => paint(g, id, x, y, r, t), starfield, fade, land, system, orbits, byId: id => OBJ.find(o => o.id === id) };
 })();
