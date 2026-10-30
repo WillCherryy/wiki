@@ -1078,7 +1078,7 @@ function showResult() {
   const r = G.result, ri = rankOf(P.xp), rk = RANKS[ri], nx = RANKS[ri + 1], prevRi = rankOf(r.before);
   const lo = rk.xp, hi = nx ? nx.xp : rk.xp, pct = nx ? Math.round((P.xp - lo) / (hi - lo) * 100) : 100;
   const rankUp = ri > prevRi, daily = r.mode === 'daily', ref = r.par || r.goal, ch = r.chal;
-  const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : daily && r.won ? `<button class="btn ghost" id="mapBtn">Path map</button>` : '';
+  const extra = r.mode === 'live' ? `<button class="btn ghost" id="liveBtn">Live board</button>` : r.mode === 'practice' ? `<button class="btn ghost" id="againBtn">Play another</button>` : r.mode === 'pack' ? `<button class="btn ghost" id="packBtn">${P.packs[G.extra.pack] && G.extra.idx + 1 < packsOf(G.extra.pack).length && r.won ? 'Next puzzle' : 'Pack'}</button>` : '';
   openModal(`
     ${r.sky ? skyReveal(r.sky, { id: 'skyCv' }) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
     ${resHero(r)}
@@ -1090,14 +1090,15 @@ function showResult() {
         ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
         ${ach.map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
         ${cos.map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${({ theme: 'theme', trail: 'trail', confetti: 'confetti', dots: 'dot style', buddy: 'buddy' })[i.cat] || ''}</b><small>${i.label ? esc(i.label) + ' · ' : ''}tap to equip it in the Locker</small></span></div>`).join('')}</details>`; })()}
-    <details class="res-fold res-more" id="resMore" ${r.sky ? '' : 'open'}><summary><span>Your route and stats</span><b>shortest routes · streak · leaderboard</b></summary>
-      ${routesCard(r)}
+    ${routesCard(r)}
+    ${daily && r.won ? '<div class="actions res-map"><button class="btn ghost" id="mapBtn">Path map · how everyone else got there</button></div>' : ''}
+    <details class="res-fold res-more" id="resMore"><summary><span>Streak and leaderboard</span><b>post your score · challenge · replay</b></summary>
       ${streakCard(r)}
       <section class="rcard" id="standing" hidden></section>
       ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
       <div class="actions" style="margin-top:14px">${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge a friend') + '</button>' : ''}${extra}<button class="btn ghost" id="replayBtn">Replay</button></div>
       <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div></details>`);
-  $('#resMore').addEventListener('toggle', () => { if ($('#resMore').open) fitHeat(r); });
+
   $('#repBtn').onclick = () => openReport(showResult); fitHeat(r); fillRoutes(r); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && (r.sky.name || r.sky.id) });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);

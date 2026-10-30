@@ -1603,3 +1603,5 @@ body.finding .finder-x { display: block; }
 #article a[data-t] { -webkit-touch-callout: none; }
 
 #obSnd[aria-pressed="false"] { color: #5f5a78 !important; text-decoration: line-through; }
+
+.res-map { margin-top: 8px; }
