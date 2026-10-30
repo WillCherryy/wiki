@@ -811,6 +811,7 @@ const CHARTS = [
   { id: 'dusk', name: 'Failed stars', d: 'The first brown dwarfs confirmed, the coldest known, and one with a planet in a photograph.', m: ['Teide 1', 'Gliese 229 B', 'Luhman 16', 'WISE 0855−0714', '2M1207'] },
   { id: 'cinder', name: 'Embers of suns', d: 'White dwarfs: the first one found, the nearest, and one with a giant planet close in.', m: ['40 Eridani B', 'Sirius B', 'Procyon B', 'van Maanen’s Star', 'WD 1856+534'] },
   { id: 'pulsar', name: 'Cosmic clocks', d: 'The first pulsar, the double pulsar, the binary that proved gravitational waves, and the fastest spinner.', m: ['PSR B1919+21', 'Crab Pulsar', 'Vela Pulsar', 'PSR B1913+16', 'PSR J0737−3039', 'PSR J1748−2446ad'] },
+  { id: 'beyond', name: 'Stars of other galaxies', d: 'Single stars seen beyond the Milky Way: in the Magellanic Clouds, Andromeda and Triangulum, and two magnified across billions of light-years.', m: ['R136a1', 'WOH G64', 'Sanduleak −69 202', 'S Doradus', 'HD 5980', 'Hubble’s V1', 'Romano’s Star', 'Icarus', 'Earendel'] },
   { id: 'horizon', name: 'Black holes that made history', d: 'The first quasar, the black hole at our centre, the first ever imaged, and the most distant known.', m: ['3C 273', 'Cygnus A', 'Sagittarius A*', 'Messier 87', 'TON 618', 'ULAS J1342+0928'] }
 ];
 const chartHave = c => c.m.filter(n => P.sky.cat[n]).length, chartDone = id => { const c = CHARTS.find(x => x.id === id); return !!c && chartHave(c) === c.m.length; };
@@ -820,7 +821,7 @@ function tonight(day = dayKey()) {   // one real object a night, the same for ev
   const types = SKY.OBJ.filter(o => o.id !== 'quasar'), o = types[h % types.length], L = SKY.POOL[o.id], q = L[(h >>> 8) % L.length];
   return { n: q.n, id: o.id, o };
 }
-const CHART_TRAIL = { triangle: ['#cfe0ff', '#ffffff', '#9ec0ff'], crux: ['#ffd28a', '#bcd6ff', '#6fa4ff'], orion: ['#ff7a3a', '#ffffff', '#6fa4ff'], hexagon: ['#ffffff', '#ffe2b4', '#f57a34'], hearth: ['#ffc83a', '#f0523a', '#d070a8'], worlds: ['#d8c8a8', '#7fd1c7', '#3a7bd5'], giant: ['#ffb070', '#e04a1a', '#8a1a00'], variable: ['#f57a34', '#ffc83a', '#f57a34'], dusk: ['#f6c4c4', '#d070a8', '#7a2a6a'], cinder: ['#ffffff', '#a9d0ff', '#4a6aa8'], pulsar: ['#e0f7ff', '#5fe0ff', '#e0f7ff'], horizon: ['#ffd08a', '#ff5a1f', '#8a1a00'] };
+const CHART_TRAIL = { beyond: ['#ffd8a8', '#bcd2ff', '#ff9cb4'], triangle: ['#cfe0ff', '#ffffff', '#9ec0ff'], crux: ['#ffd28a', '#bcd6ff', '#6fa4ff'], orion: ['#ff7a3a', '#ffffff', '#6fa4ff'], hexagon: ['#ffffff', '#ffe2b4', '#f57a34'], hearth: ['#ffc83a', '#f0523a', '#d070a8'], worlds: ['#d8c8a8', '#7fd1c7', '#3a7bd5'], giant: ['#ffb070', '#e04a1a', '#8a1a00'], variable: ['#f57a34', '#ffc83a', '#f57a34'], dusk: ['#f6c4c4', '#d070a8', '#7a2a6a'], cinder: ['#ffffff', '#a9d0ff', '#4a6aa8'], pulsar: ['#e0f7ff', '#5fe0ff', '#e0f7ff'], horizon: ['#ffd08a', '#ff5a1f', '#8a1a00'] };
 function chartHtml(k, cls) {   // the find's place in a chart, and how it reached you
   const L = chartLine(k.name), via = k.via === 'tonight' ? 'Tonight’s object: everyone could catch it today' : k.via === 'aim' ? 'Your telescope was aimed here' : '';
   if (!L && !via) return ''; const tr = L && L.done ? (COS.trail.find(t => t.id === 'chart-' + L.c.id) || {}).name : '';
@@ -1456,7 +1457,7 @@ const COS = {
     { id: 'lagoon', name: 'Lagoon', sw: 'linear-gradient(135deg,#a5f3fc,#0ea5e9,#1e3a8a)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'blossom', name: 'Blossom', sw: 'linear-gradient(135deg,#fbcfe8,#f472b6,#be185d)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'galaxy', name: 'Galaxy', sw: 'linear-gradient(135deg,#38bdf8,#6366f1,#c026d3)', need: { t: 'supporter' }, label: 'Supporter pack' },
-    ...[['triangle', 'Summer night'], ['crux', 'Southern Cross'], ['orion', 'Orion'], ['hexagon', 'Winter hexagon'], ['hearth', 'Neighbours'], ['worlds', 'New worlds'], ['giant', 'Hypergiant'], ['variable', 'Cepheid'], ['dusk', 'Brown dwarf'], ['cinder', 'Ember of a sun'], ['pulsar', 'Pulsar'], ['horizon', 'Event horizon']].map(([c, name]) => ({ id: 'chart-' + c, name, sw: `linear-gradient(135deg,${CHART_TRAIL[c].join(',')})`, need: { t: 'chart', v: c }, label: 'Complete the chart: ' + CHARTS.find(x => x.id === c).name }))
+    ...[['triangle', 'Summer night'], ['crux', 'Southern Cross'], ['orion', 'Orion'], ['hexagon', 'Winter hexagon'], ['hearth', 'Neighbours'], ['worlds', 'New worlds'], ['giant', 'Hypergiant'], ['variable', 'Cepheid'], ['dusk', 'Brown dwarf'], ['cinder', 'Ember of a sun'], ['pulsar', 'Pulsar'], ['beyond', 'Far shore'], ['horizon', 'Event horizon']].map(([c, name]) => ({ id: 'chart-' + c, name, sw: `linear-gradient(135deg,${CHART_TRAIL[c].join(',')})`, need: { t: 'chart', v: c }, label: 'Complete the chart: ' + CHARTS.find(x => x.id === c).name }))
   ],
   confetti: [
     { id: 'classic', name: 'Classic', sw: 'linear-gradient(135deg,#d63a1f,#16130f,#ee9a54)' },
