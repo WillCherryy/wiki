@@ -578,12 +578,18 @@
     for (const [rr, a] of [[1, Math.min(.12, .03 + .016 * lg)], [k1, Math.min(.32, .12 + .035 * lg)]]) { const gr = x.createRadialGradient(h2, h2, 0, h2, h2, h2 * rr); gr.addColorStop(0, rgba(tint, a)); gr.addColorStop(.3, rgba(tint, a * .45)); gr.addColorStop(.65, rgba(tint, a * .12)); gr.addColorStop(1, rgba(tint, 0)); x.fillStyle = gr; x.fillRect(0, 0, n, n); }
     if (BLOOM.size > 60) BLOOM.delete(BLOOM.keys().next().value); BLOOM.set(key, c); return c;
   }
+  // ---- the eye's brightness range. Seen from above the map every star is at about the same distance, so its brightness goes with its luminosity.
+  //      The eye adapts to the brightest star in view and sees about 14 magnitudes below it (a factor of ~400,000); fainter stars sink to a
+  //      just-visible floor so they can still be found. Adaptation settles over about half a second, as the eye's does. EYE is null outside the map.
+  let EYE = null, EYEF = null;
+  const eyeK = b => { if (EYE == null || b.n === EYEF) return 1; const dm = 2.5 * (EYE - Math.log10(lumOf(b) + 1e-9)); return dm <= 0 ? 1 : Math.pow(clamp(1 - dm / 14), 1.6); };
   function starGlow(g, b, x, y, rpx, K, tint) {   // every star glows by its real luminosity: a bright core halo, a wide soft bloom, and for the most luminous a faint anamorphic streak, as a cinema lens sees them
     if (b.id === 'brown') { glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .12); return; }
-    const lg = Math.log10(1 + lumOf(b)), L2 = Math.round(lg * 2) / 2, Ro = rpx * (9 + 3 * L2) + 18 * K;
+    const lg = Math.log10(1 + lumOf(b)), L2 = Math.round(lg * 2) / 2, Ro = rpx * (9 + 3 * L2) + 18 * K, e = eyeK(b), a0 = g.globalAlpha; g.globalAlpha = a0 * (.25 + .75 * e);
     glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .42);
     g.drawImage(bloomSprite(tint, L2), x - Ro, y - Ro, Ro * 2, Ro * 2);   // the wide bloom: two falloffs baked into one soft image, drawn once
     if (lg > 3.4 && rpx > 3) { const hw = Math.min(rpx * (10 + 2 * lg), 2400), a = Math.min(.22, .05 * (lg - 3)); g.save(); g.globalCompositeOperation = 'lighter'; const lgr = g.createLinearGradient(x - hw, 0, x + hw, 0); lgr.addColorStop(0, rgba(tint, 0)); lgr.addColorStop(.5, rgba(mixHex(tint, '#ffffff', .4), a)); lgr.addColorStop(1, rgba(tint, 0)); g.fillStyle = lgr; g.fillRect(x - hw, y - Math.max(.6, rpx * .025), hw * 2, Math.max(1.2, rpx * .05)); g.restore(); }
+    g.globalAlpha = a0;
   }
   // ---- supernova remnants around their neutron stars: painted per pixel once, a few rows per frame, then kept
   const SNR = { 'Crab Pulsar': [5.5, 'crab'], 'Cassiopeia A': [5, 'casa'] }, SNRC = new Map();
@@ -644,9 +650,9 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     if (b.n.split('#')[0] === 'Eta Carinae' && rpx * 36000 > 20 && rpx * 36000 < 4000) { const D = rpx * 36000;   /* the Homunculus is ~0.6 light-years across: 36,000 times the star */ g.save(); g.translate(x, y); g.rotate(-.7); g.drawImage(homunculus(), -D / 2, -D / 2, D, D); g.restore(); }
     if (b.id === 'neutron') drawSNR(g, b, x, y, rpx);
     if (b.id === 'quasar') { if (rpx * 2.6 >= 4 * K) { drawBH(g, b, x, y, rpx, K, t); return; } if (rpx * 4 < 26 * K) { glowAt(g, x, y, (7 + 5 * sz) * K, '#ffd9a8', .9); glowAt(g, x, y, 2.6 * K, '#ffffff', 1); return; } g.save(); g.translate(x, y); paintBody(g, 'quasar', 0, 0, rpx * 4, t + b.idx, b); g.restore(); g.restore(); return; }
-    if (rpx < 1.4) { const L = lumOf(b), gr = K * (1.3 + 1.25 * Math.log10(1 + L * 3)) * (.45 + .55 * sz); glowAt(g, x, y, Math.min(gr, 9 * K), pale, .22 + .5 * sz);
-      if (L > 2000 && sz > .4) { const sl = Math.min(26 * K, gr * 2.2) * sz; g.strokeStyle = rgba(pale, .35 * sz); g.lineWidth = Math.max(.5, .6 * K); g.beginPath(); g.moveTo(x - sl, y); g.lineTo(x + sl, y); g.moveTo(x, y - sl); g.lineTo(x, y + sl); g.stroke(); }   // diffraction spikes on the most luminous stars, as a telescope sees them
-      g.fillStyle = `rgba(255,255,255,${.5 + .45 * sz})`; g.beginPath(); g.arc(x, y, Math.max(.55 * K, rpx), 0, TAU); g.fill(); return; }
+    if (rpx < 1.4) { const L = lumOf(b), e = eyeK(b), gr = K * (1.3 + 1.25 * Math.log10(1 + L * 3)) * (.45 + .55 * sz) * (.5 + .5 * e); glowAt(g, x, y, Math.min(gr, 9 * K), pale, (.22 + .5 * sz) * e);
+      if (L > 2000 && sz > .4 && e > .6) { const sl = Math.min(26 * K, gr * 2.2) * sz; g.strokeStyle = rgba(pale, .35 * sz); g.lineWidth = Math.max(.5, .6 * K); g.beginPath(); g.moveTo(x - sl, y); g.lineTo(x + sl, y); g.moveTo(x, y - sl); g.lineTo(x, y + sl); g.stroke(); }   // diffraction spikes on the most luminous stars, as a telescope sees them
+      g.fillStyle = `rgba(255,255,255,${(.5 + .45 * sz) * (.4 + .6 * e)})`; g.beginPath(); g.arc(x, y, Math.max(.55 * K, rpx) * (.75 + .25 * e), 0, TAU); g.fill(); return; }
     if (b.id === 'redgiant' && RSUN(b) > 250) { const ns = shellSprite(b), D = rpx * 7; g.save(); g.globalAlpha = .75; g.drawImage(ns, x - D / 2, y - D / 2, D, D); g.restore(); }   // a cool supergiant sheds dust: a faint lumpy shell several times its size
     const nm = b.n.split('#')[0], pu = PULSE[nm]; if (pu) rpx *= 1 + pu[1] * Math.sin(TAU * SIMT / pu[0] + hs2(nm) * TAU);   // pulsating variables breathe at their real period
     if (b.id === 'neutron') { glowAt(g, x, y, rpx * 2.4 + 4 * K, tint, .4); drawNS(g, b, x, y, rpx, K, t); return; }
@@ -1240,6 +1246,8 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     }
     const labels = [], items = B.map((b, i) => ({ b, i, p: toS(W[i][0], W[i][1]), z: W[i][1] })).sort((x, y) => x.z - y.z), pos = [], zs = Math.pow(Z, .42) * Math.pow(.7, .58);
     CPL = 0; const spreadMode = PREF.dup === 'spread';
+    if (!opt.noEye) { let top = -Infinity; items.forEach(it => { const b = it.b; if (b.id === 'quasar' || b.id === 'neutron' || (opt.filter && !opt.filter.has(b.id))) return; const m = Math.max(physR(b) * RSU * Z * 4, 2); if (it.p[0] > -m && it.p[0] < w + m && it.p[1] > -m && it.p[1] < h + m) top = Math.max(top, Math.log10(lumOf(b) + 1e-9)); });
+      const E = lay._eye || (lay._eye = { v: null, t: 0 }), now = performance.now(); if (top > -Infinity) { if (E.v == null) E.v = top; else E.v += (top - E.v) * (1 - Math.exp(-Math.min(.1, (now - E.t) / 1000) * 4)); } E.t = now; EYE = E.v; EYEF = opt.focus; }   // the eye adapts to the brightest star in view
     items.forEach(it => { const b = it.b, i = it.i, nuc = b.tier === 'nucleus', gRs = B[b.gi].rg * Z, sz = nuc ? 1 : clamp(Math.log10(Math.max(1, gRs / (120 * K))) / Math.log10(40)), rpx = physR(b) * RSU * Z, bn = born(b.n);   // true size on screen: the galaxy is 10^12 times bigger than a star, so stars stay points of light until you are very close
       const tint = bbHex(tempOf(b)), toS2 = toS, co = { K, SY, Z, w, h, toS: toS2, rpx, sz, t, cc: opt.cc, fc: opt.focus === b.n ? opt.fc : 0, place: (spreadMode || b.real || b.home) && (b.count || 1) > 1 ? k => { const gi = NU[Math.floor(hs2(b.n + 'cg' + k) * NU.length)], wp = armW(B[gi], W[gi], b.n + '#' + k, SPN), sp = toS(wp[0], wp[1]); return { x: sp[0], y: sp[1], wx: wp[0], wy: wp[1] }; } : null };
       const many = (b.count || 1) > 1, dim = opt.filter && !opt.filter.has(b.id) && opt.focus !== b.n;
@@ -1259,6 +1267,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       let lbl = null; if (showL && !opt.noLabels && PREF.on) { lbl = { text: b.base || b.n, x: it.p[0], y: it.p[1] + (rpx > 3 ? rpx * 1.12 : 0) + 30 * K, size: (nuc ? 17 : 14) * K, color: foc ? '#ffffff' : rgba(mixHex(tint, '#ffffff', .35), .9), focus: foc }; labels.push({ lbl, pr: foc ? 0 : nuc ? 1 : b.tier === 'anchor' ? 2 : 3, m: b.m }); }
       if (dim) g.globalAlpha = 1;
       pos.push({ n: b.n, id: b.id, x: it.p[0], y: it.p[1], wx: W[i][0], wy: W[i][1], r: Math.max(rr, nuc ? 30 * K : 16 * K), lbl, tier: b.tier, copies: cps }); });
+    EYE = null;
     { const taken = []; labels.sort((x, y) => x.pr - y.pr || y.m - x.m).forEach(({ lbl }) => { const wd = lbl.text.length * lbl.size * .5, bx = { x0: lbl.x - wd / 2, x1: lbl.x + wd / 2, y0: lbl.y - lbl.size, y1: lbl.y + lbl.size * .3 }; if (!lbl.focus && taken.some(q => bx.x0 < q.x1 && bx.x1 > q.x0 && bx.y0 < q.y1 && bx.y1 > q.y0)) return; taken.push(bx); if (opt.ov) { const f = opt.ov.f, im = labelImg({ ...lbl, size: lbl.size * f }); opt.ov.g.drawImage(im.c, lbl.x * f - im.ox, lbl.y * f - im.oy); } else { const im = labelImg(lbl); g.drawImage(im.c, lbl.x - im.ox, lbl.y - im.oy); } }); }
     // minimap: the whole universe with the view as a box
     if (!opt.noMini) {    const Rm = 40 * K, mx = 14 * K + Rm, my = opt.mini === 'tl' ? (opt.miniTop ? opt.miniTop() : 52 * K) + Rm : h - 18 * K - Rm, big = lay.R * 1.1, k = Rm / big; const mgx = opt.ov ? opt.ov.g : g; mgx.save(); if (opt.ov) mgx.setTransform(opt.ov.f, 0, 0, opt.ov.f, 0, 0); mgx.fillStyle = 'rgba(10,8,22,.78)'; mgx.strokeStyle = 'rgba(255,255,255,.2)'; mgx.lineWidth = 1.5 * K; mgx.beginPath(); mgx.arc(mx, my, Rm + 2 * K, 0, TAU); mgx.fill(); mgx.stroke(); mgx.beginPath(); mgx.arc(mx, my, Rm, 0, TAU); mgx.clip();
