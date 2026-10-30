@@ -147,7 +147,7 @@ function rng(seed) { let a = hash(seed)(); return () => { a |= 0; a = a + 0x6D2B
 const dayKey = (d = new Date()) => d.toLocaleDateString('en-CA');
 const dayNum = k => { const [y, m, d] = k.split('-').map(Number); return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 864e5) + 1; };
 const yesterday = k => { const [y, m, d] = k.split('-').map(Number); return dayKey(new Date(y, m - 1, d - 1)); };
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); }
+function toast(msg) { const t = $('#toast'), fs = document.fullscreenElement; if (fs && t.parentNode !== fs) fs.appendChild(t); else if (!fs && t.parentNode !== document.body) document.body.appendChild(t);   /* toasts follow the full-screen Observatory */ t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); }
 
 /* --------------------------------------------------------------- storage */
 const KEY = 'wikiio:v1', CUR = 'wikiio:cur';
@@ -543,8 +543,8 @@ async function doRewind() {
 function skyLadder(idx) { const o = SKY.OBJ[idx]; return `<div class="ladder" style="--c:${o.c}">${SKY.OBJ.map((_, i) => `<i class="${i <= idx ? 'on' : ''} ${i === idx ? 'cur' : ''}"></i>`).join('')}</div>`; }
 const RARITY = ['Common', 'Common', 'Uncommon', 'Uncommon', 'Rare', 'Rare', 'Epic', 'Epic', 'Legendary'];
 function discoveryK(name, d = {}) {   // everything the discovery card shows, rebuilt from the catalogue so it stays current
-  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, via: d.via || '', first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
-  const f = SKY.fieldOf(name); if (f) return { idx: f.idx, id: f.id, name, kind: f.kind, temp: f.t, fact: f.f, art: f.a, m: f.m, why: d.why || '', burn: d.burn, boost: d.boost || null, near: d.near || null, next: d.next || null, via: '', first: true, field: true, count: 1 };
+  for (let i = 0; i < SKY.OBJ.length; i++) { const q = SKY.POOL[SKY.OBJ[i].id].find(p => p.n === name); if (q) return { idx: i, id: SKY.OBJ[i].id, name, kind: q.kind, temp: q.t, fact: q.f, art: q.a, m: q.m, why: d.why || '', burn: d.burn, boost: d.boost || null, pity: !!d.pity, near: d.near || null, next: d.next || null, via: d.via || '', first: !!d.first, count: d.count || P.sky.cat[name] || 1 }; }
+  const f = SKY.fieldOf(name); if (f) return { idx: f.idx, id: f.id, name, kind: f.kind, temp: f.t, fact: f.f, art: f.a, m: f.m, why: d.why || '', burn: d.burn, boost: d.boost || null, pity: !!d.pity, near: d.near || null, next: d.next || null, via: '', first: true, field: true, count: 1 };
   return null;
 }
 function dayDiscovery(day) {
@@ -561,7 +561,7 @@ function skyReveal(k, opt = {}) {   // the discovery card: a collectible with a 
     <div class="disc-type"><i></i>${o.name} · tier ${k.idx + 1} of 9</div>
     <h3 class="disc-name">${esc(k.name)}</h3><div class="disc-sub">${esc(k.kind)}</div>
     <div class="disc-stats"><div><b>${SKY.massText(k.m)}</b><span>Mass</span></div><div><b>${esc(k.temp)}</b><span>Temperature</span></div><div><b>${opt.visitor ? RARITY[k.idx] : have + '<small> / ' + total + '</small>'}</b><span>${opt.visitor ? 'Rarity' : 'Collected'}</span></div></div>
-    ${k.boost ? `<div class="disc-boost"><b>Streak boost</b> ${k.boost.days}-day streak lifted this find</div>` : ''}${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
+    ${k.pity ? `<div class="disc-boost"><b>Lucky break</b> Five finds of one kind in a row, so your telescope reached a tier further</div>` : ''}${k.boost ? `<div class="disc-boost"><b>Streak boost</b> ${k.boost.days}-day streak lifted this find</div>` : ''}${sm ? '' : skyLadder(k.idx)}${k.why ? `<div class="disc-why"><span>How you earned it</span>${esc(k.why)}</div>` : ''}
     ${opt.visitor ? '' : chartHtml(k, 'disc')}
     ${k.near && !opt.visitor ? `<div class="disc-near"><span>So close</span>${esc(k.near.how)} would have found a <b>${esc(SKY.OBJ[k.near.to].name.toLowerCase())}</b>.</div>` : ''}
     ${sm ? '' : `<p class="disc-fact">${esc(k.fact)}</p>`}
@@ -698,7 +698,7 @@ function uniMap(cv, L, o) {
   cv.onpointerup = cv.onpointercancel = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = 0; const d = drag; drag = null; if (!d) return; if (d.moved) { if (performance.now() - lastMove > 90) vel.x = vel.y = 0; return; } const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * cv.width, y = (e.clientY - r.top) / r.height * cv.height, k = cv.width / 760, hit = pos.slice().reverse().find(p => p.r && Math.hypot(p.x - x, p.y - y) < Math.max(p.r, 34 * k)), nw = performance.now();
     if (hit) { if (nw - lastTap < 320 && sel === hit.n) { fly(hit.n, Math.min(2, cam.tz * 4)); lastTap = 0; } else { pick(hit.n); lastTap = nw; } } };
   cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(-clamp2(e.deltaY, -240, 240) * .0042)); }, { passive: false });
-  return { pause: v => { paused = !!v; }, pos: () => pos, cam: () => cam, camZ: () => cam.z, fov: () => cv.width / cam.z * SKY.LYU, zoomTo: z => { fl = null; cam.tz = clamp2(z, Zmin, ZMAX); }, zRange: () => [Zmin, ZMAX], selected: () => sel, tour: on => { if (on) { const L2 = lay.bodies.filter(b => b.tier !== 'member' && !b.ghost).map(b => b.n); tour = { list: L2.length ? L2 : [lay.bodies[0].n], i: -1, next: 0 }; } else tour = null; return !!tour; }, isTour: () => !!tour, setSpeed: v => { speed = v; }, lay, pick, copyTo: (n, i) => { if (i > 0 && lay.idxOf[n + '#2'] != null) { const t = n + '#' + (i + 1); sel = t; selCopy = 0; fly(t, zoomFor(t)); return; } sel = n; selCopy = i; fly(n, Math.max(zoomFor(n), cam.tz > Z0 * 40 ? cam.tz : 1.25), i); }, stop: () => { dead = true; cancelAnimationFrame(raf); ov.remove(); sds.forEach(d => d.remove()); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
+  return { jump: (n, fovLy) => { sel = n; cam.follow = n; fl = null; cam.z = cam.tz = clamp2(cv.width / (fovLy / SKY.LYU), Zmin, ZMAX); const p = pos.find(q => q.n === n); if (p) { const [A, B, LX, LY] = AN(p); cam.x = A; cam.y = B; cam.ox = LX; cam.oy = LY; } }, pause: v => { paused = !!v; }, pos: () => pos, cam: () => cam, camZ: () => cam.z, fov: () => cv.width / cam.z * SKY.LYU, zoomTo: z => { fl = null; cam.tz = clamp2(z, Zmin, ZMAX); }, zRange: () => [Zmin, ZMAX], selected: () => sel, tour: on => { if (on) { const L2 = lay.bodies.filter(b => b.tier !== 'member' && !b.ghost).map(b => b.n); tour = { list: L2.length ? L2 : [lay.bodies[0].n], i: -1, next: 0 }; } else tour = null; return !!tour; }, isTour: () => !!tour, setSpeed: v => { speed = v; }, lay, pick, copyTo: (n, i) => { if (i > 0 && lay.idxOf[n + '#2'] != null) { const t = n + '#' + (i + 1); sel = t; selCopy = 0; fly(t, zoomFor(t)); return; } sel = n; selCopy = i; fly(n, Math.max(zoomFor(n), cam.tz > Z0 * 40 ? cam.tz : 1.25), i); }, stop: () => { dead = true; cancelAnimationFrame(raf); ov.remove(); sds.forEach(d => d.remove()); }, setFilter: f => { filter = f && f.size ? f : null; }, level: () => { const zg = zoomFor(lay.bodies[0].n), z = cam.z; return z < zg * .7 ? 0 : z < zg * 5 ? 1 : z < Math.max(.3, zg * 60) ? 2 : 3; }, zoom: zoomBy, home: n => { sel = n; cam.follow = n; cam.tz = Z0; if (o.onPick) o.onPick(n); }, setSel: n => { sel = n; } };
 }
 const crumbParts = (lay, n) => [{ t: 'Universe', n: null }].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => ({ t: b.tier === 'nucleus' ? (b.ghost === 'The Milky Way' || b.n === 'Sagittarius A*' ? 'Milky Way' : b.ghost ? b.ghost : b.id === 'quasar' ? b.n.split('#')[0] + ' galaxy' : b.n + ' system') : b.n, n: b.n })));
 const crumb = (lay, n) => ['Universe'].concat(SKY.lineage(lay, n).filter(b => b.tier !== 'member' || b.n === n).map(b => b.tier === 'nucleus' ? (b.n === 'Sagittarius A*' ? 'Milky Way' : b.ghost ? b.ghost : b.id === 'quasar' ? b.n + ' galaxy' : b.n + ' system') : b.n)).join(' › ');
@@ -814,6 +814,13 @@ const CHARTS = [
   { id: 'beyond', name: 'Stars of other galaxies', d: 'Single stars seen beyond the Milky Way: in the Magellanic Clouds, Andromeda and Triangulum, and two magnified across billions of light-years.', m: ['R136a1', 'WOH G64', 'Sanduleak −69 202', 'S Doradus', 'HD 5980', 'Hubble’s V1', 'Romano’s Star', 'Icarus', 'Earendel'] },
   { id: 'horizon', name: 'Black holes that made history', d: 'The first quasar, the black hole at our centre, the first ever imaged, and the most distant known.', m: ['3C 273', 'Cygnus A', 'Sagittarius A*', 'Messier 87', 'TON 618', 'ULAS J1342+0928'] }
 ];
+/* ---- the field logbook: landmarks you have visited in the Observatory (not earned, found by exploring) */
+const logLands = () => SKY.LOCAL.map(G => G.n).concat(Object.keys(SKY.LANDS).filter(n => SKY.LANDS[n][5] !== 'snr'), Object.keys(SKY.STRUCT));
+const logCount = () => { const v = P.sky.visits || {}; return logLands().filter(n => v[n]).length; };
+function logVisit(n) {   // first visit to a landmark: logged, a little XP, and perhaps a trail
+  if (!logLands().includes(n)) return; P.sky.visits = P.sky.visits || {}; if (P.sky.visits[n]) return; P.sky.visits[n] = Date.now(); P.xp += 5; saveP(); renderHeader();
+  const c = logCount(), t = logLands().length; toast(`Logged in your field book: ${n} · ${c} of ${t}`); const nw = checkCos(); nw.forEach(i => setTimeout(() => toast(`Trail unlocked: ${i.name}`), 1600));
+}
 const chartHave = c => c.m.filter(n => P.sky.cat[n]).length, chartDone = id => { const c = CHARTS.find(x => x.id === id); return !!c && chartHave(c) === c.m.length; };
 const typeOfName = n => { for (const o of SKY.OBJ) if (SKY.POOL[o.id].some(q => q.n === n)) return o; return null; };
 function tonight(day = dayKey()) {   // one real object a night, the same for everyone: earn its type today and it is yours (quasars stay earned the hard way)
@@ -836,6 +843,10 @@ const wikiUrl = art => 'https://en.wikipedia.org/wiki/' + art;
 const SKY_CUT = [0, .2, .32, .44, .56, .68, .8, .93, .985];   // a quasar needs a par route, every click warmer, no search or rewind, and about a minute or less
 const STREAK_BOOST = [[30, .12], [14, .08], [7, .05], [3, .02]];   // days of streak -> a small head start on the quality score
 const streakBoost = n => { for (const [d, v] of STREAK_BOOST) if (n >= d) return { v, d }; return { v: 0, d: 0 }; };
+function pityTier(sk) {   // five finds of one kind in a row: the next one reaches a tier further (never into quasars, which stay earned the hard way)
+  const rec = P.sky.recent = P.sky.recent || []; let out = sk; if (rec.length >= 5 && rec.slice(-5).every(v => v === sk.idx) && sk.idx < 7) out = { ...sk, idx: sk.idx + 1, pity: true };
+  rec.push(out.idx); if (rec.length > 8) rec.splice(0, rec.length - 8); return out;
+}
 function skyTier(r, boost = 0) {
   const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (10 * ref + 210 - r.secs) / 210));   // longer puzzles get proportionally more time for a full speed score
   const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0), cap = ref <= 1 ? 4 : ref === 2 ? 7 : 8, pick = qq => { let i = 0; SKY_CUT.forEach((c, k) => { if (qq >= c) i = k; }); return Math.min(i, cap); };
@@ -889,8 +900,8 @@ function finish(won) {
     if (won && (!P.archive[G.extra.day] || c < P.archive[G.extra.day].clicks)) P.archive[G.extra.day] = { clicks: c, secs };
     gain = won && !prev ? Math.round(gain / 2) : 0;   // half XP, once; no streak and no sky object for past days
   } else gain = Math.round(gain / 2);
-  if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = skyTier(G.result, bo.v), o = SKY.OBJ[sk.idx], fresh = SKY.POOL[o.id].some(q => !P.sky.cat[q.n]), pk = fresh ? pickNamed(o.id) : SKY.field(o.id, (P.sky.field[o.id] || 0) + 1), first = !P.sky.cat[pk.n]; if (pk.field) P.sky.field[o.id] = (P.sky.field[o.id] || 0) + 1; else P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
-  G.result.sky = { via: pk.via || '', boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: pk.field ? 1 : P.sky.cat[pk.n], field: !!pk.field, idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { via: pk.via || '', boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, field: !!pk.field, count: pk.field ? 1 : P.sky.cat[pk.n] }; }
+  if (skyOK) { const bo = G.mode === 'daily' ? streakBoost(P.streak) : { v: 0, d: 0 }, sk = pityTier(skyTier(G.result, bo.v)), o = SKY.OBJ[sk.idx], fresh = SKY.POOL[o.id].some(q => !P.sky.cat[q.n]), pk = fresh ? pickNamed(o.id) : SKY.field(o.id, (P.sky.field[o.id] || 0) + 1), first = !P.sky.cat[pk.n]; if (pk.field) P.sky.field[o.id] = (P.sky.field[o.id] || 0) + 1; else P.sky.cat[pk.n] = (P.sky.cat[pk.n] || 0) + 1; P.sky.found[o.id] = (P.sky.found[o.id] || 0) + 1; P.sky.total++; if (sk.idx > P.sky.best) P.sky.best = sk.idx; if (G.mode === 'daily') P.sky.log[G.day] = sk.idx; { const rec = { day: G.mode === 'daily' ? G.day : dayKey(), mode: G.mode, num: G.mode === 'daily' ? dayNum(G.day) : null, pack: G.mode === 'pack' ? G.extra.pack : null, from: G.from, to: G.toTitle || G.to, clicks: c, par: G.par || G.goal || 0, secs, why: sk.why, idx: sk.idx, at: Date.now() }; P.sky.runs = P.sky.runs || {}; P.sky.runs[pk.n] = { first: (P.sky.runs[pk.n] || { first: rec }).first, last: rec }; }
+  G.result.sky = { pity: !!sk.pity, via: pk.via || '', boost: sk.boosted > 0 ? { days: bo.d, tiers: sk.boosted } : null, near: skyNearMiss(G.result, sk), next: null, m: pk.m, count: pk.field ? 1 : P.sky.cat[pk.n], field: !!pk.field, idx: sk.idx, id: o.id, q: sk.q, first, why: sk.why, burn: sk.burn, name: pk.n, art: pk.a, kind: pk.kind, temp: pk.t, fact: pk.f }; G.result.sky.next = skyNext(); if (G.mode === 'daily' && P.days[G.day]) P.days[G.day].sky = { pity: !!sk.pity, via: pk.via || '', boost: G.result.sky.boost, near: G.result.sky.near, next: G.result.sky.next, name: pk.n, idx: sk.idx, id: o.id, why: sk.why, burn: sk.burn, first, field: !!pk.field, count: pk.field ? 1 : P.sky.cat[pk.n] }; }
   const before = P.xp; P.xp += gain; G.result.gain = gain; G.result.streakBonus = streakBonus; G.result.before = before; G.result.newAch = checkAch(); G.result.newCos = checkCos();
   saveP(); persistCur(); renderHeader();
   if (won) { confetti(); setTemp(1); }
@@ -1457,6 +1468,8 @@ const COS = {
     { id: 'lagoon', name: 'Lagoon', sw: 'linear-gradient(135deg,#a5f3fc,#0ea5e9,#1e3a8a)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'blossom', name: 'Blossom', sw: 'linear-gradient(135deg,#fbcfe8,#f472b6,#be185d)', need: { t: 'supporter' }, label: 'Supporter pack' },
     { id: 'galaxy', name: 'Galaxy', sw: 'linear-gradient(135deg,#38bdf8,#6366f1,#c026d3)', need: { t: 'supporter' }, label: 'Supporter pack' },
+    { id: 'wanderer', name: 'Wanderer', sw: 'linear-gradient(135deg,#ff9cb4,#ffd8a8,#9ec0ff)', need: { t: 'visits', v: 10 }, label: 'Visit 10 landmarks in the Observatory' },
+    { id: 'cartographer', name: 'Cartographer', sw: 'linear-gradient(135deg,#e8d5b0,#5c8cbe,#1e2a4a)', need: { t: 'visits', v: 'all' }, label: 'Visit every landmark in the Observatory' },
     ...[['triangle', 'Summer night'], ['crux', 'Southern Cross'], ['orion', 'Orion'], ['hexagon', 'Winter hexagon'], ['hearth', 'Neighbours'], ['worlds', 'New worlds'], ['giant', 'Hypergiant'], ['variable', 'Cepheid'], ['dusk', 'Brown dwarf'], ['cinder', 'Ember of a sun'], ['pulsar', 'Pulsar'], ['beyond', 'Far shore'], ['horizon', 'Event horizon']].map(([c, name]) => ({ id: 'chart-' + c, name, sw: `linear-gradient(135deg,${CHART_TRAIL[c].join(',')})`, need: { t: 'chart', v: c }, label: 'Complete the chart: ' + CHARTS.find(x => x.id === c).name }))
   ],
   confetti: [
@@ -1526,7 +1539,7 @@ const Buddy = (() => {
   };
   return { set, hop, ok };
 })();
-const TRAILS = { ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'], prism: ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'], lava: ['#fde047', '#f97316', '#b91c1c'], lagoon: ['#a5f3fc', '#0ea5e9', '#1e3a8a'], blossom: ['#fbcfe8', '#f472b6', '#be185d'], galaxy: ['#38bdf8', '#6366f1', '#c026d3'] };
+const TRAILS = { wanderer: ['#ff9cb4', '#ffd8a8', '#9ec0ff'], cartographer: ['#e8d5b0', '#5c8cbe', '#1e2a4a'], ember: ['#fb923c', '#ef4444'], aurora: ['#22d3ee', '#a78bfa', '#f472b6'], neon: ['#22c55e', '#06b6d4'], gilded: ['#fde68a', '#f59e0b'], frost: ['#bae6fd', '#38bdf8'], comet: ['#ec4899', '#8b5cf6'], ink: ['#9ca3af', '#374151'], prism: ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'], lava: ['#fde047', '#f97316', '#b91c1c'], lagoon: ['#a5f3fc', '#0ea5e9', '#1e3a8a'], blossom: ['#fbcfe8', '#f472b6', '#be185d'], galaxy: ['#38bdf8', '#6366f1', '#c026d3'] };
 Object.keys(CHART_TRAIL).forEach(c => { TRAILS['chart-' + c] = CHART_TRAIL[c]; });
 const CLASSIC_STOPS = ['rgb(42,79,138)', 'rgb(108,143,184)', 'rgb(216,200,168)', 'rgb(238,154,84)', 'rgb(214,58,31)'];
 const tempCss = sg => lerpStops(CLASSIC_STOPS, sg);
@@ -1538,7 +1551,7 @@ const dotCss = (sig, pos) => P.cos.trail === 'classic' ? tempCss(sig) : lerpStop
 const allCos = () => Object.entries(COS).flatMap(([cat, arr]) => arr.map(i => ({ ...i, cat })));
 function isUnlocked(i) {
   const n = i.need; if (!n) return true;
-  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'sky': return P.sky.best >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; case 'supporter': return !!P.supporter; case 'chart': return chartDone(n.v); default: return false; }
+  switch (n.t) { case 'rank': return rankOf(P.xp) >= n.v; case 'sky': return P.sky.best >= n.v; case 'streak': return P.maxStreak >= n.v; case 'packs': return P.packSolves >= n.v; case 'chal': return P.challengeWins >= n.v; case 'par': return P.parWins >= n.v; case 'supporter': return !!P.supporter; case 'chart': return chartDone(n.v); case 'visits': return logCount() >= (n.v === 'all' ? logLands().length : n.v); default: return false; }
 }
 function checkCos() {
   const out = allCos().filter(i => isUnlocked(i) && !P.cosSeen.includes(i.cat + ':' + i.id));

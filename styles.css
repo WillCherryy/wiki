@@ -242,7 +242,7 @@ kbd { font: 600 11px var(--sans); padding: 2px 6px; border: 1px solid var(--rule
 .modal p { color: var(--ink-2); margin: 6px 0 14px; font: 400 17.5px/1.5 var(--serif); }
 .modal ol { padding-left: 20px; color: var(--ink-2); font: 400 17.5px/1.5 var(--serif); } .modal ol li { margin: 9px 0; } .modal ol b { color: var(--ink); }
 .modal code { font: 500 12.5px ui-monospace, Menlo, Consolas, monospace; background: var(--paper); padding: 1px 5px; border-radius: 3px; }
-.toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 30px); opacity: 0; z-index: 80; background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 3px; font: 600 14px var(--sans); transition: .3s; pointer-events: none; }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 30px); opacity: 0; z-index: 1000; background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 3px; font: 600 14px var(--sans); transition: .3s; pointer-events: none; }
 .toast.on { transform: translate(-50%, 0); opacity: 1; }
 canvas#fx { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
 .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--rule); margin: 14px 0 14px; overflow-x: auto; scrollbar-width: none; }
@@ -1514,7 +1514,18 @@ body { font-family: var(--sans); }
 .ob-tabs button:hover { color: #fff !important; } .ob-tabs button.on { color: #fff !important; border-bottom-color: #ff8a5c !important; }
 .ob-coll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: #05040b; padding: 120px 40px 70px; -webkit-overflow-scrolling: touch; }
 .ob-coll .catbox { max-width: 1240px; margin: 0 auto; }
-#obs.coll .ob-crumbs, #obs.coll .ob-index, #obs.coll .ob-insp, #obs.coll .ob-fov, #obs.coll .ob-time, #obs.coll .ob-ruler, #obs.coll .ob-hint, #obs.coll .ob-shade, #obs.coll #obSearch, #obs.coll #obDisp { display: none !important; }
+#obs.coll .ob-crumbs, #obs.coll .ob-index, #obs.coll .ob-insp, #obs.coll .ob-fov, #obs.coll .ob-time, #obs.coll .ob-ruler, #obs.coll .ob-hint, #obs.coll .ob-say, #obs.coll .ob-shade, #obs.coll #obSearch, #obs.coll #obDisp { display: none !important; }
 #obs.coll .ob-top { background: linear-gradient(#05040b 60%, rgba(5, 4, 11, 0)); left: 0; right: 0; top: 0; padding: 30px 40px 26px; z-index: 3; }
 @media (max-width: 760px) { .ob-tabs { gap: 16px; } .ob-coll { padding: 92px 18px 60px; } #obs.coll .ob-top { padding: 16px 18px 18px; } }
 @media (max-width: 760px) { .ob-links #obCompare { display: none; } .ob-tabs button { letter-spacing: .2em !important; } .ob-brand { gap: 12px; } }
+
+/* the Observatory speaking: arrival of a new find, the first guided flight */
+.ob-say { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none; z-index: 4; max-width: min(640px, 86vw); transition: opacity 1.2s ease; animation: obSayIn 1.4s ease both; }
+.ob-say.gone { animation: obSayOut 1.2s ease forwards; }
+@keyframes obSayOut { from { opacity: 1; } to { opacity: 0; } }
+.ob-say span { display: block; font: var(--ob-lab); letter-spacing: .3em; text-transform: uppercase; color: #ff9c74; }
+.ob-say b { display: block; font: italic 400 clamp(30px, 4.6vw, 52px)/1.08 var(--display); color: #fff; margin-top: 10px; text-shadow: 0 0 30px rgba(0, 0, 0, .8); }
+.ob-say em { display: block; font: 400 17px/1.45 var(--display); font-style: normal; color: #cfc9e2; margin-top: 10px; text-shadow: 0 0 20px rgba(0, 0, 0, .9); }
+.ob-say .ob-skip { pointer-events: auto; margin-top: 18px; font: var(--ob-lab) !important; letter-spacing: .26em !important; text-transform: uppercase; color: #a9a2c8 !important; border-bottom: 1px solid rgba(255, 255, 255, .25) !important; padding-bottom: 4px !important; }
+@keyframes obSayIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.cat-log .ccm { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; }
