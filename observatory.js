@@ -20,9 +20,9 @@
   function open(opt = {}) {
     closeModal(); const L = skySys(); if (!L.length) { toast('Solve a puzzle and your first object starts your universe'); return; }
     const host = document.createElement('div'); host.id = 'obs'; const types = SKY.OBJ.map((o, i) => ({ o, n: L.filter(b => b.idx === i).length })).filter(t => t.n), galaxies = L.filter(b => b.id === 'quasar').reduce((n, b) => n + (b.count || 1), 0);
-    host.innerHTML = `<canvas id="obCv"></canvas><div class="ob-shade"></div>
-      <header class="ob-top"><div class="ob-brand"><button class="ob-word" id="obHome">Scorch<b>er</b></button><span>Observatory</span></div><nav class="ob-crumbs" id="obCrumbs"></nav>
-        <div class="ob-links"><button id="obSearch">Search <kbd>/</kbd></button><button id="obCompare">Compare sizes</button><button id="obCat">Catalogue</button><button id="obDisp">Display</button><button class="ob-x" id="obClose" aria-label="Close"></button></div></header>
+    host.innerHTML = `<canvas id="obCv"></canvas><div class="ob-shade"></div><section class="ob-coll" id="obColl" hidden><div class="catbox" id="obCatBox"></div></section>
+      <header class="ob-top"><div class="ob-brand"><button class="ob-word" id="obHome">Scorch<b>er</b></button><nav class="ob-tabs" id="obTabs"><button data-v="u" class="on">Universe</button><button data-v="c">Collection</button></nav></div><nav class="ob-crumbs" id="obCrumbs"></nav>
+        <div class="ob-links"><button id="obSearch">Search <kbd>/</kbd></button><button id="obCompare">Compare sizes</button><button id="obDisp">Display</button><button class="ob-x" id="obClose" aria-label="Close"></button></div></header>
       <aside class="ob-index" id="obIndex"><button data-t="" class="on"><i></i><span>Everything</span><em>${L.length}</em></button>${types.map(t => `<button data-t="${t.o.id}" style="--c:${t.o.c}"><i></i><span>${pluralType(t.o.name)}</span><em>${t.n}</em></button>`).join('')}</aside>
       <section class="ob-insp" id="obInsp"></section>
       <div class="ob-fov"><span>Field of view</span><b id="obFov">—</b></div>
@@ -32,13 +32,13 @@
       <div class="ob-search" id="obS" hidden><input id="obQ" placeholder="Find an object" autocomplete="off" spellcheck="false"><div class="ob-res" id="obRes"></div></div>`;
     document.body.appendChild(host); document.body.classList.add('obs-on'); try { host.requestFullscreen && host.requestFullscreen().catch(() => {}); } catch {}
     let qual = 1; const cv = host.querySelector('#obCv'), dpr = Math.min(1.5, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr * qual); cv.height = Math.round(host.clientHeight * dpr * qual); }; size();
-    let sel = opt.focus || (L[0] && L[0].n), filter = new Set(), copyI = 1;
-    const map = window.__map = uniMap(cv, L, { intro: !opt.focus, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: sel, focus: sel, newId: opt.newId, onPick: n => inspect(n) });
+    let sel = opt.focus || 'Sagittarius A*', filter = new Set(), copyI = 1;   // with nothing chosen, open on the whole universe with the Milky Way, home, at its centre
+    const map = window.__map = uniMap(cv, L, { intro: !opt.focus, z: .4, noMini: true, onQuality: v => { qual = v; size(); }, follow: opt.focus || null, focus: opt.focus || null, newId: opt.newId, onPick: n => inspect(n) });
     const Q = s => host.querySelector(s);
     const KINDS = { moon: 'Our Moon', io: 'The most volcanic world known', europa: 'Ice shell over a hidden ocean', ganymede: 'The largest moon, with its own magnetic field', callisto: 'The most cratered surface known', snow: 'Icy moon', titan: 'A moon with a thick nitrogen atmosphere and methane lakes', iapetus: 'Two-toned moon, one side dark as coal', triton: 'Orbits backwards: a captured dwarf planet',  earth: 'Our home world', ocean: 'Possible ocean world', super: 'Super-Earth', desert: 'Hot rocky world', lava: 'Lava world: its dayside is molten rock', mercury: 'Airless rocky world', rock: 'Rocky world', venus: 'Rocky world under thick clouds', ice: 'Icy world', mars: 'Cold desert world', jupiter: 'Gas giant', saturn: 'Ringed gas giant', uranus: 'Ice giant, tipped on its side', neptune: 'Ice giant', gas: 'Gas giant', hot: 'Hot Jupiter', hotblue: 'Hot Jupiter where it rains glass' };
     function inspectPlanet(n, pi) {
       sel = n; const sz = fmtRad(pi.re * .009158), per = pi.P < 2 ? sig(pi.P * 24) + ' hours' : pi.P < 800 ? sig(pi.P) + ' days' : sig(pi.P / 365.25) + ' years', star = SKY.OBJ[(sfNamed(pi.host) || { idx: 3 }).idx];
-      Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="${esc(pi.host)}">${esc(pi.host)}${pi.moon ? '' : ' system'}</button><i></i><button class="on">${esc(n)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else if (x.dataset.c === '') map.home(L[0].n); });
+      Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="${esc(pi.host)}">${esc(pi.host)}${pi.moon ? '' : ' system'}</button><i></i><button class="on">${esc(n)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else if (x.dataset.c === '') map.home('Sagittarius A*'); });
       Q('#obInsp').style.setProperty('--c', '#bcd2ff'); const w = esc(n).split(' ');
       Q('#obInsp').innerHTML = `<div class="ob-k">${pi.moon ? 'Moon of ' + esc(pi.host) : 'Planet'} · ${esc(KINDS[pi.kind] || 'Planet')}</div><h1>${w.length > 1 ? w.slice(0, -1).join(' ') + ' <span>' + w[w.length - 1] + '</span>' : '<span>' + w[0] + '</span>'}</h1>
         <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${pi.moon ? nf(pi.km) + ' km' : sig(pi.a) + ' AU'}<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div></dl>
@@ -47,13 +47,17 @@
     }
     function inspect(n) {
       { const pi = SKY.planetInfo(n); if (pi) return inspectPlanet(n, pi); }
+      { const gb = map.lay.bodies[map.lay.idxOf[n]]; if (gb && gb.ghost) { sel = n; const mw = gb.ghost === 'The Milky Way';   // a galaxy you see but have not collected the heart of
+        Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button class="on">${esc(mw ? 'Milky Way' : gb.ghost)}</button>`; Q('#obCrumbs').querySelector('button').onclick = () => map.home('Sagittarius A*'); Q('#obInsp').style.setProperty('--c', '#cfc9e2');
+        Q('#obInsp').innerHTML = `<div class="ob-k">${mw ? 'Our galaxy · barred spiral' : 'Satellite galaxy of the Milky Way'}</div><h1>${mw ? 'The Milky <span>Way</span>' : 'Large Magellanic <span>Cloud</span>'}</h1><p>${mw ? 'About 100,000 light-years across, with a few hundred billion stars. The Sun sits 26,000 light-years from the centre, where Sagittarius A*, a black hole of four million suns, waits to be found.' : 'A dwarf galaxy 160,000 light-years away, home to the most massive star known and one of the largest.'}</p>
+          <dl><div><dt>Diameter</dt><dd>${mw ? '~100,000 ly' : '~14,000 ly'}</dd></div><div><dt>Distance</dt><dd>${mw ? 'You are here' : '160,000 ly'}</dd></div></dl><div class="ob-acts"><button class="p" id="obGo">Go to</button></div>`; Q('#obGo').onclick = () => map.pick(n); return; } }
       sel = n; copyI = 1; const q = bodyOf(n); if (!q) return; const o = SKY.OBJ[q.idx], b = { ...q, id: q.id }, rad = fmtRad(SKY.physR(b)), me = L.find(x => x.n === q.n), N = me ? me.count || 1 : 1, rn = ((P.sky.runs || {})[q.n] || {}).first, parts = crumbParts(map.lay, q.n);
       Q('#obCrumbs').innerHTML = parts.map((c, i) => `${i ? '<i></i>' : ''}<button data-c="${c.n == null ? '' : esc(c.n)}" class="${i === parts.length - 1 ? 'on' : ''}">${esc(c.t)}</button>`).join('');
-      Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else map.home(L[0].n); });
+      Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else map.home('Sagittarius A*'); });
       const words = esc(q.n).split(' '), nm = words.length > 1 ? words.slice(0, -1).join(' ') + ' <span>' + words[words.length - 1] + '</span>' : `<span>${words[0]}</span>`;
       Q('#obInsp').style.setProperty('--c', o.c);
       Q('#obInsp').innerHTML = `<div class="ob-k">${esc(q.kind)} · ${RARITY[q.idx]}</div><h1>${nm}</h1><p>${esc(q.f)}</p>
-        <dl><div><dt>${q.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rad[0]}<small>${rad[1]}</small></dd></div><div><dt>Mass</dt><dd>${esc(SKY.massText(q.m))}</dd></div><div><dt>Temperature</dt><dd>${esc(q.t)}</dd></div>${SKY.NEAR[q.n] && SKY.NEAR[q.n][3] ? `<div><dt>Distance from the Sun</dt><dd>${sig(SKY.NEAR[q.n][3])} ly<small>its real place in the sky</small></dd></div>` : ''}${(SKY.PLANETS[q.n] || []).length ? `<div><dt>Planets</dt><dd>${SKY.PLANETS[q.n].length}<small>${SKY.PLANETS[q.n].map(p => p[0].replace(/ \(.*\)/, '')).slice(0, 4).join(', ')}${SKY.PLANETS[q.n].length > 4 ? '…' : ''}</small></dd></div>` : ''}${rn ? `<div><dt>Earned</dt><dd>${rn.mode === 'daily' ? 'Daily ' + rn.num : rn.mode === 'pack' ? 'Pack' : 'Puzzle'} · ${rn.clicks} clicks</dd></div>` : ''}</dl>
+        <dl><div><dt>${q.id === 'quasar' ? 'Event horizon' : 'Radius'}</dt><dd>${rad[0]}<small>${rad[1]}</small></dd></div><div><dt>Mass</dt><dd>${esc(SKY.massText(q.m))}</dd></div><div><dt>Temperature</dt><dd>${esc(q.t)}</dd></div>${SKY.NEAR[q.n] && SKY.NEAR[q.n][3] ? `<div><dt>Distance from the Sun</dt><dd>${sig(SKY.NEAR[q.n][3])} ly<small>its real place in the sky</small></dd></div>` : SKY.GALD[q.n] ? `<div><dt>Distance</dt><dd>${SKY.GALD[q.n][3] >= 1000 ? sig(SKY.GALD[q.n][3] / 1000) + ' billion ly' : sig(SKY.GALD[q.n][3]) + ' million ly'}<small>true direction; the map compresses distance</small></dd></div>` : ''}${(SKY.PLANETS[q.n] || []).length ? `<div><dt>Planets</dt><dd>${SKY.PLANETS[q.n].length}<small>${SKY.PLANETS[q.n].map(p => p[0].replace(/ \(.*\)/, '')).slice(0, 4).join(', ')}${SKY.PLANETS[q.n].length > 4 ? '…' : ''}</small></dd></div>` : ''}${rn ? `<div><dt>Earned</dt><dd>${rn.mode === 'daily' ? 'Daily ' + rn.num : rn.mode === 'pack' ? 'Pack' : 'Puzzle'} · ${rn.clicks} clicks</dd></div>` : ''}</dl>
         ${N > 1 ? `<div class="ob-copy"><button data-d="-1" aria-label="Previous copy">←</button><span><b id="obCi">01</b> / ${String(N).padStart(2, '0')}</span><u><i id="obCt" style="width:${100 / N}%"></i></u><button data-d="1" aria-label="Next copy">→</button></div>` : ''}
         <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obCmp">Compare</button><button id="obIns">Inspect</button><a href="${wikiUrl(q.a)}" target="_blank" rel="noopener">Wikipedia ↗</a></div>`;
       host.querySelectorAll('.ob-objs button').forEach(y => y.classList.toggle('cur', y.dataset.n === q.n));
@@ -83,11 +87,15 @@
     const fill = qv => { const a = L2.filter(b => !qv || b.n.toLowerCase().includes(qv)).slice(0, 40); Q('#obRes').innerHTML = a.map(b => { const r = fmtRad(SKY.physR(b)); return `<button data-n="${esc(b.n)}" style="--c:${SKY.OBJ[b.idx].c}"><i></i><b>${esc(b.n)}</b><span>${esc(typeName(b.id))}</span><em>${r[0]}</em></button>`; }).join('') || '<p>Nothing by that name in your universe yet.</p>'; Q('#obRes').querySelectorAll('button').forEach(x => x.onclick = () => { search(false); map.pick(x.dataset.n); }); };
     const search = on => { Q('#obS').hidden = !on; if (on) { Q('#obQ').value = ''; fill(''); setTimeout(() => Q('#obQ').focus(), 30); } };
     Q('#obQ').oninput = e => fill(e.target.value.trim().toLowerCase()); Q('#obS').onclick = e => { if (e.target.id === 'obS') search(false); };
-    Q('#obSearch').onclick = () => search(true); Q('#obCompare').onclick = () => compare(sel); Q('#obCat').onclick = () => { done(); openSky(); }; Q('#obDisp').onclick = () => dispMenu(host);
+    Q('#obSearch').onclick = () => search(true); Q('#obCompare').onclick = () => compare(sel); Q('#obDisp').onclick = () => dispMenu(host);
     const done = () => { clearInterval(tick); map.stop(); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); document.body.classList.remove('obs-on'); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} } host.remove(); if (opt.back) opt.back(); };
-    const key = e => { if (!host.isConnected || document.getElementById('cmp')) return; if (e.key === 'Escape') { if (!Q('#obS').hidden) search(false); else done(); } else if (e.key === '/' && Q('#obS').hidden) { e.preventDefault(); search(true); } else if ((e.key === '+' || e.key === '=') && Q('#obS').hidden) map.zoom(2); else if (e.key === '-' && Q('#obS').hidden) map.zoom(.5); };
+    const key = e => { if (!host.isConnected || document.getElementById('cmp')) return; if (e.key === 'Escape') { if (!Q('#obS').hidden) search(false); else if (host.classList.contains('coll')) view('u'); else done(); } else if (e.key === '/' && Q('#obS').hidden) { e.preventDefault(); search(true); } else if ((e.key === '+' || e.key === '=') && Q('#obS').hidden) map.zoom(2); else if (e.key === '-' && Q('#obS').hidden) map.zoom(.5); };
     document.addEventListener('keydown', key); window.addEventListener('resize', size);
-    Q('#obClose').onclick = done; Q('#obHome').onclick = () => map.home(L[0].n);
+    Q('#obClose').onclick = done; Q('#obHome').onclick = () => { view('u'); map.home('Sagittarius A*'); };
+    // two views of one sky: the universe, and the collection (the catalogue, charts and locked objects). The map rests while the collection is open
+    const view = v => { const c = v === 'c'; host.classList.toggle('coll', c); Q('#obColl').hidden = !c; map.pause(c); Q('#obTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+      if (c) { catalogue(Q('#obCatBox'), { go: n => { view('u'); map.pick(n); } }); Q('#obColl').scrollTop = 0; if (opt.row) { const el = Q(`.cat-pl[data-id="${CSS.escape(opt.row)}"]`); opt.row = ''; if (el) setTimeout(() => el.scrollIntoView({ block: 'center' }), 60); } } };
+    Q('#obTabs').querySelectorAll('button').forEach(x => x.onclick = () => view(x.dataset.v)); if (opt.tab === 'c') view('c');
     inspect(sel); if (opt.focus) setTimeout(() => { if (host.isConnected) map.pick(opt.focus); }, 400); setTimeout(() => { const h = Q('#obHint'); if (h) h.classList.add('gone'); }, 7000);
     return map;
   }
@@ -160,12 +168,12 @@
   }
 
   /* ------------------------------------------------------------------ the catalogue: every object, each row drawn to one true scale */
-  function catalogue(box) {
+  function catalogue(box, co = {}) {   // co.go(name): inside the Observatory, a plate flies the universe to it
     const cat = P.sky.cat, owned = Object.keys(cat).length, total = SKY.OBJ.reduce((n, o) => n + SKY.POOL[o.id].length, 0), finds = Object.values(cat).reduce((a, b) => a + b, 0), legend = SKY.POOL.quasar.filter(q => cat[q.n]).length;
     const words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'], big = owned <= 12 ? words[owned] : nf(owned);
     const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(Date.now() - (27 - i) * 864e5).toISOString().slice(0, 10), v = P.sky.log[d]; return v === undefined ? '<i></i>' : `<i class="on" style="--c:${SKY.OBJ[v].c}" title="${SKY.OBJ[v].name}"></i>`; }).join('');
     box.innerHTML = `<div class="cat-hd"><div><div class="ob-k">Catalogue</div><h1>${big} <em>of</em> ${total}</h1><p>Every object you have earned, largest first. Sizes keep their true order within each row; open Compare sizes to see them all at one true scale.</p>
-      <div class="cat-go"><button id="catObs">Enter the observatory</button><button id="catCmp">Compare sizes</button></div></div>
+      <div class="cat-go">${co.go ? '' : '<button id="catObs">Enter the observatory</button>'}<button id="catCmp">Compare sizes</button></div></div>
       <div class="cat-stats"><div><b>${nf(finds)}</b><span>Finds</span></div><div><b>${SKY.OBJ.filter(o => SKY.POOL[o.id].some(q => cat[q.n])).length}</b><span>Types</span></div><div><b>${legend}</b><span>Galaxies</span></div><div class="cat-days"><span>Last 28 days</span><div>${days}</div></div></div></div>
       ${skyNext() ? `<div class="cat-next"><span>Next</span>${esc(skyNext())}</div>` : ''}
       ${(() => { const tn = tonight(); return `<div class="cat-tonight" style="--c:${tn.o.c}"><span>Tonight</span><b>${esc(tn.n)}</b>${cat[tn.n] ? 'is already in your sky.' : `is overhead: earn a ${esc(tn.o.name.toLowerCase())} today and it is yours.`}</div>`; })()}
@@ -178,10 +186,9 @@
     const draw = () => { box.querySelectorAll('.cat-row').forEach(row => { const pls = [...row.querySelectorAll('.cat-pl[data-n]')]; if (!pls.length) return; const id = pls[0].dataset.id, rs = pls.map(p => SKY.physR({ ...sfNamed(p.dataset.n), id })), mx = Math.max(...rs);
       pls.forEach((p, k) => { const c = p.querySelector('canvas'), g = c.getContext('2d'), w = c.width, h = c.height; g.fillStyle = '#05040b'; g.fillRect(0, 0, w, h); SKY.starfield(g, w, h, 0, 70, k + 3); const q = sfNamed(p.dataset.n), rp = id === 'quasar' ? h * .035 : id === 'neutron' ? h * .07 : Math.max(h * .045, Math.sqrt(rs[k] / mx) * h * .34); /* a quasar or neutron star at true scale would vanish: these rows show the object itself */ SKY.bodyAt(g, { ...q, id }, w / 2, h * .46, rp, 1, 1.4, 2); }); }); };
     draw(); let n = 0; const iv = setInterval(() => { if (!box.isConnected || ++n > 16) return clearInterval(iv); draw(); }, 450);   // sharper faces arrive from the worker: redraw a few times
-    box.querySelectorAll('.cat-pl[data-n]').forEach(p => p.onclick = () => open({ focus: p.dataset.n, back: () => openSky() }));
-    box.querySelectorAll('.ccm button[data-n]').forEach(p => p.onclick = () => open({ focus: p.dataset.n, back: () => openSky() }));
-    box.querySelectorAll('[data-aim]').forEach(p => p.onclick = () => { const n = p.dataset.aim; P.sky.aim = P.sky.aim === n ? '' : n; saveP(); const y = (box.closest('.pagebody, #modal, .modal') || document.scrollingElement).scrollTop; catalogue(box); const sc = box.closest('.pagebody, #modal, .modal') || document.scrollingElement; sc.scrollTop = y; });   // one aim at a time; tap again to release it
-    box.querySelector('#catObs').onclick = () => open({ back: () => openSky() }); box.querySelector('#catCmp').onclick = () => compare(skyList()[0] && skyList()[0].n);
+    const go = n => co.go ? co.go(n) : open({ focus: n }); box.querySelectorAll('.cat-pl[data-n], .ccm button[data-n]').forEach(p => p.onclick = () => go(p.dataset.n));
+    box.querySelectorAll('[data-aim]').forEach(p => p.onclick = () => { const n = p.dataset.aim; P.sky.aim = P.sky.aim === n ? '' : n; saveP(); const sc = box.closest('.ob-coll, .pagebody, #modal, .modal') || document.scrollingElement, y = sc.scrollTop; catalogue(box, co); sc.scrollTop = y; });   // one aim at a time; tap again to release it
+    if (box.querySelector('#catObs')) box.querySelector('#catObs').onclick = () => open(); box.querySelector('#catCmp').onclick = () => compare(skyList()[0] && skyList()[0].n);
   }
 
   window.Observatory = { open, compare, catalogue, fmtLen, fmtRad };

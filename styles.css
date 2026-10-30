@@ -1208,7 +1208,7 @@ body.insky #page { padding-top:10px; }
 #obs canvas#obCv, #cmp canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 #obs .unistars { background-color: #030208; }
 .ob-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(3, 2, 8, .7), transparent 17%, transparent 74%, rgba(3, 2, 8, .86)), linear-gradient(90deg, transparent 66%, rgba(3, 2, 8, .55)); }
-#obs button, #cmp button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+#obs button:not(.ob-coll button), #cmp button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 .ob-top, .cmp-top { position: absolute; left: 40px; right: 40px; top: 30px; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 40px; align-items: start; pointer-events: none; }
 .ob-top > *, .cmp-top > * { pointer-events: auto; }
 .ob-brand { display: flex; align-items: baseline; gap: 14px; } .ob-word { font: 400 25px/1 var(--display) !important; letter-spacing: -.01em; } .ob-word b { font-weight: 400; font-style: italic; color: #ff8a5c; }
@@ -1507,3 +1507,14 @@ body { font-family: var(--sans); }
 #inspect .in-hint { padding: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; font: 400 10px 'Jost', var(--sans) !important; letter-spacing: .26em; text-transform: uppercase; color: #8a84a3 !important; white-space: nowrap; }
 #inspect #inX { border: 0 !important; background: none !important; border-radius: 0 !important; right: 30px !important; top: 26px !important; } #inspect #inX svg { stroke-width: 1.2; width: 24px; height: 24px; }
 @media (max-width: 899px) { #inspect .inbar { padding: 60px 20px calc(24px + env(safe-area-inset-bottom, 0px)) !important; } #inspect .in-hint { white-space: normal; text-align: center; width: 80%; } }
+
+/* the Observatory's two views: Universe and Collection */
+.ob-tabs { display: flex; gap: 24px; align-items: baseline; }
+.ob-tabs button { font: var(--ob-lab) !important; letter-spacing: .26em !important; text-transform: uppercase; color: #8a84a3 !important; padding: 0 0 6px !important; border-bottom: 1px solid transparent !important; transition: color .2s, border-color .2s; }
+.ob-tabs button:hover { color: #fff !important; } .ob-tabs button.on { color: #fff !important; border-bottom-color: #ff8a5c !important; }
+.ob-coll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: #05040b; padding: 120px 40px 70px; -webkit-overflow-scrolling: touch; }
+.ob-coll .catbox { max-width: 1240px; margin: 0 auto; }
+#obs.coll .ob-crumbs, #obs.coll .ob-index, #obs.coll .ob-insp, #obs.coll .ob-fov, #obs.coll .ob-time, #obs.coll .ob-ruler, #obs.coll .ob-hint, #obs.coll .ob-shade, #obs.coll #obSearch, #obs.coll #obDisp { display: none !important; }
+#obs.coll .ob-top { background: linear-gradient(#05040b 60%, rgba(5, 4, 11, 0)); left: 0; right: 0; top: 0; padding: 30px 40px 26px; z-index: 3; }
+@media (max-width: 760px) { .ob-tabs { gap: 16px; } .ob-coll { padding: 92px 18px 60px; } #obs.coll .ob-top { padding: 16px 18px 18px; } }
+@media (max-width: 760px) { .ob-links #obCompare { display: none; } .ob-tabs button { letter-spacing: .2em !important; } .ob-brand { gap: 12px; } }

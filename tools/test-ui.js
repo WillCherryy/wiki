@@ -28,9 +28,9 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     await page.goto(`http://localhost:${PORT}/index.html`); await page.waitForFunction(() => typeof P !== 'undefined' && typeof renderHome === 'function' && document.querySelector('#home'), null, { timeout: 15000 }); await page.waitForTimeout(600);
     await page.evaluate(() => { closeModal(); P.sky.cat = { 'TON 618': 1, Rigel: 1, 'The Sun': 1 }; P.sky.found = { quasar: 1, bluegiant: 1, sun: 1 }; P.sky.best = 8; saveP(); });
     for (const call of CALLS) {
-      errs.length = 0; await page.evaluate(() => { const f = document.getElementById('skyfull'); if (f) f.remove(); closeModal(); show('home'); });
+      errs.length = 0; await page.evaluate(() => { const f = document.getElementById('skyfull'); if (f) f.remove(); const ob = document.getElementById('obs'); if (ob) { const x = ob.querySelector('#obClose'); if (x) x.click(); else ob.remove(); } closeModal(); show('home'); });
       try { await page.evaluate(c => { eval(c); }, call); await page.waitForTimeout(900); } catch (e) { bad(`${tag} ${call}: threw ${e.message.split('\n')[0]}`); continue; }
-      const m = await page.evaluate(() => ({ over: document.documentElement.scrollWidth - window.innerWidth, text: (document.querySelector('#page:not([style*="none"]) #pageBody, #scrim.on #modal') || {}).innerText || '' }));
+      const m = await page.evaluate(() => ({ over: document.documentElement.scrollWidth - window.innerWidth, text: (document.querySelector('#page:not([style*="none"]) #pageBody, #scrim.on #modal, #obs') || {}).innerText || '' }));
       if (errs.length) bad(`${tag} ${call}: script error: ${errs[0]}`); if (m.over > 2) bad(`${tag} ${call}: page scrolls sideways by ${m.over}px`); if (m.text.trim().length < 20) bad(`${tag} ${call}: nothing visible`);
     }
     errs.length = 0; await page.evaluate(() => { closeModal(); show('home'); Observatory.open({}); }); await page.waitForTimeout(1800);
