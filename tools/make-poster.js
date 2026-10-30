@@ -43,7 +43,7 @@ const size = (s, big) => { const n = s.length; return big * (n <= 12 ? 1 : n <= 
      <div style="font:600 22px U;letter-spacing:.24em;text-transform:uppercase;color:${T.mute};margin-bottom:22px">Reach</div>
      <div style="font:italic 400 ${tease ? 210 : size(p.to, 150)}px/.98 S;letter-spacing:-.02em;color:${T.acc}">${tease ? '?' : esc(p.to)}</div>
     </div>
-    <div style="display:flex;justify-content:center;gap:12px;margin:26px 0 34px">${[p.par ? `Fastest possible · ${p.par} click${p.par === 1 ? '' : 's'}` : 'Click only links', p.par ? level(p.par) : '', 'Solvable in 4 or fewer'].filter(Boolean).map(t => `<span style="border:2.5px solid ${T.ink};padding:10px 18px;font:600 19px U;letter-spacing:.1em;text-transform:uppercase;color:${T.ink2};white-space:nowrap">${t}</span>`).join('')}</div>
+    <div style="display:flex;justify-content:center;gap:12px;margin:26px 0 34px">${[p.par ? `Par · ${p.par} click${p.par === 1 ? '' : 's'}` : 'Click only links', p.par ? level(p.par) : '', 'Solvable in 4 or fewer'].filter(Boolean).map(t => `<span style="border:2.5px solid ${T.ink};padding:10px 18px;font:600 19px U;letter-spacing:.1em;text-transform:uppercase;color:${T.ink2};white-space:nowrap">${t}</span>`).join('')}</div>
     <div><div style="font:italic 400 66px/1 S">Can you beat it?</div><div style="font:500 36px U;margin-top:16px">playscorcher.com</div><div style="font:600 18px U;letter-spacing:.2em;text-transform:uppercase;color:${T.mute};margin-top:16px">Free · No account · New puzzle every day</div></div>
    </div>
   </div>`;

@@ -18,12 +18,37 @@
   const pluralType = n => n.replace(/y$/, 'ie') + 's';
 
   /* ------------------------------------------------------------------ the Observatory */
+  /* ---- the sound of the sky: a quiet, slowly breathing drone, retuned to whatever you are looking at. Web Audio only, nothing downloaded; off with one tap and remembered */
+  const SkySound = {
+    ctx: null, on: (() => { try { return localStorage.getItem('wikiio:skysnd') !== '0'; } catch { return true; } })(), n: {},
+    MOOD: { brown: [41, 260, 0, 0], reddwarf: [46, 320, 0, 0], redgiant: [44, 280, .05, 0], sun: [55, 520, 0, 0], bluewhite: [65, 900, .02, 0], bluegiant: [73, 1300, .04, 0], whitedwarf: [82, 1500, 0, .5], neutron: [62, 1100, .03, 1], quasar: [33, 420, .2, 0], galaxy: [49, 620, .08, 0], planet: [52, 480, 0, 0] },   // [root Hz, brightness, solar-wind hiss, pulsar tick]
+    start() {
+      if (this.ctx || !this.on) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; let c; try { c = this.ctx = new AC(); } catch { return; }
+      const N = this.n, out = N.out = c.createGain(); out.gain.value = 0; out.connect(c.destination); out.gain.linearRampToValueAtTime(.055, c.currentTime + 4);
+      const lp = N.lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.Q.value = .6; lp.connect(out);
+      const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = .045; lg.gain.value = 140; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();   // the drone breathes over about twenty seconds
+      N.osc = [[1, 0], [1.4983, 4], [2, -3], [.5, 2]].map(([r, det], i) => { const o = c.createOscillator(), g = c.createGain(); o.type = i === 1 ? 'triangle' : 'sine'; o.frequency.value = 55 * r; o.detune.value = det; g.gain.value = [.5, .16, .22, .4][i]; o.connect(g); g.connect(lp); o.start(); return { o, r }; });
+      const len = c.sampleRate * 3, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0); let b = 0; for (let i = 0; i < len; i++) { b = .985 * b + .015 * (Math.random() * 2 - 1); d[i] = b * 6; }
+      const ns = c.createBufferSource(); ns.buffer = buf; ns.loop = true; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = .7; N.hiss = c.createGain(); N.hiss.gain.value = .03; ns.connect(bp); bp.connect(N.hiss); N.hiss.connect(out); ns.start();
+      const tk = c.createOscillator(), tg = c.createGain(); tk.type = 'sine'; tk.frequency.value = 1320; tg.gain.value = 0; tk.connect(tg); tg.connect(out); tk.start(); N.tick = tg;   // a faint high glint that pulses for neutron stars
+      const pl = c.createOscillator(), pg = c.createGain(); pl.type = 'square'; pl.frequency.value = 1.6; pg.gain.value = 0; pl.connect(pg); pg.connect(tg.gain); pl.start(); N.pulse = pg; N.pulseO = pl;
+      this.mood(this.last || 'galaxy');
+    },
+    mood(k) { this.last = k; const c = this.ctx, N = this.n; if (!c) return; const m = this.MOOD[k] || this.MOOD.galaxy, t = c.currentTime;
+      N.osc.forEach(({ o, r }) => { o.frequency.cancelScheduledValues(t); o.frequency.setTargetAtTime(m[0] * r, t, 1.2); });
+      N.lp.frequency.cancelScheduledValues(t); N.lp.frequency.setTargetAtTime(m[1], t, 1.5); N.hiss.gain.setTargetAtTime(.025 + m[2], t, 1.5);
+      N.tick.gain.setTargetAtTime(m[3] ? .012 : 0, t, .8); N.pulse.gain.setTargetAtTime(m[3] ? .012 : 0, t, .8); N.pulseO.frequency.setTargetAtTime(k === 'whitedwarf' ? .25 : 1.6, t, .5); },
+    stop() { const c = this.ctx; if (!c) return; this.ctx = null; try { this.n.out.gain.setTargetAtTime(0, c.currentTime, .4); setTimeout(() => c.close(), 1600); } catch {} },
+    toggle() { this.on = !this.on; try { localStorage.setItem('wikiio:skysnd', this.on ? '1' : '0'); } catch {} if (this.on) this.start(); else this.stop(); return this.on; },
+    duck(v) { if (this.ctx) this.n.out.gain.setTargetAtTime(v ? .02 : .055, this.ctx.currentTime, .6); }
+  };
+  window.SkySound = SkySound;
   function open(opt = {}) {
     closeModal(); const L = skySys(); if (!L.length) { toast('Solve a puzzle and your first object starts your universe'); return; }
     const host = document.createElement('div'); host.id = 'obs'; const types = SKY.OBJ.map((o, i) => ({ o, n: L.filter(b => b.idx === i).length })).filter(t => t.n), galaxies = L.filter(b => b.id === 'quasar').reduce((n, b) => n + (b.count || 1), 0);
     host.innerHTML = `<canvas id="obCv"></canvas><div class="ob-shade"></div><section class="ob-coll" id="obColl" hidden><div class="catbox" id="obCatBox"></div></section>
       <header class="ob-top"><div class="ob-brand"><button class="ob-word" id="obHome">Scorch<b>er</b></button><nav class="ob-tabs" id="obTabs"><button data-v="u" class="on">Universe</button><button data-v="c">Collection</button></nav></div><nav class="ob-crumbs" id="obCrumbs"></nav>
-        <div class="ob-links"><button id="obSearch">Search <kbd>/</kbd></button><button id="obCompare">Compare sizes</button><button id="obDisp">Display</button><button class="ob-x" id="obClose" aria-label="Close"></button></div></header>
+        <div class="ob-links"><button id="obSearch">Search <kbd>/</kbd></button><button id="obCompare">Compare sizes</button><button id="obDisp">Display</button><button id="obSnd" aria-pressed="${SkySound.on}" title="Ambient sound">Sound</button><button class="ob-x" id="obClose" aria-label="Close"></button></div></header>
       <aside class="ob-index" id="obIndex"><button data-t="" class="on"><i></i><span>Everything</span><em>${L.length}</em></button>${types.map(t => `<button data-t="${t.o.id}" style="--c:${t.o.c}"><i></i><span>${pluralType(t.o.name)}</span><em>${t.n}</em></button>`).join('')}</aside>
       <section class="ob-insp" id="obInsp"></section>
       <div class="ob-fov"><span>Field of view</span><b id="obFov">—</b></div>
@@ -39,16 +64,16 @@
     const Q = s => host.querySelector(s);
     const KINDS = { moon: 'Our Moon', io: 'The most volcanic world known', europa: 'Ice shell over a hidden ocean', ganymede: 'The largest moon, with its own magnetic field', callisto: 'The most cratered surface known', snow: 'Icy moon', titan: 'A moon with a thick nitrogen atmosphere and methane lakes', iapetus: 'Two-toned moon, one side dark as coal', triton: 'Orbits backwards: a captured dwarf planet',  earth: 'Our home world', ocean: 'Possible ocean world', super: 'Super-Earth', desert: 'Hot rocky world', lava: 'Lava world: its dayside is molten rock', mercury: 'Airless rocky world', rock: 'Rocky world', venus: 'Rocky world under thick clouds', ice: 'Icy world', mars: 'Cold desert world', jupiter: 'Gas giant', saturn: 'Ringed gas giant', uranus: 'Ice giant, tipped on its side', neptune: 'Ice giant', gas: 'Gas giant', hot: 'Hot Jupiter', hotblue: 'Hot Jupiter where it rains glass' };
     function inspectPlanet(n, pi) {
-      sel = n; const sz = fmtRad(pi.re * .009158), per = pi.P < 2 ? sig(pi.P * 24) + ' hours' : pi.P < 800 ? sig(pi.P) + ' days' : sig(pi.P / 365.25) + ' years', star = SKY.OBJ[(sfNamed(pi.host) || { idx: 3 }).idx];
+      SkySound.mood('planet'); sel = n; const sz = fmtRad(pi.re * .009158), per = pi.P < 2 ? sig(pi.P * 24) + ' hours' : pi.P < 800 ? sig(pi.P) + ' days' : sig(pi.P / 365.25) + ' years', star = SKY.OBJ[(sfNamed(pi.host) || { idx: 3 }).idx];
       Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="${esc(pi.host)}">${esc(pi.host)}${pi.moon ? '' : ' system'}</button><i></i><button class="on">${esc(n)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else if (x.dataset.c === '') map.home('Sagittarius A*'); });
       Q('#obInsp').style.setProperty('--c', '#bcd2ff'); const w = esc(n).split(' ');
       Q('#obInsp').innerHTML = `<div class="ob-k">${pi.moon ? 'Moon of ' + esc(pi.host) : 'Planet'} · ${esc(KINDS[pi.kind] || 'Planet')}</div><h1>${w.length > 1 ? w.slice(0, -1).join(' ') + ' <span>' + w[w.length - 1] + '</span>' : '<span>' + w[0] + '</span>'}</h1>
-        <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${pi.moon ? nf(pi.km) + ' km' : sig(pi.a) + ' AU'}<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div></dl>
+        <dl><div><dt>Radius</dt><dd>${sig(pi.re)} Earths<small>${sz[0]}</small></dd></div><div><dt>Orbit</dt><dd>${pi.moon ? nf(pi.km) + ' km' : sig(pi.a) + ' AU'}<small>from ${esc(pi.host)}</small></dd></div><div><dt>Year</dt><dd>${per}</dd></div>${SKY.planetLon(n) != null ? `<div><dt>${pi.moon ? 'Position' : 'Where it is today'}</dt><dd>${Math.round(((SKY.planetLon(n) * 180 / Math.PI) % 360 + 360) % 360)}°<small>${pi.moon ? 'its real place in its orbit' : 'its real place, ecliptic longitude'}</small></dd></div>` : ''}</dl>
         <div class="ob-acts"><button class="p" id="obGo">Go to</button><button id="obGlobe">Inspect</button><button id="obStar">Its star</button><button id="obCmp">Compare</button></div>`; Q('#obGlobe').onclick = () => openGlobe(n, () => {});
       Q('#obGo').onclick = () => map.pick(n); Q('#obStar').textContent = pi.moon ? 'Its planet' : 'Its star'; Q('#obStar').onclick = () => map.pick(pi.host); Q('#obCmp').onclick = () => compare(n, [n, 'Earth', 'Jupiter'].filter((v, i, a) => a.indexOf(v) === i), 'all');
     }
     function identifyStar(x, y, k) {   // tap a real star from the Gaia/HYG catalogue: what it is, how far, how bright
-      const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } SKY.mark(st.src);
+      const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } SKY.mark(st.src); SkySound.mood(st.T > 20000 ? 'bluegiant' : st.T > 7500 ? 'bluewhite' : st.T > 5200 ? 'sun' : st.M < 1 ? 'redgiant' : 'reddwarf');
       const show = () => { const nm = st.name == null ? SKY.starName(st.src) : st.name, title = nm || 'A catalogue star', w = esc(title).split(' '), lyT = st.ly >= 1000 ? nf(Math.round(st.ly / 10) * 10) : sig(st.ly);
         Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i><button data-c="Sagittarius A*">Milky Way</button><i></i><button class="on">${esc(title)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(b => b.onclick = () => { SKY.mark(null); if (b.dataset.c) map.pick(b.dataset.c); else map.home('Sagittarius A*'); });
         Q('#obInsp').style.setProperty('--c', st.hex);
@@ -59,14 +84,14 @@
     }
     function inspect(n) {
       { const pi = SKY.planetInfo(n); if (pi) return inspectPlanet(n, pi); }
-      { const gb = map.lay.bodies[map.lay.idxOf[n]]; if (gb && gb.ghost) { sel = n; setTimeout(() => { if (sel === n && host.isConnected) logVisit(n); }, 2600);   /* logged once you have arrived and lingered */ const mw = gb.ghost === 'The Milky Way';   // a galaxy you see but have not collected the heart of
+      { const gb = map.lay.bodies[map.lay.idxOf[n]]; if (gb && gb.ghost) { sel = n; SkySound.mood('galaxy'); setTimeout(() => { if (sel === n && host.isConnected) logVisit(n); }, 2600);   /* logged once you have arrived and lingered */ const mw = gb.ghost === 'The Milky Way';   // a galaxy you see but have not collected the heart of
         const KL = { emission: 'Emission nebula · star-forming region', planetary: 'Planetary nebula', open: 'Open star cluster', globular: 'Globular cluster', dark: 'Dark nebula', snr: 'Supernova remnant', struct: 'Structure of the Milky Way' }, inMW = !!gb.land, dl = !gb.dly ? 'The Sun is in it' : lyText(gb.dly), wd = esc(gb.ghost).split(' ');
         Q('#obCrumbs').innerHTML = `<button data-c="">Universe</button><i></i>${inMW ? '<button data-c="Sagittarius A*">Milky Way</button><i></i>' : ''}<button class="on">${esc(mw ? 'Milky Way' : gb.ghost)}</button>`; Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else map.home('Sagittarius A*'); }); Q('#obInsp').style.setProperty('--c', '#cfc9e2');
         Q('#obInsp').innerHTML = mw ? `<div class="ob-k">Our galaxy · barred spiral</div><h1>The Milky <span>Way</span></h1><p>About 100,000 light-years across, with a few hundred billion stars. The Sun sits 26,000 light-years from the centre, where Sagittarius A*, a black hole of four million suns, waits to be found.</p>
           <dl><div><dt>Diameter</dt><dd>~100,000 ly</dd></div><div><dt>Distance</dt><dd>You are here</dd></div></dl><div class="ob-acts"><button class="p" id="obGo">Go to</button></div>`
           : `<div class="ob-k">${inMW ? KL[gb.land] : gb.far ? 'Distant galaxy, magnified by a cluster' : 'Galaxy of the Local Group'} · landmark</div><h1>${wd.length > 1 ? wd.slice(0, -1).join(' ') + ' <span>' + wd[wd.length - 1] + '</span>' : '<span>' + wd[0] + '</span>'}</h1><p>${esc(gb.note || '')}</p>
           <dl><div><dt>Diameter</dt><dd>~${nf(Math.round((gb.rly || gb.rg * SKY.LYU) * 2 * (gb.rly < 5 ? 10 : 1)) / (gb.rly < 5 ? 10 : 1), 1)} ly</dd></div><div><dt>Distance</dt><dd>${dl}${gb.mly || (gb.dly >= 1e6) ? '<small>true direction; the map compresses distance</small>' : ''}</dd></div><div><dt>Collectable</dt><dd>${gb.src ? 'Its star is' : 'No'}<small>${gb.src ? 'earn ' + esc(gb.src) + ' and it joins your sky' : 'it is simply there'}</small></dd></div></dl><div class="ob-acts"><button class="p" id="obGo">Go to</button></div>`; Q('#obGo').onclick = () => map.pick(n); return; } }
-      sel = n; copyI = 1; const q = bodyOf(n); if (!q) return; const o = SKY.OBJ[q.idx], b = { ...q, id: q.id }, rad = fmtRad(SKY.physR(b)), me = L.find(x => x.n === q.n), N = me ? me.count || 1 : 1, rn = ((P.sky.runs || {})[q.n] || {}).first, parts = crumbParts(map.lay, q.n);
+      sel = n; copyI = 1; const q = bodyOf(n); if (!q) return; SkySound.mood(q.id); const o = SKY.OBJ[q.idx], b = { ...q, id: q.id }, rad = fmtRad(SKY.physR(b)), me = L.find(x => x.n === q.n), N = me ? me.count || 1 : 1, rn = ((P.sky.runs || {})[q.n] || {}).first, parts = crumbParts(map.lay, q.n);
       Q('#obCrumbs').innerHTML = parts.map((c, i) => `${i ? '<i></i>' : ''}<button data-c="${c.n == null ? '' : esc(c.n)}" class="${i === parts.length - 1 ? 'on' : ''}">${esc(c.t)}</button>`).join('');
       Q('#obCrumbs').querySelectorAll('button').forEach(x => x.onclick = () => { if (x.dataset.c) map.pick(x.dataset.c); else map.home('Sagittarius A*'); });
       const words = esc(q.n).split(' '), nm = words.length > 1 ? words.slice(0, -1).join(' ') + ' <span>' + words[words.length - 1] + '</span>' : `<span>${words[0]}</span>`;
@@ -103,22 +128,23 @@
     const search = on => { Q('#obS').hidden = !on; if (on) { Q('#obQ').value = ''; fill(''); setTimeout(() => Q('#obQ').focus(), 30); } };
     Q('#obQ').oninput = e => fill(e.target.value.trim().toLowerCase()); Q('#obS').onclick = e => { if (e.target.id === 'obS') search(false); };
     Q('#obSearch').onclick = () => search(true); Q('#obCompare').onclick = () => compare(sel); Q('#obDisp').onclick = () => dispMenu(host);
-    const done = () => { clearInterval(tick); map.stop(); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); document.body.classList.remove('obs-on'); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} } host.remove(); if (opt.back) opt.back(); };
+    const done = () => { SkySound.stop(); clearInterval(tick); map.stop(); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); document.body.classList.remove('obs-on'); if (document.fullscreenElement) { try { document.exitFullscreen(); } catch {} } host.remove(); if (opt.back) opt.back(); };
     const key = e => { if (!host.isConnected || document.getElementById('cmp')) return; if (e.key === 'Escape') { if (!Q('#obS').hidden) search(false); else if (host.classList.contains('coll')) view('u'); else done(); } else if (e.key === '/' && Q('#obS').hidden) { e.preventDefault(); search(true); } else if ((e.key === '+' || e.key === '=') && Q('#obS').hidden) map.zoom(2); else if (e.key === '-' && Q('#obS').hidden) map.zoom(.5); };
     document.addEventListener('keydown', key); window.addEventListener('resize', size);
+    SkySound.start(); Q('#obSnd').onclick = e => { const on = SkySound.toggle(); e.currentTarget.setAttribute('aria-pressed', on); };
     Q('#obClose').onclick = done; Q('#obHome').onclick = () => { view('u'); map.home('Sagittarius A*'); };
     // two views of one sky: the universe, and the collection (the catalogue, charts and locked objects). The map rests while the collection is open
-    const view = v => { const c = v === 'c'; host.classList.toggle('coll', c); Q('#obColl').hidden = !c; map.pause(c); Q('#obTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+    const view = v => { const c = v === 'c'; SkySound.duck(c); host.classList.toggle('coll', c); Q('#obColl').hidden = !c; map.pause(c); Q('#obTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
       if (c) { catalogue(Q('#obCatBox'), { go: n => { view('u'); map.pick(n); } }); Q('#obColl').scrollTop = 0; if (opt.row) { const el = Q(`.cat-pl[data-id="${CSS.escape(opt.row)}"]`); opt.row = ''; if (el) setTimeout(() => el.scrollIntoView({ block: 'center' }), 60); } } };
     Q('#obTabs').querySelectorAll('button').forEach(x => x.onclick = () => view(x.dataset.v)); if (opt.tab === 'c') view('c');
-    const say = (eye, big, small, ms) => { let c = Q('#obSay'); if (!c) { c = document.createElement('div'); c.id = 'obSay'; c.className = 'ob-say'; host.appendChild(c); } c.innerHTML = `<span>${eye}</span><b>${big}</b>${small ? `<em>${small}</em>` : ''}`; c.classList.remove('gone'); clearTimeout(c._t); if (ms) c._t = setTimeout(() => c.classList.add('gone'), ms); return c; };
+    const say = (eye, big, small, ms) => { let c = Q('#obSay'); if (!c) { c = document.createElement('div'); c.id = 'obSay'; c.className = 'ob-say'; host.appendChild(c); } c.innerHTML = `<span>${eye}</span><b>${big}</b>${small ? `<em>${small}</em>` : ''}`; c.classList.remove('gone'); host.classList.add('saying'); clearTimeout(c._t); if (ms) c._t = setTimeout(() => { c.classList.add('gone'); host.classList.remove('saying'); }, ms); return c; };   // while the sky speaks, the panels step back
     const distFromSun = n => { const q = SKY.NEAR[n]; if (q && q[3]) return q[3]; const g = SKY.GALD[n.split('#')[0]]; if (g) return g[3] * 1e6; const ps = map.pos(), a = ps.find(p => p.n === n), b = ps.find(p => p.n === 'The Sun'); return a && b ? Math.hypot(a.wx - b.wx, a.wy - b.wy) * SKY.LYU : 0; };
     const lyT = d => d >= 1e9 ? sig(d / 1e9) + ' billion light-years' : d >= 1e6 ? sig(d / 1e6) + ' million light-years' : nf(Math.round(d)) + ' light-years';
     if (opt.newId && L.some(b => b.n === 'The Sun') && opt.newId !== 'The Sun') {   // a new find: start at home, then fly out to where it really is
       setTimeout(() => { if (!host.isConnected) return; map.jump('The Sun', 60); setTimeout(() => { if (!host.isConnected) return; map.pick(opt.newId); const d = distFromSun(opt.newId); say('A new light in your sky', esc(opt.newId), d ? lyT(d) + ' from the Sun' : '', 8000); }, 1300); }, 150);
     } else if (opt.focus) setTimeout(() => { if (host.isConnected) map.pick(opt.focus); }, 400);
     if (tour1) {   // the first time: a short guided flight from your own stars out to the edge of the universe
-      P.sky.toured = 1; saveP(); let on = true; const stop = () => { if (!on) return; on = false; P.sky.toured = 1; saveP(); const c = Q('#obSay'); if (c) c.classList.add('gone'); cv.removeEventListener('pointerdown', stop); };
+      P.sky.toured = 1; saveP(); let on = true; const stop = () => { if (!on) return; on = false; P.sky.toured = 1; saveP(); const c = Q('#obSay'); if (c) c.classList.add('gone'); host.classList.remove('saying'); cv.removeEventListener('pointerdown', stop); };
       cv.addEventListener('pointerdown', stop); const steps = [
         [300, () => { map.jump(home0, 40); say('Your sky', 'Every light here, you earned', 'Each one is a real object, placed where it really is.'); }],
         [4800, () => map.pick('Sagittarius A*')], [5600, () => say('Home', 'The Milky Way', '100,000 light-years across. Your stars live in it.')],

@@ -55,11 +55,19 @@
         await L.add([A, m, B]); if (L.spent()) break;
       }
       if (L.found.length) return done(2, L.found);
+      // the list of pages linking to a very popular target is cut short, so also read what each of a's links links to (needed for par 3 anyway)
+      onStep('Looking for 3-click routes');
+      const out = await g.outLinks(F1);
+      tried = 0;
+      for (const m of F1) {
+        if (B1.has(norm(m)) || !(out.get(m) || []).some(t => norm(t) === nb)) continue;
+        if (++tried > verifyCap) break;
+        await L.add([A, m, B]); if (L.spent()) break;
+      }
+      if (L.found.length) return done(2, L.found);
       if (maxPar < 3) return null;
 
       // par 3: a -> m1 -> m2 -> b, with m2 a backlink of b
-      onStep('Looking for 3-click routes');
-      const out = await g.outLinks(F1);
       L = level(); tried = 0;
       outer3: for (const m1 of F1) {
         for (const m2 of out.get(m1) || []) {

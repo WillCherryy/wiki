@@ -1577,3 +1577,29 @@ body.finding .finder-x { display: block; }
 @media (max-width: 860px) { .cat-bar { grid-template-columns: 1fr; gap: 12px; } .cat-sel { overflow-x: auto; scrollbar-width: none; } .cat-tabs { gap: 20px; } #obs.coll .cat-bar { top: 64px; } }
 .cat-bar { background: #05040b; padding: 14px 0 14px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
 @media (max-width: 860px) { .cat-bar { gap: 10px; padding: 10px 0 12px; } .cat-types { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 16px; margin: 0 -18px; padding: 0 18px; } .cat-types::-webkit-scrollbar, .cat-sel::-webkit-scrollbar, .cat-tabs::-webkit-scrollbar { display: none; } .cat-types button { flex: none; } .cat-q input { font-size: 17px; } }
+
+/* result: the discovery and the score lead; the rest folds away */
+.res-main { margin-top: 18px; }
+.res-fold { margin-top: 16px; border-top: 1px solid var(--rule); }
+.res-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 14px 0; }
+.res-fold > summary::-webkit-details-marker { display: none; }
+.res-fold > summary span { font: 600 11.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.res-fold > summary b { font: italic 400 16px var(--display); color: var(--ink-2); text-align: right; }
+.res-fold > summary::after { content: '+'; font: 300 20px/1 var(--sans); color: var(--mute); margin-left: 6px; } .res-fold[open] > summary::after { content: '−'; }
+
+.rewardhow { margin-top: 18px; text-align: left; } .rewardhow span { display: block; font: 600 10.5px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+.rh-lad { display: flex; gap: 4px; margin: 8px 0 6px; } .rh-lad i { flex: 1; height: 3px; border-radius: 2px; background: var(--c); }
+.rewardhow small { display: block; font: 400 13px/1.45 var(--sans); color: var(--mute); }
+
+#obs .ob-insp, #obs .ob-index { transition: opacity .6s ease; } #obs.saying .ob-insp, #obs.saying .ob-index { opacity: 0; pointer-events: none; }
+#obs.saying .ob-say { top: 30%; }
+
+/* link preview */
+#peek { position: fixed; z-index: 900; display: none; gap: 12px; padding: 14px 16px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); box-shadow: 0 18px 40px rgba(20, 16, 10, .18); pointer-events: none; }
+#peek.on { display: flex; animation: peekIn .16s ease; } @keyframes peekIn { from { opacity: 0; transform: translateY(4px); } }
+#peek img { width: 64px; height: 64px; object-fit: cover; flex: none; } #peek b { display: block; font: italic 400 20px/1.15 var(--display); } #peek.goal b { color: var(--accent-ink); }
+#peek em { display: block; font: 400 12.5px var(--sans); color: var(--mute); margin-top: 2px; } #peek p { margin: 8px 0 0; font: 400 14px/1.45 var(--display); color: var(--ink-2); }
+#peek small { display: block; margin-top: 8px; font: 600 10px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--mute); } #peek.loading p { opacity: .5; }
+#article a[data-t] { -webkit-touch-callout: none; }
+
+#obSnd[aria-pressed="false"] { color: #5f5a78 !important; text-decoration: line-through; }

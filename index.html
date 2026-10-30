@@ -310,8 +310,8 @@ function setPlate(d, sa, sb) {
   const from = sa ? sa.title : d.from, to = sb ? sb.title : d.to, cap = x => x ? (x.desc || (x.extract || '').split(/(?<=\.)\s/)[0] || '') : '';
   $('#fromTitle').textContent = from; fitHero($('#fromTitle'), from); $('#fromDesc').textContent = cap(sa);
   $('#toTitle').textContent = to; fitHero($('#toTitle'), to); $('#toDesc').textContent = cap(sb);
-  $('#plateCheck').innerHTML = d.par ? `<span>✓</span> <b>Fastest possible: ${d.par} click${d.par === 1 ? '' : 's'}</b> · checked, always solvable in four or fewer` : '';
-  $('#plateFacts').innerHTML = [d.par ? `Fastest ${d.par}` : '', d.par ? diffOf(d.par) : '', d.ka && d.kb ? `${esc(d.ka)} → ${esc(d.kb)}` : ''].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+  $('#plateCheck').innerHTML = d.par ? `<span>✓</span> <b>Par ${d.par}</b> · our shortest known route; checked, always solvable in four clicks or fewer` : '';
+  $('#plateFacts').innerHTML = [d.par ? `Par ${d.par}` : '', d.par ? diffOf(d.par) : '', d.ka && d.kb ? `${esc(d.ka)} → ${esc(d.kb)}` : ''].filter(Boolean).map(t => `<span>${t}</span>`).join('');
 }
 function dailyCtx() {
   const day = dayKey(), e = P.days[day]; if (!e) return null;
@@ -347,7 +347,8 @@ function renderHeroAct() {
     box.innerHTML = `<button class="btn big" id="playBtn">${resume ? 'Resume today’s puzzle' : 'Play today’s puzzle'} <span class="arr">→</span></button>`;
     $('#playBtn').onclick = playDaily;
     box.insertAdjacentHTML('beforeend', '<button class="btn ghost posterbtn" id="heroPoster">Share today’s poster</button>'); $('#heroPoster').onclick = openPoster;
-    { const tn = tonight(), have = P.sky.cat[tn.n]; box.insertAdjacentHTML('beforeend', `<div class="tonight" style="--c:${tn.o.c}"><span>Tonight’s object</span><b>${esc(tn.n)}</b><small>${have ? 'Already in your sky' : `Earn a ${esc(tn.o.name.toLowerCase())} today and it is yours`}</small></div>`); }
+    { const tn = tonight(), have = P.sky.cat[tn.n]; box.insertAdjacentHTML('beforeend', `<div class="rewardhow"><span>Your prize</span><div class="rh-lad">${SKY.OBJ.map(o => `<i style="--c:${o.c}" title="${esc(o.name)}"></i>`).join('')}</div><small>Your run decides it: any finish earns a cool star; the fewer clicks, the faster, the hotter. A par route with no search or rewind, in about a minute, earns a quasar.</small></div>
+      <div class="tonight" style="--c:${tn.o.c}"><span>Tonight’s object · a bonus</span><b>${esc(tn.n)}</b><small>${have ? 'Already in your sky' : `If today’s run earns a ${esc(tn.o.name.toLowerCase())}, it will be ${esc(tn.n)}. Not a guarantee: your run decides the type.`}</small></div>`); }
   }
 }
 const ICONS = { sky: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>', film: '<rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18M7 7L5 3M12 7L10 3M17 7l-2-4"/>', temple: '<path d="M3 20h18M5 20V10M9.7 20V10M14.3 20V10M19 20V10M3 10l9-6 9 6z"/>', flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M8 15h8"/>', globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>', ball: '<circle cx="12" cy="12" r="9"/><path d="M5.5 5.5c5 4 5 9 0 13M18.5 5.5c-5 4-5 9 0 13"/>', food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/>', music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>', leaf: '<path d="M5 19C5 9 11 4 20 4c0 9-5 15-15 15z"/><path d="M5 19c3-5 6-8 10-10"/>', planet: '<circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)"/>', art: '<rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 16l5-5 4 4 3-3 4 4"/>', tech: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>', bolt: '<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>', trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 20h8M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>', grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>', target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' };
@@ -442,7 +443,7 @@ async function startGame(mode, resume, extra) {
   G = { mode, day, from, to, extra, usedFind: false, goal: meta.goal || null, path: [], steps: [], timeline: [], rewinds: 0, par: meta.par, route: meta.route, alts: meta.alts || [], base: 0, moves: 0, t0: 0, done: false, keywords: new Set(), toTitle: to };
   if (mode === 'live') G.base = extra.base || 0;
   if (resume) Object.assign(G, { path: resume.path, steps: resume.steps, timeline: resume.timeline || [], rewinds: resume.rewinds || 0, usedFind: !!resume.usedFind, moves: resume.moves || 0, base: resume.base });
-  $('#reachLab').textContent = mode === 'live' ? 'Reach · live race' : mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · fastest ${G.par} click${G.par === 1 ? '' : 's'}` : 'Reach';
+  $('#reachLab').textContent = mode === 'live' ? 'Reach · live race' : mode === 'challenge' ? `Reach · beat ${extra.n}'s ${extra.c}` : mode === 'pack' ? `Reach · goal ≤ ${G.goal}` : G.par ? `Reach · par ${G.par}` : 'Reach';
   show('game'); setTemp(0);
   $('#tName').textContent = G.to; $('#mClicks').textContent = 0; $('#mTime').textContent = '0:00'; $('#trail').innerHTML = '';
   $('#article').innerHTML = `<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Loading ${esc(G.from)}…</div>`;
@@ -515,7 +516,7 @@ async function go0(title, initial, resume, kind = 'go') {
   if (!resume || !initial) G.steps.push({ title: page.title, sig });
   else if (!G.steps.length) G.steps.push({ title: page.title, sig });
   if (!(resume && initial && G.timeline.length)) G.timeline.push({ t: Math.round(elapsed() * 10) / 10, title: page.title, sig: win ? 1 : sig, k: initial ? 'start' : kind });
-  G.cur = page; G.sig = win ? 1 : sig; if (!win) checkNear2(page);
+  if (window.Peek) Peek.hide(); G.cur = page; G.sig = win ? 1 : sig; if (!win) checkNear2(page);
   const wp = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(page.title.replace(/ /g, '_'));
   art.innerHTML = `<h1>${esc(page.title)}</h1>${page.html}<p class="attr">Text from <a href="${wp}" target="_blank" rel="noopener">Wikipedia</a>, available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p>`;
   art.classList.remove('out'); art.classList.remove('in'); void art.offsetWidth; art.classList.add('in');
@@ -975,7 +976,7 @@ function shareText() {
   const r = G.result, tag = r.mode === 'daily' ? '#' + dayNum(G.day) : r.mode === 'live' ? 'live race' : r.mode === 'pack' ? 'pack' : r.mode === 'custom' ? 'custom puzzle' : r.mode === 'archive' ? 'archive' : r.mode === 'challenge' ? 'challenge' : 'practice';
   const squares = r.steps.map((s, i) => i === r.steps.length - 1 && r.won ? '🎯' : sigSquare(s.sig)).join('');
   const ref = r.par || r.goal;
-  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'fastest' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL + (r.mode === 'daily' ? 'p/' + G.day : '') : BRAND.domain}`;
+  return `${BRAND.name} ${tag} ${r.won ? `🧭 ${r.clicks} click${r.clicks === 1 ? '' : 's'}${ref ? ` (${r.par ? 'par' : 'goal'} ${ref})` : ''} · ${fmt(r.secs)}${r.rewinds ? ' 📺' : ''}${r.purist ? ' ◆' : ''}` : '🏳️ gave up'}\n${squares}\n${BRAND.name}, the daily Wikipedia link race · ${location.protocol.startsWith('http') ? SITE_URL + (r.mode === 'daily' ? 'p/' + G.day : '') : BRAND.domain}`;
 }
 /* ----------------------------------------------------------------- result components (one visual language) */
 const rampDots = n => Array.from({ length: n }, (_, i) => Math.round((n < 2 ? 1 : i / (n - 1)) * 4));
@@ -1030,7 +1031,7 @@ function fitHeat(r) {   // the chart is drawn in its real pixel width so its typ
 async function fillRoutes(r) {   // a puzzle that arrived without a known route (custom, live, hand-picked or fallback dailies): find the fastest routes now and show them
   if ((r.route && r.route.length > 1) || !r.from || !r.to) return; const card = document.querySelector('.rcard.routes'); if (!card) return;
   const ck = 'wikiio:route:' + r.from + '>' + r.to; let res = null; try { res = JSON.parse(localStorage.getItem(ck)); } catch {}
-  const note = card.querySelector('h4 small'); if (!res && note) note.innerHTML = '<span class="rfind">finding the fastest routes…</span>';
+  const note = card.querySelector('h4 small'); if (!res && note) note.innerHTML = '<span class="rfind">finding the shortest routes…</span>';
   if (!res) { try { res = await withTimeout(checkRoute(r.from, r.to, null, 3), 60000); } catch {} if (res && res.route) try { localStorage.setItem(ck, JSON.stringify({ route: res.route, alts: res.alts || [] })); } catch {} }
   const live = document.querySelector('.rcard.routes'); if (!live) return;
   if (!res || !res.route) { const n = live.querySelector('h4 small'); if (n) n.textContent = 'no route of four clicks or fewer found'; return; }
@@ -1046,11 +1047,11 @@ function routesCard(r) {
   const ramp = n => { const rd = rampDots(n); return i => DOT_C[rd[i]]; };
   const sec = (title, note, body) => `<div class="rsec"><div class="rhd2"><b>${title}</b><span>${note}</span></div>${body}</div>`;
   const clk = n => `${n} click${n === 1 ? '' : 's'}`;
-  const mine = yours.length > 1 ? `<div class="rsec" id="profile"><div class="rhd2"><b>Your route</b><span>${r.won ? clk(r.clicks) + (mineOptimal ? ' · one of the fastest' : '') : 'where you got to'}</span></div>${list(yours, i => dotCss(sigOf(i), i / (yours.length - 1)), true)}<p class="rtv" id="pdev"></p></div>` : '';
-  const tag = i => r.won ? (mineOptimal ? (others.length > 1 ? `Also fastest ${i + 1}` : 'Also fastest') : (others.length > 1 ? `Fastest route ${i + 1}` : 'Fastest route')) : (others.length > 1 ? `A way through ${i + 1}` : 'A way through');
+  const mine = yours.length > 1 ? `<div class="rsec" id="profile"><div class="rhd2"><b>Your route</b><span>${r.won ? clk(r.clicks) + (mineOptimal ? ' · a shortest known route' : r.clicks < shortest ? ' · shorter than par' : '') : 'where you got to'}</span></div>${list(yours, i => dotCss(sigOf(i), i / (yours.length - 1)), true)}<p class="rtv" id="pdev"></p></div>` : '';
+  const tag = i => r.won ? (mineOptimal ? (others.length > 1 ? `Also shortest ${i + 1}` : 'Also shortest') : (others.length > 1 ? `Shortest known route ${i + 1}` : 'Shortest known route')) : (others.length > 1 ? `A way through ${i + 1}` : 'A way through');
   let verdict = '';
-  if (known.length && r.won) verdict = r.clicks < shortest ? 'Shorter than our shortest known route. Nice find.' : r.clicks === shortest ? (mineOptimal ? 'You found one of the shortest routes.' : 'As short as the shortest route.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
-  return `<section class="rcard routes"><h4>Routes <small>${known.length ? `fastest possible: ${clk(shortest)}` : ''}</small></h4>${heatChart(r)}${mine}
+  if (known.length && r.won) verdict = r.clicks < shortest ? `You beat par: ${clk(r.clicks)} against our shortest known ${clk(shortest)}. Our route finder missed this one, and your route is now the one to beat.` : r.clicks === shortest ? (mineOptimal ? 'You found one of the shortest routes.' : 'As short as the shortest route.') : `${r.clicks - shortest} click${r.clicks - shortest === 1 ? '' : 's'} over the shortest route.`;
+  return `<section class="rcard routes"><h4>Routes <small>${known.length ? (r.won && r.clicks < shortest ? `par ${shortest} · you found ${clk(r.clicks)}` : `par: ${clk(shortest)}`) : ''}</small></h4>${heatChart(r)}${mine}
     ${others.map((k, i) => sec(tag(i), clk(k.length - 1), list(k, ramp(k.length), false))).join('')}
     ${mineOptimal && !others.length ? '<p class="rtf">That is the only shortest route we found.</p>' : ''}
     ${verdict ? `<p class="rtv rsum">${verdict}</p>` : ''}
@@ -1082,16 +1083,21 @@ function showResult() {
     ${r.sky ? skyReveal(r.sky, { id: 'skyCv' }) : r.won && r.mode !== 'daily' && r.mode !== 'pack' ? '<p class="skynote">Sky objects come from daily and pack puzzles, not practice, live or challenge runs.</p>' : ''}
     ${resHero(r)}
     ${ch ? `<div class="vs"><div><b>You</b><span>${r.clicks} clicks · ${fmt(r.secs)}</span></div><i>vs</i><div><b>${esc(ch.n)}</b><span>${ch.c} clicks · ${fmt(ch.s)}</span></div></div>` : ''}
-    ${routesCard(r)}
-    ${streakCard(r)}
-    <section class="rcard" id="standing" hidden></section>
-    ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
-    ${(r.newAch || []).map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
-    ${(r.newCos || []).map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${({ theme: 'theme', trail: 'trail', confetti: 'confetti', dots: 'dot style', buddy: 'buddy' })[i.cat] || ''}</b><small>${i.label ? esc(i.label) + ' · ' : ''}tap to equip it in the Locker</small></span></div>`).join('')}
-    ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
-    <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
-    <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
-    <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
+    <div class="actions res-main"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See it in your sky' : 'Your sky'}</button>` : ''}<button class="btn ghost" id="homeBtn">Home</button></div>
+    ${(() => { const ach = r.newAch || [], cos = r.newCos || [], n = ach.length + cos.length + (r.shield ? 1 : 0); if (!n) return '';   // everything unlocked, folded into one line
+      const parts = [ach.length ? ach.length + (ach.length === 1 ? ' achievement' : ' achievements') : '', cos.length ? cos.length + (cos.length === 1 ? ' reward' : ' rewards') : '', r.shield ? 'streak shield used' : ''].filter(Boolean).join(' · ');
+      return `<details class="res-fold res-unl"><summary><span>Also unlocked</span><b>${parts}</b></summary>
+        ${r.shield ? '<div class="unlock"><span class="medal">◆</span><span><b>Streak shield used</b><small>Your streak survived a missed day. It refreshes next month.</small></span></div>' : ''}
+        ${ach.map(u => `<div class="unlock"><span class="medal" style="--mc:${TIERS[u.tier].c}">${u.a.icon}</span><span><b>${u.a.name} · ${TIERS[u.tier].n}</b><small>Achievement unlocked</small></span></div>`).join('')}
+        ${cos.map(i => `<div class="unlock" data-lock="${i.cat}"><span class="medal" style="--mc:var(--accent)"><span style="width:26px;height:26px;border-radius:9px;background:${i.sw};display:block"></span></span><span><b>${esc(i.name)} ${({ theme: 'theme', trail: 'trail', confetti: 'confetti', dots: 'dot style', buddy: 'buddy' })[i.cat] || ''}</b><small>${i.label ? esc(i.label) + ' · ' : ''}tap to equip it in the Locker</small></span></div>`).join('')}</details>`; })()}
+    <details class="res-fold res-more" id="resMore" ${r.sky ? '' : 'open'}><summary><span>Your route and stats</span><b>shortest routes · streak · leaderboard</b></summary>
+      ${routesCard(r)}
+      ${streakCard(r)}
+      <section class="rcard" id="standing" hidden></section>
+      ${r.won && daily ? `<div class="namebox"><input id="nameIn" maxlength="20" placeholder="Name for the leaderboard" value="${esc(P.name)}"><button class="btn ghost" id="postBtn">Post</button></div>` : ''}
+      <div class="actions" style="margin-top:14px">${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge a friend') + '</button>' : ''}${extra}<button class="btn ghost" id="replayBtn">Replay</button></div>
+      <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div></details>`);
+  $('#resMore').addEventListener('toggle', () => { if ($('#resMore').open) fitHeat(r); });
   $('#repBtn').onclick = () => openReport(showResult); fitHeat(r); fillRoutes(r); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && (r.sky.name || r.sky.id) });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
@@ -1450,8 +1456,29 @@ function confetti(id) {
 function goHome() { clearInterval(tick); G = null; setTemp(0); show('home'); renderHome(); }
 $('#article').addEventListener('click', e => {
   const a = e.target.closest('a[data-t]'); if (!a) { const x = e.target.closest('a'); if (x && !x.target) e.preventDefault(); return; }
-  e.preventDefault(); if (G && !G.done && !G.nav) go(a.dataset.t);
+  e.preventDefault(); if (Peek.ate) { Peek.ate = false; return; } Peek.hide(); if (G && !G.done && !G.nav) go(a.dataset.t);
 });
+/* link preview: hover a link (desktop) or press and hold it (touch) to read the start of that article before you spend a click */
+var Peek = {
+  el: null, cur: null, t: 0, ate: false,
+  box() { if (!this.el) { this.el = document.createElement('div'); this.el.id = 'peek'; this.el.setAttribute('role', 'tooltip'); document.body.appendChild(this.el); } return this.el; },
+  async show(a, touch) {
+    const t = a.dataset.t; this.cur = a; const el = this.box(); el.className = 'on loading'; el.innerHTML = `<b>${esc(t)}</b><p>…</p>`; this.place(a, touch);
+    let sm = null; try { sm = await getSummary(t); } catch {} if (this.cur !== a) return;
+    const goal = norm(t) === norm(G && G.toTitle || ''), ex = sm && sm.extract ? sm.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ') : '';
+    el.className = 'on' + (goal ? ' goal' : ''); el.innerHTML = `${sm && sm.thumb ? `<img src="${esc(sm.thumb)}" alt="">` : ''}<div><b>${esc(sm ? sm.title : t)}</b>${sm && sm.desc ? `<em>${esc(sm.desc)}</em>` : ''}${ex ? `<p>${esc(ex.length > 260 ? ex.slice(0, 257) + '…' : ex)}</p>` : ''}${touch ? '<small>Tap the link to go · tap elsewhere to close</small>' : ''}</div>`; this.place(a, touch);
+  },
+  place(a, touch) { const el = this.el, r = a.getBoundingClientRect(), w = Math.min(340, innerWidth - 24); el.style.width = w + 'px'; el.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px'; const h = el.offsetHeight || 120, below = r.bottom + 10 + h < innerHeight - (touch ? 90 : 10); el.style.top = (below ? r.bottom + 10 : Math.max(10, r.top - h - 10)) + 'px'; },
+  hide() { clearTimeout(this.t); this.cur = null; if (this.el) this.el.className = ''; }
+};
+{ const art = $('#article'), fine = matchMedia('(hover: hover) and (pointer: fine)');
+  art.addEventListener('mouseover', e => { if (!fine.matches) return; const a = e.target.closest && e.target.closest('a[data-t]'); if (!a || a === Peek.cur) return; clearTimeout(Peek.t); Peek.t = setTimeout(() => Peek.show(a, false), 450); });
+  art.addEventListener('mouseout', e => { if (!fine.matches) return; const a = e.target.closest && e.target.closest('a[data-t]'); if (a && !a.contains(e.relatedTarget)) Peek.hide(); });
+  let lp = null; art.addEventListener('touchstart', e => { const a = e.target.closest && e.target.closest('a[data-t]'); if (!a) { if (Peek.cur) Peek.hide(); return; } const x = e.touches[0].clientX, y = e.touches[0].clientY; clearTimeout(Peek.t); lp = { a, x, y }; Peek.t = setTimeout(() => { Peek.ate = true; Peek.show(a, true); if (navigator.vibrate) navigator.vibrate(8); }, 420); }, { passive: true });
+  art.addEventListener('touchmove', e => { if (!lp) return; const t = e.touches[0]; if (Math.hypot(t.clientX - lp.x, t.clientY - lp.y) > 10) { clearTimeout(Peek.t); lp = null; } }, { passive: true });
+  art.addEventListener('touchend', () => { clearTimeout(Peek.t); lp = null; });
+  art.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('a[data-t]')) e.preventDefault(); });   // the press opens our preview, not the browser's link menu
+  addEventListener('scroll', () => { if (Peek.cur && fine.matches) Peek.hide(); }, { passive: true }); document.addEventListener('touchstart', e => { if (Peek.cur && !e.target.closest('#article a[data-t]') && !e.target.closest('#peek')) Peek.hide(); }, { passive: true }); }
 $('#logo').onclick = () => { if (G && !G.done) return ask('Leave this puzzle?', 'Your progress is saved. You can resume from the home screen.', 'Leave', goHome); goHome(); };
 $('#menuBtn').onclick = openMenu;
 $('#backBtn').onclick = back;
@@ -1815,7 +1842,7 @@ async function posterCanvas(d, tease) {
   y += 52 + from.sz * .26; x.strokeStyle = RULE; x.lineWidth = 4; x.setLineDash([2, 10]); x.lineCap = 'round'; x.beginPath(); x.moveTo(M, y); x.lineTo(W / 2 - 150, y); x.moveTo(W / 2 + 150, y); x.lineTo(W - M, y); x.stroke(); x.setLineDash([]);
   [['#2a4f8a', 11], ['#5c8cbe', 14], ['#d6be8c', 18], ['#f08c50', 23], ['#d63a1f', 29]].forEach(([col, r], i) => { x.fillStyle = col; x.beginPath(); x.arc(W / 2 - 108 + i * 54, y + 10 - r + 14, r, 0, 7); x.fill(); });
   y += 84; caps('Reach', W / 2, y, 22, MUTE, 'center', 5.2); y += 38; x.fillStyle = ACC; x.font = `italic 400 ${to.sz}px ${DISP}`; to.ls.forEach(l => { y += to.sz * .86; x.fillText(l, W / 2, y); y += to.sz * .12; });
-  const chips = [d.par ? `Fastest possible · ${d.par} click${d.par === 1 ? '' : 's'}` : 'Click only links', d.par ? diffOf(d.par) : '', 'Solvable in 4 or fewer'].filter(Boolean); x.font = `600 19px ${SANS}`; try { x.letterSpacing = '1.9px'; } catch {}
+  const chips = [d.par ? `Par ${d.par}` : 'Click only links', d.par ? diffOf(d.par) : '', 'Solvable in 4 or fewer'].filter(Boolean); x.font = `600 19px ${SANS}`; try { x.letterSpacing = '1.9px'; } catch {}
   const ws = chips.map(t => x.measureText(t.toUpperCase()).width + 36), tot = ws.reduce((a, b) => a + b, 0) + 12 * (chips.length - 1); let cx = (W - tot) / 2, cy = H - 104 - 218;
   chips.forEach((t, i) => { x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(cx, cy, ws[i], 44); x.fillStyle = INK2; x.textAlign = 'left'; x.fillText(t.toUpperCase(), cx + 18, cy + 29); cx += ws[i] + 12; }); try { x.letterSpacing = '0px'; } catch {}
   x.textAlign = 'center'; x.fillStyle = INK; x.font = `italic 400 66px ${DISP}`; x.fillText('Can you beat it?', W / 2, H - 104 - 90); x.font = `500 36px ${SANS}`; x.fillText(BRAND.domain, W / 2, H - 104 - 38); caps('Free · No account · New puzzle every day', W / 2, H - 104 + 4, 18, MUTE, 'center', 3.6);
@@ -1887,7 +1914,7 @@ async function openArchive() {
   const res = d => { const e = P.days[d], a = (P.archive || {})[d]; if (e && e.won) return { c: e.clicks, on: true }; if (a) return { c: a.clicks }; return null; };
   const done = days.filter(d => res(d)).length, fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   openModal(`<h2>Daily archive</h2><p>Every past daily puzzle, any time. Archive solves earn half XP once, and do not count for your streak or Sky. <b>${done}</b> of <b>${days.length}</b> played.</p>
-    ${days.length ? `<div class="pkgrid arch">${days.map(d => { const z = PZ[d], r = res(d); return `<button class="${r ? 'got' : ''}" data-d="${d}"><span class="ar-top"><b>#${dayNum(d)}</b><em>${fmtD(d)}</em></span><span class="ar-route">${esc(z.from)} <i>→</i> ${esc(z.to)}</span><span class="ar-s">${r ? '✓ ' + r.c + ' click' + (r.c === 1 ? '' : 's') + (r.on ? ' on the day' : '') : 'Fastest ' + (z.par || '?')}</span></button>`; }).join('')}</div>` : '<p class="mute">No past puzzles yet. Come back tomorrow.</p>'}`);
+    ${days.length ? `<div class="pkgrid arch">${days.map(d => { const z = PZ[d], r = res(d); return `<button class="${r ? 'got' : ''}" data-d="${d}"><span class="ar-top"><b>#${dayNum(d)}</b><em>${fmtD(d)}</em></span><span class="ar-route">${esc(z.from)} <i>→</i> ${esc(z.to)}</span><span class="ar-s">${r ? '✓ ' + r.c + ' click' + (r.c === 1 ? '' : 's') + (r.on ? ' on the day' : '') : 'Par ' + (z.par || '?')}</span></button>`; }).join('')}</div>` : '<p class="mute">No past puzzles yet. Come back tomorrow.</p>'}`);
   document.querySelectorAll('.arch button').forEach(b => b.onclick = () => { closeModal(); startGame('archive', null, { day: b.dataset.d }); });
 }
 
@@ -1906,7 +1933,7 @@ function handlePuzzleLink() {
   const pz = parsePuzzle(m[1]); if (!pz) return toast('That puzzle link is not valid');
   openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">A puzzle for you</span>
     <h2 style="margin-top:12px">${esc(pz.n)} made you a puzzle</h2>
-    <div class="card" style="padding:16px;margin:14px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(pz.f)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700;color:var(--accent-ink)">${esc(pz.t)}</div>${pz.par ? `<div style="margin-top:12px"><span class="pill">Fastest known: ${pz.par} click${pz.par === 1 ? '' : 's'}</span></div>` : ''}</div>
+    <div class="card" style="padding:16px;margin:14px 0"><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">Get from</div><div class="serif" style="font-size:24px;font-weight:700">${esc(pz.f)}</div><div class="mute">↓</div><div class="s mute b" style="letter-spacing:.09em;text-transform:uppercase;font-size:11.5px">to</div><div class="serif" style="font-size:24px;font-weight:700;color:var(--accent-ink)">${esc(pz.t)}</div>${pz.par ? `<div style="margin-top:12px"><span class="pill">Par ${pz.par}</span></div>` : ''}</div>
     <button class="btn" id="mkAccept" style="width:100%;font-size:17px;padding:16px">Play this puzzle →</button><div class="s mute" style="margin-top:10px">No account needed</div></div>`);
   $('#mkAccept').onclick = () => { closeModal(); startGame('custom', null, pz); };
 }
@@ -2271,7 +2298,7 @@ function openPack(id) {
     <div class="pkbar wide" style="--ph:${p.hue}"><i style="width:${st.total ? Math.round(st.solved / st.total * 100) : 0}%"></i></div>
     ${next !== undefined ? `<button class="btn" id="pkPlay" style="width:100%;margin:12px 0 4px">${st.solved ? 'Play next' : 'Start the pack'} · #${nextN + 1}</button>` : '<p class="rtv" style="text-align:center">Pack complete. Every puzzle solved.</p>'}
     <div class="pkgrid">${vis.map((i, n) => { const z = packPuzzle(id, i), r = pk[i], locked = next !== undefined && vis.indexOf(i) > nextN;
-      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''} ${r ? 'done' : ''}" style="--ph:${p.hue}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">${z.par ? 'Fastest ' + z.par + ' · ' : ''}goal ${z.goal}</span><div class="s mute b">#${n + 1}${locked ? ' 🔒' : r ? ' ✓' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} <em>→</em> ${esc(z.to)}</div><div class="s">${r ? '<span class="stars3">' + '★'.repeat(r.stars) + '<i>' + '★'.repeat(3 - r.stars) + '</i></span>' + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? '<span class="mute">Solve the one before</span>' : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
+      return `<button class="tile pk ${locked ? 'lock' : ''} ${i === next ? 'next' : ''} ${r ? 'done' : ''}" style="--ph:${p.hue}" data-i="${i}" ${locked ? 'disabled' : ''}><span class="badge">${z.par ? 'Par ' + z.par + ' · ' : ''}goal ${z.goal}</span><div class="s mute b">#${n + 1}${locked ? ' 🔒' : r ? ' ✓' : ''}</div><div class="serif b" style="font-size:15px;margin:3px 0">${esc(z.from)} <em>→</em> ${esc(z.to)}</div><div class="s">${r ? '<span class="stars3">' + '★'.repeat(r.stars) + '<i>' + '★'.repeat(3 - r.stars) + '</i></span>' + ` <span class="mute">${r.clicks} click${r.clicks === 1 ? '' : 's'}</span>` : locked ? '<span class="mute">Solve the one before</span>' : '<span class="mute">unplayed</span>'}</div></button>`; }).join('')}</div>`);
   $('#pkBack').onclick = openPacks;
   if ($('#pkPlay')) $('#pkPlay').onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: next }); };
   document.querySelectorAll('.pk').forEach(b => b.onclick = () => { closeModal(); startGame('pack', null, { pack: id, idx: +b.dataset.i }); });
