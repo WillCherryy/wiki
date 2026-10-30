@@ -742,12 +742,12 @@ function openGlobe(name, back) {   // a planet or moon as a globe you can turn: 
   const cv = $('#inCv'), dpr = Math.min(2, window.devicePixelRatio || 1), size = () => { cv.width = Math.round(host.clientWidth * dpr); cv.height = Math.round(host.clientHeight * dpr); }; size();
   const bg = document.createElement('canvas'); bg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'; cv.before(bg); bg.width = cv.width; bg.height = cv.height; SKY.starBg(bg.getContext('2d'), bg.width, bg.height, Math.round(bg.width * bg.height / 5000), 3, '#07060f');
   const G = SKY.globe(cv, pi.kind, name); if (!G) { host.remove(); if (OM && OM.pause) OM.pause(false); return; }
-  let spin = 0, pitch = .12, zoom = 1, vs = .06, dead = false, last = performance.now(), lastTap = 0, pd = 0; const ptr = new Map();
+  let pitch = .12, spin = G.locked ? G.faceStar(.12) : 0, zoom = 1, vs = G.locked ? 0 : .06, dead = false, last = performance.now(), lastTap = 0, pd = 0; const ptr = new Map();
   const frame = now => { if (dead) return; const dt = Math.min(.05, (now - last) / 1000); last = now; if (!ptr.size) spin += vs * dt; G.draw(spin, pitch, zoom); requestAnimationFrame(frame); };   // it turns slowly by itself until you take hold of it
   requestAnimationFrame(frame);
   cv.onpointerdown = e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { cv.setPointerCapture(e.pointerId); } catch {} if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pd = Math.hypot(a.x - b.x, a.y - b.y); } const n = performance.now(); if (ptr.size === 1 && n - lastTap < 300) { zoom = 1; pitch = .12; } lastTap = n; };
   cv.onpointermove = e => { const o = ptr.get(e.pointerId); if (!o) return; if (ptr.size === 2) { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pd) zoom = Math.max(.5, Math.min(4, zoom * d / pd)); pd = d; return; }
-    const k = 3 / Math.max(240, Math.min(host.clientWidth, host.clientHeight) * zoom); spin += (e.clientX - o.x) * k; pitch = Math.max(-1.45, Math.min(1.45, pitch + (e.clientY - o.y) * k)); vs = Math.sign(e.clientX - o.x || vs) * .06; ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); };
+    const k = 3 / Math.max(240, Math.min(host.clientWidth, host.clientHeight) * zoom); spin += (e.clientX - o.x) * k; pitch = Math.max(-1.45, Math.min(1.45, pitch + (e.clientY - o.y) * k)); vs = G.locked ? 0 : Math.sign(e.clientX - o.x || vs) * .06; ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); };
   cv.onpointerup = cv.onpointercancel = e => { ptr.delete(e.pointerId); pd = 0; };
   cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.5, Math.min(4, zoom * Math.exp(-e.deltaY * .0015))); }, { passive: false });
   const done = () => { dead = true; G.stop(); document.removeEventListener('keydown', esc3); window.removeEventListener('resize', rs); host.remove(); if (OM && OM.pause) OM.pause(false); if (back) back(); };
