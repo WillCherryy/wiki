@@ -80,7 +80,7 @@
         <div class="trail trailM" id="trailM"></div>
       </div>
       <div class="tools">
-        <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link  ( / )" autocomplete="off" spellcheck="false"><span id="finderN"></span></label>
+        <label class="finder"><svg viewBox="0 0 24 24" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="finder" placeholder="Find a link  ( / )" autocomplete="off" spellcheck="false" enterkeyhint="search"><span id="finderN"></span><button type="button" class="finder-x" id="finderX" aria-label="Close search">✕</button></label>
         <button class="chip" id="tocBtn" title="Jump to a section (C)">Contents <small>sections</small></button>
         <button class="chip" id="backBtn" title="Back (B)">Back <small>+1 click</small></button>
         <button class="chip" id="rewindBtn" title="Watch a short video to undo your last click for free">Rewind <small>1 left</small></button>
@@ -925,7 +925,7 @@ function setNav(n) { document.querySelectorAll('#topnav [data-go]').forEach(b =>
 function openPage(html, onclose) {   // the same content as a modal, laid out as a full page in the site chrome
   const m = /^\s*<h2[^>]*>([\s\S]*?)<\/h2>\s*(<p[^>]*>[\s\S]*?<\/p>)?/.exec(html), title = m ? m[1] : '', sub = m && m[2] ? m[2].replace(/^<p[^>]*>|<\/p>$/g, '') : '', rest = m ? html.slice(m[0].length) : html;
   if (curView() !== 'page') prevView = curView();
-  document.body.classList.remove('insky'); $('#pageBody').className = 'pagebody k-' + (title.replace(/<[^>]+>/g, '').toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '') || (/class="(resulthead|disc)/.test(rest) ? 'x' : 'plain')); $('#pageHead').innerHTML = title ? `<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}` : ''; $('#pageHead').style.display = title ? '' : 'none'; $('#pageBody').innerHTML = rest;
+  document.body.classList.remove('insky'); $('#pageBody').className = 'pagebody k-' + (title.replace(/<[^>]+>/g, '').toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '') || (/class="(resulthead|disc)/.test(rest) ? 'x' : 'plain')); $('#pageHead').innerHTML = `<button class="pageback" data-close aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>` + (title ? `<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}` : ''); $('#pageHead').style.display = ''; $('#pageBody').innerHTML = rest;
   $('#page').onclose = onclose; $('#page').dataset.k = pageNav; show('page'); window.scrollTo({ top: 0 }); setNav(pageNav);
 }
 function openModal(html, onclose) { if (Date.now() < pageUntil) { pageUntil = 0; return openPage(html, onclose); } $('#modal').classList.remove('sky'); $('#modal').innerHTML = `<button class="chip iconbtn x" aria-label="Close" data-close>✕</button>${html}`; $('#scrim').classList.add('on'); $('#scrim').onclose = onclose; $('#modal').classList.toggle('sheetm', document.body.classList.contains('ingame') && matchMedia('(max-width: 899px)').matches); }
@@ -1005,6 +1005,16 @@ function resHero(r) {   // the headline of a finished run: what happened, in one
 function fitHeat(r) {   // the chart is drawn in its real pixel width so its type stays at reading size on any screen
   const el = document.querySelector('.hchart'); if (!el) return; const w = Math.round(el.clientWidth); if (w > 200) el.outerHTML = heatChart(r, w);
 }
+async function fillRoutes(r) {   // a puzzle that arrived without a known route (custom, live, hand-picked or fallback dailies): find the fastest routes now and show them
+  if ((r.route && r.route.length > 1) || !r.from || !r.to) return; const card = document.querySelector('.rcard.routes'); if (!card) return;
+  const ck = 'wikiio:route:' + r.from + '>' + r.to; let res = null; try { res = JSON.parse(localStorage.getItem(ck)); } catch {}
+  const note = card.querySelector('h4 small'); if (!res && note) note.innerHTML = '<span class="rfind">finding the fastest routes…</span>';
+  if (!res) { try { res = await withTimeout(checkRoute(r.from, r.to, null, 3), 60000); } catch {} if (res && res.route) try { localStorage.setItem(ck, JSON.stringify({ route: res.route, alts: res.alts || [] })); } catch {} }
+  const live = document.querySelector('.rcard.routes'); if (!live) return;
+  if (!res || !res.route) { const n = live.querySelector('h4 small'); if (n) n.textContent = 'no route of four clicks or fewer found'; return; }
+  r.route = res.route; r.alts = res.alts || []; if (r.mode === 'daily' && G && G.day && P.days[G.day]) { P.days[G.day].route = r.route; P.days[G.day].alts = r.alts; saveP(); }
+  live.outerHTML = routesCard(r); fitHeat(r);
+}
 function routesCard(r) {
   const yours = r.path || [], steps = r.steps || [], key = k => k.map(norm).join('>'), sigOf = i => r.won && i === yours.length - 1 ? 1 : steps[i] && steps[i].sig != null ? steps[i].sig : 0;
   const known = [r.route, ...(r.alts || [])].filter(a => Array.isArray(a) && a.length > 1);
@@ -1060,7 +1070,7 @@ function showResult() {
     <div class="actions" style="margin-top:14px"><button class="btn" id="shareBtn">Share card</button>${r.sky ? `<button class="btn ghost" id="skyBtn">${r.sky.first ? 'See your system' : 'Your sky'}</button>` : ''}${r.won ? '<button class="btn ghost" id="chalBtn">' + (ch ? 'Send back' : 'Challenge') + '</button>' : ''}</div>
     <div class="actions" style="margin-top:10px">${extra}<button class="btn ghost" id="replayBtn">Replay</button><button class="btn ghost" id="homeBtn">Home</button></div>
     <div style="text-align:center;margin-top:12px"><button class="linkbtn" id="repBtn">Report a problem with this puzzle</button></div>`);
-  $('#repBtn').onclick = () => openReport(showResult); fitHeat(r); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && (r.sky.name || r.sky.id) });
+  $('#repBtn').onclick = () => openReport(showResult); fitHeat(r); fillRoutes(r); fillStanding(r); fillCrowd(r); if (r.sky) mountSky(r.sky.id, r.sky.idx, r.sky.name); if ($('#skyBtn')) $('#skyBtn').onclick = () => openSky(r.sky && r.sky.first ? { tab: 'sys', newId: r.sky.name } : { focus: r.sky && (r.sky.name || r.sky.id) });
   $('#shareBtn').onclick = () => openShareCard(r, showResult);
   if ($('#chalBtn')) $('#chalBtn').onclick = () => openChallenge(r, showResult);
   if ($('#mapBtn')) $('#mapBtn').onclick = () => openPathMap(r);
@@ -1314,7 +1324,7 @@ function openMenu() {
     ['How to play', '', showHelp]
   ];
   openModal(`<h2>Menu</h2><div class="menu">${items.map((it, i) => `<button data-i="${i}"><b>${it[0]}</b><small>${esc(it[1])}</small></button>`).join('')}</div><div class="slinks" style="margin-top:14px"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>`);
-  document.querySelectorAll('.menu button').forEach(b => b.onclick = () => items[+b.dataset.i][2]());
+  document.querySelectorAll('.menu button').forEach(b => b.onclick = () => { const f = items[+b.dataset.i][2]; closeModal(); f(); });   // the menu closes as its item opens, so nothing is left stacked on top
 }
 async function restorePurchase() {   // buyers have no account: the checkout email brings the pack back after browser data was cleared
   const email = (prompt('Enter the email address you used at checkout to restore your Supporter pack:') || '').trim(); if (!email) return;
@@ -2118,7 +2128,7 @@ function renderLiveBoard(box) {
 
 /* route checking for custom lobbies: the same solver the founder uses for the daily puzzle, loaded only when needed */
 const loadScript = src => new Promise((res, rej) => { if (document.querySelector(`script[data-lazy="${src}"]`)) return res(); const s = document.createElement('script'); s.src = src; s.dataset.lazy = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-async function checkRoute(from, to, onStep) { await loadScript('solver.js'); await loadScript('wikiclient.js'); return WikiSolver.makeSolver(WikiClient.makeGraph()).findRoute(from, to, { maxPar: 4, alts: 1, altCap: 20, onStep }); }
+async function checkRoute(from, to, onStep, alts = 1) { await loadScript('solver.js'); await loadScript('wikiclient.js'); return WikiSolver.makeSolver(WikiClient.makeGraph()).findRoute(from, to, { maxPar: 4, alts, altCap: 20 * alts, onStep }); }
 
 /* host */
 async function openHost() {
@@ -2471,7 +2481,10 @@ function runFinder() {
   hits.forEach(a => a.classList.add('hit')); $('#finderN').textContent = q.length >= 2 ? hits.length + ' found' : ''; stepFinder(1);
 }
 $('#finder').addEventListener('input', runFinder);
-$('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { e.target.value = ''; runFinder(); e.target.blur(); } });
+$('#finder').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); stepFinder(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') { closeFinder(); } });
+function closeFinder() { const f = $('#finder'); f.value = ''; runFinder(); f.blur(); document.body.classList.remove('finding'); }   // the ✕, Escape, or leaving the page closes the search
+$('#finderX').addEventListener('click', e => { e.preventDefault(); closeFinder(); });
+$('#finder').addEventListener('blur', () => { if (matchMedia('(max-width: 899px)').matches && !$('#finder').value) setTimeout(() => { if (document.activeElement !== $('#finder')) document.body.classList.remove('finding'); }, 150); });   // on a phone, putting the keyboard away with nothing typed closes the bar
 const applyFs = () => { $('#article').style.fontSize = (21.5 + P.fs * 1.5) + 'px'; };
 /* thumb dock (phones): the same actions as the side tools, within reach of one hand */
 function syncDock() {

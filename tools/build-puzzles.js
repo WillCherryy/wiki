@@ -34,6 +34,15 @@ const addDays = (d, n) => { const [y, m, dd] = d.split('-').map(Number); return 
 const weekday = d => new Date(d + 'T00:00:00Z').getUTCDay();
 // Easy early in the week, harder towards the weekend (Sun..Sat).
 const RANGE = [[3, 4], [2, 3], [3, 4], [3, 4], [3, 4], [4, 4], [4, 4]];   // Sun..Sat: a par-4 day is the aim on Fri and Sat, and on the other days the builder keeps looking for a 4 before settling for a 3
+// Appeal: endpoints people recognise (average daily page views over the last two months) and a concrete target, not an abstract topic
+const VIEWS = new Map();
+async function views(title) {
+  if (VIEWS.has(title)) return VIEWS.get(title); let v = null;
+  try { const j = await g.api({ action: 'query', prop: 'pageviews', titles: title, pvipdays: '60', redirects: '1' }), pv = (((j.query || {}).pages || [])[0] || {}).pageviews || {}, xs = Object.values(pv).filter(x => typeof x === 'number'); v = xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; } catch {}
+  VIEWS.set(title, v); return v;
+}
+const MIN_FROM = +arg('min-views-from', 300), MIN_TO = +arg('min-views-to', 1000);
+const ABSTRACT = /mathemat|philosoph|religion|society|social|concept|language|linguist/i;   // fine to start from, poor to aim at
 const label = p => p <= 2 ? 'Easy' : p === 3 ? 'Medium' : p === 4 ? 'Hard' : 'Expert';
 
 (async () => {
@@ -51,12 +60,13 @@ const label = p => p <= 2 ? 'Easy' : p === 3 ? 'Medium' : p === 4 ? 'Hard' : 'Ex
       const ka = KEYS[Math.floor(r() * KEYS.length)]; let kb;
       do kb = KEYS[Math.floor(r() * KEYS.length)]; while (KEYS.length > 1 && kb === ka);
       const from = POOL[ka][Math.floor(r() * POOL[ka].length)], to = POOL[kb][Math.floor(r() * POOL[kb].length)];
-      if (from === to || used.has(from) || used.has(to)) continue;
+      if (from === to || used.has(from) || used.has(to) || ABSTRACT.test(kb)) continue;
+      const [vf, vt] = await Promise.all([views(from), views(to)]); if ((vf != null && vf < MIN_FROM) || (vt != null && vt < MIN_TO)) { process.stdout.write('·'); continue; }   // too obscure for a daily
       let res; try { res = await findRoute(from, to, { maxPar: MAXPAR, alts: 2, log: process.env.VERBOSE ? console.log : () => {} }); } catch (e) { console.warn('  error', from, to, e.message); continue; }
       if (!res) { process.stdout.write('.'); continue; }
       const dist = res.par < lo ? lo - res.par : res.par > hi ? res.par - hi : 0;
       const cand = { from: res.route[0], to: res.route[res.route.length - 1], par: res.par, route: res.route, alts: res.alts || [], cats: [ka, kb], dist };
-      cand.score = dist * 10 + (hi - Math.min(hi, res.par));   // inside the range, prefer the harder end of it
+      cand.score = dist * 10 + (hi - Math.min(hi, res.par)) - .4 * Math.log10(Math.max(1, Math.min(vf || 1000, vt || 1000)));   // inside the range, prefer the harder end of it, then the better-known pair
       if (!best || cand.score < best.score) best = cand;
       if (dist === 0 && res.par === hi) break;
     }

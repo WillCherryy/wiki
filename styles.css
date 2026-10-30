@@ -1543,3 +1543,12 @@ body { font-family: var(--sans); }
 @media (max-width: 700px) { .room-grid { grid-template-columns: 1fr; gap: 18px; } .room-code { font-size: 42px; } }
 .modal:has(.room) { width: min(900px, 100%) !important; }
 .room-set .mk { grid-template-columns: 1fr !important; display: grid; gap: 0; } .room-set .actions { flex-wrap: wrap; }
+.rfind { animation: rfind 1.4s ease-in-out infinite; } @keyframes rfind { 50% { opacity: .4; } }
+
+/* every page has a way back */
+.pageback { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 4px 0; margin: 0 0 10px; font: 600 11.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); cursor: pointer; }
+.pageback svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; } .pageback:hover { color: var(--ink); }
+@media (min-width: 900px) { .pageback { display: none; } }
+
+.finder-x { display: none; border: 0; background: none; color: var(--mute); font-size: 15px; padding: 0 4px 0 10px; cursor: pointer; flex: none; }
+body.finding .finder-x { display: block; }
