@@ -1300,20 +1300,27 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     g.restore();
   }
   let GBUD = 0;   // milliseconds of galaxy painting allowed this frame, shared by every galaxy in view
-  // ---- the real stars around the Sun, from the HYG catalogue (stars/catalogue.bin, built by tools/build-stars.js): 109,000 stars at their measured places,
+  // ---- the real stars around the Sun, from Gaia DR3 and HYG (stars/catalogue.bin, built by tools/build-stars.js): 756,000 stars at their measured places,
   //      coloured by their B-V index and as bright as their luminosity allows, loaded the first time you look into the neighbourhood
   const CAT = { st: 0, n: 0, x: null, y: null, L: null, col: null };
   function catalogue() { if (CAT.st) return CAT.st === 2 ? CAT : null; CAT.st = 1;
     fetch(MAPDIR.replace(/maps\/$/, '') + 'stars/catalogue.bin').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(ab => { const v2 = ab.byteLength >= 8 && String.fromCharCode(...new Uint8Array(ab, 0, 4)) === 'SCT2', unit = v2 ? new DataView(ab).getFloat32(4, true) : .25, dv = new DataView(ab, v2 ? 8 : 0), n = (ab.byteLength - (v2 ? 8 : 0)) / 10 | 0; CAT.n = n; CAT.x = new Float32Array(n); CAT.y = new Float32Array(n); CAT.L = new Float32Array(n); CAT.col = new Uint8Array(n);
       for (let i = 0; i < n; i++) { const o = i * 10; CAT.x[i] = dv.getInt16(o, true) * unit; CAT.y[i] = dv.getInt16(o + 2, true) * unit; CAT.L[i] = Math.log10(Math.pow(10, -.4 * (dv.getInt16(o + 6, true) / 100 - 4.83))); const ci = dv.getInt8(o + 8) / 50; CAT.col[i] = ci < 0 ? 0 : ci < .3 ? 1 : ci < .6 ? 2 : ci < .9 ? 3 : ci < 1.3 ? 4 : 5; }
-      { const ord = Array.from({ length: n }, (_, i) => i).sort((a, b) => CAT.L[b] - CAT.L[a]), re = (A, T) => { const o = new T(n); for (let i = 0; i < n; i++) o[i] = A[ord[i]]; return o; }; CAT.x = re(CAT.x, Float32Array); CAT.y = re(CAT.y, Float32Array); CAT.L = re(CAT.L, Float32Array); CAT.col = re(CAT.col, Uint8Array); }   /* brightest first, so each frame can stop at the first star too faint to see */
+      { const CS = 250, cx = new Int32Array(n), ord = Array.from({ length: n }, (_, i) => i); for (let i = 0; i < n; i++) cx[i] = ((Math.floor(CAT.x[i] / CS) + 512) << 10) | (Math.floor(CAT.y[i] / CS) + 512);
+        ord.sort((a, b) => cx[a] - cx[b] || CAT.L[b] - CAT.L[a]); const re = (A, T) => { const o = new T(n); for (let i = 0; i < n; i++) o[i] = A[ord[i]]; return o; }; CAT.x = re(CAT.x, Float32Array); CAT.y = re(CAT.y, Float32Array); CAT.L = re(CAT.L, Float32Array); CAT.col = re(CAT.col, Uint8Array);
+        CAT.cells = new Map(); for (let i = 0; i < n; i++) { const k = cx[ord[i]], e = CAT.cells.get(k); if (e) e[1] = i + 1; else CAT.cells.set(k, [i, i + 1]); } CAT.CS = CS;
+        const byL = Array.from({ length: n }, (_, i) => i).sort((a, b) => CAT.L[b] - CAT.L[a]); CAT.byL = Uint32Array.from(byL); }   /* a grid of 250 ly cells (each brightest first) for close views; a global brightest-first list for wide ones */
       CAT.st = 2; }).catch(() => { CAT.st = 3; }); return null; }
   const CATC = ['#9bb4ff', '#cad8ff', '#f8f7ff', '#fff4e0', '#ffd9a8', '#ffb37a'];   // B-V bins: blue-white O/B, A, F, G, K, M
   function drawCatalogue(g, B, W, Z, w, h, toS, K, SPN, gal) {
-    const fov = w / Z * LYU; if (fov > 9000) return; const C = catalogue(); if (!C) return; const hb = B[0], f = gframe(hb, SPN), c = Math.cos(f.rot), sn = Math.sin(f.rot), fade = clamp((9000 - fov) / 6000)   /* beyond a few thousand light-years the catalogue thins out (what Hipparcos could measure), so the galaxy picture takes over */, bk = []; for (let i = 0; i < 18; i++) bk.push([]);
+    const fov = w / Z * LYU; if (fov > 24000) return; const C = catalogue(); if (!C) return; const hb = B[0], f = gframe(hb, SPN), c = Math.cos(f.rot), sn = Math.sin(f.rot), fade = clamp((24000 - fov) / 12000)   /* beyond a few thousand light-years the catalogue thins out (what Hipparcos could measure), so the galaxy picture takes over */, bk = []; for (let i = 0; i < 18; i++) bk.push([]);
     const k = Z / LYU, ox = toS(W[0][0], W[0][1]), dmod = 5 * Math.log10(Math.max(.3, fov * .8 / 3.26) / 10);
-    const Lmin = (4.83 + dmod - 7.5) / 2.5; for (let i = 0; i < C.n; i++) { if (C.L[i] < Lmin) break; const X = C.x[i] - R0LY, Yv = C.y[i], px = ox[0] + X * c * k - Yv * sn * k, py = ox[1] + (X * sn + Yv * c) * k * f.sy; if (px < -2 || px > w + 2 || py < -2 || py > h + 2) continue;
-      const m = 4.83 - 2.5 * C.L[i] + dmod, a = clamp((7.5 - m) / 3) * fade; if (a < .04) continue; bk[C.col[i] * 3 + (a > .66 ? 2 : a > .33 ? 1 : 0)].push(px, py, K * (.6 + .55 * clamp((5.5 - m) / 5))); }   /* apparent magnitude as seen from a height of about the field of view: stars brighten and fade continuously as you zoom */
+    const Lmin = (4.83 + dmod - 7.5) / 2.5, star = i => { const X = C.x[i] - R0LY, Yv = C.y[i], px = ox[0] + X * c * k - Yv * sn * k, py = ox[1] + (X * sn + Yv * c) * k * f.sy; if (px < -2 || px > w + 2 || py < -2 || py > h + 2) return;
+      const m = 4.83 - 2.5 * C.L[i] + dmod, a = clamp((7.5 - m) / 3) * fade; if (a < .04) return; bk[C.col[i] * 3 + (a > .66 ? 2 : a > .33 ? 1 : 0)].push(px, py, K * (.6 + .55 * clamp((5.5 - m) / 5))); };
+    const inv = (px, py) => { const u = (px - ox[0]) / k, v = (py - ox[1]) / (k * f.sy); return [u * c + v * sn + R0LY, -u * sn + v * c]; }, cs = [inv(0, 0), inv(w, 0), inv(0, h), inv(w, h)], CS = C.CS;
+    const x0 = Math.floor(Math.min(...cs.map(q => q[0])) / CS), x1 = Math.floor(Math.max(...cs.map(q => q[0])) / CS), y0 = Math.floor(Math.min(...cs.map(q => q[1])) / CS), y1 = Math.floor(Math.max(...cs.map(q => q[1])) / CS);
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) <= 2500) { for (let gx = x0; gx <= x1; gx++) for (let gy = y0; gy <= y1; gy++) { const e = C.cells.get(((gx + 512) << 10) | (gy + 512)); if (!e) continue; for (let i = e[0]; i < e[1]; i++) { if (C.L[i] < Lmin) break; star(i); } } }   /* close: only the cells in view */
+    else for (let j = 0; j < C.n; j++) { const i = C.byL[j]; if (C.L[i] < Lmin) break; star(i); }   /* wide: brightest first, stop at the faintest visible */   /* apparent magnitude as seen from a height of about the field of view: stars brighten and fade continuously as you zoom */
     bk.forEach((pts, i) => { if (!pts.length) return; g.fillStyle = rgba(CATC[i / 3 | 0], [.25, .5, .85][i % 3]); g.beginPath(); for (let j = 0; j < pts.length; j += 3) { const r = pts[j + 2]; g.rect(pts[j] - r / 2, pts[j + 1] - r / 2, r, r); } g.fill(); });
   }
   const LASTG = new Map();
