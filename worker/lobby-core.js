@@ -1,4 +1,5 @@
-// Streamer lobby: pure race logic, independent of transport.
+// Live lobbies: pure race logic, independent of transport. Two modes: 'stream' (the host runs everything, viewers race) and 'friends'
+// (a room: everyone sees who is there and the race card, anyone can set the race from any Wikipedia article, players mark themselves ready).
 // The Cloudflare Durable Object (worker/lobby.js) and the dev server (server.js) both wrap this class.
 // A "conn" is { send(string) }; the core never touches sockets or clocks directly, so it is easy to test.
 
@@ -6,8 +7,8 @@ const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g,
 const MAX_PLAYERS = 1000, COUNTDOWN_MS = 5000, FLUSH_MS = 1000, AUTO_END_MS = 45 * 60 * 1000;
 
 export class LobbyCore {
-  constructor({ code, hostKey, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
-    Object.assign(this, { code, hostKey, now, setTimer, clearTimer });
+  constructor({ code, hostKey, mode = 'stream', now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout }) {
+    Object.assign(this, { code, hostKey, now, setTimer, clearTimer }); this.mode = mode === 'friends' ? 'friends' : 'stream'; this.hostPid = ''; this.setBy = '';
     this.puzzle = null; this.phase = 'open'; this.round = 0; this.startAt = 0;
     this.conns = new Set(); this.players = new Map();   // pid -> player
     this.flushT = null; this.endT = null; this.dirty = false; this.lastActive = now();
@@ -23,7 +24,8 @@ export class LobbyCore {
   join(conn) { this.conns.add(conn); this.lastActive = this.now(); this.sendState(conn); }
   leave(conn) {
     this.conns.delete(conn);
-    if (conn.pid && this.players.has(conn.pid)) { const p = this.players.get(conn.pid); if (p.conn === conn) { p.conn = null; p.online = false; this.dirty = true; this.schedule(); } }
+    if (conn.pid && this.players.has(conn.pid)) { const p = this.players.get(conn.pid); if (p.conn === conn) { p.conn = null; p.online = false; p.ready = false; if (this.mode === 'friends' && this.phase === 'open' && !p.done) this.players.delete(p.pid);   /* someone who leaves a waiting room is gone, not counted */
+      this.dirty = true; this.schedule(); } }
   }
   idle() { return this.conns.size === 0; }
 
@@ -32,13 +34,23 @@ export class LobbyCore {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (!m || typeof m.t !== 'string') return;
     this.lastActive = this.now();
-    if (m.t === 'host') { if (m.key && m.key === this.hostKey) { conn.host = true; conn.send(JSON.stringify({ t: 'host', ok: true })); this.sendBoard(conn, true); } else conn.send(JSON.stringify({ t: 'host', ok: false })); return; }
+    if (m.t === 'host') { if (m.key && m.key === this.hostKey) { conn.host = true; if (conn.pid) this.hostPid = conn.pid; conn.send(JSON.stringify({ t: 'host', ok: true })); this.sendBoard(conn, true); } else conn.send(JSON.stringify({ t: 'host', ok: false })); return; }
     if (m.t === 'view') { conn.view = true; this.sendBoard(conn, true); return; }
     if (m.t === 'hello') return this.hello(conn, m);
     if (conn.host && ['start', 'reset', 'end', 'kick'].includes(m.t)) return this.control(m);
     const p = conn.pid && this.players.get(conn.pid); if (!p || p.conn !== conn) return;
     if (m.t === 'move') return this.move(p, m);
     if (m.t === 'finish') return this.finish(p, m);
+    if (m.t === 'ready' && this.mode === 'friends' && this.phase === 'open') { p.ready = !!m.on; this.dirty = true; return this.flush(); }
+    if (m.t === 'set' && this.mode === 'friends') return this.set(p, m);
+  }
+  set(p, m) {   // friends: anyone in the room can set the next race, from any two articles
+    if (this.phase === 'countdown' || this.phase === 'racing') return;
+    const q = m.puzzle || {}, cur = this.puzzle; if (cur && q.from === cur.from && q.to === cur.to) { if (Number.isInteger(q.par) && q.par > 0 && q.par < 20) cur.par = q.par; return this.broadcastState(); }   // the same race again only adds its par
+    if (!this.setPuzzle(m.puzzle)) return p.conn && p.conn.send(JSON.stringify({ t: 'err', error: 'puzzle' }));
+    this.setBy = p.name; if (this.phase === 'ended') { this.phase = 'open'; this.round++; this.startAt = 0; this.resetProgress(); }
+    for (const q of this.players.values()) q.ready = false;
+    this.dirty = true; this.broadcastState(); this.flush();
   }
 
   hello(conn, m) {
@@ -47,11 +59,11 @@ export class LobbyCore {
     let p = this.players.get(pid);
     if (!p) {
       if (this.players.size >= MAX_PLAYERS) return conn.send(JSON.stringify({ t: 'err', error: 'full' }));
-      p = { pid, name, title: null, clicks: 0, temp: 0, done: false, secs: null, finishedAt: 0, lastMove: 0, conn: null, online: false };
+      p = { pid, name, title: null, clicks: 0, temp: 0, done: false, secs: null, finishedAt: 0, lastMove: 0, conn: null, online: false, ready: false, joinedAt: this.now() };
       this.players.set(pid, p);
     }
     if (p.conn && p.conn !== conn) { p.conn.pid = null; }    // a newer tab takes over
-    p.name = name; p.conn = conn; p.online = true; conn.pid = pid;
+    p.name = name; p.conn = conn; p.online = true; conn.pid = pid; if (conn.host) this.hostPid = pid;
     this.dirty = true; this.schedule(); this.sendState(conn); this.sendBoard(conn);
   }
 
@@ -59,11 +71,12 @@ export class LobbyCore {
     const t = this.now();
     if (m.t === 'start') {
       if (this.phase === 'racing' || this.phase === 'countdown' || !this.puzzle) return;
+      if (this.phase === 'ended') this.round++;
       this.phase = 'countdown'; this.startAt = t + COUNTDOWN_MS; this.resetProgress();
       this.clearTimer(this.endT); this.endT = this.setTimer(() => this.startRace(), COUNTDOWN_MS);
     } else if (m.t === 'reset') {
-      if (m.puzzle && !this.setPuzzle(m.puzzle)) return;
-      this.clearTimer(this.endT); this.phase = 'open'; this.round++; this.startAt = 0; this.resetProgress();
+      if (m.puzzle && !this.setPuzzle(m.puzzle)) return; if (m.puzzle) this.setBy = '';
+      this.clearTimer(this.endT); for (const q of this.players.values()) q.ready = false; this.phase = 'open'; this.round++; this.startAt = 0; this.resetProgress();
     } else if (m.t === 'end') {
       if (this.phase !== 'racing') return;
       this.endRace();
@@ -100,8 +113,8 @@ export class LobbyCore {
 
   // ---- outbound --------------------------------------------------------------------------------------------------
   stateMsg() {
-    const live = this.phase !== 'open';
-    return { t: 's', phase: this.phase, round: this.round, now: this.now(), startAt: this.startAt, code: this.code, puzzle: live ? this.puzzle : null, has: !!this.puzzle };
+    const live = this.phase !== 'open' || this.mode === 'friends';   // a friends room shows the race card; a stream keeps it secret until the countdown
+    return { t: 's', mode: this.mode, phase: this.phase, round: this.round, now: this.now(), startAt: this.startAt, code: this.code, puzzle: live ? this.puzzle : null, has: !!this.puzzle, setBy: this.setBy, hostPid: this.hostPid };
   }
   sendState(conn) { conn.send(JSON.stringify(this.stateMsg())); }
   broadcastState() { const s = JSON.stringify(this.stateMsg()); for (const c of this.conns) c.send(s); }
@@ -112,7 +125,8 @@ export class LobbyCore {
   }
   board(full) {
     const ord = this.order(), top = ord.slice(0, full ? 15 : 10).map(p => ({ n: p.name, c: p.clicks, s: p.secs, d: p.done, tp: p.temp, at: p.title }));
-    const out = { t: 'b', now: this.now(), n: this.players.size, on: ord.filter(p => p.online).length, fin: ord.filter(p => p.done).length, top };
+    const on = ord.filter(p => p.online).length, out = { t: 'b', now: this.now(), n: on, all: this.players.size, on, fin: ord.filter(p => p.done).length, top };   // n counts the people actually here
+    if (this.mode === 'friends') out.room = [...this.players.values()].sort((a, b) => a.joinedAt - b.joinedAt).slice(0, 60).map(p => ({ pid: p.pid, n: p.name, on: p.online, r: p.ready, h: p.pid === this.hostPid, d: p.done }));
     if (full) {
       const by = new Map();
       for (const p of ord) if (!p.done && p.title && p.online) { const e = by.get(p.title) || { title: p.title, n: 0, tp: 0, names: [] }; e.n++; e.tp += p.temp; if (e.names.length < 3) e.names.push(p.name); by.set(p.title, e); }

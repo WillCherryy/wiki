@@ -243,7 +243,7 @@ async function lobbyRoute(request, env, path, method, reply, t) {
     const puzzle = { from: b && b.from, to: b && b.to, par: b && b.par };
     for (let i = 0; i < 6; i++) {
       const code = randomString(5, ALPHABET), key = randomString(20, 'abcdefghijklmnopqrstuvwxyz0123456789');
-      const res = await env.LOBBY.get(env.LOBBY.idFromName(code)).fetch('https://lobby/init', { method: 'POST', body: JSON.stringify({ code, hostKey: key, puzzle }) });
+      const res = await env.LOBBY.get(env.LOBBY.idFromName(code)).fetch('https://lobby/init', { method: 'POST', body: JSON.stringify({ code, hostKey: key, puzzle, mode: b && b.mode }) });
       if (res.status === 409) continue;
       if (res.ok && env.DB && ready) await bump(env, new Date(t).toISOString().slice(0, 10), 'lobby').run().catch(() => {});
       return res.ok ? reply({ code, key }) : reply({ error: 'invalid puzzle' }, 400);

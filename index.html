@@ -1961,10 +1961,11 @@ const Live = {
   now() { return Date.now() + this.off; },
   recv(m) {
     if (m.t === 's') { this.off = m.now - Date.now(); this.st = m; this.onState(); }
-    else if (m.t === 'b') { this.bd = m; this.pill(); if (this.screen === 'board') renderLiveBoard(); if (this.screen === 'host') renderHost(true); if (this.screen === 'lobby' && this.st && this.st.phase === 'open') renderLobby(); }
+    else if (m.t === 'b') { this.bd = m; this.pill(); if (this.screen === 'board') renderLiveBoard(); if (this.screen === 'host') renderHost(true); if (this.screen === 'lobby' && this.st && (this.st.phase === 'open' || this.st.mode === 'friends')) renderLobby(); }
     else if (m.t === 'ev') { if (m.rank <= 3 && m.name !== P.name) toast(`${m.name} finished ${ordinal(m.rank)} · ${m.clicks} clicks`); }
     else if (m.t === 'kicked') { this.leave(true); closeModal(); toast('The host removed you from the lobby'); if (G && G.mode === 'live') goHome(); }
     else if (m.t === 'err' && m.error === 'full') toast('This lobby is full');
+    else if (m.t === 'err' && m.error === 'puzzle') toast('That race could not be set: pick two different articles');
   },
   onState() {
     const s = this.st, inGame = G && G.mode === 'live' && !G.done;
@@ -1998,7 +1999,7 @@ const Live = {
     el.innerHTML = `<i></i><b>Live</b> ${esc(this.code)} · ${this.play && me && this.st && this.st.phase === 'racing' ? ordinal(me) + ' of ' + n : n + ' player' + (n === 1 ? '' : 's')}${this.key ? ' · <u>Host</u>' : ''}`;
   }
 };
-$('#livePill').onclick = () => { if (Live.key) openHostPanel(); else openLiveBoard(); };
+$('#livePill').onclick = () => { if (Live.st && Live.st.mode === 'friends') openLobby(); else if (Live.key) openHostPanel(); else openLiveBoard(); };
 
 function ldName(inputId, then) {
   const v = $(inputId).value.trim(); if (!v) { $(inputId).focus(); return toast('Pick a nickname first'); }
@@ -2010,14 +2011,72 @@ async function openLiveJoin(code) {
   let info = null; try { const r = await fetch(API_BASE + '/api/lobby/' + code); if (r.ok) info = await r.json(); } catch {}
   if (!info) return toast('Lobby not found — check the code, or the host may have closed it');
   Live.screen = '';
-  if (Live.code !== code) Live.connect(code);
+  let mine = null; try { mine = JSON.parse(localStorage.getItem('wikiio:room')); } catch {}
+  if (Live.code !== code) Live.connect(code, mine && mine.code === code ? mine.key : '');
   Live.play = false;
-  openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Live race</span><h2 style="margin-top:12px">Join the lobby</h2>
-    <p>${info.n} player${info.n === 1 ? '' : 's'} so far. Everyone races the same puzzle at the same moment. No account needed.</p>
+  openModal(`<div style="text-align:center"><span class="eyebrow" style="justify-content:center">${info.mode === 'friends' ? 'A friend’s room' : 'Live race'}</span><h2 style="margin-top:12px">Join ${info.mode === 'friends' ? 'the room' : 'the lobby'}</h2>
+    <p>${info.n} ${info.n === 1 ? 'person' : 'people'} here now. Everyone races the same puzzle at the same moment. No account needed.</p>
     <div class="field" style="text-align:left">Your nickname<input id="ldName" maxlength="20" value="${esc(P.name)}" placeholder="Shown on the stream" autocomplete="off"></div>
     <button class="btn" id="ldJoin" style="width:100%;font-size:17px;padding:16px">Join the race →</button></div>`, () => { if (!Live.play) Live.leave(true); });
   $('#ldJoin').onclick = () => ldName('#ldName', () => { Live.play = true; Live.hello(); openLobby(); });
   $('#ldName').onkeydown = e => { if (e.key === 'Enter') $('#ldJoin').click(); };
+}
+/* ---- friends rooms: a waiting room where everyone sees who is here, anyone can set the race from any two Wikipedia articles, the host starts it */
+function attachSuggest(inp, box) {   // Wikipedia title suggestions under an input
+  let tm = 0, seq = 0;
+  inp.oninput = () => { clearTimeout(tm); const q = inp.value.trim(); if (q.length < 2) { box.innerHTML = ''; return; } tm = setTimeout(async () => { const my = ++seq; let l = []; try { l = await wikiSuggest(q); } catch {} if (my !== seq) return; box.innerHTML = l.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join(''); box.querySelectorAll('button').forEach(b => b.onmousedown = b.ontouchstart = e => { e.preventDefault(); inp.value = b.dataset.t; box.innerHTML = ''; }); }, 180); };
+  inp.onblur = () => setTimeout(() => { box.innerHTML = ''; }, 150);
+}
+async function openRoom() {   // start a friends room: you are its host and its first player
+  openModal(`<span class="eyebrow">Play with friends</span><h2 style="margin-top:10px">Start a room</h2><p>You get a code and a link. Friends join, anyone sets a race from any two Wikipedia articles, and you start it when everyone is ready.</p>
+    <div class="field">Your nickname<input id="rmName" maxlength="20" value="${esc(P.name)}" placeholder="Shown to your friends" autocomplete="off"></div>
+    <div class="actions"><button class="btn" id="rmMake">Open the room →</button></div>`);
+  $('#rmName').onkeydown = e => { if (e.key === 'Enter') $('#rmMake').click(); };
+  $('#rmMake').onclick = () => ldName('#rmName', async () => {
+    $('#rmMake').disabled = true;
+    try { const r = await fetch(API_BASE + '/api/lobby', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'friends' }) }); if (!r.ok) throw 0;
+      const { code, key } = await r.json(); try { localStorage.setItem('wikiio:room', JSON.stringify({ code, key })); } catch {}
+      Live.connect(code, key); Live.play = true; openLobby();
+    } catch { $('#rmMake').disabled = false; toast('Could not open a room — is the API set up?'); }
+  });
+}
+async function roomSet(from, to) {   // set the race: resolve both titles, set it at once, then check a route in the background and add its par
+  let a, b; try { [a, b] = await Promise.all([getSummary(from), getSummary(to)]); } catch { return toast('Those articles could not be found'); }
+  if (a.title === b.title) return toast('Pick two different articles');
+  Live.send({ t: 'set', puzzle: { from: a.title, to: b.title } });
+  checkRoute(a.title, b.title).then(res => { const s = Live.st; if (res && s && s.puzzle && s.puzzle.from === a.title && s.puzzle.to === b.title) Live.send({ t: 'set', puzzle: { from: a.title, to: b.title, par: res.par } }); }).catch(() => {});
+}
+function renderRoom(box) {
+  const s = Live.st, b = Live.bd || { room: [], n: 0 }, me = (b.room || []).find(p => p.pid === P.pid), host = !!Live.key, key = Live.code + ':' + s.round + ':' + s.phase;
+  if (box.dataset.room !== key) { box.dataset.room = key;   // the frame is built once per phase, so typing is never interrupted; the parts below refresh live
+    box.innerHTML = `<div class="room"><div class="room-top"><div><span class="eyebrow">Room</span><div class="room-code">${esc(Live.code)}</div></div><button class="btn ghost" id="rmCopy">Copy invite link</button></div>
+      ${s.phase === 'ended' ? '<div id="rmRes"></div>' : ''}
+      <div class="room-grid"><section><h4>In the room <small id="rmN"></small></h4><div id="rmPeople" class="room-people"></div></section>
+        <section><h4>The race</h4><div id="rmRace"></div>
+          <details class="room-set" ${s.puzzle ? '' : 'open'}><summary>${s.puzzle ? 'Set a different race' : 'Set the race'}</summary>
+            <div class="mk"><div class="field mkf">Start article<input id="rmF" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Any Wikipedia article"><div class="mk-sug" id="rmFs"></div></div>
+              <div class="field mkf">Target article<input id="rmT" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Any Wikipedia article"><div class="mk-sug" id="rmTs"></div></div></div>
+            <div class="actions"><button class="btn" id="rmSet">Set this race</button><button class="btn ghost" id="rmRand">Random</button><button class="btn ghost" id="rmDaily">Today’s puzzle</button></div></details></section></div>
+      <div class="actions room-act" id="rmAct"></div><div class="actions"><button class="btn ghost" id="rmLeave">Leave room</button></div></div>`;
+    attachSuggest($('#rmF'), $('#rmFs')); attachSuggest($('#rmT'), $('#rmTs'));
+    $('#rmCopy').onclick = async () => { try { await navigator.clipboard.writeText(Live.link(Live.code)); toast('Invite link copied'); } catch { toast(Live.link(Live.code)); } };
+    $('#rmSet').onclick = () => { const f = $('#rmF').value.trim(), t = $('#rmT').value.trim(); if (!f || !t) return toast('Choose a start and a target'); roomSet(f, t); $('.room-set').open = false; };
+    $('#rmRand').onclick = async () => { try { const v = verifiedPair(); if (v) Live.send({ t: 'set', puzzle: { from: v.from, to: v.to, par: v.par } }); else { const [f, t] = await resolvePair('p' + Math.random()); Live.send({ t: 'set', puzzle: { from: f, to: t } }); } } catch { toast('Could not pick a race'); } };
+    $('#rmDaily').onclick = async () => { try { const d = await getDaily(dayKey()); Live.send({ t: 'set', puzzle: { from: d.from, to: d.to, par: d.par || null } }); } catch { toast('Could not load today’s puzzle'); } };
+    $('#rmLeave').onclick = () => { Live.leave(true); closeModal(); if (!$('#game').classList.contains('on')) renderHome(); };
+    if (s.phase === 'ended') { const r = document.createElement('div'); renderLiveBoard(r); r.querySelector('#lbLeave') && r.querySelector('#lbLeave').closest('.actions').remove(); $('#rmRes').append(...r.childNodes); }
+  }
+  const people = b.room || [], here = people.filter(p => p.on), ready = here.filter(p => p.r).length;
+  $('#rmN').textContent = `${here.length} here${s.phase === 'open' && here.length ? ` · ${ready} ready` : ''}`;
+  $('#rmPeople').innerHTML = people.length ? people.map(p => `<div class="rp${p.on ? '' : ' off'}${p.r ? ' ready' : ''}"><i></i><b>${esc(p.n)}</b>${p.pid === P.pid ? '<small>you</small>' : ''}${p.h ? '<em>host</em>' : ''}<span>${p.on ? (p.r ? 'Ready' : 'Not ready') : 'Away'}</span>${host && p.pid !== P.pid ? `<button data-kick="${p.pid}" title="Remove">×</button>` : ''}</div>`).join('') : '<p class="mute">Nobody here yet. Share the code or the link.</p>';
+  $('#rmPeople').querySelectorAll('[data-kick]').forEach(k => k.onclick = () => Live.send({ t: 'kick', pid: k.dataset.kick }));
+  $('#rmRace').innerHTML = s.puzzle ? `<div class="room-race"><span>From</span><b>${esc(s.puzzle.from)}</b><span>to</span><b class="to">${esc(s.puzzle.to)}</b><small>${s.puzzle.par ? `Can be done in ${s.puzzle.par} click${s.puzzle.par === 1 ? '' : 's'}` : 'Checking a route…'}${s.setBy ? ` · set by ${esc(s.setBy)}` : ''}</small></div>` : '<p class="mute">No race yet. Anyone in the room can set one.</p>';
+  const hostName = (people.find(p => p.h) || {}).n || 'the host';
+  $('#rmAct').innerHTML = s.phase === 'ended' ? (host ? `<button class="btn" id="rmAgain">Race again · same race</button>` : `<p class="mute">Set a new race, or wait for ${esc(hostName)} to restart.</p>`)
+    : `${me ? `<button class="btn ${me.r ? 'ghost' : ''}" id="rmReady">${me.r ? 'Not ready' : 'I’m ready'}</button>` : ''}${host ? `<button class="btn" id="rmStart" ${s.puzzle ? '' : 'disabled'}>Start · 5 s countdown</button>` : `<p class="mute">${esc(hostName)} starts the race.</p>`}`;
+  if ($('#rmReady')) $('#rmReady').onclick = () => Live.send({ t: 'ready', on: !me.r });
+  if ($('#rmStart')) $('#rmStart').onclick = () => Live.send({ t: 'start' });
+  if ($('#rmAgain')) $('#rmAgain').onclick = () => Live.send({ t: 'start' });
 }
 function openLobby() {
   Live.screen = 'lobby';
@@ -2027,6 +2086,8 @@ function openLobby() {
 function renderLobby() {
   const box = $('#lobbyBody'); if (!box) return; const s = Live.st, b = Live.bd, n = b ? b.n : 0; clearInterval(Live.cd);
   if (!s) { box.innerHTML = '<div class="loading"><div class="spin"><i></i><i></i><i></i><i></i><i></i></div>Connecting…</div>'; return; }
+  if (s.mode === 'friends' && (s.phase === 'open' || s.phase === 'ended')) return renderRoom(box);
+  box.dataset.room = '';
   if (s.phase === 'open') {
     box.innerHTML = `<div style="text-align:center"><span class="eyebrow" style="justify-content:center">Live race · ${esc(Live.code)}</span><h2 style="margin-top:12px">Waiting for the host…</h2>
       <div class="lobby-n"><b>${n}</b><span>player${n === 1 ? '' : 's'} in the lobby</span></div>
@@ -2128,12 +2189,13 @@ function renderHost() {
   if (focus && $('#' + focus) && $('#' + focus).tagName === 'INPUT') $('#' + focus).focus();
 }
 function liveMenu() {
-  openModal(`<h2>Play with friends</h2><p>Race the same puzzle at the same time. Join a friend’s lobby with a code, or host your own for friends or a stream.</p>
-    <div class="twocards"><div class="pcard"><h5>Join a lobby</h5><p>Enter the code your host shared.</p><div class="namebox" style="margin:0"><input id="liveCode" maxlength="8" placeholder="Code, e.g. K7QMA" style="text-transform:uppercase"><button class="btn" id="liveGo">Join</button></div></div>
-    <div class="pcard"><h5>Host a lobby</h5><p>Run a race for friends or your stream audience, with an OBS overlay.</p><button class="btn ghost" id="liveHost" style="width:100%">Host a lobby</button></div></div>`);
+  openModal(`<h2>Play with friends</h2><p>Race the same puzzle at the same moment, live.</p>
+    <div class="twocards"><div class="pcard"><h5>Start a room</h5><p>Get a code for your friends. Anyone can set the race, you start it.</p><button class="btn" id="liveRoom" style="width:100%">Start a room</button></div>
+    <div class="pcard"><h5>Join a room</h5><p>Enter the code a friend shared.</p><div class="namebox" style="margin:0"><input id="liveCode" maxlength="8" placeholder="Code, e.g. K7QMA" style="text-transform:uppercase"><button class="btn ghost" id="liveGo">Join</button></div></div></div>
+    <p class="s mute" style="margin-top:14px">Streaming? <a href="#" id="liveHost">Host a stream lobby</a> with an OBS overlay.</p>`);
   $('#liveGo').onclick = () => { const c = $('#liveCode').value; closeModal(); openLiveJoin(c); };
   $('#liveCode').onkeydown = e => { if (e.key === 'Enter') $('#liveGo').click(); };
-  $('#liveHost').onclick = openHost;
+  $('#liveRoom').onclick = openRoom; $('#liveHost').onclick = e => { e.preventDefault(); openHost(); };
 }
 function handleLive() {
   const m = location.hash.match(/^#l=([A-Za-z0-9]{4,8})$/); if (!m) return;

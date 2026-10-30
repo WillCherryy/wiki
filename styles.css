@@ -1529,3 +1529,17 @@ body { font-family: var(--sans); }
 .ob-say .ob-skip { pointer-events: auto; margin-top: 18px; font: var(--ob-lab) !important; letter-spacing: .26em !important; text-transform: uppercase; color: #a9a2c8 !important; border-bottom: 1px solid rgba(255, 255, 255, .25) !important; padding-bottom: 4px !important; }
 @keyframes obSayIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .cat-log .ccm { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; }
+
+/* friends rooms */
+.room-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.room-code { font: 400 54px/1 var(--display); letter-spacing: .12em; margin-top: 6px; }
+.room-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 28px; } .room-grid h4 { margin: 0 0 10px; font: 600 11.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); } .room-grid h4 small { letter-spacing: .04em; text-transform: none; font-weight: 500; margin-left: 6px; color: var(--ink); }
+.room-people { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow: auto; }
+.rp { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); } .rp i { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); flex: none; } .rp.ready i { background: #3fa35b; } .rp.off { opacity: .45; }
+.rp b { font-weight: 600; } .rp small, .rp em { font-size: 11px; color: var(--mute); font-style: normal; text-transform: uppercase; letter-spacing: .1em; } .rp span { margin-left: auto; font-size: 13px; color: var(--mute); } .rp button { border: 0; background: none; color: var(--mute); cursor: pointer; font-size: 16px; }
+.room-race { display: grid; gap: 2px; padding: 4px 0 12px; } .room-race span { font: 600 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin-top: 6px; } .room-race b { font: italic 400 28px/1.15 var(--display); } .room-race b.to { color: var(--accent-ink); } .room-race small { color: var(--mute); margin-top: 8px; }
+.room-set { margin-top: 6px; } .room-set summary { cursor: pointer; font-weight: 600; padding: 6px 0; } .room-set .mk { margin-top: 8px; }
+.room-act { margin-top: 18px; align-items: center; }
+@media (max-width: 700px) { .room-grid { grid-template-columns: 1fr; gap: 18px; } .room-code { font-size: 42px; } }
+.modal:has(.room) { width: min(900px, 100%) !important; }
+.room-set .mk { grid-template-columns: 1fr !important; display: grid; gap: 0; } .room-set .actions { flex-wrap: wrap; }

@@ -95,4 +95,22 @@ async function wire() {
   } finally { srv.kill(); }
 }
 
-core().then(wire).catch(e => { console.error(e); process.exit(1); });
+async function rooms() {   // friends rooms: no race needed to open, anyone sets it, ready flags, counts of who is actually here
+  const { LobbyCore } = await import(path.join(__dirname, '..', 'worker', 'lobby-core.js'));
+  let t = 1e6; const L = new LobbyCore({ code: 'ROOMS', hostKey: 'k', mode: 'friends', now: () => t, setTimer: () => 0, clearTimer: () => {} });
+  const h = mkConn(), a = mkConn(), b = mkConn(); [h, a, b].forEach(x => L.join(x));
+  L.message(h, JSON.stringify({ t: 'host', key: 'k' })); const hello = (c, pid, name) => L.message(c, JSON.stringify({ t: 'hello', pid, name }));
+  hello(h, 'hostpid001', 'Hana'); hello(a, 'alicepid01', 'Alice'); hello(b, 'bobbypid02', 'Bob'); L.flush();
+  assert.strictEqual(a.last('b').n, 3); assert.deepStrictEqual(a.last('b').room.map(p => [p.n, p.h]), [['Hana', true], ['Alice', false], ['Bob', false]], 'everyone sees the room, host marked');
+  L.message(h, JSON.stringify({ t: 'start' })); assert.strictEqual(L.phase, 'open', 'no race set: cannot start');
+  L.message(a, JSON.stringify({ t: 'set', puzzle: { from: 'Cheese', to: 'Moon' } })); assert.deepStrictEqual(b.last('s').puzzle, { from: 'Cheese', to: 'Moon', par: null }, 'a guest can set the race, and everyone sees it');
+  assert.strictEqual(b.last('s').setBy, 'Alice');
+  L.message(b, JSON.stringify({ t: 'ready', on: true })); L.message(a, JSON.stringify({ t: 'set', puzzle: { from: 'Cheese', to: 'Moon', par: 3 } }));
+  assert.strictEqual(L.puzzle.par, 3); assert(L.players.get('bobbypid02').ready, 'adding the par keeps people ready');
+  L.leave(b); L.flush(); assert.strictEqual(a.last('b').n, 2, 'someone who leaves the waiting room is no longer counted');
+  L.message(a, JSON.stringify({ t: 'start' })); assert.strictEqual(L.phase, 'open', 'only the host starts');
+  L.message(h, JSON.stringify({ t: 'start' })); assert.strictEqual(L.phase, 'countdown');
+  L.message(a, JSON.stringify({ t: 'set', puzzle: { from: 'X', to: 'Y' } })); assert.strictEqual(L.puzzle.to, 'Moon', 'the race cannot change once it is under way');
+  console.log('ok: friends rooms (no race to open, anyone sets it, par added in place, ready, live head count, host starts)');
+}
+core().then(rooms).then(wire).catch(e => { console.error(e); process.exit(1); });

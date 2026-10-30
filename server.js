@@ -127,14 +127,14 @@ const server = http.createServer((req, res) => {
       await coreReady;
       for (let i = 0; i < 6; i++) {
         const code = rnd(5, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'); if (lobbies.has(code)) continue;
-        const key = rnd(20, 'abcdefghijklmnopqrstuvwxyz0123456789'), core = new LobbyCore({ code, hostKey: key });
-        if (!b || !core.setPuzzle({ from: b.from, to: b.to, par: b.par })) return json(res, 400, { error: 'invalid puzzle' });
+        const key = rnd(20, 'abcdefghijklmnopqrstuvwxyz0123456789'), core = new LobbyCore({ code, hostKey: key, mode: b && b.mode }), has = b && (b.from || b.to);
+        if (!b || (has || core.mode !== 'friends') && !core.setPuzzle({ from: b.from, to: b.to, par: b.par })) return json(res, 400, { error: 'invalid puzzle' });
         lobbies.set(code, { core }); bumpC(utcDay(), 'lobby'); save(); return json(res, 200, { code, key });
       }
       json(res, 503, { error: 'try again' });
     });
   }
-  { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, n: l.core.players.size }) : json(res, 404, { error: 'no such lobby' }); } }
+  { const m = url.pathname.match(/^\/api\/lobby\/([A-Za-z0-9]{4,8})$/); if (m && req.method === 'GET') { const l = lobbies.get(m[1].toUpperCase()); return l ? json(res, 200, { code: l.core.code, phase: l.core.phase, mode: l.core.mode, n: [...l.core.players.values()].filter(p => p.online).length }) : json(res, 404, { error: 'no such lobby' }); } }
   if (url.pathname === '/api/daily' && req.method === 'GET') {
     const day = q.get('day') || ''; if (!DAY.test(day)) return json(res, 400, { error: 'invalid' });
     if (day > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) return json(res, 404, { error: 'none' });   // picks stay secret until the day before
