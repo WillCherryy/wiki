@@ -10,7 +10,8 @@ fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive:
 for (const f of required) fs.copyFileSync(path.join(root, f), path.join(out, f));
 for (const f of optional) if (fs.existsSync(path.join(root, f))) fs.copyFileSync(path.join(root, f), path.join(out, f));
 fs.cpSync(path.join(root, 'fonts'), path.join(out, 'fonts'), { recursive: true });
-fs.cpSync(path.join(root, 'maps'), path.join(out, 'maps'), { recursive: true });   // planet surface maps (maps/CREDITS.md)
+fs.cpSync(path.join(root, 'maps'), path.join(out, 'maps'), { recursive: true });
+fs.cpSync(path.join(root, 'stars'), path.join(out, 'stars'), { recursive: true });   // the real star catalogue (tools/build-stars.js)   // planet surface maps (maps/CREDITS.md)
 if (fs.existsSync(path.join(root, 'og'))) fs.cpSync(path.join(root, 'og'), path.join(out, 'og'), { recursive: true });   // per-object link previews (tools/make-og.js)
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 // a stamp so you can check what is live: open /build.txt on the site (also shown in Settings)

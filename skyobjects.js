@@ -1290,6 +1290,21 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
     g.restore();
   }
   let BUILT = 0;   // at most one galaxy picture is painted per frame; the rest show a plain glow until their turn
+  // ---- the real stars around the Sun, from the HYG catalogue (stars/catalogue.bin, built by tools/build-stars.js): 109,000 stars at their measured places,
+  //      coloured by their B-V index and as bright as their luminosity allows, loaded the first time you look into the neighbourhood
+  const CAT = { st: 0, n: 0, x: null, y: null, L: null, col: null };
+  function catalogue() { if (CAT.st) return CAT.st === 2 ? CAT : null; CAT.st = 1;
+    fetch(MAPDIR.replace(/maps\/$/, '') + 'stars/catalogue.bin').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(ab => { const dv = new DataView(ab), n = ab.byteLength / 10 | 0; CAT.n = n; CAT.x = new Float32Array(n); CAT.y = new Float32Array(n); CAT.L = new Float32Array(n); CAT.col = new Uint8Array(n);
+      for (let i = 0; i < n; i++) { const o = i * 10; CAT.x[i] = dv.getInt16(o, true) / 4; CAT.y[i] = dv.getInt16(o + 2, true) / 4; CAT.L[i] = Math.log10(Math.pow(10, -.4 * (dv.getInt16(o + 6, true) / 100 - 4.83))); const ci = dv.getInt8(o + 8) / 50; CAT.col[i] = ci < 0 ? 0 : ci < .3 ? 1 : ci < .6 ? 2 : ci < .9 ? 3 : ci < 1.3 ? 4 : 5; }
+      CAT.st = 2; }).catch(() => { CAT.st = 3; }); return null; }
+  const CATC = ['#9bb4ff', '#cad8ff', '#f8f7ff', '#fff4e0', '#ffd9a8', '#ffb37a'];   // B-V bins: blue-white O/B, A, F, G, K, M
+  function drawCatalogue(g, B, W, Z, w, h, toS, K, SPN, gal) {
+    const fov = w / Z * LYU; if (fov > 9000) return; const C = catalogue(); if (!C) return; const hb = B[0], f = gframe(hb, SPN), c = Math.cos(f.rot), sn = Math.sin(f.rot), fade = clamp((9000 - fov) / 6000)   /* beyond a few thousand light-years the catalogue thins out (what Hipparcos could measure), so the galaxy picture takes over */, bk = []; for (let i = 0; i < 18; i++) bk.push([]);
+    const k = Z / LYU, ox = toS(W[0][0], W[0][1]), E = EYE == null ? 4 : EYE;
+    for (let i = 0; i < C.n; i++) { const X = C.x[i] - R0LY, Yv = C.y[i], px = ox[0] + X * c * k - Yv * sn * k, py = ox[1] + (X * sn + Yv * c) * k * f.sy; if (px < -2 || px > w + 2 || py < -2 || py > h + 2) continue;
+      const dm = 2.5 * (E - C.L[i]), a = (dm <= 0 ? 1 : Math.pow(clamp(1 - dm / 14), 1.6)) * fade; if (a < .03) continue; bk[C.col[i] * 3 + (a > .5 ? 2 : a > .2 ? 1 : 0)].push(px, py, a > .5 ? 1.25 * K : .8 * K); }
+    bk.forEach((pts, i) => { if (!pts.length) return; g.fillStyle = rgba(CATC[i / 3 | 0], [.28, .55, .9][i % 3]); g.beginPath(); for (let j = 0; j < pts.length; j += 3) { const r = pts[j + 2]; g.rect(pts[j] - r / 2, pts[j + 1] - r / 2, r, r); } g.fill(); });
+  }
   const LASTG = new Map();
   function galaxySprite(b, hex, need, rot = 0, sy = 1) {   // a picture per galaxy at its tilt and turn (re-made only if it turns noticeably); the best finished one is used while a better one is painted
     const want = need > 420 ? 768 : 384, q = '|' + Math.round(rot / .06) + '|' + Math.round(sy * 50), kHi = b.n + '|768' + q, kLo = b.n + '|384' + q, hi = SPR.get(kHi), lo = SPR.get(kLo);
@@ -1408,6 +1423,7 @@ return [Rc + Ry, Gc + Gy, Bc + By, ext, IB, Ry, Gy, By]; };   /* young light (ar
     CPL = 0; const spreadMode = PREF.dup === 'spread';
     if (!opt.noEye) { let top = -Infinity; items.forEach(it => { const b = it.b; if (b.ghost || b.id === 'quasar' || b.id === 'neutron' || (opt.filter && !opt.filter.has(b.id))) return; const m = Math.max(physR(b) * RSU * Z * 4, 2); if (it.p[0] > -m && it.p[0] < w + m && it.p[1] > -m && it.p[1] < h + m) top = Math.max(top, Math.log10(lumOf(b) + 1e-9)); });
       const E = lay._eye || (lay._eye = { v: null, t: 0 }), now = performance.now(); if (top > -Infinity) { if (E.v == null) E.v = top; else E.v += (top - E.v) * (1 - Math.exp(-Math.min(.1, (now - E.t) / 1000) * 4)); } E.t = now; EYE = E.v; EYEF = opt.focus; }   // the eye adapts to the brightest star in view
+    if (!opt.noCat && B[0]) drawCatalogue(g, B, W, Z, w, h, toS, K, SPN);   // the real stars of the solar neighbourhood
     items.forEach(it => { if (it.b.land) { const b = it.b, Rp = b.rly / LYU * Z, fov = w / Z * LYU; if (b.land === 'struct') { const on = clamp((fov - 15000) / 15000) * clamp((300000 - fov) / 100000); pos.push({ n: b.n, id: 'landmark', ghost: true, x: it.p[0], y: it.p[1], wx: W[it.i][0], wy: W[it.i][1], r: on > .3 ? 26 * K : 0, tier: 'landmark' }); if (on > 0 && !opt.noLabels && PREF.on && vis(it.p[0], it.p[1], 0)) labels.push({ lbl: { text: b.n, x: it.p[0], y: it.p[1], size: 13 * K, color: `rgba(230,214,190,${.55 * on})` }, pr: 2, m: 0 }); return; }   // a structure of the galaxy: a name at galactic scale only
         pos.push({ n: b.n, id: 'landmark', ghost: true, x: it.p[0], y: it.p[1], wx: W[it.i][0], wy: W[it.i][1], r: fov > 60000 ? 0 : Math.max(Rp, 10 * K), tier: 'landmark' }); if (!vis(it.p[0], it.p[1], Rp + 40 * K) || fov > 60000) return; const sz = Math.max(Rp, 2.2 * K), fade = clamp((60000 - fov) / 30000);   // a landmark: drawn at true size, never smaller than a faint mark
         g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = fade * (b.land === 'emission' ? .75 : .9) * (Rp < 2.2 * K ? .6 : 1); const tx = b.land === 'snr' ? snrTex(b.src) : landSprite(b.n, b.land); if (tx) g.drawImage(tx, it.p[0] - sz, it.p[1] - sz * tx.height / tx.width, sz * 2, sz * 2 * tx.height / tx.width); g.restore();
