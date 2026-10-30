@@ -1552,3 +1552,7 @@ body { font-family: var(--sans); }
 
 .finder-x { display: none; border: 0; background: none; color: var(--mute); font-size: 15px; padding: 0 4px 0 10px; cursor: pointer; flex: none; }
 body.finding .finder-x { display: block; }
+
+/* a thin, quiet bar while a slow article loads */
+#loadbar { position: fixed; left: 0; top: 0; height: 2px; width: 0; z-index: 1001; background: var(--temp, var(--accent)); opacity: 0; pointer-events: none; }
+#loadbar.on { opacity: 1; animation: loadbar 2.4s cubic-bezier(.1, .7, .2, 1) forwards; } @keyframes loadbar { from { width: 0; } to { width: 88%; } }

@@ -15,7 +15,7 @@
     { id: 'bluegiant', name: 'Blue giant', k: 25000, temp: '≈ 25,000 K', kind: 'Massive star', c: '#6fa4ff', fact: 'Massive stars shine tens of thousands of times brighter than the Sun and last only millions of years.' },
     { id: 'whitedwarf', name: 'White dwarf', k: 50000, temp: 'young ≈ 50,000 K', kind: 'Stellar remnant', c: '#a9d0ff', fact: 'The Earth-sized core left behind by a Sun-like star. It cools slowly over billions of years.' },
     { id: 'neutron', name: 'Neutron star', k: 1e6, temp: '≈ 1,000,000 K', kind: 'Stellar remnant', c: '#5fe0ff', fact: 'A city-sized ball of neutrons, denser than an atomic nucleus. Some spin hundreds of times a second as pulsars.' },
-    { id: 'quasar', name: 'Quasar', k: 1e7, temp: 'millions of K', kind: 'Accreting black hole', c: '#ffa24a', fact: 'Gas spiralling into a supermassive black hole heats to millions of degrees and can outshine its entire galaxy.' }
+    { id: 'quasar', name: 'Quasar', k: 1e7, temp: '≈ 1 billion K corona', kind: 'Accreting black hole', c: '#ffa24a', fact: 'Gas spiralling into a supermassive black hole heats to millions of degrees and can outshine its entire galaxy.' }
   ];
   const FR = { brown: .22, reddwarf: .2, redgiant: .23, sun: .21, bluewhite: .15, bluegiant: .16, whitedwarf: .11, neutron: .12, quasar: .15 };
   const rgba = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
@@ -386,10 +386,10 @@
       { n: 'Geminga', a: 'Geminga', kind: 'Gamma-ray pulsar', t: '≈ 500,000 K', f: 'A pulsar about 800 light-years away that shines mostly in gamma rays and spins every 0.24 seconds.' },
       { n: 'PSR B1919+21', a: 'PSR_B1919%2B21', kind: 'Pulsar', t: '≈ 1,000,000 K', f: 'The first pulsar ever found, spotted by Jocelyn Bell Burnell in 1967.' }],
     quasar: [
-      { n: '3C 273', a: '3C_273', kind: 'Quasar', t: 'millions of K', f: 'The first quasar to have its distance measured (1963), about 2.4 billion light-years away.' },
-      { n: 'TON 618', a: 'TON_618', kind: 'Quasar', t: 'millions of K', f: 'Powered by one of the most massive black holes known, tens of billions of times the mass of the Sun.' },
-      { n: '3C 48', a: '3C_48', kind: 'Quasar', t: 'millions of K', f: 'Among the first quasars found, in 1960, when it looked like an odd star that was loud in radio waves.' },
-      { n: 'APM 08279+5255', a: 'APM_08279%2B5255', kind: 'Lensed quasar', t: 'millions of K', f: 'A quasar magnified by a gravitational lens, with signs of an enormous reservoir of water vapour.' }]
+      { n: '3C 273', a: '3C_273', kind: 'Quasar', t: '≈ 1 billion K corona', f: 'The first quasar to have its distance measured (1963), about 2.4 billion light-years away.' },
+      { n: 'TON 618', a: 'TON_618', kind: 'Quasar', t: '≈ 1 billion K corona', f: 'Powered by one of the most massive black holes known, tens of billions of times the mass of the Sun.' },
+      { n: '3C 48', a: '3C_48', kind: 'Quasar', t: '≈ 1 billion K corona', f: 'Among the first quasars found, in 1960, when it looked like an odd star that was loud in radio waves.' },
+      { n: 'APM 08279+5255', a: 'APM_08279%2B5255', kind: 'Lensed quasar', t: '≈ 1 billion K corona', f: 'A quasar magnified by a gravitational lens, with signs of an enormous reservoir of water vapour.' }]
   };
 
   // more famous examples, so each type has 6 to 8
@@ -432,10 +432,10 @@
       { n: 'SGR 1806−20', a: 'SGR_1806-20', kind: 'Magnetar', t: '≈ 1,000,000 K', f: 'A magnetar whose 2004 flare briefly outshone the whole galaxy in gamma rays.' },
       { n: 'PSR J0348+0432', a: 'PSR_J0348%2B0432', kind: 'Heavy pulsar', t: '≈ 1,000,000 K', f: 'A neutron star about twice the mass of the Sun, orbited by a white dwarf.' }],
     quasar: [
-      { n: 'Markarian 231', a: 'Markarian_231', kind: 'Quasar', t: 'millions of K', f: 'The closest known quasar, about 600 million light-years away, in a merging galaxy.' },
-      { n: 'Twin Quasar', a: 'Twin_Quasar', kind: 'Lensed quasar', t: 'millions of K', f: 'One quasar seen twice, split by a gravitational lens. It was the first lens ever found, in 1979.' },
-      { n: '3C 279', a: '3C_279', kind: 'Blazar', t: 'millions of K', f: 'A quasar whose jet points almost straight at us, flaring in gamma rays, about 5 billion light-years away.' },
-      { n: 'J0313−1806', a: 'J0313%E2%88%921806', kind: 'Distant quasar', t: 'millions of K', f: 'Seen as it was about 670 million years after the Big Bang, among the most distant quasars known.' }]
+      { n: 'Markarian 231', a: 'Markarian_231', kind: 'Quasar', t: '≈ 1 billion K corona', f: 'The closest known quasar, about 600 million light-years away, in a merging galaxy.' },
+      { n: 'Twin Quasar', a: 'Twin_Quasar', kind: 'Lensed quasar', t: '≈ 1 billion K corona', f: 'One quasar seen twice, split by a gravitational lens. It was the first lens ever found, in 1979.' },
+      { n: '3C 279', a: '3C_279', kind: 'Blazar', t: '≈ 1 billion K corona', f: 'A quasar whose jet points almost straight at us, flaring in gamma rays, about 5 billion light-years away.' },
+      { n: 'J0313−1806', a: 'J0313%E2%88%921806', kind: 'Distant quasar', t: '≈ 1 billion K corona', f: 'Seen as it was about 670 million years after the Big Bang, among the most distant quasars known.' }]
   };
   Object.keys(MORE).forEach(k => POOL[k].push(...MORE[k]));
   // a third batch: every type now has well over a dozen real objects (m = solar masses; quasars: the central black hole)
@@ -517,14 +517,14 @@
       E('PSR J1614−2230', 'PSR_J1614-2230', 'Heavy millisecond pulsar', '≈ 1,000,000 K', 1.9, 'A neutron star of about 1.9 Suns whose weight ruled out many exotic models of matter.'),
       E('RX J1856.5−3754', 'RX_J1856.5-3754', 'Isolated neutron star', '≈ 700,000 K', 1.4, 'One of the nearest neutron stars, about 400 light-years away, glowing alone from leftover heat.'),
       E('SGR 1935+2154', 'SGR_1935%2B2154', 'Magnetar', '≈ 1,000,000 K', 1.4, 'In 2020 this magnetar produced the first fast radio burst traced to our own galaxy.')],
-    quasar: [E('OJ 287', 'OJ_287', 'Blazar with a black-hole pair', 'millions of K', 1.8e10, 'Its flares are thought to come from a smaller black hole crossing the disc of a giant one, about every 12 years.'),
-      E('Messier 87', 'Messier_87', 'Active galactic nucleus', 'millions of K', 6.5e9, 'Its black hole gave us the first image of a black hole’s shadow, in 2019.'),
-      E('Sagittarius A*', 'Sagittarius_A*', 'Supermassive black hole', 'faint, hot flow', 4.3e6, 'The black hole at the centre of our own Milky Way, about 4 million Suns, imaged in 2022.'),
-      E('Cygnus A', 'Cygnus_A', 'Radio galaxy', 'millions of K', 2.5e9, 'One of the strongest radio sources in the sky, with jets that carve lobes hundreds of thousands of light-years wide.'),
-      E('Centaurus A', 'Centaurus_A', 'Radio galaxy', 'millions of K', 5.5e7, 'The nearest active galaxy, 12 million light-years away, with a dark dust lane and powerful jets.'),
-      E('S5 0014+81', 'S5_0014%2B81', 'Quasar', 'millions of K', 4e10, 'One of the most luminous quasars known, powered by a black hole of tens of billions of Suns.'),
-      E('SDSS J0100+2802', 'SDSS_J0100%2B2802', 'Distant quasar', 'millions of K', 1.2e10, 'Seen as it was less than a billion years after the Big Bang, with a black hole of about 12 billion Suns.'),
-      E('ULAS J1342+0928', 'ULAS_J1342%2B0928', 'Distant quasar', 'millions of K', 8e8, 'Seen as it was about 690 million years after the Big Bang, the most distant quasar known when found in 2017.')]
+    quasar: [E('OJ 287', 'OJ_287', 'Blazar with a black-hole pair', '≈ 1 billion K corona', 1.8e10, 'Its flares are thought to come from a smaller black hole crossing the disc of a giant one, about every 12 years.'),
+      E('Messier 87', 'Messier_87', 'Active galactic nucleus', '≈ 10 billion K flow', 6.5e9, 'Its black hole gave us the first image of a black hole’s shadow, in 2019.'),
+      E('Sagittarius A*', 'Sagittarius_A*', 'Supermassive black hole', '≈ 10 billion K flow', 4.3e6, 'The black hole at the centre of our own Milky Way, about 4 million Suns, imaged in 2022.'),
+      E('Cygnus A', 'Cygnus_A', 'Radio galaxy', '≈ 1 billion K corona', 2.5e9, 'One of the strongest radio sources in the sky, with jets that carve lobes hundreds of thousands of light-years wide.'),
+      E('Centaurus A', 'Centaurus_A', 'Radio galaxy', '≈ 10 billion K flow', 5.5e7, 'The nearest active galaxy, 12 million light-years away, with a dark dust lane and powerful jets.'),
+      E('S5 0014+81', 'S5_0014%2B81', 'Quasar', '≈ 1 billion K corona', 4e10, 'One of the most luminous quasars known, powered by a black hole of tens of billions of Suns.'),
+      E('SDSS J0100+2802', 'SDSS_J0100%2B2802', 'Distant quasar', '≈ 1 billion K corona', 1.2e10, 'Seen as it was less than a billion years after the Big Bang, with a black hole of about 12 billion Suns.'),
+      E('ULAS J1342+0928', 'ULAS_J1342%2B0928', 'Distant quasar', '≈ 1 billion K corona', 8e8, 'Seen as it was about 690 million years after the Big Bang, the most distant quasar known when found in 2017.')]
   };
   Object.keys(MORE2).forEach(k => POOL[k].push(...MORE2[k]));
   // mass in solar masses (quasars: the central black hole). The system map is ordered by it: the heaviest object you own sits at the centre.
@@ -550,7 +550,9 @@
   OBJ.forEach((o, oi) => { const L = POOL[o.id], lm = L.map(q => Math.log10(q.m || MASS[q.n] || 1)), lo = Math.min(...lm), hi = Math.max(...lm), [a, b] = RANGE[o.id] || DEFR;
     L.forEach((q, i) => { q.m = q.m || MASS[q.n] || 1; if (TWIN[q.n]) q.twin = TWIN[q.n]; if (COMP[q.n]) q.comp = COMP[q.n]; q.s = a + (b - a) * (hi > lo ? (lm[i] - lo) / (hi - lo) : .5);
       const tt = TINT[q.n]; if (tt) { q.tint = tt[0]; q.ta = tt[1]; } else { const nb = OBJ[clamp(oi + (hash(i * 3.3 + oi) > .5 ? 1 : -1), 0, OBJ.length - 1)]; q.tint = nb.c; q.ta = .08 + .12 * hash(i * 1.7 + oi * 5); } }); });
-  function massText(m) { return m >= 1e9 ? (m / 1e9).toFixed(m >= 1e10 ? 0 : 1).replace(/\.0$/, '') + ' billion Suns' : m >= 1e6 ? Math.round(m / 1e6) + ' million Suns' : m >= 10 ? Math.round(m) + ' Suns' : m >= .1 ? '≈ ' + m.toFixed(2).replace(/0$/, '') + ' Suns' : '≈ ' + Math.round(m * 1047.6) + ' Jupiters'; }
+  function massText(m) {   // one style everywhere: up to three figures, singular for exactly one, Jupiters below a tenth of a Sun
+    const f = v => String(+v.toPrecision(v >= 10 && v < 100 ? 2 : 3)), sun = v => { const t = f(v); return t === '1' ? '1 Sun' : t + ' Suns'; };
+    return m >= 1e9 ? f(m / 1e9) + ' billion Suns' : m >= 1e6 ? f(m / 1e6) + ' million Suns' : m >= .1 ? sun(m) : f(m * 1047.6) + ' Jupiters'; }
   const hs = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h; };
 
   function landFx(g, id, idx, t, cx, cy, R, w, h) {
@@ -854,7 +856,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
   const FIELDA = { brown: 'Brown_dwarf', reddwarf: 'Red_dwarf', redgiant: 'Red_giant', sun: 'Solar_analog', bluewhite: 'A-type_main-sequence_star', bluegiant: 'Blue_giant', whitedwarf: 'White_dwarf', neutron: 'Neutron_star', quasar: 'Quasar' };
   const FIELDN = /^Unnamed (.+) (\d{3,})$/;
   function field(id, k) { const o = OBJ.find(x => x.id === id), L = POOL[id], h = j => hs2(id + ':' + k + j), q = L[Math.floor(h('t') * L.length)], noun = id === 'quasar' ? 'galaxy' : o.name.toLowerCase();
-    return { n: `Unnamed ${noun} ${String(k).padStart(3, '0')}`, id, idx: OBJ.indexOf(o), m: (q.m || 1) * (.7 + .7 * h('m')), t: q.t, kind: id === 'quasar' ? 'Galaxy with an active black hole' : q.kind, f: o.fact, a: FIELDA[id], field: true, count: 1 }; }
+    return { n: `Unnamed ${noun} ${String(k).padStart(3, '0')}`, id, idx: OBJ.indexOf(o), m: (q.m || 1) * (.7 + .7 * h('m')), t: q.t, kind: id === 'quasar' ? 'Galaxy with an active black hole' : o.name, f: o.fact, a: FIELDA[id], field: true, count: 1 }; }
   const fieldOf = n => { const m = FIELDN.exec(String(n)); if (!m) return null; const o = OBJ.find(x => x.id === 'quasar' ? m[1] === 'galaxy' : x.name.toLowerCase() === m[1]); return o ? field(o.id, +m[2]) : null; };
   const rec = (id, n) => POOL[id].find(p => p.n === n) || (fieldOf(n) && fieldOf(n).id === id ? fieldOf(n) : null);
   const galR = mly => 14000 * (8 + 10 * Math.log10(Math.max(1, mly / 5)));   // compressed distance in world units: 12 Mly ~ 12 galaxy radii, 13 Gly ~ 42
@@ -919,7 +921,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
   const RSUN = (b) => { const nm = String(b.n || '').split('#')[0]; if (RREAL[nm] != null) return RREAL[nm]; const m = Math.max(b.m || 1, .01); switch (b.id) { case 'brown': return .09 + .015 * hs2(b.n + 'rs'); case 'reddwarf': return .12 + .45 * Math.min(m, .6); case 'redgiant': return 40 * Math.pow(m, 1.1); case 'sun': return Math.pow(m, .8); case 'bluewhite': return 1.6 * Math.pow(m, .7); case 'bluegiant': return 4 * Math.pow(m, .6); case 'whitedwarf': return .0125; case 'neutron': return 1.72e-5; default: return 1; } };   // radius in solar radii, so the sizes you see keep their real order (compressed to a power of .45 to stay drawable)
   const LYU = 3.6, RSU = 7.36e-8 / LYU, AUU = 1.581e-5 / LYU;   // world units: one unit is 3.6 light-years, so a galaxy of 14,000 units is about 50,000 ly in radius; a solar radius and an AU in the same units
   const TDEF = { brown: 1100, reddwarf: 3200, redgiant: 3600, sun: 5800, bluewhite: 9500, bluegiant: 22000, whitedwarf: 24000, neutron: 600000, quasar: 1e6 };
-  const tempOf = b => { const v = Number(String(b.t || '').replace(/[^0-9.]/g, '')); return v > 100 && v < 2e5 && !/million/i.test(b.t || '') ? v : TDEF[b.id] || 5800; };
+  const tempOf = b => { if (b.id === 'quasar') return TDEF.quasar; const v = Number(String(b.t || '').replace(/[^0-9.]/g, '')); return v > 100 && v < 2e5 && !/million/i.test(b.t || '') ? v : TDEF[b.id] || 5800; };
   const bbHex = T => { const t = T / 100; let r, g, bl; if (t <= 66) { r = 255; g = 99.47 * Math.log(t) - 161.12; bl = t <= 19 ? 0 : 138.52 * Math.log(t - 10) - 305.04; } else { r = 329.7 * Math.pow(t - 60, -.1332); g = 288.12 * Math.pow(t - 60, -.0755); bl = 255; } const c = v => Math.round(clamp(v, 0, 255)); return '#' + ((1 << 24) | (c(r) << 16) | (c(g) << 8) | c(bl)).toString(16).slice(1); };   // blackbody colour of a temperature
   const physR = b => b.id === 'quasar' ? 4.24e-6 * (b.m || 1e9) : RSUN(b);   // solar radii; for a quasar the black hole's event horizon (Schwarzschild radius)
   const lumOf = b => Math.pow(RSUN(b), 2) * Math.pow(tempOf(b) / 5772, 4);

@@ -109,7 +109,7 @@
   <button id="dMore"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg><span>More</span></button>
 </nav>
 <button class="live-pill" id="livePill" hidden></button>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div><div id="loadbar" aria-hidden="true"></div>
 <canvas id="fx"></canvas>
 
 <script src="config.js" charset="utf-8"></script>
@@ -212,7 +212,7 @@ function getPage(title) {
 }
 async function loadPage(title) {
   const k = norm(title);
-  const url = `${API}?action=parse&format=json&formatversion=2&origin=*&redirects=1&prop=text&disableeditsection=1&disablelimitreport=1&disabletoc=1&page=${encodeURIComponent(title)}`;
+  const url = `${API}?action=parse&format=json&formatversion=2&origin=*&redirects=1&prop=text&disableeditsection=1&disablelimitreport=1&disabletoc=1&maxage=3600&smaxage=3600&page=${encodeURIComponent(title)}`;   // cacheable: everyone loading today's start page shares Wikipedia's edge cache
   const r = await fetch(url); if (!r.ok) throw new Error('net');
   const j = await r.json(); if (j.error) throw new Error(j.error.info || 'missing');
   const doc = new DOMParser().parseFromString(j.parse.text, 'text/html');
@@ -411,6 +411,7 @@ async function renderHome() {
   try { d = await getDaily(day); } catch { const [a, b, ka, kb] = pickPair(todaySeed()); d = { from: a, to: b, ka, kb }; }
   TODAY = d; setPlate(d, null, null);
   try { const [sa, sb] = await Promise.all([getSummary(d.from), getSummary(d.to)]); setPlate(d, sa, sb); } catch {}
+  if (d.from && !(P.days[day] && P.days[day].won)) setTimeout(() => { getPage(d.from).catch(() => {}); getPage(d.to).catch(() => {}); }, 1200);   // the first page opens instantly when you press play
 }
 function readCur() { try { return JSON.parse(localStorage.getItem(CUR)); } catch { return null; } }
 
@@ -485,8 +486,10 @@ async function go0(title, initial, resume, kind = 'go') {
   const art = $('#article');
   if (!initial) art.classList.add('out');
   let page;
+  const lb = $('#loadbar'), lt = setTimeout(() => lb && lb.classList.add('on'), 220);   // only a slow load shows the bar
   try { const pp = getPage(title); if (!initial) await Promise.all([pp, sleep(70)]); page = await pp; }
   catch (e) { art.classList.remove('out'); toast('Could not load that article — check your connection'); if (initial) art.innerHTML = '<div class="loading">Failed to load. <button class="btn ghost" onclick="location.reload()">Retry</button></div>'; return; }
+  finally { clearTimeout(lt); lb && lb.classList.remove('on'); }
   if (!initial || !resume) G.path.push(page.title);
   if (!initial) G.moves = (G.moves || 0) + 1;
   const sig = signalFor(page), win = norm(page.title) === norm(G.toTitle);
@@ -848,7 +851,7 @@ function pityTier(sk) {   // five finds of one kind in a row: the next one reach
   rec.push(out.idx); if (rec.length > 8) rec.splice(0, rec.length - 8); return out;
 }
 function skyTier(r, boost = 0) {
-  const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = bn.n ? bn.warm / bn.n : 1, sp = Math.max(0, Math.min(1, (10 * ref + 210 - r.secs) / 210));   // longer puzzles get proportionally more time for a full speed score
+  const ref = r.par || r.goal || r.clicks, bn = burnOf(r.steps || []), e = Math.max(0, 1 - Math.max(0, r.clicks - ref) * .2), h = r.won && r.clicks <= ref ? 1 : bn.n ? bn.warm / bn.n : 1,   /* a par route had no wasted click: every step got closer, whatever the heat estimate says */ sp = Math.max(0, Math.min(1, (10 * ref + 210 - r.secs) / 210));   // longer puzzles get proportionally more time for a full speed score
   const q = .55 * e + .25 * h + .12 * sp + (r.purist ? .08 : 0), cap = ref <= 1 ? 4 : ref === 2 ? 7 : 8, pick = qq => { let i = 0; SKY_CUT.forEach((c, k) => { if (qq >= c) i = k; }); return Math.min(i, cap); };
   let idx = pick(q + boost); const plain = pick(q); if (boost && idx === 8 && plain < 8) idx = 7;   // a streak never hands out a quasar: that one is earned
   const why = [r.clicks <= ref ? (r.clicks < ref ? 'beat par' : 'par route') : `${r.clicks - ref} over par`, bn.n && bn.warm === bn.n ? 'every click warmer' : bn.best >= 2 ? `burn ×${bn.best}` : '', r.purist ? 'no search or rewind' : ''].filter(Boolean).join(' · ');
