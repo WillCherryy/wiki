@@ -1,0 +1,31 @@
+{
+  "name": "Marsupialia",
+  "common": "Marsupials",
+  "mrca": [
+    "Didelphis virginiana",
+    "Osphranter rufus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 49.11,
+        "mid": 78.28,
+        "hi": 104.26,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 39"
+      }
+    ],
+    "display": {
+      "lo": 49.11,
+      "mid": 78.28,
+      "hi": 104.26,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

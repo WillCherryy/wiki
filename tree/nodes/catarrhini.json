@@ -1,5 +1,9 @@
 {
   "name": "Catarrhini",
+  "mrca": [
+    "Macaca mulatta",
+    "Homo sapiens"
+  ],
   "common": "Old World monkeys and apes",
   "blurb": "Monkeys of Africa and Asia, and the apes, humans included.",
   "relationship": {
@@ -9,21 +13,34 @@
   "age": {
     "fossilMin": {
       "ma": 24.44,
-      "taxon": "",
-      "formation": "",
+      "taxon": "Rukwapithecus fleaglei (RRBP 12444A), a stem hominoid",
+      "formation": "Nsungwe Formation, Rukwa Rift Basin, Tanzania",
+      "dating": "Radiometric: 24.93 ± 0.49 Ma, giving 24.44 Ma",
       "cite": "benton2015",
-      "checked": "secondary table citing Benton et al. 2015"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 84 (Crown Catarrhini)"
     },
     "softMax": {
-      "ma": 33.9,
-      "basis": "Stem catarrhines from the early Oligocene Fayum beds, Egypt",
+      "ma": 34.0,
+      "basis": "Stem catarrhines (propliopithecids, oligopithecids) but no crown members in the Fayum beds, Egypt: base of the Oligocene, 33.9 ± 0.1 Ma",
       "cite": "benton2015",
-      "checked": "secondary table citing Benton et al. 2015"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 84 (Crown Catarrhini): the paper gives 34.0 Ma; the earlier 33.9 Ma omitted the ± 0.1 Myr"
     },
     "display": {
-      "lo": 24.44,
-      "hi": 33.9,
-      "source": "calibration"
-    }
+      "lo": 24.11,
+      "mid": 26.84,
+      "hi": 30.32,
+      "source": "synthesis"
+    },
+    "clock": [
+      {
+        "lo": 24.11,
+        "mid": 26.84,
+        "hi": 30.32,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 68"
+      }
+    ]
   }
 }

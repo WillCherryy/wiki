@@ -1,5 +1,9 @@
 {
   "name": "Hominidae",
+  "mrca": [
+    "Pongo pygmaeus",
+    "Homo sapiens"
+  ],
   "common": "Great apes",
   "blurb": "Orangutans, gorillas, chimpanzees, bonobos and humans.",
   "relationship": {
@@ -9,10 +13,34 @@
   "age": {
     "fossilMin": {
       "ma": 11.6,
-      "taxon": "",
-      "formation": "",
+      "taxon": "Sivapithecus indicus (e.g. GSP Y-16075), on the orangutan lineage (total-group Ponginae)",
+      "formation": "Chinji Formation, Pakistan",
+      "dating": "Magnetic polarity chron C5Ar, about 12 Ma; top of the Serravallian, 11.6 Ma",
       "cite": "benton2015",
-      "checked": "secondary table citing Benton et al. 2015"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 86 (Crown Hominidae)"
+    },
+    "softMax": {
+      "ma": 33.9,
+      "basis": "The diverse earliest Oligocene anthropoids of the Fayum, Egypt, lack derived great-ape features: Eocene–Oligocene boundary, 33.9 Ma",
+      "cite": "benton2015",
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 86 (Crown Hominidae)"
+    },
+    "clock": [
+      {
+        "lo": 15.4,
+        "mid": 17.85,
+        "hi": 20.52,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 69"
+      }
+    ],
+    "display": {
+      "lo": 15.4,
+      "mid": 17.85,
+      "hi": 20.52,
+      "source": "synthesis"
     }
   }
 }

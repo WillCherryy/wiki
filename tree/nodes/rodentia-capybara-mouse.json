@@ -1,0 +1,32 @@
+{
+  "common": "Mouse-related and guinea-pig-related rodents",
+  "mrca": [
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus",
+    "Rattus norvegicus"
+  ],
+  "exact": true,
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 56.91,
+        "mid": 58.76,
+        "hi": 60.28,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 61 (\"Guinea Pig/Rat\")"
+      }
+    ],
+    "display": {
+      "lo": 56.91,
+      "mid": 58.76,
+      "hi": 60.28,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

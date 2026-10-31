@@ -1,0 +1,31 @@
+{
+  "name": "Xenarthra",
+  "common": "Armadillos, anteaters and sloths",
+  "mrca": [
+    "Dasypus novemcinctus",
+    "Choloepus didactylus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 56.62,
+        "mid": 67.08,
+        "hi": 76.83,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 42"
+      }
+    ],
+    "display": {
+      "lo": 56.62,
+      "mid": 67.08,
+      "hi": 76.83,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

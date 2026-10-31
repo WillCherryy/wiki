@@ -1,5 +1,9 @@
 {
   "name": "Hominini",
+  "mrca": [
+    "Pan troglodytes",
+    "Homo sapiens"
+  ],
   "common": "Humans and chimpanzees",
   "blurb": "Humans, chimpanzees and bonobos. Chimpanzees and bonobos are our closest living relatives.",
   "relationship": {
@@ -8,10 +12,35 @@
   "age": {
     "fossilMin": {
       "ma": 6.5,
-      "taxon": "Sahelanthropus tchadensis",
-      "formation": "Chad",
+      "taxon": "Sahelanthropus tchadensis (skull TM 266-01-060-1), a basal hominin",
+      "formation": "Toros-Menalla, northern Chad",
+      "dating": "Biostratigraphy, correlated with the lower Nawata Formation at Lothagam (7.4–6.5 Ma)",
       "cite": "benton2015",
-      "checked": "https://palaeo-electronica.org/content/2023/3777-primate-fossil-calibrations"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 87 (Chimpanzee–Human)"
+    },
+    "softMax": {
+      "ma": 10,
+      "basis": "Late Miocene apes (Ankarapithecus, Lufengopithecus, Ouranopithecus, Sivapithecus) but no chimpanzee or human relatives in deposits about 10 Ma old",
+      "cite": "benton2015",
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 87 (Chimpanzee–Human)"
+    },
+    "clock": [
+      {
+        "lo": 7.51,
+        "mid": 8.94,
+        "hi": 10.1,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 71",
+        "note": "A phylogenomic node age: it dates the divergence of sequences, which precedes the split of the populations (here constrained by the 6.5–10 Ma fossil calibration)."
+      }
+    ],
+    "display": {
+      "lo": 7.51,
+      "mid": 8.94,
+      "hi": 10.1,
+      "source": "synthesis"
     }
   },
   "review": null

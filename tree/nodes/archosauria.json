@@ -1,10 +1,26 @@
 {
   "name": "Archosauria",
+  "mrca": [
+    "Crocodylus niloticus",
+    "Gallus gallus"
+  ],
   "common": "Archosaurs",
   "blurb": "Crocodiles and birds: the surviving members of the lineage that also produced pterosaurs and the non-avian dinosaurs.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 225.99,
+        "mid": 259.38,
+        "hi": 288.36,
+        "method": "Bayesian relaxed molecular clock (PhyloBayes, CAT-GTR), calibration scheme C16; mean and conservative 95% credibility interval (extremes of the 95% CIs of 100 gene-jackknife timetrees)",
+        "data": "Phylotranscriptomic data, 100 jawed vertebrates (genome-wide estimate)",
+        "cite": "irisarri2017",
+        "checked": "Irisarri et al. 2017, Supplementary Table 9, node 109 (\"Archosaurians (Archosauria)\")"
+      }
+    ]
+  },
   "review": null
 }

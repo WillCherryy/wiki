@@ -1,0 +1,2683 @@
+{
+ "_note": "TimeTree 5 node ages (Kumar et al. 2022), written by tools/fetch-timetree.js: median of the published study estimates for the node and the confidence interval of that median. Do not edit by hand.",
+ "source": "https://timetree.org",
+ "cite": "kumar2022",
+ "ncbi": {
+  "Myxine glutinosa": 7769,
+  "Petromyzon marinus": 7757,
+  "Hydrolagus colliei": 7873,
+  "Carcharodon carcharias": 13397,
+  "Rhincodon typus": 259920,
+  "Sphyrna mokarran": 195334,
+  "Mobula birostris": 1983395,
+  "Raja clavata": 7781,
+  "Polypterus senegalus": 55291,
+  "Acipenser sturio": 61674,
+  "Lepisosteus oculatus": 7918,
+  "Anguilla anguilla": 7936,
+  "Clupea harengus": 7950,
+  "Danio rerio": 7955,
+  "Salmo salar": 8030,
+  "Gadus morhua": 8049,
+  "Amphiprion ocellaris": 80972,
+  "Hippocampus kuda": 103715,
+  "Mola mola": 94237,
+  "Latimeria chalumnae": 7897,
+  "Neoceratodus forsteri": 7892,
+  "Protopterus annectens": 7888,
+  "Dermophis mexicanus": 118251,
+  "Rana temporaria": 8407,
+  "Rhinella marina": 8386,
+  "Salamandra salamandra": 57571,
+  "Ambystoma mexicanum": 8296,
+  "Ornithorhynchus anatinus": 9258,
+  "Tachyglossus aculeatus": 9261,
+  "Didelphis virginiana": 9267,
+  "Osphranter rufus": 9321,
+  "Phascolarctos cinereus": 38626,
+  "Orycteropus afer": 9818,
+  "Loxodonta africana": 9785,
+  "Trichechus manatus": 9778,
+  "Dasypus novemcinctus": 9361,
+  "Myrmecophaga tridactyla": 71006,
+  "Choloepus didactylus": 27675,
+  "Oryctolagus cuniculus": 9986,
+  "Sciurus vulgaris": 55149,
+  "Hydrochoerus hydrochaeris": 10149,
+  "Mus musculus": 10090,
+  "Rattus norvegicus": 10116,
+  "Lemur catta": 9447,
+  "Callithrix jacchus": 9483,
+  "Macaca mulatta": 9544,
+  "Pongo pygmaeus": 9600,
+  "Gorilla gorilla": 9593,
+  "Pan troglodytes": 9598,
+  "Pan paniscus": 9597,
+  "Homo sapiens": 9606,
+  "Erinaceus europaeus": 9365,
+  "Rousettus aegyptiacus": 9407,
+  "Pipistrellus pipistrellus": 59474,
+  "Felis catus": 9685,
+  "Panthera leo": 9689,
+  "Canis lupus": 9612,
+  "Ursus maritimus": 29073,
+  "Phoca vitulina": 9720,
+  "Equus caballus": 9796,
+  "Ceratotherium simum": 9807,
+  "Sus scrofa": 9823,
+  "Bos taurus": 9913,
+  "Giraffa camelopardalis": 9894,
+  "Hippopotamus amphibius": 9833,
+  "Balaenoptera musculus": 9771,
+  "Tursiops truncatus": 9739,
+  "Sphenodon punctatus": 8508,
+  "Eublepharis macularius": 481883,
+  "Podarcis muralis": 64176,
+  "Iguana iguana": 8517,
+  "Varanus komodoensis": 61221,
+  "Python regius": 51751,
+  "Ophiophagus hannah": 8665,
+  "Chelonia mydas": 8469,
+  "Chelonoidis niger": 66189,
+  "Crocodylus niloticus": 8501,
+  "Alligator mississippiensis": 8496,
+  "Struthio camelus": 8801,
+  "Dromaius novaehollandiae": 8790,
+  "Gallus gallus": 9031,
+  "Anas platyrhynchos": 8839,
+  "Columba livia": 8932,
+  "Archilochus colubris": 190676,
+  "Aptenodytes forsteri": 9233,
+  "Tyto alba": 56313,
+  "Haliaeetus leucocephalus": 52644,
+  "Falco peregrinus": 8954,
+  "Psittacus erithacus": 57247,
+  "Corvus corax": 56781,
+  "Taeniopygia guttata": 59729
+ },
+ "proxies": {
+  "Myxine glutinosa": {
+   "ncbi": 7762,
+   "name": "Myxinidae",
+   "rank": "family"
+  },
+  "Rhincodon typus": {
+   "ncbi": 30503,
+   "name": "Orectolobiformes",
+   "rank": "order"
+  },
+  "Raja clavata": {
+   "ncbi": 7858,
+   "name": "Rajiformes",
+   "rank": "order"
+  },
+  "Protopterus annectens": {
+   "ncbi": 7879,
+   "name": "Lepidosirenoidei",
+   "rank": "suborder"
+  },
+  "Struthio camelus": {
+   "ncbi": 8798,
+   "name": "Struthioniformes",
+   "rank": "order"
+  },
+  "Dromaius novaehollandiae": {
+   "ncbi": 8784,
+   "name": "Casuariiformes",
+   "rank": "order"
+  }
+ },
+ "nodes": [
+  {
+   "clade": [
+    "Acipenser sturio",
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Amphiprion ocellaris",
+    "Anas platyrhynchos",
+    "Anguilla anguilla",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Carcharodon carcharias",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Clupea harengus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Danio rerio",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gadus morhua",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippocampus kuda",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Hydrolagus colliei",
+    "Iguana iguana",
+    "Latimeria chalumnae",
+    "Lemur catta",
+    "Lepisosteus oculatus",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mobula birostris",
+    "Mola mola",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Myxine glutinosa",
+    "Neoceratodus forsteri",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Petromyzon marinus",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Polypterus senegalus",
+    "Pongo pygmaeus",
+    "Protopterus annectens",
+    "Psittacus erithacus",
+    "Python regius",
+    "Raja clavata",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhincodon typus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Salmo salar",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Sphyrna mokarran",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Myxine glutinosa",
+    "Acipenser sturio"
+   ],
+   "proxies": [
+    "Myxine glutinosa as Myxinidae"
+   ],
+   "ttid": 215176,
+   "ncbiTaxon": 7742,
+   "median": 562.84,
+   "ciLow": 514.72,
+   "ciHigh": 610.96,
+   "adjusted": 562.84,
+   "studies": 14,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Myxine glutinosa",
+    "Petromyzon marinus"
+   ],
+   "query": [
+    "Myxine glutinosa",
+    "Petromyzon marinus"
+   ],
+   "proxies": [
+    "Myxine glutinosa as Myxinidae"
+   ],
+   "ttid": 300115,
+   "ncbiTaxon": 1476529,
+   "median": 454.93,
+   "ciLow": 420.21,
+   "ciHigh": 489.64,
+   "adjusted": 454.93,
+   "studies": 8,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Acipenser sturio",
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Amphiprion ocellaris",
+    "Anas platyrhynchos",
+    "Anguilla anguilla",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Carcharodon carcharias",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Clupea harengus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Danio rerio",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gadus morhua",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippocampus kuda",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Hydrolagus colliei",
+    "Iguana iguana",
+    "Latimeria chalumnae",
+    "Lemur catta",
+    "Lepisosteus oculatus",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mobula birostris",
+    "Mola mola",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Neoceratodus forsteri",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Polypterus senegalus",
+    "Pongo pygmaeus",
+    "Protopterus annectens",
+    "Psittacus erithacus",
+    "Python regius",
+    "Raja clavata",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhincodon typus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Salmo salar",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Sphyrna mokarran",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Carcharodon carcharias",
+    "Acipenser sturio"
+   ],
+   "ttid": 215177,
+   "ncbiTaxon": 7776,
+   "median": 463.24,
+   "ciLow": 447.12,
+   "ciHigh": 479.36,
+   "adjusted": 463.24,
+   "studies": 20,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Carcharodon carcharias",
+    "Hydrolagus colliei",
+    "Mobula birostris",
+    "Raja clavata",
+    "Rhincodon typus",
+    "Sphyrna mokarran"
+   ],
+   "query": [
+    "Hydrolagus colliei",
+    "Carcharodon carcharias"
+   ],
+   "ttid": 215178,
+   "ncbiTaxon": 7777,
+   "median": 404.39,
+   "ciLow": 369.76,
+   "ciHigh": 439.03,
+   "adjusted": 404.39,
+   "studies": 7,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Carcharodon carcharias",
+    "Mobula birostris",
+    "Raja clavata",
+    "Rhincodon typus",
+    "Sphyrna mokarran"
+   ],
+   "query": [
+    "Carcharodon carcharias",
+    "Mobula birostris"
+   ],
+   "ttid": 215179,
+   "ncbiTaxon": 7778,
+   "median": 273.31,
+   "ciLow": 243.66,
+   "ciHigh": 302.95,
+   "adjusted": 273.31,
+   "studies": 11,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Carcharodon carcharias",
+    "Rhincodon typus",
+    "Sphyrna mokarran"
+   ],
+   "query": [
+    "Carcharodon carcharias",
+    "Rhincodon typus",
+    "Sphyrna mokarran"
+   ],
+   "proxies": [
+    "Rhincodon typus as Orectolobiformes"
+   ],
+   "ttid": 215587,
+   "ncbiTaxon": 119195,
+   "median": 255.11,
+   "ciLow": 198.7,
+   "ciHigh": 311.52,
+   "adjusted": 255.11,
+   "studies": 3,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Mobula birostris",
+    "Raja clavata"
+   ],
+   "query": [
+    "Mobula birostris",
+    "Raja clavata"
+   ],
+   "proxies": [
+    "Raja clavata as Rajiformes"
+   ],
+   "ttid": 215180,
+   "ncbiTaxon": 117893,
+   "median": 196.54,
+   "ciLow": 165.12,
+   "ciHigh": 227.97,
+   "adjusted": 220.65,
+   "studies": 5,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Acipenser sturio",
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Amphiprion ocellaris",
+    "Anas platyrhynchos",
+    "Anguilla anguilla",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Clupea harengus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Danio rerio",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gadus morhua",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippocampus kuda",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Iguana iguana",
+    "Latimeria chalumnae",
+    "Lemur catta",
+    "Lepisosteus oculatus",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mola mola",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Neoceratodus forsteri",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Polypterus senegalus",
+    "Pongo pygmaeus",
+    "Protopterus annectens",
+    "Psittacus erithacus",
+    "Python regius",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Salmo salar",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Acipenser sturio",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 216109,
+   "ncbiTaxon": 117571,
+   "median": 435.13,
+   "ciLow": 428.14,
+   "ciHigh": 442.12,
+   "adjusted": 435.13,
+   "studies": 40,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Acipenser sturio",
+    "Amphiprion ocellaris",
+    "Anguilla anguilla",
+    "Clupea harengus",
+    "Danio rerio",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Lepisosteus oculatus",
+    "Mola mola",
+    "Polypterus senegalus",
+    "Salmo salar"
+   ],
+   "query": [
+    "Polypterus senegalus",
+    "Acipenser sturio"
+   ],
+   "ttid": 216110,
+   "ncbiTaxon": 7898,
+   "median": 391.49,
+   "ciLow": 379.6,
+   "ciHigh": 403.38,
+   "adjusted": 391.49,
+   "studies": 20,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Acipenser sturio",
+    "Amphiprion ocellaris",
+    "Anguilla anguilla",
+    "Clupea harengus",
+    "Danio rerio",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Lepisosteus oculatus",
+    "Mola mola",
+    "Salmo salar"
+   ],
+   "query": [
+    "Acipenser sturio",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 216111,
+   "ncbiTaxon": 186623,
+   "median": 347.07,
+   "ciLow": 329.37,
+   "ciHigh": 364.78,
+   "adjusted": 347.07,
+   "studies": 23,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Anguilla anguilla",
+    "Clupea harengus",
+    "Danio rerio",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Lepisosteus oculatus",
+    "Mola mola",
+    "Salmo salar"
+   ],
+   "query": [
+    "Lepisosteus oculatus",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 216112,
+   "ncbiTaxon": 41665,
+   "median": 305.24,
+   "ciLow": 283.31,
+   "ciHigh": 327.17,
+   "adjusted": 305.24,
+   "studies": 27,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Anguilla anguilla",
+    "Clupea harengus",
+    "Danio rerio",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Mola mola",
+    "Salmo salar"
+   ],
+   "query": [
+    "Anguilla anguilla",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 216113,
+   "ncbiTaxon": 32443,
+   "median": 249.56,
+   "ciLow": 230,
+   "ciHigh": 269.12,
+   "adjusted": 249.56,
+   "studies": 30,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Clupea harengus",
+    "Danio rerio",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Mola mola",
+    "Salmo salar"
+   ],
+   "query": [
+    "Clupea harengus",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 216115,
+   "ncbiTaxon": 186625,
+   "median": 220.36,
+   "ciLow": 203.55,
+   "ciHigh": 237.17,
+   "adjusted": 217.61,
+   "studies": 47,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Clupea harengus",
+    "Danio rerio"
+   ],
+   "query": [
+    "Clupea harengus",
+    "Danio rerio"
+   ],
+   "ttid": 216116,
+   "ncbiTaxon": 186634,
+   "median": 200.92,
+   "ciLow": 184.32,
+   "ciHigh": 217.52,
+   "adjusted": 207.67,
+   "studies": 27,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Mola mola",
+    "Salmo salar"
+   ],
+   "query": [
+    "Salmo salar",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 227097,
+   "ncbiTaxon": 0,
+   "median": 200.37,
+   "ciLow": 180.42,
+   "ciHigh": 220.31,
+   "adjusted": 194.2,
+   "studies": 31,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Gadus morhua",
+    "Hippocampus kuda",
+    "Mola mola"
+   ],
+   "query": [
+    "Gadus morhua",
+    "Amphiprion ocellaris"
+   ],
+   "ttid": 227803,
+   "ncbiTaxon": 123368,
+   "median": 146.46,
+   "ciLow": 134.28,
+   "ciHigh": 158.65,
+   "adjusted": 146.46,
+   "studies": 44,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Hippocampus kuda",
+    "Mola mola"
+   ],
+   "query": [
+    "Amphiprion ocellaris",
+    "Hippocampus kuda",
+    "Mola mola"
+   ],
+   "ttid": 230351,
+   "ncbiTaxon": 0,
+   "median": 102.48,
+   "ciLow": 91.16,
+   "ciHigh": 113.81,
+   "adjusted": 106.15,
+   "studies": 25,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Iguana iguana",
+    "Latimeria chalumnae",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Neoceratodus forsteri",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Pongo pygmaeus",
+    "Protopterus annectens",
+    "Psittacus erithacus",
+    "Python regius",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Latimeria chalumnae",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 247854,
+   "ncbiTaxon": 8287,
+   "median": 412.46,
+   "ciLow": 403.68,
+   "ciHigh": 421.25,
+   "adjusted": 412.46,
+   "studies": 22,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Iguana iguana",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Neoceratodus forsteri",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Pongo pygmaeus",
+    "Protopterus annectens",
+    "Psittacus erithacus",
+    "Python regius",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Protopterus annectens",
+    "Alligator mississippiensis"
+   ],
+   "proxies": [
+    "Protopterus annectens as Lepidosirenoidei"
+   ],
+   "ttid": 247855,
+   "ncbiTaxon": 1338369,
+   "median": 402.23,
+   "ciLow": 392.6,
+   "ciHigh": 411.86,
+   "adjusted": 402.23,
+   "studies": 16,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Neoceratodus forsteri",
+    "Protopterus annectens"
+   ],
+   "query": [
+    "Neoceratodus forsteri",
+    "Protopterus annectens"
+   ],
+   "unavailable": "a species is not in TimeTree: Neoceratodus forsteri"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Ambystoma mexicanum",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dasypus novemcinctus",
+    "Dermophis mexicanus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Iguana iguana",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Pongo pygmaeus",
+    "Psittacus erithacus",
+    "Python regius",
+    "Rana temporaria",
+    "Rattus norvegicus",
+    "Rhinella marina",
+    "Rousettus aegyptiacus",
+    "Salamandra salamandra",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Ambystoma mexicanum",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 247856,
+   "ncbiTaxon": 32523,
+   "median": 352.08,
+   "ciLow": 349.44,
+   "ciHigh": 354.72,
+   "adjusted": 352.08,
+   "studies": 38,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ambystoma mexicanum",
+    "Dermophis mexicanus",
+    "Rana temporaria",
+    "Rhinella marina",
+    "Salamandra salamandra"
+   ],
+   "query": [
+    "Dermophis mexicanus",
+    "Ambystoma mexicanum"
+   ],
+   "ttid": 247857,
+   "ncbiTaxon": 8292,
+   "median": 316.95,
+   "ciLow": 308.07,
+   "ciHigh": 325.84,
+   "adjusted": 316.95,
+   "studies": 31,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ambystoma mexicanum",
+    "Rana temporaria",
+    "Rhinella marina",
+    "Salamandra salamandra"
+   ],
+   "query": [
+    "Rana temporaria",
+    "Ambystoma mexicanum"
+   ],
+   "ttid": 247998,
+   "ncbiTaxon": 41666,
+   "median": 289.95,
+   "ciLow": 278.86,
+   "ciHigh": 301.04,
+   "adjusted": 289.95,
+   "studies": 35,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Rana temporaria",
+    "Rhinella marina"
+   ],
+   "query": [
+    "Rana temporaria",
+    "Rhinella marina"
+   ],
+   "ttid": 249776,
+   "ncbiTaxon": 8416,
+   "median": 143.14,
+   "ciLow": 135.34,
+   "ciHigh": 150.94,
+   "adjusted": 143.14,
+   "studies": 37,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ambystoma mexicanum",
+    "Salamandra salamandra"
+   ],
+   "query": [
+    "Salamandra salamandra",
+    "Ambystoma mexicanum"
+   ],
+   "ttid": 248205,
+   "ncbiTaxon": 0,
+   "median": 148.04,
+   "ciLow": 133.67,
+   "ciHigh": 162.4,
+   "adjusted": 148.04,
+   "studies": 25,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Choloepus didactylus",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dasypus novemcinctus",
+    "Didelphis virginiana",
+    "Dromaius novaehollandiae",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Felis catus",
+    "Gallus gallus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Haliaeetus leucocephalus",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Iguana iguana",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Ophiophagus hannah",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Podarcis muralis",
+    "Pongo pygmaeus",
+    "Psittacus erithacus",
+    "Python regius",
+    "Rattus norvegicus",
+    "Rousettus aegyptiacus",
+    "Sciurus vulgaris",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Taeniopygia guttata",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Tyto alba",
+    "Ursus maritimus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Balaenoptera musculus",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 260866,
+   "ncbiTaxon": 32524,
+   "median": 318.82,
+   "ciLow": 316.69,
+   "ciHigh": 320.96,
+   "adjusted": 318.82,
+   "studies": 39,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Choloepus didactylus",
+    "Dasypus novemcinctus",
+    "Didelphis virginiana",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Ornithorhynchus anatinus",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Pongo pygmaeus",
+    "Rattus norvegicus",
+    "Rousettus aegyptiacus",
+    "Sciurus vulgaris",
+    "Sus scrofa",
+    "Tachyglossus aculeatus",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Ornithorhynchus anatinus",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 260867,
+   "ncbiTaxon": 40674,
+   "median": 181.19,
+   "ciLow": 168.09,
+   "ciHigh": 194.29,
+   "adjusted": 181.19,
+   "studies": 38,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ornithorhynchus anatinus",
+    "Tachyglossus aculeatus"
+   ],
+   "query": [
+    "Ornithorhynchus anatinus",
+    "Tachyglossus aculeatus"
+   ],
+   "ttid": 272122,
+   "ncbiTaxon": 9255,
+   "median": 47.08,
+   "ciLow": 38.41,
+   "ciHigh": 55.74,
+   "adjusted": 47.08,
+   "studies": 21,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Choloepus didactylus",
+    "Dasypus novemcinctus",
+    "Didelphis virginiana",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Osphranter rufus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phascolarctos cinereus",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Pongo pygmaeus",
+    "Rattus norvegicus",
+    "Rousettus aegyptiacus",
+    "Sciurus vulgaris",
+    "Sus scrofa",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Didelphis virginiana",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 260868,
+   "ncbiTaxon": 32525,
+   "median": 159.16,
+   "ciLow": 152.24,
+   "ciHigh": 166.07,
+   "adjusted": 159.16,
+   "studies": 44,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Didelphis virginiana",
+    "Osphranter rufus",
+    "Phascolarctos cinereus"
+   ],
+   "query": [
+    "Didelphis virginiana",
+    "Osphranter rufus"
+   ],
+   "ttid": 260879,
+   "ncbiTaxon": 0,
+   "median": 73.81,
+   "ciLow": 65.63,
+   "ciHigh": 81.98,
+   "adjusted": 70.24,
+   "studies": 33,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Osphranter rufus",
+    "Phascolarctos cinereus"
+   ],
+   "query": [
+    "Osphranter rufus",
+    "Phascolarctos cinereus"
+   ],
+   "unavailable": "a species is not in TimeTree: Phascolarctos cinereus"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Choloepus didactylus",
+    "Dasypus novemcinctus",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Lemur catta",
+    "Loxodonta africana",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Myrmecophaga tridactyla",
+    "Orycteropus afer",
+    "Oryctolagus cuniculus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Pongo pygmaeus",
+    "Rattus norvegicus",
+    "Rousettus aegyptiacus",
+    "Sciurus vulgaris",
+    "Sus scrofa",
+    "Trichechus manatus",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Loxodonta africana",
+    "Choloepus didactylus",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 261618,
+   "ncbiTaxon": 9347,
+   "median": 96.97,
+   "ciLow": 92.48,
+   "ciHigh": 101.46,
+   "adjusted": 96.97,
+   "studies": 25,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Loxodonta africana",
+    "Orycteropus afer",
+    "Trichechus manatus"
+   ],
+   "query": [
+    "Orycteropus afer",
+    "Loxodonta africana"
+   ],
+   "unavailable": "a species is not in TimeTree: Orycteropus afer"
+  },
+  {
+   "clade": [
+    "Loxodonta africana",
+    "Trichechus manatus"
+   ],
+   "query": [
+    "Loxodonta africana",
+    "Trichechus manatus"
+   ],
+   "ttid": 261841,
+   "ncbiTaxon": 0,
+   "median": 61.43,
+   "ciLow": 58.34,
+   "ciHigh": 64.53,
+   "adjusted": 63.34,
+   "studies": 18,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Choloepus didactylus",
+    "Dasypus novemcinctus",
+    "Myrmecophaga tridactyla"
+   ],
+   "query": [
+    "Dasypus novemcinctus",
+    "Choloepus didactylus"
+   ],
+   "ttid": 261620,
+   "ncbiTaxon": 9348,
+   "median": 66,
+   "ciLow": 62.09,
+   "ciHigh": 69.92,
+   "adjusted": 66,
+   "studies": 20,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Choloepus didactylus",
+    "Myrmecophaga tridactyla"
+   ],
+   "query": [
+    "Myrmecophaga tridactyla",
+    "Choloepus didactylus"
+   ],
+   "ttid": 261621,
+   "ncbiTaxon": 948950,
+   "median": 54.25,
+   "ciLow": 48.2,
+   "ciHigh": 60.29,
+   "adjusted": 54.25,
+   "studies": 15,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Callithrix jacchus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Gorilla gorilla",
+    "Hippopotamus amphibius",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Lemur catta",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Oryctolagus cuniculus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Panthera leo",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Pongo pygmaeus",
+    "Rattus norvegicus",
+    "Rousettus aegyptiacus",
+    "Sciurus vulgaris",
+    "Sus scrofa",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Callithrix jacchus",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 261876,
+   "ncbiTaxon": 1437010,
+   "median": 89.48,
+   "ciLow": 86.02,
+   "ciHigh": 92.94,
+   "adjusted": 89.48,
+   "studies": 70,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Callithrix jacchus",
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Hydrochoerus hydrochaeris",
+    "Lemur catta",
+    "Macaca mulatta",
+    "Mus musculus",
+    "Oryctolagus cuniculus",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Pongo pygmaeus",
+    "Rattus norvegicus",
+    "Sciurus vulgaris"
+   ],
+   "query": [
+    "Hydrochoerus hydrochaeris",
+    "Callithrix jacchus"
+   ],
+   "ttid": 266386,
+   "ncbiTaxon": 314146,
+   "median": 83.51,
+   "ciLow": 80.14,
+   "ciHigh": 86.89,
+   "adjusted": 83.51,
+   "studies": 83,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus",
+    "Oryctolagus cuniculus",
+    "Rattus norvegicus",
+    "Sciurus vulgaris"
+   ],
+   "query": [
+    "Oryctolagus cuniculus",
+    "Hydrochoerus hydrochaeris"
+   ],
+   "ttid": 266387,
+   "ncbiTaxon": 314147,
+   "median": 75.43,
+   "ciLow": 72.15,
+   "ciHigh": 78.72,
+   "adjusted": 75.43,
+   "studies": 48,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus",
+    "Rattus norvegicus",
+    "Sciurus vulgaris"
+   ],
+   "query": [
+    "Sciurus vulgaris",
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus"
+   ],
+   "ttid": 266597,
+   "ncbiTaxon": 9989,
+   "median": 68.73,
+   "ciLow": 64.15,
+   "ciHigh": 73.32,
+   "adjusted": 69.82,
+   "studies": 32,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Mus musculus",
+    "Rattus norvegicus"
+   ],
+   "query": [
+    "Mus musculus",
+    "Rattus norvegicus"
+   ],
+   "ttid": 267366,
+   "ncbiTaxon": 0,
+   "median": 19.43,
+   "ciLow": 16.89,
+   "ciHigh": 21.97,
+   "adjusted": 13.27,
+   "studies": 79,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Callithrix jacchus",
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Lemur catta",
+    "Macaca mulatta",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Pongo pygmaeus"
+   ],
+   "query": [
+    "Lemur catta",
+    "Callithrix jacchus"
+   ],
+   "ttid": 270978,
+   "ncbiTaxon": 9443,
+   "median": 71.65,
+   "ciLow": 68.87,
+   "ciHigh": 74.43,
+   "adjusted": 71.65,
+   "studies": 55,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Callithrix jacchus",
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Macaca mulatta",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Pongo pygmaeus"
+   ],
+   "query": [
+    "Callithrix jacchus",
+    "Gorilla gorilla"
+   ],
+   "ttid": 271275,
+   "ncbiTaxon": 314293,
+   "median": 42.43,
+   "ciLow": 40.46,
+   "ciHigh": 44.4,
+   "adjusted": 42.43,
+   "studies": 75,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Macaca mulatta",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Pongo pygmaeus"
+   ],
+   "query": [
+    "Macaca mulatta",
+    "Gorilla gorilla"
+   ],
+   "ttid": 271651,
+   "ncbiTaxon": 9526,
+   "median": 28.9,
+   "ciLow": 27.81,
+   "ciHigh": 29.99,
+   "adjusted": 28.9,
+   "studies": 93,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Pan paniscus",
+    "Pan troglodytes",
+    "Pongo pygmaeus"
+   ],
+   "query": [
+    "Pongo pygmaeus",
+    "Gorilla gorilla"
+   ],
+   "ttid": 271706,
+   "ncbiTaxon": 9604,
+   "median": 15.63,
+   "ciLow": 14.9,
+   "ciHigh": 16.36,
+   "adjusted": 15.63,
+   "studies": 82,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Gorilla gorilla",
+    "Homo sapiens",
+    "Pan paniscus",
+    "Pan troglodytes"
+   ],
+   "query": [
+    "Gorilla gorilla",
+    "Homo sapiens"
+   ],
+   "ttid": 271707,
+   "ncbiTaxon": 207598,
+   "median": 8.72,
+   "ciLow": 8.25,
+   "ciHigh": 9.18,
+   "adjusted": 8.72,
+   "studies": 73,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Homo sapiens",
+    "Pan paniscus",
+    "Pan troglodytes"
+   ],
+   "query": [
+    "Pan paniscus",
+    "Homo sapiens"
+   ],
+   "ttid": 271711,
+   "ncbiTaxon": 0,
+   "median": 6.45,
+   "ciLow": 6.16,
+   "ciHigh": 6.75,
+   "adjusted": 6.45,
+   "studies": 104,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Pan paniscus",
+    "Pan troglodytes"
+   ],
+   "query": [
+    "Pan troglodytes",
+    "Pan paniscus"
+   ],
+   "ttid": 271712,
+   "ncbiTaxon": 9596,
+   "median": 2.56,
+   "ciLow": 2.32,
+   "ciHigh": 2.79,
+   "adjusted": 2.56,
+   "studies": 51,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Equus caballus",
+    "Erinaceus europaeus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Panthera leo",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Rousettus aegyptiacus",
+    "Sus scrofa",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Erinaceus europaeus",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 261877,
+   "ncbiTaxon": 314145,
+   "median": 82.13,
+   "ciLow": 77.91,
+   "ciHigh": 86.35,
+   "adjusted": 82.13,
+   "studies": 32,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Equus caballus",
+    "Felis catus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Panthera leo",
+    "Phoca vitulina",
+    "Pipistrellus pipistrellus",
+    "Rousettus aegyptiacus",
+    "Sus scrofa",
+    "Tursiops truncatus",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Pipistrellus pipistrellus",
+    "Canis lupus",
+    "Ceratotherium simum",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 262579,
+   "ncbiTaxon": 0,
+   "median": 79.3,
+   "ciLow": 76.16,
+   "ciHigh": 82.44,
+   "adjusted": 79.3,
+   "studies": 26,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Pipistrellus pipistrellus",
+    "Rousettus aegyptiacus"
+   ],
+   "query": [
+    "Rousettus aegyptiacus",
+    "Pipistrellus pipistrellus"
+   ],
+   "ttid": 262580,
+   "ncbiTaxon": 9397,
+   "median": 61.41,
+   "ciLow": 59.55,
+   "ciHigh": 63.28,
+   "adjusted": 61.41,
+   "studies": 32,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Canis lupus",
+    "Felis catus",
+    "Panthera leo",
+    "Phoca vitulina",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Felis catus",
+    "Canis lupus"
+   ],
+   "ttid": 264761,
+   "ncbiTaxon": 33554,
+   "median": 53.66,
+   "ciLow": 51.21,
+   "ciHigh": 56.11,
+   "adjusted": 53.66,
+   "studies": 50,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Felis catus",
+    "Panthera leo"
+   ],
+   "query": [
+    "Felis catus",
+    "Panthera leo"
+   ],
+   "ttid": 264767,
+   "ncbiTaxon": 0,
+   "median": 13.8,
+   "ciLow": 11.95,
+   "ciHigh": 15.66,
+   "adjusted": 13.8,
+   "studies": 19,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Canis lupus",
+    "Phoca vitulina",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Canis lupus",
+    "Phoca vitulina"
+   ],
+   "ttid": 265033,
+   "ncbiTaxon": 379584,
+   "median": 44.94,
+   "ciLow": 42.34,
+   "ciHigh": 47.55,
+   "adjusted": 44.94,
+   "studies": 29,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Phoca vitulina",
+    "Ursus maritimus"
+   ],
+   "query": [
+    "Ursus maritimus",
+    "Phoca vitulina"
+   ],
+   "ttid": 265151,
+   "ncbiTaxon": 0,
+   "median": 39.65,
+   "ciLow": 36.87,
+   "ciHigh": 42.42,
+   "adjusted": 39.65,
+   "studies": 21,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ceratotherium simum",
+    "Equus caballus"
+   ],
+   "query": [
+    "Equus caballus",
+    "Ceratotherium simum"
+   ],
+   "ttid": 264685,
+   "ncbiTaxon": 9787,
+   "median": 54.66,
+   "ciLow": 53.61,
+   "ciHigh": 55.72,
+   "adjusted": 54.66,
+   "studies": 40,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Sus scrofa",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Sus scrofa",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 265493,
+   "ncbiTaxon": 0,
+   "median": 58.96,
+   "ciLow": 55.54,
+   "ciHigh": 62.37,
+   "adjusted": 58.96,
+   "studies": 28,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Bos taurus",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 265537,
+   "ncbiTaxon": 0,
+   "median": 56.76,
+   "ciLow": 54.92,
+   "ciHigh": 58.61,
+   "adjusted": 56.76,
+   "studies": 39,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Bos taurus",
+    "Giraffa camelopardalis"
+   ],
+   "query": [
+    "Bos taurus",
+    "Giraffa camelopardalis"
+   ],
+   "ttid": 265539,
+   "ncbiTaxon": 35500,
+   "median": 23.68,
+   "ciLow": 21.1,
+   "ciHigh": 26.26,
+   "adjusted": 23.68,
+   "studies": 15,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Hippopotamus amphibius",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Hippopotamus amphibius",
+    "Balaenoptera musculus"
+   ],
+   "ttid": 266193,
+   "ncbiTaxon": 2653789,
+   "median": 53.01,
+   "ciLow": 51.78,
+   "ciHigh": 54.23,
+   "adjusted": 53.01,
+   "studies": 40,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Balaenoptera musculus",
+    "Tursiops truncatus"
+   ],
+   "ttid": 266194,
+   "ncbiTaxon": 9721,
+   "median": 33.55,
+   "ciLow": 32.38,
+   "ciHigh": 34.71,
+   "adjusted": 33.55,
+   "studies": 41,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dromaius novaehollandiae",
+    "Eublepharis macularius",
+    "Falco peregrinus",
+    "Gallus gallus",
+    "Haliaeetus leucocephalus",
+    "Iguana iguana",
+    "Ophiophagus hannah",
+    "Podarcis muralis",
+    "Psittacus erithacus",
+    "Python regius",
+    "Sphenodon punctatus",
+    "Struthio camelus",
+    "Taeniopygia guttata",
+    "Tyto alba",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Eublepharis macularius",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 272127,
+   "ncbiTaxon": 32561,
+   "median": 280.68,
+   "ciLow": 276.55,
+   "ciHigh": 284.82,
+   "adjusted": 280.68,
+   "studies": 39,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Eublepharis macularius",
+    "Iguana iguana",
+    "Ophiophagus hannah",
+    "Podarcis muralis",
+    "Python regius",
+    "Sphenodon punctatus",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Sphenodon punctatus",
+    "Eublepharis macularius"
+   ],
+   "ttid": 272128,
+   "ncbiTaxon": 8504,
+   "median": 244.98,
+   "ciLow": 236.56,
+   "ciHigh": 253.4,
+   "adjusted": 244.98,
+   "studies": 29,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Eublepharis macularius",
+    "Iguana iguana",
+    "Ophiophagus hannah",
+    "Podarcis muralis",
+    "Python regius",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Eublepharis macularius",
+    "Iguana iguana"
+   ],
+   "ttid": 272145,
+   "ncbiTaxon": 1329961,
+   "median": 200.13,
+   "ciLow": 191.6,
+   "ciHigh": 208.65,
+   "adjusted": 200.13,
+   "studies": 37,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Iguana iguana",
+    "Ophiophagus hannah",
+    "Podarcis muralis",
+    "Python regius",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Podarcis muralis",
+    "Iguana iguana"
+   ],
+   "ttid": 276173,
+   "ncbiTaxon": 1329912,
+   "median": 172.86,
+   "ciLow": 166.29,
+   "ciHigh": 179.44,
+   "adjusted": 172.86,
+   "studies": 37,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Iguana iguana",
+    "Ophiophagus hannah",
+    "Python regius",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Iguana iguana",
+    "Varanus komodoensis",
+    "Ophiophagus hannah"
+   ],
+   "ttid": 276174,
+   "ncbiTaxon": 1329911,
+   "median": 162.24,
+   "ciLow": 155.1,
+   "ciHigh": 169.38,
+   "adjusted": 162.24,
+   "studies": 47,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Ophiophagus hannah",
+    "Python regius"
+   ],
+   "query": [
+    "Python regius",
+    "Ophiophagus hannah"
+   ],
+   "ttid": 276465,
+   "ncbiTaxon": 0,
+   "median": 76.34,
+   "ciLow": 66.43,
+   "ciHigh": 86.25,
+   "adjusted": 83.4,
+   "studies": 22,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Chelonia mydas",
+    "Chelonoidis niger",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dromaius novaehollandiae",
+    "Falco peregrinus",
+    "Gallus gallus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Struthio camelus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Chelonia mydas",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 283603,
+   "ncbiTaxon": 1329799,
+   "median": 256.83,
+   "ciLow": 248.98,
+   "ciHigh": 264.69,
+   "adjusted": 256.83,
+   "studies": 38,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Chelonia mydas",
+    "Chelonoidis niger"
+   ],
+   "query": [
+    "Chelonia mydas",
+    "Chelonoidis niger"
+   ],
+   "ttid": 299614,
+   "ncbiTaxon": 1579337,
+   "median": 98.66,
+   "ciLow": 83.93,
+   "ciHigh": 113.38,
+   "adjusted": 99.86,
+   "studies": 20,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Columba livia",
+    "Corvus corax",
+    "Crocodylus niloticus",
+    "Dromaius novaehollandiae",
+    "Falco peregrinus",
+    "Gallus gallus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Struthio camelus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Alligator mississippiensis",
+    "Anas platyrhynchos"
+   ],
+   "ttid": 283604,
+   "ncbiTaxon": 8492,
+   "median": 243.3,
+   "ciLow": 239.62,
+   "ciHigh": 246.97,
+   "adjusted": 243.3,
+   "studies": 43,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Alligator mississippiensis",
+    "Crocodylus niloticus"
+   ],
+   "query": [
+    "Crocodylus niloticus",
+    "Alligator mississippiensis"
+   ],
+   "ttid": 283605,
+   "ncbiTaxon": 1294634,
+   "median": 88.04,
+   "ciLow": 77.05,
+   "ciHigh": 99.03,
+   "adjusted": 88.04,
+   "studies": 24,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Columba livia",
+    "Corvus corax",
+    "Dromaius novaehollandiae",
+    "Falco peregrinus",
+    "Gallus gallus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Struthio camelus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Dromaius novaehollandiae",
+    "Anas platyrhynchos"
+   ],
+   "proxies": [
+    "Dromaius novaehollandiae as Casuariiformes"
+   ],
+   "ttid": 283654,
+   "ncbiTaxon": 8782,
+   "median": 107.56,
+   "ciLow": 101.51,
+   "ciHigh": 113.6,
+   "adjusted": 107.56,
+   "studies": 38,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Dromaius novaehollandiae",
+    "Struthio camelus"
+   ],
+   "query": [
+    "Struthio camelus",
+    "Dromaius novaehollandiae"
+   ],
+   "proxies": [
+    "Struthio camelus as Struthioniformes",
+    "Dromaius novaehollandiae as Casuariiformes"
+   ],
+   "ttid": 283677,
+   "ncbiTaxon": 0,
+   "median": 65.52,
+   "ciLow": 59.78,
+   "ciHigh": 71.27,
+   "adjusted": 65.52,
+   "studies": 24,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Columba livia",
+    "Corvus corax",
+    "Falco peregrinus",
+    "Gallus gallus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Anas platyrhynchos",
+    "Aptenodytes forsteri"
+   ],
+   "ttid": 283730,
+   "ncbiTaxon": 8825,
+   "median": 96.41,
+   "ciLow": 90.2,
+   "ciHigh": 102.61,
+   "adjusted": 96.41,
+   "studies": 48,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Anas platyrhynchos",
+    "Gallus gallus"
+   ],
+   "query": [
+    "Gallus gallus",
+    "Anas platyrhynchos"
+   ],
+   "ttid": 283731,
+   "ncbiTaxon": 1549675,
+   "median": 78.82,
+   "ciLow": 72.87,
+   "ciHigh": 84.77,
+   "adjusted": 78.82,
+   "studies": 47,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Columba livia",
+    "Corvus corax",
+    "Falco peregrinus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Columba livia",
+    "Archilochus colubris",
+    "Aptenodytes forsteri",
+    "Corvus corax"
+   ],
+   "ttid": 284530,
+   "ncbiTaxon": 0,
+   "median": 86.49,
+   "ciLow": 74.14,
+   "ciHigh": 98.84,
+   "adjusted": 78.07,
+   "studies": 7,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Corvus corax",
+    "Falco peregrinus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Haliaeetus leucocephalus",
+    "Corvus corax"
+   ],
+   "ttid": 286727,
+   "ncbiTaxon": 3073808,
+   "median": 69.52,
+   "ciLow": 63.34,
+   "ciHigh": 75.7,
+   "adjusted": 70.65,
+   "studies": 18,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Haliaeetus leucocephalus",
+    "Tyto alba"
+   ],
+   "query": [
+    "Tyto alba",
+    "Haliaeetus leucocephalus"
+   ],
+   "ttid": 298098,
+   "ncbiTaxon": 0,
+   "median": 66.19,
+   "ciLow": 61.96,
+   "ciHigh": 70.42,
+   "adjusted": 69.08,
+   "studies": 8,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Corvus corax",
+    "Falco peregrinus",
+    "Psittacus erithacus",
+    "Taeniopygia guttata"
+   ],
+   "query": [
+    "Falco peregrinus",
+    "Corvus corax"
+   ],
+   "ttid": 286732,
+   "ncbiTaxon": 0,
+   "median": 74.24,
+   "ciLow": 68.8,
+   "ciHigh": 79.68,
+   "adjusted": 70.65,
+   "studies": 23,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Corvus corax",
+    "Psittacus erithacus",
+    "Taeniopygia guttata"
+   ],
+   "query": [
+    "Psittacus erithacus",
+    "Corvus corax"
+   ],
+   "ttid": 286863,
+   "ncbiTaxon": 0,
+   "median": 72.47,
+   "ciLow": 65.77,
+   "ciHigh": 79.17,
+   "adjusted": 70.65,
+   "studies": 19,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Corvus corax",
+    "Taeniopygia guttata"
+   ],
+   "query": [
+    "Corvus corax",
+    "Taeniopygia guttata"
+   ],
+   "ttid": 286893,
+   "ncbiTaxon": 0,
+   "median": 31.52,
+   "ciLow": 24.93,
+   "ciHigh": 38.12,
+   "adjusted": 29.06,
+   "studies": 11,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus",
+    "Rattus norvegicus"
+   ],
+   "query": [
+    "Mus musculus",
+    "Hydrochoerus hydrochaeris"
+   ],
+   "ttid": 266598,
+   "ncbiTaxon": 0,
+   "median": 70.9,
+   "ciLow": 63.25,
+   "ciHigh": 78.54,
+   "adjusted": 69.82,
+   "studies": 27,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Ceratotherium simum",
+    "Equus caballus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Pipistrellus pipistrellus",
+    "Rousettus aegyptiacus",
+    "Sus scrofa",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Balaenoptera musculus",
+    "Pipistrellus pipistrellus"
+   ],
+   "ttid": 262579,
+   "ncbiTaxon": 0,
+   "median": 79.3,
+   "ciLow": 76.16,
+   "ciHigh": 82.44,
+   "adjusted": 79.3,
+   "studies": 26,
+   "conflict": "TimeTree's clade for these species also contains Canis lupus",
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Balaenoptera musculus",
+    "Bos taurus",
+    "Ceratotherium simum",
+    "Equus caballus",
+    "Giraffa camelopardalis",
+    "Hippopotamus amphibius",
+    "Sus scrofa",
+    "Tursiops truncatus"
+   ],
+   "query": [
+    "Balaenoptera musculus",
+    "Ceratotherium simum"
+   ],
+   "ttid": 264683,
+   "ncbiTaxon": 0,
+   "median": 75.95,
+   "ciLow": 72.06,
+   "ciHigh": 79.85,
+   "adjusted": 75.95,
+   "studies": 29,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Choloepus didactylus",
+    "Dasypus novemcinctus",
+    "Loxodonta africana",
+    "Myrmecophaga tridactyla",
+    "Orycteropus afer",
+    "Trichechus manatus"
+   ],
+   "query": [
+    "Loxodonta africana",
+    "Choloepus didactylus"
+   ],
+   "ttid": 261619,
+   "ncbiTaxon": 0,
+   "median": 90.59,
+   "ciLow": 85.61,
+   "ciHigh": 95.58,
+   "adjusted": 90.59,
+   "studies": 16,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Aptenodytes forsteri",
+    "Archilochus colubris",
+    "Corvus corax",
+    "Falco peregrinus",
+    "Haliaeetus leucocephalus",
+    "Psittacus erithacus",
+    "Taeniopygia guttata",
+    "Tyto alba"
+   ],
+   "query": [
+    "Corvus corax",
+    "Aptenodytes forsteri"
+   ],
+   "ttid": 285718,
+   "ncbiTaxon": 0,
+   "median": 71.46,
+   "ciLow": 0,
+   "ciHigh": 0,
+   "adjusted": 70.65,
+   "studies": 1,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Aptenodytes forsteri",
+    "Archilochus colubris"
+   ],
+   "query": [
+    "Archilochus colubris",
+    "Aptenodytes forsteri"
+   ],
+   "ttid": 285028,
+   "ncbiTaxon": 0,
+   "median": 68.15,
+   "ciLow": 64.7,
+   "ciHigh": 71.6,
+   "adjusted": 70.65,
+   "studies": 8,
+   "conflict": "TimeTree's clade for these species also contains Corvus corax",
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Iguana iguana",
+    "Varanus komodoensis"
+   ],
+   "query": [
+    "Iguana iguana",
+    "Varanus komodoensis"
+   ],
+   "ttid": 279606,
+   "ncbiTaxon": 0,
+   "median": 159.68,
+   "ciLow": 149.3,
+   "ciHigh": 170.06,
+   "adjusted": 159.68,
+   "studies": 24,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Amphiprion ocellaris",
+    "Mola mola"
+   ],
+   "query": [
+    "Amphiprion ocellaris",
+    "Mola mola"
+   ],
+   "ttid": 230352,
+   "ncbiTaxon": 0,
+   "median": 106.78,
+   "ciLow": 98.4,
+   "ciHigh": 115.17,
+   "adjusted": 106.15,
+   "studies": 37,
+   "retrieved": "2026-10-31"
+  },
+  {
+   "clade": [
+    "Rhincodon typus",
+    "Sphyrna mokarran"
+   ],
+   "query": [
+    "Sphyrna mokarran",
+    "Rhincodon typus"
+   ],
+   "proxies": [
+    "Rhincodon typus as Orectolobiformes"
+   ],
+   "ttid": 215587,
+   "ncbiTaxon": 119195,
+   "median": 255.11,
+   "ciLow": 198.7,
+   "ciHigh": 311.52,
+   "adjusted": 255.11,
+   "studies": 3,
+   "conflict": "TimeTree's clade for these species also contains Carcharodon carcharias",
+   "retrieved": "2026-10-31"
+  }
+ ]
+}

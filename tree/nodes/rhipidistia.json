@@ -1,10 +1,32 @@
 {
   "name": "Rhipidistia",
+  "mrca": [
+    "Neoceratodus forsteri",
+    "Homo sapiens"
+  ],
   "common": "Lungfishes and tetrapods",
   "blurb": "Lungfishes are the closest living relatives of the land vertebrates.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 407.6,
+        "mid": 411.98,
+        "hi": 418.95,
+        "method": "Bayesian relaxed molecular clock (PhyloBayes, CAT-GTR), calibration scheme C16; mean and conservative 95% credibility interval (extremes of the 95% CIs of 100 gene-jackknife timetrees)",
+        "data": "Phylotranscriptomic data, 100 jawed vertebrates (genome-wide estimate)",
+        "cite": "irisarri2017",
+        "checked": "Irisarri et al. 2017, Supplementary Table 9, node 104 (\"Lungfish + tetrapod\")"
+      }
+    ],
+    "display": {
+      "lo": 407.6,
+      "mid": 411.98,
+      "hi": 418.95,
+      "source": "synthesis"
+    }
+  },
   "review": null
 }

@@ -1,0 +1,32 @@
+{
+  "name": "Scrotifera",
+  "common": "Bats, carnivores and hoofed mammals",
+  "mrca": [
+    "Pipistrellus pipistrellus",
+    "Canis lupus",
+    "Bos taurus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 71.17,
+        "mid": 74.82,
+        "hi": 78.5,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 48"
+      }
+    ],
+    "display": {
+      "lo": 71.17,
+      "mid": 74.82,
+      "hi": 78.5,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

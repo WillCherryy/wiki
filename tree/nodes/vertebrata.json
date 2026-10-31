@@ -1,5 +1,9 @@
 {
   "name": "Vertebrata",
+  "mrca": [
+    "Myxine glutinosa",
+    "Homo sapiens"
+  ],
   "common": "Vertebrates",
   "blurb": "Animals with a backbone or its forerunner, a skull, and a brain in three parts. Every species in this section descends from their last common ancestor.",
   "relationship": {

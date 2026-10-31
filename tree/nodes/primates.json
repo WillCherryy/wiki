@@ -1,5 +1,9 @@
 {
   "name": "Primates",
+  "mrca": [
+    "Lemur catta",
+    "Homo sapiens"
+  ],
   "common": "Primates",
   "blurb": "Lemurs, monkeys and apes, humans included: grasping hands, forward-facing eyes and large brains for their size.",
   "relationship": {
@@ -8,10 +12,34 @@
   "age": {
     "fossilMin": {
       "ma": 56,
-      "taxon": "",
-      "formation": "",
+      "taxon": "Altiatlasius koulchii (THR 141, MNHN Paris), the oldest euprimate",
+      "formation": "Adrar Mgorn 1, Ouarzazate Basin, Morocco",
+      "dating": "Magnetostratigraphy: late or latest Thanetian; top of the Thanetian, 56.0 Ma",
       "cite": "benton2015",
-      "checked": "secondary table citing Benton et al. 2015"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 81 (Crown Primates)"
+    },
+    "softMax": {
+      "ma": 66,
+      "basis": "Early Paleocene plesiadapiforms but no definitive crown primates: base of the Paleocene, 66.04 ± 0.4 Ma",
+      "cite": "benton2015",
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 81 (Crown Primates)"
+    },
+    "clock": [
+      {
+        "lo": 65.64,
+        "mid": 69.27,
+        "hi": 72.96,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 64"
+      }
+    ],
+    "display": {
+      "lo": 65.64,
+      "mid": 69.27,
+      "hi": 72.96,
+      "source": "synthesis"
     }
   },
   "review": null
