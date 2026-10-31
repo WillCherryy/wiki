@@ -295,7 +295,7 @@ const server = http.createServer((req, res) => {
     });
   }
   const TYPES = { '.txt': 'text/plain', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' };
-  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/skyobjects.js', '/observatory.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/ads.txt'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
+  const STATIC = {}; ['/cats.js', '/clean.js', '/packs.js', '/skyobjects.js', '/universe.js', '/observatory.js', '/sky.html', '/sky.css', '/sky-app.js', '/config.js', '/legal.js', '/legal.css', '/styles.css', '/puzzles.json', '/pool.json', '/packs.json', '/privacy.html', '/terms.html', '/overlay.html', '/overlay.css', '/admin.html', '/admin-puzzles.html', '/admin.css', '/solver.js', '/wikiclient.js', '/favicon.svg', '/og.png', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/ads.txt'].forEach(f => { STATIC[f] = TYPES[path.extname(f)]; });
   const ft = url.pathname.match(/^\/fonts\/([\w.-]+\.(woff2|txt))$/);
   if (req.method === 'GET' && ft) {
     return fs.readFile(path.join(__dirname, 'fonts', ft[1]), (e, buf) => {
@@ -307,6 +307,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (url.pathname === '/stars/catalogue.bin' || url.pathname === '/stars/names.txt')) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': url.pathname.endsWith('.txt') ? 'text/plain; charset=utf-8' : 'application/octet-stream' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }   // the real star catalogue
   if (req.method === 'GET' && /^\/maps\/[a-z-]+\.jpg$/.test(url.pathname)) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': 'image/jpeg' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }   // planet surface maps
   if (req.method === 'GET' && /^\/og\/(find\/[a-z0-9-]+|day\/\d{4}-\d{2}-\d{2})\.jpg$/.test(url.pathname)) { try { const buf = fs.readFileSync(path.join(__dirname, url.pathname)); res.writeHead(200, { 'content-type': 'image/jpeg' }); return res.end(buf); } catch { res.writeHead(404); return res.end(); } }
+  if (req.method === 'GET' && url.pathname === '/sky') url.pathname = '/sky.html';   // Scorcher Sky (Cloudflare serves /sky from sky.html the same way)
   if (req.method === 'GET' && STATIC[url.pathname]) {
     return fs.readFile(path.join(__dirname, url.pathname), (e, buf) => {
       if (e) return json(res, 404, {});

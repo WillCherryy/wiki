@@ -158,8 +158,8 @@
 
   /* ------------------------------------------------------------------ size comparison: everything you own, side by side at true scale */
   const REFS = [{ n: 'Earth', ref: 'earth', r: .00917, kind: 'Our planet, for scale', c: '#7fb4ff' }, { n: 'Jupiter', ref: 'jupiter', r: .1005, kind: 'The largest planet, for scale', c: '#e8c8a0' }];
-  function compare(startName, pick, mode) {   // pick: only these names (any objects you own, plus Earth, Jupiter and the Sun); mode 'all' shows them side by side in one frame
-    if (document.getElementById('cmp')) return; const own = skyList(), seen = new Set(); let list = [];
+  function compare(startName, pick, mode, src) {   // pick: only these names (any objects you own, plus Earth, Jupiter and the Sun); mode 'all' shows them side by side in one frame; src: the objects to choose from (Scorcher Sky passes everything; Your Sky, what you own)
+    if (document.getElementById('cmp')) return; const own = src || skyList(), seen = new Set(); let list = [];
     own.forEach(b => { if (seen.has(b.n)) return; seen.add(b.n); list.push({ n: b.n, b, r: SKY.physR(b), kind: b.kind, c: SKY.OBJ[b.idx].c, id: b.id }); });
     REFS.forEach(x => list.push({ ...x, r: x.r })); if (!own.some(b => b.n === 'The Sun')) list.push({ n: 'The Sun', ref: 'sun', r: 1, kind: 'Our star, for scale', c: '#ffc83a', b: { n: 'The Sun', id: 'sun', t: '≈ 5,800 K', m: 1, idx: 3 } });
     own.forEach(b => (SKY.PLANETS[b.n] || []).forEach(([pn, re, a, P, kind]) => { if (pn === 'Earth' || pn === 'Jupiter') return; list.push({ n: pn, ref: 'planet', kind: 'Planet of ' + b.n, pk: kind, r: re * .009158, c: '#cfe0ff' }); }));
@@ -215,8 +215,8 @@
       const byR = full.slice().sort((a, b) => b.r - a.r), draw = q => { pk.querySelector('#cpRes').innerHTML = byR.filter(o => !q || o.n.toLowerCase().includes(q)).map(o => `<button data-n="${esc(o.n)}" class="${chosen.has(o.n) ? 'on' : ''}" style="--c:${o.c}"><i></i><b>${esc(o.n)}</b><span>${esc(o.ref ? 'Reference' : typeName(o.id))}</span><em>${fmtRad(o.r)[0]}</em></button>`).join('');
           pk.querySelector('#cpN').textContent = chosen.size ? chosen.size + ' chosen' : 'Tap objects to choose them'; pk.querySelectorAll('#cpRes button').forEach(b => b.onclick = () => { chosen.has(b.dataset.n) ? chosen.delete(b.dataset.n) : chosen.add(b.dataset.n); b.classList.toggle('on'); pk.querySelector('#cpN').textContent = chosen.size ? chosen.size + ' chosen' : 'Tap objects to choose them'; }); };
       draw(''); pk.querySelector('#cpQ').oninput = e => draw(e.target.value.trim().toLowerCase()); setTimeout(() => pk.querySelector('#cpQ').focus(), 30);
-      pk.querySelector('#cpAll').onclick = () => { close(); compare(list[Math.round(idx)].n); };
-      pk.querySelector('#cpGo').onclick = () => { if (chosen.size < 2) return toast('Choose at least two objects'); const names = [...chosen]; close(); compare(names[0], names, 'all'); }; };
+      pk.querySelector('#cpAll').onclick = () => { close(); compare(list[Math.round(idx)].n, null, null, src); };
+      pk.querySelector('#cpGo').onclick = () => { if (chosen.size < 2) return toast('Choose at least two objects'); const names = [...chosen]; close(); compare(names[0], names, 'all', src); }; };
     host.querySelector('#cmpPrev').onclick = () => go(-1); host.querySelector('#cmpNext').onclick = () => go(1);
     const key = e => { if (host.querySelector('.cmp-pick') && e.key !== 'Escape') return; if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1); else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1); else if (e.key === 'Escape') { const pk = host.querySelector('.cmp-pick'); if (pk) pk.remove(); else close(); } };
     const close = () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size); document.removeEventListener('keydown', key); host.remove(); if (OM && OM.pause) OM.pause(false); };

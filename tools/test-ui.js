@@ -37,8 +37,20 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     const sz = await page.evaluate(() => { const c = document.getElementById('obCv'); return c ? [c.width, c.clientWidth, document.getElementById('obInsp').innerText.length] : null; }); if (!sz || sz[0] < sz[1] * .4 || sz[2] < 20) bad(`${tag} observatory did not open properly (${sz})`); if (errs.length) bad(`${tag} observatory: ${errs[0]}`);
     errs.length = 0; await page.evaluate(() => { document.getElementById('obClose').click(); Observatory.compare('The Sun'); }); await page.waitForTimeout(1200); if (!(await page.evaluate(() => !!document.getElementById('cmpInfo') && document.getElementById('cmpInfo').innerText.length > 10))) bad(`${tag} size comparison did not open`); if (errs.length) bad(`${tag} compare: ${errs[0]}`);
     await page.evaluate(() => document.getElementById('cmpX').click());
+    // Scorcher Sky: the same engine with everything unlocked, its own scientific interface
+    errs.length = 0; await page.goto(`http://localhost:${PORT}/sky`); await page.waitForTimeout(2500);
+    { const r = await page.evaluate(async () => { const out = {}; out.welcome = document.getElementById('sxInsp').innerText.length; __map.pick('Betelgeuse'); await new Promise(r => setTimeout(r, 600));
+        const t = document.getElementById('sxInsp').innerText; out.bet = /Betelgeuse/.test(t) && /Right ascension/.test(t) && /PUBLISHED/i.test(t);
+        __map.pick('Jupiter'); await new Promise(r => setTimeout(r, 400)); out.jup = /Ecliptic longitude/.test(document.getElementById('sxInsp').innerText);
+        const st = { gx: 120, gy: -40, gz: 15, unit: .84, M: 1.2, T: 6100, L: 28, kind: 'F-type main-sequence star', hex: '#fff4e0', name: 'Test' }; showStar(st); out.star = /Declination/.test(document.getElementById('sxInsp').innerText);
+        __map.pick('Betelgeuse'); await new Promise(r => setTimeout(r, 300)); document.querySelector('[data-a="cmp"]').click(); await new Promise(r => setTimeout(r, 900)); out.cmp = !!document.getElementById('cmpInfo'); const x = document.getElementById('cmpX'); if (x) x.click();
+        __map.pick('Jupiter'); await new Promise(r => setTimeout(r, 300)); document.querySelector('[data-a="globe"]').click(); await new Promise(r => setTimeout(r, 600)); out.globe = !!document.getElementById('inspect'); const g = document.getElementById('inX'); if (g) g.click();
+        const q = document.getElementById('sxQ'); q.value = '05h35m -05.4'; q.dispatchEvent(new Event('input')); out.coord = /Orion Nebula/.test(document.getElementById('sxRes').innerText);
+        out.over = document.documentElement.scrollWidth - innerWidth; return out; });
+      if (errs.length) bad(`${tag} /sky: script error: ${errs[0]}`); if (r.welcome < 50) bad(`${tag} /sky: no welcome panel`); if (!r.bet) bad(`${tag} /sky: object inspector incomplete`); if (!r.jup) bad(`${tag} /sky: planet inspector incomplete`);
+      if (!r.star) bad(`${tag} /sky: catalogue star inspector incomplete`); if (!r.cmp) bad(`${tag} /sky: size comparison did not open`); if (!r.globe) bad(`${tag} /sky: globe did not open`); if (!r.coord) bad(`${tag} /sky: coordinate search failed`); if (r.over > 2) bad(`${tag} /sky: page scrolls sideways by ${r.over}px`); }
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates)');
 })().catch(e => { console.error(e); process.exit(1); });
