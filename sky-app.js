@@ -123,8 +123,9 @@ function factsStar(st) {
     { k: 'Absolute magnitude', v: minus(st.M.toFixed(1)), tag: 'pub', src: bright ? src : 'Gaia DR3 G magnitude and parallax', g: 'absmag' },
     { k: 'Temperature', v: '≈ ' + nf(st.T) + ' K', s: 'from its colour', tag: 'der', src: 'Ballesteros (2012) colour–temperature relation, from B−V (approximated from Gaia BP−RP)', g: 'temp' },
     { k: 'Visual luminosity', v: s3(st.L) + ' L☉', tag: 'der', src: 'From the absolute magnitude; no bolometric correction', g: 'vlum' },
+    ...(st.R == null ? [] : [{ k: 'Radius (rough estimate)', v: '≈ ' + sig(st.R) + ' R☉', tag: 'der', src: 'From the visual luminosity and colour temperature by the Stefan–Boltzmann law. With no bolometric correction it underestimates very hot and very cool stars; the disc drawn when you approach uses this size', g: 'size' }]),
     { k: 'Spectral class (estimate)', v: st.kind, tag: 'der', src: 'Estimated from colour and absolute magnitude, not from a spectrum' }];
-  return { name: st.name || 'A catalogue star', eyebrow: 'Catalogue star · real measurement', c: st.hex, blurb: st.name ? '' : 'One of the 756,000 stars in the catalogue behind this map, from the Gaia and Hipparcos missions. It has no common name.', rows, place: 'At its measured position in three dimensions.', links: [['SIMBAD near here', simbadCone(ra, de, unc * 60 * 1.2)]], acts: [] };
+  return { name: st.name || 'A catalogue star', eyebrow: 'Catalogue star · real measurement', c: st.hex, blurb: st.name ? '' : 'One of the 756,000 stars in the catalogue behind this map, from the Gaia and Hipparcos missions. It has no common name.', rows, place: 'At its measured position in three dimensions. Fly to it to approach it; close in, it is drawn as a disc at its estimated size.', links: [['SIMBAD near here', simbadCone(ra, de, unc * 60 * 1.2)]], acts: ['go'], oi: st.src };
 }
 function facts(n) {
   const pi = SKY.planetInfo(n); if (pi) return factsPlanet(n, pi);
@@ -137,7 +138,7 @@ const RULER = { lo: -10, hi: 10, ticks: [['1 R☉', 7.36e-8], ['1 AU', 1.58e-5],
 const rulerX = ly => (Math.log10(ly) - RULER.lo) / (RULER.hi - RULER.lo);
 const SPEEDS = [['Pause', 0], ['Real time', 1], ['1 day/s', 86400], ['1 year/s', 3.156e7], ['1 Myr/s', 3.156e13]];
 const ICON = { search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>', list: '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>', x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>', plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>', minus: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>', info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>' };
-let map = null, sel = null, curFacts = null;
+let map = null, sel = null, curFacts = null, tapStar = null;
 
 const app = $('#sxApp');
 app.innerHTML = `<div class="sx-map" id="sxMap"><canvas id="sxCv" aria-label="Map of the universe. Drag to move, scroll or pinch to zoom, tap an object to inspect it."></canvas></div>
@@ -193,7 +194,7 @@ function renderInsp() {
 }
 function act(a) {
   const F = curFacts; if (!F) return;
-  if (a === 'go') map.pick(F.name);
+  if (a === 'go') map.pick(F.oi != null ? '★' + F.oi : F.name);
   else if (a === 'look') openInspect(F.name, () => {});
   else if (a === 'globe') openGlobe(F.name, () => {});
   else if (a === 'host') map.pick(F.host);
@@ -213,12 +214,14 @@ function welcome() {
 }
 function show(n) { sel = n; curFacts = facts(n); if (curFacts) setHash(n); renderInsp(); }
 let lastStar = null;
-function showStar(st) { sel = null; lastStar = st; curFacts = factsStar(st); setHash(''); renderInsp(); }
+function showStar(st) { sel = null; lastStar = st; curFacts = factsStar(st); setHash('★' + st.src); renderInsp(); }
 const setHash = n => { try { history.replaceState(null, '', n ? '#o=' + encodeURIComponent(n) : location.pathname); } catch {} };
 
 /* ---- the map itself */
-map = window.__map = uniMap(cv, ALL, { intro: !/#o=/.test(location.hash), z: .4, noMini: true, onQuality: v => { qual = v; size(); }, onPick: n => { SKY.mark(null); show(n); closeBrowse(); }, onEmpty: (x, y, k) => {
-  const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } SKY.mark(st.src); showStar(st);
+map = window.__map = uniMap(cv, ALL, { intro: !/#o=/.test(location.hash), z: .4, noMini: true, catLabels: true, onQuality: v => { qual = v; size(); }, onPick: n => { closeBrowse(); if (n[0] === '★') { const oi = +n.slice(1), st = SKY.starInfo(oi); SKY.mark(oi); if (st) { showStar(st); setHash(n); } return; } SKY.mark(null); show(n); }, onEmpty: (x, y, k) => {
+  const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } const now = Date.now(), again = tapStar && tapStar.oi === st.src && now - tapStar.t < 400; tapStar = { oi: st.src, t: now };
+  if (again) { map.pick('★' + st.src); return; }   // double-tap a star to approach it
+  SKY.mark(st.src); showStar(st);
   if (st.name == null) { const t0 = Date.now(), iv = setInterval(() => { if (SKY.namesReady() || Date.now() - t0 > 6000) { clearInterval(iv); st.name = SKY.starName(st.src); if (curFacts && curFacts.c === st.hex) showStar(st); } }, 200); } } });
 
 /* ---- browse */
@@ -229,8 +232,15 @@ function drawList(filter = '') {
   const box = $('#sxList'), sortBy = $('#sxSort').value, f = filter.toLowerCase(), by = (a, sz, dk = x => distOf(x.n)) => a.sort(sortBy === 'name' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'size' ? (x, y) => sz(y) - sz(x) : (x, y) => dk(x) - dk(y) || x.n.localeCompare(y.n));
   const row = (n, sub, c, right) => `<button class="sx-row ${n === sel ? 'cur' : ''}" data-n="${esc(n)}" style="--c:${c}"><i></i><span><b>${esc(n)}</b><small>${esc(sub)}</small></span><em>${esc(right)}</em></button>`;
   const dTxt = n => { const d = distOf(n); return n === 'The Sun' ? '—' : isFinite(d) ? fmtLen(d) : ''; };
-  if (btab === 'obj') { box.innerHTML = SKY.OBJ.map((o, i) => { const items = by(ALL.filter(b => b.idx === i && (!f || b.n.toLowerCase().includes(f))), b => SKY.physR(b)); if (!items.length) return ''; const on = !!f || openT === o.id;
-      return `<div class="sx-grp ${on ? 'on' : ''}"><button class="sx-gh" data-t="${o.id}" style="--c:${o.c}" aria-expanded="${on}"><i></i><span>${esc(o.name.replace(/y$/, 'ie') + 's')}</span><em>${items.length}</em></button>${on ? items.map(b => row(b.n, b.kind, o.c, sortBy === 'size' ? radText(SKY.physR(b))[0] : dTxt(b.n))).join('') : ''}</div>`; }).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
+  if (btab === 'obj') { const CG = SKY.catGroups();   // every star the map draws counts: the featured objects plus the catalogue stars of each type
+    const onScreen = () => { const r = box.getBoundingClientRect(), st = getComputedStyle(box.closest('aside, section, div') || box); return r.width > 0 && r.height > 0 && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight && st.visibility !== 'hidden' && +st.opacity !== 0; };
+    if (!CG && onScreen()) { SKY.catLoad(); clearTimeout(drawList.w); drawList.w = setTimeout(() => drawList($('#sxQ').value.trim()), 700); }
+    box.innerHTML = SKY.OBJ.map((o, i) => { const items = by(ALL.filter(b => b.idx === i && (!f || b.n.toLowerCase().includes(f))), b => SKY.physR(b)), all = ALL.filter(b => b.idx === i).length, cn = CG && CG.n[o.id] || 0;
+      const cat = CG && CG.named[o.id] ? CG.named[o.id].filter(x => !f || x.name.toLowerCase().includes(f)) : []; if (!items.length && !cat.length) return ''; const on = !!f || openT === o.id;
+      const cs = on ? cat.slice().sort(sortBy === 'name' ? (x, y) => x.name.localeCompare(y.name) : sortBy === 'size' ? (x, y) => y.R - x.R : (x, y) => x.ly - y.ly) : [], SHOW = 40;
+      const catRows = cs.slice(0, SHOW).map(x => row('★' + x.oi, 'Catalogue star', o.c, sortBy === 'size' ? '≈ ' + sig(x.R) + ' R☉' : fmtLen(x.ly)).replace(`<b>★${x.oi}</b>`, `<b>${esc(x.name)}</b>`)).join('');
+      const head = cn ? `<div class="sx-sub">${nf(all)} featured, with full data</div>` : '', tail = cn && on ? `<div class="sx-sub">In the catalogue: ${nf(cn)} stars of this type<small>Classified from colour and brightness, not spectra. The catalogue holds stars brighter than magnitude 10.5, so luminous giants are over-represented and faint dwarfs rare. ${nf(CG.named[o.id].length)} have a proper name${cs.length > SHOW ? `; the ${SHOW} ${sortBy === 'name' ? 'first by name' : sortBy === 'size' ? 'largest' : 'nearest'} are listed, search for the rest` : ''}. Tap any other star on the map to identify it.</small></div>${catRows}` : '';
+      return `<div class="sx-grp ${on ? 'on' : ''}"><button class="sx-gh" data-t="${o.id}" style="--c:${o.c}" aria-expanded="${on}"><i></i><span>${esc(o.name.replace(/y$/, 'ie') + 's')}</span><em>${nf(all + cn)}</em></button>${on ? head + items.map(b => row(b.n, b.kind, o.c, sortBy === 'size' ? radText(SKY.physR(b))[0] : dTxt(b.n))).join('') + tail : ''}</div>`; }).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
   else if (btab === 'pl') { const groups = Object.entries(SKY.PLANETS).map(([h, L]) => [h, by(L.map(p => ({ n: p[0], p })).filter(x => !f || x.n.toLowerCase().includes(f) || h.toLowerCase().includes(f)), x => x.p[1], x => x.p[2])]).filter(g => g[1].length);
     box.innerHTML = groups.map(([h, L]) => `<div class="sx-grp on"><div class="sx-gh static"><span>${esc(h === 'The Sun' ? 'Solar System' : h)}</span><em>${L.length}</em></div>${L.map(x => row(x.n, h === 'The Sun' ? KINDS[x.p[4]] || 'Planet' : 'Planet of ' + h, '#bcd2ff', sortBy === 'size' ? sig(x.p[1]) + ' R⊕' : sig(x.p[2]) + ' AU')).join('')}${h === 'The Sun' ? Object.entries(SKY.MOONS).flatMap(([pl, M]) => M.filter(m => !f || m[0].toLowerCase().includes(f)).map(m => row(m[0], 'Moon of ' + pl, '#9fb2d8', nf(m[1]) + ' km'))).join('') : ''}</div>`).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
   else { const L = by(LANDN().filter(n => !f || n.toLowerCase().includes(f)).map(n => ({ n })), x => { const a = SKY.LANDS[x.n]; return a ? a[4] : (SKY.LOCAL.find(y => y.n === x.n) || {}).rly || 0; });
@@ -241,7 +251,7 @@ function drawList(filter = '') {
 $$('.sx-tabs button').forEach(b => b.onclick = () => { btab = b.dataset.b; $$('.sx-tabs button').forEach(x => x.classList.toggle('on', x === b)); openT = ''; map.setFilter(null); drawList($('#sxQ').value.trim()); });
 $('#sxSort').onchange = () => drawList($('#sxQ').value.trim());
 const openBrowse = () => document.body.classList.add('browse'), closeBrowse = () => document.body.classList.remove('browse');
-$('#sxBrowseBtn').onclick = () => document.body.classList.toggle('browse'); $('#sxBrowseX').onclick = closeBrowse;
+$('#sxBrowseBtn').onclick = () => { document.body.classList.toggle('browse'); setTimeout(() => drawList($('#sxQ').value.trim()), 450); };   // after the panel has slid in, so its counts can load $('#sxBrowseX').onclick = closeBrowse;
 
 /* ---- search: names, or a position on the sky */
 const POSITIONED = () => { const out = []; ALL.forEach(b => { const a = SKY.NEAR[b.n], g = SKY.GALD[b.n]; if (a && a[3]) out.push([b.n, raOf(a[0], a[1]), a[2], SKY.OBJ[b.idx].name]); else if (g) out.push([b.n, raOf(g[0], g[1]), g[2], SKY.OBJ[b.idx].name]); });
@@ -257,7 +267,10 @@ function search(v) {
   if (c) { const near = POSITIONED().map(([n, ra, de, k]) => [n, sep(c[0], c[1], ra, de), k]).sort((a, b) => a[1] - b[1]).slice(0, 8);
     html = `<div class="sx-res-h">Nearest to RA ${fmtRA(c[0])}, Dec ${fmtDec(c[1])}</div>${near.map(([n, d, k]) => `<button data-n="${esc(n)}"><b>${esc(n)}</b><span>${esc(k)}</span><em>${d < 1 ? nf(d * 60, 1) + '′' : nf(d, 1) + '°'} away</em></button>`).join('')}<a class="sx-res-ext" href="${simbadCone(c[0], c[1], 10)}" target="_blank" rel="noopener">Search every catalogued object within 10′ on SIMBAD ↗</a>`; }
   else { const f = q.toLowerCase(), hits = [...ALL.map(b => [b.n, SKY.OBJ[b.idx].name]), ...Object.values(SKY.PLANETS).flat().map(p => [p[0], 'Planet']), ...Object.values(SKY.MOONS).flat().map(m => [m[0], 'Moon']), ...LANDN().map(n => [n, 'Landmark'])].filter(([n]) => n.toLowerCase().includes(f)).sort((a, b) => (a[0].toLowerCase().indexOf(f) - b[0].toLowerCase().indexOf(f)) || a[0].localeCompare(b[0])).slice(0, 10);
-    html = hits.length ? hits.map(([n, k]) => `<button data-n="${esc(n)}"><b>${esc(n)}</b><span>${esc(k)}</span></button>`).join('') : `<p>Nothing by that name among the objects drawn here. The map's 756,000 catalogue stars can be found by tapping them.</p><a class="sx-res-ext" href="${simbadId(q)}" target="_blank" rel="noopener">Look up “${esc(q)}” on SIMBAD ↗</a>`; }
+    const ready = SKY.namesReady(); if (!ready) { SKY.catLoad(); clearTimeout(search.w); search.w = setTimeout(() => { if ($('#sxQ').value.trim() === q) search(q); }, 400); }
+    const stars = ready && q.length >= 2 ? SKY.starSearch(q, Math.max(3, 12 - hits.length)) : [], du = ly => PREF.unit === 'pc' ? nf(ly / 3.2616, ly < 32.6 ? 1 : 0) + ' pc' : nf(ly, ly < 100 ? 1 : 0) + ' ly';
+    const rows = [...hits.map(([n, k]) => [n, n, k]), ...stars.map(s => ['★' + s.oi, s.name, 'Catalogue star · ' + du(s.ly)])];   // the 111,000 named stars of the catalogue, brightest first
+    html = rows.length ? rows.map(([id, n, k]) => `<button data-n="${esc(id)}"><b>${esc(n)}</b><span>${esc(k)}</span></button>`).join('') + (ready ? '' : '<p class="sx-res-wait">Loading the names of catalogue stars…</p>') : ready ? `<p>Nothing by that name here, among the drawn objects or the 111,000 named stars of the catalogue.</p><a class="sx-res-ext" href="${simbadId(q)}" target="_blank" rel="noopener">Look up “${esc(q)}” on SIMBAD ↗</a>` : '<p class="sx-res-wait">Loading the names of catalogue stars…</p>'; }
   res.innerHTML = html; res.hidden = false; $$('button', res).forEach(b => b.onclick = () => { res.hidden = true; $('#sxQ').blur(); map.pick(b.dataset.n); });
 }
 $('#sxQ').oninput = e => search(e.target.value);
@@ -333,4 +346,4 @@ document.addEventListener('keydown', e => {
 });
 
 drawList(); renderInsp();
-{ const m = location.hash.match(/#o=(.+)$/); if (m) { const n = decodeURIComponent(m[1]); setTimeout(() => map.pick(n), 350); } }
+{ const m = location.hash.match(/#o=(.+)$/); if (m) { const n = decodeURIComponent(m[1]); if (n[0] === '★') { SKY.catLoad(); const t0 = Date.now(), iv = setInterval(() => { if (SKY.namesReady() && SKY.catAnchor(+n.slice(1))) { clearInterval(iv); map.pick(n); } else if (Date.now() - t0 > 15000) clearInterval(iv); }, 250); } else setTimeout(() => map.pick(n), 350); } }

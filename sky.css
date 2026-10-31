@@ -68,6 +68,8 @@ body.sx::before, body.sx::after { display: none; }
 .sx-row i { width: 6px; height: 6px; box-shadow: none; opacity: .8; }
 .sx-row span { flex: 1; min-width: 0; } .sx-row b { display: block; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sx-row small { display: block; font-size: 11.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sx-sub { margin: 10px 8px 4px 12px; font: 500 10.5px var(--sans, inherit); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.sx-sub small { display: block; margin-top: 4px; font-size: 11.5px; font-weight: 400; letter-spacing: 0; text-transform: none; line-height: 1.45; }
 .sx-row:hover { background: rgba(255, 255, 255, .05); } .sx-row.cur { background: rgba(255, 255, 255, .09); }
 .sx-none { color: var(--mute); padding: 12px; }
 .sx-bfoot { display: none; align-items: center; gap: 4px; flex-wrap: wrap; padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); }

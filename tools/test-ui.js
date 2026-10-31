@@ -49,6 +49,16 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
         out.over = document.documentElement.scrollWidth - innerWidth; return out; });
       if (errs.length) bad(`${tag} /sky: script error: ${errs[0]}`); if (r.welcome < 50) bad(`${tag} /sky: no welcome panel`); if (!r.bet) bad(`${tag} /sky: object inspector incomplete`); if (!r.jup) bad(`${tag} /sky: planet inspector incomplete`);
       if (!r.star) bad(`${tag} /sky: catalogue star inspector incomplete`); if (!r.cmp) bad(`${tag} /sky: size comparison did not open`); if (!r.globe) bad(`${tag} /sky: globe did not open`); if (!r.coord) bad(`${tag} /sky: coordinate search failed`); if (r.over > 2) bad(`${tag} /sky: page scrolls sideways by ${r.over}px`); }
+    // catalogue stars: found by name, approached and followed; a followed object stays centred however uneven the frames (the camera once lagged and judders)
+    { const r = await page.evaluate(async () => { const wait = ms => new Promise(f => setTimeout(f, ms)), out = {}, cv = document.querySelector('#sxMap canvas, canvas');
+        SKY.catLoad(); for (let i = 0; i < 80 && !SKY.namesReady(); i++) await wait(250);
+        const q = document.getElementById('sxQ'); q.value = 'Mesarthim'; q.dispatchEvent(new Event('input')); const b = [...document.querySelectorAll('#sxRes button')].find(x => x.dataset.n[0] === '★'); out.find = !!b;
+        __map.pick('Betelgeuse'); await wait(4500); __map.zoomTo(cv.width * SKY.LYU / 300); __map.setSpeed(3.156e13); await wait(2500); let worst = 0;   // a 300 ly view at 1 Myr/s: the star crosses the screen in seconds
+        for (let f = 0; f < 15; f++) { await new Promise(r => requestAnimationFrame(r)); const p = __map.pos().find(x => x.n === 'Betelgeuse'); worst = Math.max(worst, p ? Math.hypot(p.x - cv.width / 2, p.y - cv.height / 2) : 1e9); }
+        __map.setSpeed(1); out.follow = worst < 3; out.worst = worst;
+        if (b) { b.click(); await wait(6000); out.star = __map.cam().follow === b.dataset.n && /Fly to/.test(document.getElementById('sxInsp').innerText) && /Mesarthim/.test(document.getElementById('sxInsp').innerText); }
+        return out; });
+      if (!r.find) bad(`${tag} /sky: catalogue star not found by name`); if (!r.follow) bad(`${tag} /sky: followed object drifts off centre (${r.worst && r.worst.toFixed(1)} px)`); if (!r.star) bad(`${tag} /sky: could not fly to a catalogue star`); }
     // Scorcher Tree: loads the built dataset, inspects species and branch points, compares two species, opens a collapsed group, searches
     errs.length = 0; await page.goto(`http://localhost:${PORT}/tree`); await page.waitForTimeout(1500);
     { const r = await page.evaluate(async () => { const T = window.__tree, side = () => document.getElementById('txSide').innerText, out = {}; if (!T) return { load: false }; out.load = true;
