@@ -1,0 +1,10 @@
+{
+  "name": "Chondrichthyes",
+  "common": "Cartilaginous fishes",
+  "blurb": "Sharks, rays and chimaeras, with skeletons of cartilage rather than bone.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

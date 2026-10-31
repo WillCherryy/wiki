@@ -1,0 +1,10 @@
+{
+  "name": "Actinopterygii",
+  "common": "Ray-finned fishes",
+  "blurb": "Fishes whose fins are webs of skin on bony rays. About half of all living vertebrate species belong here.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

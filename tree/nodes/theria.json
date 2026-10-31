@@ -1,0 +1,10 @@
+{
+  "name": "Theria",
+  "common": "Live-bearing mammals",
+  "blurb": "Marsupials and placental mammals.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

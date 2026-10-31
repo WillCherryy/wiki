@@ -1,0 +1,25 @@
+{
+  "name": "Archelosauria",
+  "common": "Turtles, crocodiles and birds",
+  "blurb": "Turtles grouped with archosaurs, the lineage of crocodiles and birds. Where turtles belong was argued over for more than a century.",
+  "relationship": {
+    "status": "debated",
+    "note": "Genome-scale data place turtles with archosaurs. Anatomy has placed them elsewhere, because their skulls lack the openings other reptiles have.",
+    "competing": [
+      {
+        "name": "Turtles with archosaurs",
+        "summary": "Turtles are the sister group of crocodiles and birds, as most genome-scale studies find."
+      },
+      {
+        "name": "Turtles with lepidosaurs",
+        "summary": "Turtles are closest to the tuatara, lizards and snakes, as some morphological analyses found."
+      },
+      {
+        "name": "Turtles outside the diapsids",
+        "summary": "Turtles branched off before all other living reptiles, the traditional reading of their solid skull."
+      }
+    ]
+  },
+  "age": {},
+  "review": null
+}

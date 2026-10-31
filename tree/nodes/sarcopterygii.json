@@ -1,0 +1,10 @@
+{
+  "name": "Sarcopterygii",
+  "common": "Lobe-finned vertebrates",
+  "blurb": "Coelacanths, lungfishes and the tetrapods: fins (or limbs) built on a single bone joined to the body.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Teleostei",
+  "common": "Teleosts",
+  "blurb": "The great radiation of ray-finned fishes, from eels and herring to seahorses and the ocean sunfish.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

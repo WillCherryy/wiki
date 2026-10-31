@@ -1,0 +1,10 @@
+{
+  "name": "Osteichthyes",
+  "common": "Bony vertebrates",
+  "blurb": "Vertebrates with bony skeletons: the ray-finned fishes, and the lobe-finned fishes including all land vertebrates.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Sauria",
+  "common": "Reptiles",
+  "blurb": "The living reptiles: tuatara, lizards and snakes on one side; turtles, crocodiles and birds on the other.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

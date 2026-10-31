@@ -1,0 +1,10 @@
+{
+  "name": "Gnathostomata",
+  "common": "Jawed vertebrates",
+  "blurb": "Vertebrates with hinged jaws and paired fins or limbs: everything from sharks to humans.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

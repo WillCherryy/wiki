@@ -49,8 +49,18 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
         out.over = document.documentElement.scrollWidth - innerWidth; return out; });
       if (errs.length) bad(`${tag} /sky: script error: ${errs[0]}`); if (r.welcome < 50) bad(`${tag} /sky: no welcome panel`); if (!r.bet) bad(`${tag} /sky: object inspector incomplete`); if (!r.jup) bad(`${tag} /sky: planet inspector incomplete`);
       if (!r.star) bad(`${tag} /sky: catalogue star inspector incomplete`); if (!r.cmp) bad(`${tag} /sky: size comparison did not open`); if (!r.globe) bad(`${tag} /sky: globe did not open`); if (!r.coord) bad(`${tag} /sky: coordinate search failed`); if (r.over > 2) bad(`${tag} /sky: page scrolls sideways by ${r.over}px`); }
+    // Scorcher Tree: loads the built dataset, inspects species and branch points, compares two species, opens a collapsed group, searches
+    errs.length = 0; await page.goto(`http://localhost:${PORT}/tree`); await page.waitForTimeout(1500);
+    { const r = await page.evaluate(async () => { const T = window.__tree, side = () => document.getElementById('txSide').innerText, out = {}; if (!T) return { load: false }; out.load = true;
+        T.select('homo-sapiens', true); out.taxon = /Homo sapiens/.test(side()) && /Closest relatives/i.test(side());
+        T.select('placentalia', true); out.node = /Atlantogenata/.test(side()) && /not yet sourced/.test(side());
+        T.setCompare(['homo-sapiens', 'gallus-gallus']); out.cmp = /Last common ancestor/i.test(side()) && /Amniot/.test(side());
+        const was = T.byId.get('teleostei').row; T.toggle('teleostei'); out.open = T.byId.get('danio-rerio').row != null;
+        const q = document.getElementById('txQ'); q.value = 'coelac'; q.dispatchEvent(new Event('input')); out.search = /coelacanth/i.test(document.getElementById('txRes').innerText);
+        out.over = document.documentElement.scrollWidth - innerWidth; return out; });
+      if (errs.length) bad(`${tag} /tree: script error: ${errs[0]}`); if (!r.load) bad(`${tag} /tree: dataset did not load`); else { if (!r.taxon) bad(`${tag} /tree: species inspector incomplete`); if (!r.node) bad(`${tag} /tree: branch-point inspector incomplete`); if (!r.cmp) bad(`${tag} /tree: comparison did not find the common ancestor`); if (!r.open) bad(`${tag} /tree: group did not open`); if (!r.search) bad(`${tag} /tree: search failed`); if (r.over > 2) bad(`${tag} /tree: page scrolls sideways`); } }
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches)');
 })().catch(e => { console.error(e); process.exit(1); });

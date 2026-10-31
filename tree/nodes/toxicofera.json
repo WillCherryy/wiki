@@ -1,0 +1,21 @@
+{
+  "name": "Toxicofera",
+  "common": "Toxicofera",
+  "blurb": "Iguanas, monitor lizards and snakes. Molecular data group them together; anatomy has traditionally suggested a different arrangement.",
+  "relationship": {
+    "status": "debated",
+    "note": "A long-standing conflict between molecular and morphological evidence.",
+    "competing": [
+      {
+        "name": "Toxicofera (molecular)",
+        "summary": "Iguanians, anguimorphs (including monitor lizards) and snakes form one group, nested well inside the lizards."
+      },
+      {
+        "name": "Iguania at the base (morphological)",
+        "summary": "Iguanians are the sister group of all other squamates (Scleroglossa), as anatomical studies have long found."
+      }
+    ]
+  },
+  "age": {},
+  "review": null
+}

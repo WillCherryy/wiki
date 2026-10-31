@@ -1,0 +1,10 @@
+{
+  "name": "Lissamphibia",
+  "common": "Living amphibians",
+  "blurb": "Frogs, salamanders and caecilians. That they form one group is widely accepted; which fossil amphibians they descend from is still debated.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

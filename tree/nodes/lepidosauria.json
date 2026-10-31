@@ -1,0 +1,10 @@
+{
+  "name": "Lepidosauria",
+  "common": "Tuatara, lizards and snakes",
+  "blurb": "The tuatara of New Zealand is the last survivor of a lineage that separated from lizards and snakes long ago.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

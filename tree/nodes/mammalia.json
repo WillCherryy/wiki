@@ -1,0 +1,10 @@
+{
+  "name": "Mammalia",
+  "common": "Mammals",
+  "blurb": "Animals that feed their young on milk and have hair and a jaw joint of their own. The platypus and echidna still lay eggs.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

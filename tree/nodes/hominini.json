@@ -1,0 +1,10 @@
+{
+  "name": "Hominini",
+  "common": "Humans and chimpanzees",
+  "blurb": "Humans, chimpanzees and bonobos. Chimpanzees and bonobos are our closest living relatives.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

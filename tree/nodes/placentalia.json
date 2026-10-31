@@ -1,0 +1,25 @@
+{
+  "name": "Placentalia",
+  "common": "Placental mammals",
+  "blurb": "Mammals whose young develop to an advanced stage inside the mother, nourished through a placenta. Where the root of their tree lies is one of the classic open questions in mammal evolution.",
+  "relationship": {
+    "status": "debated",
+    "note": "The three major lineages are well supported. Which of them split off first is not settled: the three possible answers each have support from different datasets and analyses.",
+    "competing": [
+      {
+        "name": "Atlantogenata",
+        "summary": "Afrotheria and Xenarthra are each other's closest relatives, as two southern-continent radiations."
+      },
+      {
+        "name": "Exafroplacentalia",
+        "summary": "Afrotheria split off first; Xenarthra is closer to Boreoeutheria."
+      },
+      {
+        "name": "Epitheria",
+        "summary": "Xenarthra split off first; Afrotheria is closer to Boreoeutheria."
+      }
+    ]
+  },
+  "age": {},
+  "review": null
+}

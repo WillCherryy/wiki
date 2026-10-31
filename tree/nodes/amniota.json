@@ -1,0 +1,10 @@
+{
+  "name": "Amniota",
+  "common": "Amniotes",
+  "blurb": "Mammals and reptiles, birds included: animals whose embryos develop inside protective membranes, freeing them from laying eggs in water.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}

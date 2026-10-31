@@ -1,0 +1,10 @@
+{
+  "name": "Tetrapoda",
+  "common": "Tetrapods",
+  "blurb": "Four-limbed vertebrates and their descendants, including those that later lost their limbs, such as snakes and caecilians.",
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {},
+  "review": null
+}
