@@ -5,6 +5,25 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 156.3,
+      "taxon": "",
+      "formation": "",
+      "cite": "benton2015",
+      "checked": "https://fossilcalibrations.org/Show_Calibration.php?CalibrationID=247"
+    },
+    "softMax": {
+      "ma": 169.6,
+      "basis": "Allows for southern tribosphenic mammals such as Ambondro possibly being therians",
+      "cite": "benton2015",
+      "checked": "https://fossilcalibrations.org/Show_Calibration.php?CalibrationID=247"
+    },
+    "display": {
+      "lo": 156.3,
+      "hi": 169.6,
+      "source": "calibration"
+    }
+  },
   "review": null
 }

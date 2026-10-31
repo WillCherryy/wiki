@@ -44,6 +44,7 @@ Build: `node tools/build-tree.js [--otol] [--images] [--verify]`. Without flags 
   - `clock`: molecular-clock estimates, each a published interval from one study.
 - **display** is what the explorer draws. Its `source` says where it came from:
   - `review`: chosen by a reviewed node's evidence review; `lo`/`hi` must equal one of the node's published clock intervals or its fossil/maximum bounds.
+  - `calibration`: a published fossil calibration bracket, from the node's own `fossilMin` to its `softMax` (a constraint on the age, not an estimate of it; the tree places the node at the minimum).
   - `synthesis`: one published synthesis interval (for a node not yet reviewed in depth), with its citation in `clock`.
   - `bounded`: no published estimate; the build derives only the bracket implied by dated neighbours (at least as old as its oldest dated descendant, no older than its dated parent). No midpoint is ever drawn for a bounded node.
 
@@ -64,3 +65,14 @@ Build: `node tools/build-tree.js [--otol] [--images] [--verify]`. Without flags 
 2. Write `tree/nodes/<id>.json` with each value and its citation key; add each work to `citations.json` with its DOI.
 3. `node tools/build-tree.js --verify`: every DOI resolves and its title and year match.
 4. A second person checks each number against the paper and sets `review: "reviewed"`.
+
+## Status of the age evidence (first pass)
+
+Eleven branch points carry fossil evidence, all from Benton et al. 2015 (doi:10.26879/424) except Sauria (Ezcurra, Scheyer & Butler 2014, doi:10.1371/journal.pone.0089165). The sandbox could not open the papers or Crossref, so each value was confirmed only against an index of the paper (its Zenodo treatment records, the Fossil Calibration Database, or a table citing it); each record's `checked` field says which. Every citation is therefore `verified: false` until `--verify` runs and a reviewer checks the number against the paper.
+
+To check first:
+- **Amniota (318–332.9 Ma):** a 2025 analysis reportedly places *Hylonomus* outside crown Amniota; if accepted, the minimum needs another fossil.
+- **Theria (156.3–169.6 Ma), Rodentia (56–66 Ma), Catarrhini (24.44–33.9 Ma):** add the fossil taxa and formations.
+- **Placentalia (soft maximum 164.6 Ma):** taken from a secondary table and based on *Juramaia*, whose Jurassic age is disputed.
+- **Primates (≥ 56 Ma), Hominidae (≥ 11.6 Ma):** from a secondary table; confirm in the paper.
+- No molecular-clock estimates yet: add published intervals (e.g. from TimeTree 5 and primary studies) once the sources can be reached.

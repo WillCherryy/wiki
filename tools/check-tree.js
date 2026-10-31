@@ -26,7 +26,8 @@ function validate(d, { strict = false } = {}) {
     if (a.softMax) { if (!num(a.softMax.ma)) errors.push(`${w}: soft maximum must be a positive age in Ma`); cite(`${w} soft maximum`, a.softMax.cite); if (a.fossilMin && a.softMax.ma < a.fossilMin.ma) errors.push(`${w}: soft maximum is younger than the fossil minimum`); }
     (a.clock || []).forEach((c, i) => { if (!num(c.lo) || !num(c.hi) || c.lo > c.hi || (c.mid != null && (c.mid < c.lo || c.mid > c.hi))) errors.push(`${w}: clock estimate ${i} must have 0 < lo ≤ mid ≤ hi`); cite(`${w} clock estimate ${i}`, c.cite); });
     const dp = a.display; if (dp) {
-      if (!['review', 'synthesis', 'bounded'].includes(dp.source)) errors.push(`${w}: display source "${dp.source}" is not review, synthesis or bounded`);
+      if (!['review', 'synthesis', 'calibration', 'bounded'].includes(dp.source)) errors.push(`${w}: display source "${dp.source}" is not review, synthesis, calibration or bounded`);
+      if (dp.source === 'calibration' && !(a.fossilMin && a.softMax && dp.lo === a.fossilMin.ma && dp.hi === a.softMax.ma)) errors.push(`${w}: a calibration display must run exactly from its fossil minimum to its soft maximum`);
       if (dp.source === 'bounded') { if (dp.mid != null) errors.push(`${w}: a bounded node must not have a midpoint`); }
       else { const fromRecords = (a.clock || []).some(c => c.lo === dp.lo && c.hi === dp.hi) || (a.fossilMin && a.softMax && dp.lo === a.fossilMin.ma && dp.hi === a.softMax.ma);
         if (!fromRecords) errors.push(`${w}: displayed interval ${dp.lo}–${dp.hi} Ma is not one of its published intervals (never invent a date)`);

@@ -30,8 +30,10 @@ function deriveBounds(tree, nodes) {
   const ownFloor = n => { const a = (nodes[n.id] || {}).age || {}, d = a.display; return Math.max(d && d.source !== 'bounded' ? d.lo : 0, a.fossilMin ? a.fossilMin.ma : 0); };
   const floor = new Map(); (function up(n) { if (!n.children) { floor.set(n.id, 0); return 0; } let f = ownFloor(n); n.children.forEach(c => { f = Math.max(f, up(c)); }); floor.set(n.id, f); return f; })(tree);
   (function down(n, ceil) { if (!n.children) return; const rec = nodes[n.id] || (nodes[n.id] = { relationship: { status: 'pending' }, age: {}, review: null }); rec.age = rec.age || {}; const d = rec.age.display;
-    if (!d || d.source === 'bounded') { const lo = n.children.reduce((m, c) => Math.max(m, floor.get(c.id)), 0); rec.age.display = lo > 0 || isFinite(ceil) ? { lo: lo || null, hi: isFinite(ceil) ? ceil : null, source: 'bounded' } : null; if (rec.age.display && rec.age.display.lo == null && rec.age.display.hi == null) rec.age.display = null; }
-    const own = rec.age.display && rec.age.display.source !== 'bounded' ? rec.age.display.hi : Infinity; n.children.forEach(c => down(c, Math.min(ceil, own))); })(tree, Infinity);
+    if (!d || d.source === 'bounded') {   // its own fossil minimum and soft maximum count, as do the floors of its descendants and the ceiling of its ancestors
+      const lo = n.children.reduce((m, c) => Math.max(m, floor.get(c.id)), rec.age.fossilMin ? rec.age.fossilMin.ma : 0), hi = Math.min(ceil, rec.age.softMax ? rec.age.softMax.ma : Infinity);
+      rec.age.display = lo > 0 || isFinite(hi) ? { lo: lo || null, hi: isFinite(hi) ? hi : null, source: 'bounded' } : null; }
+    const own = rec.age.display ? (rec.age.display.hi != null ? rec.age.display.hi : Infinity) : Infinity; n.children.forEach(c => down(c, Math.min(ceil, own))); })(tree, Infinity);
 }
 
 /* ---------------- network sources (only with flags) */

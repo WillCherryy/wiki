@@ -20,6 +20,13 @@
       }
     ]
   },
-  "age": {},
+  "age": {
+    "softMax": {
+      "ma": 164.6,
+      "basis": "Juramaia, the oldest eutherian (its Jurassic age is disputed)",
+      "cite": "benton2015",
+      "checked": "secondary table citing Benton et al. 2015"
+    }
+  },
   "review": null
 }

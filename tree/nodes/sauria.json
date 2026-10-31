@@ -5,6 +5,14 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 254.7,
+      "taxon": "",
+      "formation": "",
+      "cite": "ezcurra2014",
+      "checked": "PLOS ONE abstract"
+    }
+  },
   "review": null
 }

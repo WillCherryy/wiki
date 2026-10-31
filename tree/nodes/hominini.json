@@ -5,6 +5,14 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 6.5,
+      "taxon": "Sahelanthropus tchadensis",
+      "formation": "Chad",
+      "cite": "benton2015",
+      "checked": "https://palaeo-electronica.org/content/2023/3777-primate-fossil-calibrations"
+    }
+  },
   "review": null
 }

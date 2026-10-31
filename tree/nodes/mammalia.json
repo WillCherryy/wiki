@@ -5,6 +5,25 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 164.9,
+      "taxon": "Ambondro mahabo",
+      "formation": "Madagascar (a member of the monotreme lineage, Australosphenida)",
+      "cite": "benton2015",
+      "checked": "https://zenodo.org/records/13305933"
+    },
+    "softMax": {
+      "ma": 201.5,
+      "basis": "Triassic–Jurassic boundary: earlier mammaliaform faunas lack members of either crown lineage",
+      "cite": "benton2015",
+      "checked": "https://zenodo.org/records/13305933"
+    },
+    "display": {
+      "lo": 164.9,
+      "hi": 201.5,
+      "source": "calibration"
+    }
+  },
   "review": null
 }

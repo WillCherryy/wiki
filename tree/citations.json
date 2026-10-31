@@ -1,1 +1,19 @@
-{}
+{
+  "benton2015": {
+    "authors": "Benton, Donoghue, Asher, Friedman, Near & Vinther",
+    "year": 2015,
+    "title": "Constraints on the timescale of animal evolutionary history",
+    "journal": "Palaeontologia Electronica 18.1.1FC",
+    "doi": "10.26879/424",
+    "url": "https://palaeo-electronica.org/content/fc-1",
+    "verified": false
+  },
+  "ezcurra2014": {
+    "authors": "Ezcurra, Scheyer & Butler",
+    "year": 2014,
+    "title": "The origin and early evolution of Sauria: reassessing the Permian saurian fossil record and the timing of the crocodile-lizard divergence",
+    "journal": "PLOS ONE 9(2): e89165",
+    "doi": "10.1371/journal.pone.0089165",
+    "verified": false
+  }
+}

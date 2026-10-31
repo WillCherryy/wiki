@@ -1,0 +1,29 @@
+{
+  "name": "Rodentia",
+  "common": "Rodents",
+  "blurb": "The largest order of mammals: squirrels, capybaras, mice and rats, with ever-growing incisors.",
+  "relationship": {
+    "status": "pending"
+  },
+  "review": null,
+  "age": {
+    "fossilMin": {
+      "ma": 56,
+      "taxon": "",
+      "formation": "",
+      "cite": "benton2015",
+      "checked": "https://zenodo.org/records/13305955"
+    },
+    "softMax": {
+      "ma": 66,
+      "basis": "Fossil calibration bracket",
+      "cite": "benton2015",
+      "checked": "https://zenodo.org/records/13305955"
+    },
+    "display": {
+      "lo": 56,
+      "hi": 66,
+      "source": "calibration"
+    }
+  }
+}

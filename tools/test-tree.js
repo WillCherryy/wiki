@@ -13,6 +13,7 @@ assert.strictEqual(mrca(tree, ['a', 'b']).id, 'ab'); assert.strictEqual(mrca(tre
 const N = () => ({ root: { name: 'Root', relationship: { status: 'pending' }, age: { display: { lo: 100, hi: 120, source: 'synthesis' }, clock: [{ lo: 100, hi: 120, cite: 'k' }] } }, ab: { name: 'AB', relationship: { status: 'pending' }, age: {} } });
 { const n = N(); deriveBounds(tree, n); assert.deepStrictEqual(n.ab.age.display, { lo: null, hi: 120, source: 'bounded' }, 'a node under a dated parent is bounded above only'); }
 { const n = N(); n.ab.age.fossilMin = { ma: 50, cite: 'k' }; delete n.root.age.display; delete n.root.age.clock; deriveBounds(tree, n); assert.deepStrictEqual(n.root.age.display, { lo: 50, hi: null, source: 'bounded' }, 'a fossil below sets a floor, never a midpoint'); }
+{ const n = N(); n.ab.age = { fossilMin: { ma: 70, cite: 'k' }, softMax: { ma: 90, cite: 'k' } }; deriveBounds(tree, n); assert.deepStrictEqual(n.ab.age.display, { lo: 70, hi: 90, source: 'bounded' }, 'a node\'s own fossil minimum and soft maximum bound it'); }
 // rules
 const base = () => ({ taxa: { a: { sci: 'A a' }, b: { sci: 'B b' }, c: { sci: 'C c' } }, tree: JSON.parse(JSON.stringify(tree)), nodes: N(), citations: { k: { doi: '10.1/x', verified: true } } });
 const errs = (d, o) => validate(d, o).errors;
@@ -27,7 +28,8 @@ assert.deepStrictEqual(errs(base()), [], 'a clean dataset passes');
 { const d = base(); d.citations.k.verified = false; assert.deepStrictEqual(errs(d), []); assert(errs(d, { strict: true }).some(e => /not verified/.test(e)), 'strict mode needs verified DOIs'); }
 { const d = base(); d.nodes.root.age.display.mid = undefined; d.nodes.root.age.display = { lo: 100, hi: 120, mid: 110, source: 'bounded' }; assert(errs(d).some(e => /bounded node must not have a midpoint/.test(e))); }
 { const d = base(); d.taxa.a.image = { licence: 'All rights reserved', artist: 'X' }; assert(errs(d).some(e => /not free/.test(e)), 'unfree image'); }
+{ const d = base(); d.nodes.ab.age = { fossilMin: { ma: 50, cite: 'k' }, softMax: { ma: 60, cite: 'k' }, display: { lo: 50, hi: 60, source: 'calibration' } }; assert.deepStrictEqual(errs(d), [], 'a calibration bracket from its own records passes'); d.nodes.ab.age.display.hi = 61; assert(errs(d).some(e => /calibration display/.test(e)), 'calibration bracket must match its records'); }
 // the real dataset
 const real = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'treedata', 'vertebrates.json'), 'utf8')), r = validate(real);
 assert.deepStrictEqual(r.errors, [], 'the built vertebrate dataset breaks a rule');
-console.log(`ok: tree evidence rules (parser, MRCA, bounded ages, 11 rule checks); vertebrates.json: ${Object.keys(real.taxa).length} species, ${Object.keys(real.nodes).length} nodes, ${r.warnings.length} draft warnings`);
+console.log(`ok: tree evidence rules (parser, MRCA, bounded ages, 12 rule checks); vertebrates.json: ${Object.keys(real.taxa).length} species, ${Object.keys(real.nodes).length} nodes, ${r.warnings.length} draft warnings`);

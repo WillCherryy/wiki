@@ -5,6 +5,26 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 318,
+      "taxon": "Hylonomus lyelli",
+      "formation": "Joggins Formation, Nova Scotia",
+      "cite": "benton2015",
+      "checked": "https://palaeo-electronica.org/content/fc-1",
+      "note": "A 2025 analysis recovered Hylonomus outside crown Amniota; if that holds, this minimum needs another fossil."
+    },
+    "softMax": {
+      "ma": 332.9,
+      "basis": "Fossil calibration bracket",
+      "cite": "benton2015",
+      "checked": "https://palaeo-electronica.org/content/fc-1"
+    },
+    "display": {
+      "lo": 318,
+      "hi": 332.9,
+      "source": "calibration"
+    }
+  },
   "review": null
 }

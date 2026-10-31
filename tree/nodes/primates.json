@@ -5,6 +5,14 @@
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "fossilMin": {
+      "ma": 56,
+      "taxon": "",
+      "formation": "",
+      "cite": "benton2015",
+      "checked": "secondary table citing Benton et al. 2015"
+    }
+  },
   "review": null
 }

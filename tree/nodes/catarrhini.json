@@ -1,0 +1,29 @@
+{
+  "name": "Catarrhini",
+  "common": "Old World monkeys and apes",
+  "blurb": "Monkeys of Africa and Asia, and the apes, humans included.",
+  "relationship": {
+    "status": "pending"
+  },
+  "review": null,
+  "age": {
+    "fossilMin": {
+      "ma": 24.44,
+      "taxon": "",
+      "formation": "",
+      "cite": "benton2015",
+      "checked": "secondary table citing Benton et al. 2015"
+    },
+    "softMax": {
+      "ma": 33.9,
+      "basis": "Stem catarrhines from the early Oligocene Fayum beds, Egypt",
+      "cite": "benton2015",
+      "checked": "secondary table citing Benton et al. 2015"
+    },
+    "display": {
+      "lo": 24.44,
+      "hi": 33.9,
+      "source": "calibration"
+    }
+  }
+}
