@@ -7,4 +7,5 @@ Start by reading `docs/PLATFORM.md`: the platform vision (Wiki race, Scorcher Sk
 - The owner uses Windows PowerShell and deploys with `git pull origin main` then `npm run deploy`.
 - Never invent a date, support value or citation. Label measured, derived, modelled and illustrative values honestly.
 - Keep explanations scientifically accurate and brief. UI should be beautiful and clean; educational content rigorous, well developed and of a good difficulty.
-- Commit and push only when asked.
+- Work directly on `main` and push there (the owner's instruction, October 2026); commit and push only when asked.
+- Refresh TimeTree ages with `node tools/fetch-timetree.js`; full tree build: `node tools/build-tree.js --otol --images --verify`.

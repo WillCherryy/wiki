@@ -41,19 +41,22 @@ Known limits (stated on the page): named-object values are rounded literature va
 - **Decided, not yet done:** replace the simplified planet and Moon positions with **astronomy-engine** (MIT licence), giving any date and time and RA/Dec from Earth; link JPL Horizons for arcsecond work. Deliberately not the first change.
 - Later options: per-value citations for the named objects; a **schools** version (brief, classroom mode, child safety, curriculum fit, accessibility, measured-vs-modelled labelling); galaxy, neutron star, white dwarf and exoplanet detail upgrades; real lunar relief from LRO elevation data. An open question from the owner: Moon "wobble" (needs the planet, zoom level and whether the disc or the label moves).
 
-**Scorcher Tree (`/tree`): built, on draft data.** See `docs/tree-data.md` for the full evidence rules. Summary: a selected tree (91 vertebrates), canvas explorer with smooth zoom, collapsible groups, search, two-species comparison to the last common ancestor, an inspector showing relationship status, competing hypotheses and three kinds of age evidence (fossil minimum, soft maximum, molecular clock) never merged, deep links, and a geological time axis that switches on by itself once most branch points have published ages. `tools/build-tree.js` builds `treedata/vertebrates.json`; `tools/check-tree.js` enforces the rules (no number without a citation, displayed ages only from published intervals, no invented midpoints, polytomies stay unresolved, debates named, images freely licensed and credited).
-- 11 branch points have fossil calibrations and 3 have clock estimates, all from search summaries of the papers, all marked unverified. No photos yet. The branching is a hand-made conservative draft, not the Open Tree synthesis.
+**Scorcher Tree (`/tree`): built, on the Open Tree topology, with checked ages.** See `docs/tree-data.md` for the full evidence rules. Summary: a selected tree (91 vertebrates), canvas explorer with smooth zoom, collapsible groups, search, two-species comparison to the last common ancestor, an inspector showing relationship status, competing hypotheses and three kinds of age evidence (fossil minimum, soft maximum, molecular clock) never merged, deep links, and a geological time axis that switches on by itself once most branch points have published ages. `tools/build-tree.js` builds `treedata/vertebrates.json`; `tools/check-tree.js` enforces the rules (no number without a citation, displayed ages only from published intervals, no invented midpoints, polytomies stay unresolved, debates named, images freely licensed and credited).
+- Topology from the Open Tree synthesis (opentree16.1); all 91 names match it exactly. The hand-made draft remains only as the offline fallback.
+- Ages (October 2026 pass): 10 fossil calibrations read in Benton et al. 2015 and Ezcurra et al. 2014, with taxa, formations and dating; several values corrected. Clock estimates on 84 of 90 branch points: primary studies where their sampling spans the node (Tarver 2016 for 25 mammal nodes, Irisarri 2017 for deep nodes, Claramunt & Cracraft 2015, Stiller 2024), TimeTree 5 for the rest (`tools/fetch-timetree.js`, cached in `tree/timetree.json`). All 8 DOIs verified on Crossref. The time axis is on. No node is yet `reviewed`. Details and what changed: the status section of `docs/tree-data.md`.
+- 91/91 species have freely licensed, credited Commons photos; `tree/images.json` holds hand-picked replacements where the Wikidata image's licence or credit could not be used.
+- `node tools/check-tree.js --strict` still fails only on 8 uncited competing hypotheses (Placentalia, Archelosauria, Toxicofera).
 - Mockups for reference: `mockups/tree/`.
 
 **Evolution game:** not built. `phylo.html` and `phylo-data.js` are an old unlisted prototype (guess when two animals diverged); its dates are unverified and must not be shown to players. `docs/divergence-game.md` has its notes. The intended design is a deduction game integrated with the Tree; it needs an original mechanic and paper playtests before any build.
 
 ## Next steps, in order
 
-1. **Needs network access** (`api.opentreeoflife.org`, `www.wikidata.org`, `commons.wikimedia.org`, `api.crossref.org`, `timetree.org`, `palaeo-electronica.org`, `fossilcalibrations.org`, `zenodo.org`, `doi.org`):
-   - Run `node tools/build-tree.js --otol --images --verify`. Fix species names that do not match the Open Tree, evidence records that stop attaching, and photo licences.
-   - Check each age against its primary paper (the checklist is at the end of `docs/tree-data.md`).
-   - Add molecular-clock estimates for the other branch points from TimeTree and primary studies. This switches the tree onto its geological time axis.
+1. **Tree evidence** (done: Open Tree topology, photos, age checks, clock estimates; see Status). Remaining, in order:
+   - Cite the competing hypotheses on the three debated nodes, so strict mode passes.
+   - Fossil calibrations for the remaining nodes from Benton et al. 2015 (it covers most of them), and fish clock intervals (Hughes et al. 2018's supplement could not be downloaded from the sandbox).
    - Draft evidence reviews for the 15 to 50 major nodes; each needs a human check before `review: "reviewed"`.
+   - Network notes: Open Tree, Crossref, TimeTree, Palaeontologia Electronica, PLOS and Europe PMC are reachable; Wikimedia rate-limits bursts (the build retries); zenodo.org and some publishers return 403.
 2. Sky: astronomy-engine positions, then per-value citations.
 3. Evolution game: design spike with paper playtests, using the Tree data, before any build.
 4. Your Tree overlay, then Wiki race deep links into Sky and Tree.
