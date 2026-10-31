@@ -27,7 +27,7 @@ function walk(n, f, parent = null) { f(n, parent); (n.children || []).forEach(c 
 
 // bounded intervals: at least as old as the oldest dated thing below, no older than the youngest dated thing above (strictly from published values)
 function deriveBounds(tree, nodes) {
-  const ownFloor = n => { const a = (nodes[n.id] || {}).age || {}, d = a.display; return Math.max(d && d.source !== 'bounded' ? d.lo : 0, a.fossilMin ? a.fossilMin.ma : 0); };
+  const ownFloor = n => { const a = (nodes[n.id] || {}).age || {}, d = a.display; return Math.max(d && d.source === 'calibration' ? d.lo : 0, a.fossilMin ? a.fossilMin.ma : 0); };   // floors come only from fossils (hard minimums), never from the low end of a clock estimate
   const floor = new Map(); (function up(n) { if (!n.children) { floor.set(n.id, 0); return 0; } let f = ownFloor(n); n.children.forEach(c => { f = Math.max(f, up(c)); }); floor.set(n.id, f); return f; })(tree);
   (function down(n, ceil) { if (!n.children) return; const rec = nodes[n.id] || (nodes[n.id] = { relationship: { status: 'pending' }, age: {}, review: null }); rec.age = rec.age || {}; const d = rec.age.display;
     if (!d || d.source === 'bounded') {   // its own fossil minimum and soft maximum count, as do the floors of its descendants and the ceiling of its ancestors

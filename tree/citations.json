@@ -15,5 +15,21 @@
     "journal": "PLOS ONE 9(2): e89165",
     "doi": "10.1371/journal.pone.0089165",
     "verified": false
+  },
+  "tarver2016": {
+    "authors": "Tarver, dos Reis, Mirarab, Moran, Parker, O’Reilly, King, O’Connell, Asher, Warnow, Peterson, Donoghue & Pisani",
+    "year": 2016,
+    "title": "The interrelationships of placental mammals and the limits of phylogenetic inference",
+    "journal": "Genome Biology and Evolution 8(2): 330–344",
+    "doi": "10.1093/gbe/evv261",
+    "verified": false
+  },
+  "claramunt2015": {
+    "authors": "Claramunt & Cracraft",
+    "year": 2015,
+    "title": "A new time tree reveals Earth history’s imprint on the evolution of modern birds",
+    "journal": "Science Advances 1(11): e1501005",
+    "doi": "10.1126/sciadv.1501005",
+    "verified": false
   }
 }

@@ -23,7 +23,18 @@
       "lo": 156.3,
       "hi": 169.6,
       "source": "calibration"
-    }
+    },
+    "clock": [
+      {
+        "lo": 157,
+        "mid": 164,
+        "hi": 170,
+        "method": "Bayesian relaxed molecular clock",
+        "data": "Phylogenomic data",
+        "cite": "tarver2016",
+        "checked": "search summary of the paper"
+      }
+    ]
   },
   "review": null
 }

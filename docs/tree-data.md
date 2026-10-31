@@ -68,11 +68,13 @@ Build: `node tools/build-tree.js [--otol] [--images] [--verify]`. Without flags 
 
 ## Status of the age evidence (first pass)
 
-Eleven branch points carry fossil evidence, all from Benton et al. 2015 (doi:10.26879/424) except Sauria (Ezcurra, Scheyer & Butler 2014, doi:10.1371/journal.pone.0089165). The sandbox could not open the papers or Crossref, so each value was confirmed only against an index of the paper (its Zenodo treatment records, the Fossil Calibration Database, or a table citing it); each record's `checked` field says which. Every citation is therefore `verified: false` until `--verify` runs and a reviewer checks the number against the paper.
+Eleven branch points carry fossil evidence and three carry molecular-clock estimates, all from Benton et al. 2015 (doi:10.26879/424) except Sauria (Ezcurra, Scheyer & Butler 2014, doi:10.1371/journal.pone.0089165). The sandbox could not open the papers or Crossref, so each value was confirmed only against an index of the paper (its Zenodo treatment records, the Fossil Calibration Database, or a table citing it); each record's `checked` field says which. Every citation is therefore `verified: false` until `--verify` runs and a reviewer checks the number against the paper.
 
 To check first:
 - **Amniota (318–332.9 Ma):** a 2025 analysis reportedly places *Hylonomus* outside crown Amniota; if accepted, the minimum needs another fossil.
 - **Theria (156.3–169.6 Ma), Rodentia (56–66 Ma), Catarrhini (24.44–33.9 Ma):** add the fossil taxa and formations.
 - **Placentalia (soft maximum 164.6 Ma):** taken from a secondary table and based on *Juramaia*, whose Jurassic age is disputed.
 - **Primates (≥ 56 Ma), Hominidae (≥ 11.6 Ma):** from a secondary table; confirm in the paper.
-- No molecular-clock estimates yet: add published intervals (e.g. from TimeTree 5 and primary studies) once the sources can be reached.
+- **Molecular clocks (first three):** Placentalia 93 Ma (86–100) and Theria 164 Ma (157–170) from Tarver et al. 2016 (doi:10.1093/gbe/evv261); crown birds 95 Ma (84.2–114.3) from Claramunt & Cracraft 2015 (doi:10.1126/sciadv.1501005). Confirmed from search summaries of the papers only; check against each paper's figures and tables.
+- **Human–chimpanzee:** deliberately no clock estimate yet. Moorjani et al. 2016 (PNAS) report ~12.1 Myr for genetic divergence, which is not the population split time; the right figure and interval must come from the paper itself.
+- Floors on undated nodes come only from fossil minimums (hard constraints), never from the low end of a clock interval.

@@ -26,6 +26,23 @@
       "basis": "Juramaia, the oldest eutherian (its Jurassic age is disputed)",
       "cite": "benton2015",
       "checked": "secondary table citing Benton et al. 2015"
+    },
+    "clock": [
+      {
+        "lo": 86,
+        "mid": 93,
+        "hi": 100,
+        "method": "Bayesian relaxed molecular clock",
+        "data": "Phylogenomic data, placental mammals",
+        "cite": "tarver2016",
+        "checked": "search summary of the paper"
+      }
+    ],
+    "display": {
+      "lo": 86,
+      "mid": 93,
+      "hi": 100,
+      "source": "synthesis"
     }
   },
   "review": null
