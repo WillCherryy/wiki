@@ -59,6 +59,13 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
         if (b) { b.click(); await wait(6000); out.star = __map.cam().follow === b.dataset.n && /Fly to/.test(document.getElementById('sxInsp').innerText) && /Mesarthim/.test(document.getElementById('sxInsp').innerText); }
         return out; });
       if (!r.find) bad(`${tag} /sky: catalogue star not found by name`); if (!r.follow) bad(`${tag} /sky: followed object drifts off centre (${r.worst && r.worst.toFixed(1)} px)`); if (!r.star) bad(`${tag} /sky: could not fly to a catalogue star`); }
+    // the points catalogue and true scale: a nearby galaxy found by name and approached; Andromeda at its true distance from the Milky Way
+    { const r = await page.evaluate(async () => { const wait = ms => new Promise(f => setTimeout(f, ms)), out = {}; SKY.ptLoad(); for (let i = 0; i < 80 && !SKY.ptReady(); i++) await wait(250);
+        const q = document.getElementById('sxQ'); q.value = 'Messier 81'; q.dispatchEvent(new Event('input')); await wait(300); const b = [...document.querySelectorAll('#sxRes button')].find(x => x.dataset.n[0] === '◆'); out.find = !!b;
+        if (b) { b.click(); await wait(6000); out.go = __map.cam().follow === b.dataset.n && /Nearby galaxy/i.test(document.getElementById('sxInsp').innerText); }
+        const L = __map.lay, a = L.bodies[L.idxOf['Andromeda Galaxy']], ly = a ? Math.hypot(a.px, a.py) * SKY.LYU : 0; out.real = ly > 2e6 && ly < 2.6e6; out.ly = ly;   // projected on the plane: 2.3 Mly
+        return out; });
+      if (!r.find) bad(`${tag} /sky: galaxy not found by name`); if (!r.go) bad(`${tag} /sky: could not fly to a catalogued galaxy`); if (!r.real) bad(`${tag} /sky: Andromeda not at its true distance (${Math.round(r.ly)} ly)`); }
     // Scorcher Tree: loads the built dataset, inspects species and branch points, compares two species, opens a collapsed group, searches
     errs.length = 0; await page.goto(`http://localhost:${PORT}/tree`); await page.waitForTimeout(1500);
     { const r = await page.evaluate(async () => { const T = window.__tree, side = () => document.getElementById('txSide').innerText, out = {}; if (!T) return { load: false }; out.load = true;

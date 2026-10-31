@@ -50,6 +50,8 @@ const TAG = {
   ill: ['Illustrative', 'A visual choice that makes the object visible or legible. Not data.']
 };
 const GLOSS = {
+  z: 'Redshift: how much the expansion of the universe has stretched the light on its way here. z = 1 means wavelengths have doubled.',
+  comov: 'Where the galaxy is now. Its light set out long ago, and space has expanded since, so it is now farther away than the distance its light has travelled.',
   ra: 'Right ascension: the sky\'s equivalent of longitude, measured eastward along the celestial equator in hours (24 h = 360°). J2000 means the coordinate grid of 1 January 2000.',
   dec: 'Declination: the sky\'s equivalent of latitude, from +90° at the north celestial pole to −90° at the south.',
   gal: 'Galactic coordinates: longitude l and latitude b measured from the Sun, with l = 0° towards the centre of the Milky Way and b = 0° along its disc.',
@@ -78,13 +80,14 @@ const posRows = (ra, de, src, unc) => { const [l, b] = toGal(ra, de), u = unc ? 
   return [{ k: 'Right ascension (J2000)', v: fmtRA(ra) + u, s: PREF.detail === 'full' ? nf(ra, 3) + '°' : '', tag: unc ? 'der' : 'pub', src, g: 'ra' },
     { k: 'Declination (J2000)', v: fmtDec(de) + u, s: PREF.detail === 'full' ? sexDec(de) : '', tag: unc ? 'der' : 'pub', src, g: 'dec' },
     { k: 'Galactic l, b', v: `${nf(l, 2)}°, ${minus(nf(b, 2))}°`, tag: 'der', src: 'Converted from RA and Dec (IAU 1958 galactic frame, J2000)', g: 'gal', full: true }]; };
+const zRows = n => { const z = SKY.ZOF[n]; if (z == null) return []; return [{ k: 'Redshift', v: 'z = ' + z, tag: 'pub', src: LIT, g: 'z' }, { k: 'Distance now', v: dist(SKY.COSMO.comovingFromZ(z) * 1e6)[0], s: 'comoving distance; where it is placed on this map', tag: 'der', src: 'From the redshift, flat ΛCDM with Planck 2018 parameters (H₀ = 67.66 km/s/Mpc, Ωm = 0.311)', g: 'comov' }]; };   // the light left long ago; the galaxy is farther now
 const distRow = (ly, src, lt) => { const [a, b] = dist(ly); return { k: 'Distance from the Sun', v: a, s: b + (lt ? ' · light-travel distance' : ''), tag: 'pub', src, g: lt ? 'lt' : 'dist' }; };
 const LIT = 'Literature value, compiled from published sources and rounded; check the SIMBAD record for the primary reference';
 
 function factsObj(q) {
   const o = SKY.OBJ[q.idx], near = SKY.NEAR[q.n], gd = SKY.GALD[q.n], sun = q.n === 'The Sun', rows = [];
   let pos = null; if (near && near[3]) pos = { ra: raOf(near[0], near[1]), dec: near[2], ly: near[3], src: LIT }; else if (gd) pos = { ra: raOf(gd[0], gd[1]), dec: gd[2], ly: gd[3] * 1e6, src: LIT, lt: gd[3] >= 1000 }; else if (q.n === 'Sagittarius A*') pos = SGRA;
-  if (pos) rows.push(...posRows(pos.ra, pos.dec, pos.src), distRow(pos.ly, pos.src, pos.lt)); else if (sun) rows.push({ k: 'Distance from Earth', v: '1 AU', s: '149.6 million km · 8.3 light-minutes', tag: 'pub', src: 'IAU 2012 definition of the astronomical unit', g: 'orbit' });
+  if (pos) rows.push(...posRows(pos.ra, pos.dec, pos.src), distRow(pos.ly, pos.src, pos.lt), ...zRows(q.n)); else if (sun) rows.push({ k: 'Distance from Earth', v: '1 AU', s: '149.6 million km · 8.3 light-minutes', tag: 'pub', src: 'IAU 2012 definition of the astronomical unit', g: 'orbit' });
   const R = SKY.physR(q), rr = radText(R);
   if (q.id === 'quasar') rows.push({ k: 'Event horizon radius', v: rr[0], s: rr[1], tag: 'der', src: 'Schwarzschild radius 2GM/c² from the published black-hole mass', g: 'eh' });
   else rows.push({ k: 'Radius', v: rr[0], s: rr[1], tag: SKY.hasRadius(q.n) ? 'pub' : 'mod', src: SKY.hasRadius(q.n) ? LIT : `No published radius held here: estimated from the mass with a typical ${o.name.toLowerCase()} mass–radius relation`, g: 'rad' });
@@ -92,7 +95,7 @@ function factsObj(q) {
   if (q.t) rows.push({ k: 'Temperature', v: q.t, s: q.id === 'quasar' ? 'of the hot gas around the black hole' : '', tag: 'pub', src: LIT, g: 'temp' });
   if (!['quasar', 'neutron'].includes(q.id)) { const L = SKY.lumOf(q), ok = SKY.hasRadius(q.n) && /\d/.test(q.t || ''); rows.push({ k: 'Luminosity', v: s3(L) + ' L☉', tag: ok ? 'der' : 'mod', src: ok ? 'Stefan–Boltzmann law from the radius and temperature above' : 'From a modelled radius, so only indicative', g: 'lum', full: !ok }); }
   const pl = SKY.PLANETS[q.n] || []; if (pl.length) rows.push({ k: 'Known planets held here', v: String(pl.length), s: pl.map(p => p[0]).slice(0, 5).join(', ') + (pl.length > 5 ? '…' : ''), tag: 'pub', src: 'NASA Exoplanet Archive / literature, a selection' });
-  const place = sun ? 'At the centre of its own system, 26,700 ly from the centre of the Milky Way.' : gd ? 'True direction from the Sun. Distances between galaxies are compressed so the universe fits on one map.' : pos && pos.ly > 1e5 ? 'Placed in its host galaxy, in its true direction. Distances between galaxies are compressed.' : 'At its true position in three dimensions around the Sun: direction and distance.';
+  const place = sun ? 'At the centre of its own system, 26,700 ly from the centre of the Milky Way.' : gd ? GAL_PLACE : pos && pos.ly > 1e5 ? 'Placed in its host galaxy, at its true direction and distance.' : 'At its true position in three dimensions around the Sun: direction and distance.';
   return { name: q.n, eyebrow: q.kind && q.kind.toLowerCase() !== o.name.toLowerCase() ? `${o.name} · ${q.kind}` : o.name, c: o.c, blurb: q.f, rows, place, pic: 'Illustrative rendering from its type, temperature and size', links: [['Wikipedia', wiki(q.a)], sun ? null : ['SIMBAD', simbadId(q.n)]].filter(Boolean), acts: ['go', 'look', 'cmp'] };
 }
 function factsPlanet(n, pi) {
@@ -109,11 +112,35 @@ function factsLand(gb) {
   if (n === 'The Milky Way') return { name: 'The Milky Way', eyebrow: 'Our galaxy · barred spiral', c: '#cfc9e2', blurb: 'A barred spiral galaxy of a few hundred billion stars. The Sun lies in its disc, between two spiral arms.', rows: [{ k: 'Diameter of the stellar disc', v: '≈ 100,000 ly', s: 'the disc has no sharp edge; some studies find stars out to about twice this', tag: 'pub', src: 'Literature range' }, { k: 'Sun to centre', v: dist(SGRA.ly)[0], s: dist(SGRA.ly)[1], tag: 'pub', src: SGRA.src }, { k: 'Spiral arms, bar and disc on the map', v: 'Modelled', tag: 'mod', src: 'A painted model based on published maps of the arms and bar. We cannot photograph our own galaxy from outside.' }], place: 'You are inside it. Its overall shape is modelled; the stars near the Sun are real catalogue stars.', links: [['Wikipedia', wiki('Milky_Way')]], acts: ['go'] };
   const L = SKY.LANDS[n], LO = SKY.LOCAL.find(x => x.n === n), ST = SKY.STRUCT[n];
   if (L) { eyebrow = (LAND_KIND[L[5]] || 'Nebula') + ' · in the Milky Way'; blurb = L[6]; rows.push(...posRows(raOf(L[0], L[1]), L[2], LIT), distRow(L[3], LIT), { k: 'Diameter', v: '≈ ' + fmtLen(L[4] * 2), tag: 'pub', src: LIT, g: 'size' }); }
-  else if (LO) { eyebrow = 'Galaxy · Local Group'; blurb = LO.note; rows.push(...posRows(raOf(LO.ra[0], LO.ra[1]), LO.ra[2], LIT), distRow(LO.ly, LIT), { k: 'Diameter', v: '≈ ' + fmtLen(LO.rly * 2), tag: 'pub', src: LIT, g: 'size' }); place = LO.ly >= 1e6 ? 'True direction from the Sun. Distances between galaxies are compressed.' : place; }
+  else if (LO) { const ly = LO.ly || LO.mly * 1e6; eyebrow = LO.far ? 'Distant galaxy' : 'Galaxy · Local Group'; blurb = LO.note; rows.push(...posRows(raOf(LO.ra[0], LO.ra[1]), LO.ra[2], LIT), distRow(ly, LIT, !!LO.far), ...zRows(n), { k: 'Diameter', v: '≈ ' + fmtLen(LO.rly * 2), tag: 'pub', src: LIT, g: 'size' }); place = ly >= 1e6 ? GAL_PLACE : place; }   /* Andromeda and Triangulum hold their distance in millions of ly */
   else if (ST) { eyebrow = 'Structure of the Milky Way'; blurb = ST[3]; rows.push({ k: 'On the map', v: 'Modelled', tag: 'mod', src: 'Drawn from published maps of the Galaxy; no outside view exists' }); place = 'Part of the modelled shape of the Milky Way.'; }
   else if (gb.far) { eyebrow = 'Distant galaxy'; }
   return { name: n, eyebrow, c: '#cfc9e2', blurb, rows, place, pic: L || LO ? 'Illustrative rendering of a cloud, cluster or galaxy of this kind and size' : '', links: [['Wikipedia', wikiQ(n)], ST ? null : ['SIMBAD', simbadId(n)]].filter(Boolean), acts: ['go'] };
 }
+const GAL_PLACE = 'At its true direction and distance from the Sun (for distant galaxies, its comoving distance now). Seen from above the Milky Way’s disc, so its height above or below the disc is not shown.';
+const UNGC_M = { TRGB: 'tip of the red giant branch', Cep: 'Cepheid variables', SN: 'a supernova', CMD: 'its colour–magnitude diagram', RR: 'RR Lyrae variables', geom: 'geometry', mem: 'membership of a group with a measured distance', TF: 'the Tully–Fisher relation', BS: 'its brightest stars', txt: 'surface-brightness fluctuations', SBF: 'surface-brightness fluctuations', FP: 'the fundamental plane', GCLF: 'its globular clusters', PNLF: 'its planetary nebulae', h: 'its velocity (the Hubble flow)' };
+const morphText = T => T == null ? '' : T <= -4 ? 'Elliptical' : T === -3 ? 'Dwarf spheroidal' : T < 0 ? 'Lenticular' : T <= 8 ? 'Spiral' : T === 9 ? 'Magellanic spiral' : 'Irregular';   // de Vaucouleurs T type, as the UNGC uses it
+function factsPoint(q) {   // an object of the points catalogue: its published values, the method behind its distance, and the catalogue it comes from
+  const set = q.set, cite = set.cite, rows = [...posRows(q.ra, q.de, cite)], ly = q.d, gal = /^galaxy/.test(q.s); let eyebrow = set.title, blurb = '', place = 'At its catalogued direction and distance.';
+  const dRow = (tag, how) => ({ ...distRow(ly, cite), tag, src: cite + ' · ' + how });
+  if (q.s === 'galaxy') { const h = q.m === 'h'; rows.push(dRow(h ? 'der' : 'pub', 'distance from ' + (UNGC_M[q.m] || q.m) + (h ? '; approximate, since a nearby galaxy’s own motion is comparable with the expansion' : '') + '. Given to 0.01 Mpc (33,000 ly)'));
+    if (q.t != null) rows.push({ k: 'Type', v: morphText(q.t), s: 'T = ' + q.t, tag: 'pub', src: cite });
+    if (q.dk) rows.push({ k: 'Diameter', v: '≈ ' + fmtLen(q.dk * 3261.56), tag: 'pub', src: cite + ' (major linear diameter)', g: 'size' });
+    if (q.lk) rows.push({ k: 'Infrared luminosity', v: s3(Math.pow(10, q.lk)) + ' L☉', s: 'K band, a proxy for its mass in stars', tag: 'pub', src: cite });
+    eyebrow = 'Nearby galaxy' + (q.t != null ? ' · ' + morphText(q.t).toLowerCase() : ''); place = GAL_PLACE; }
+  else if (q.s === 'galaxy-z') { rows.push({ k: 'Velocity away from us', v: nf(q.v) + ' km/s', s: 'z = ' + (q.v / 299792.458).toFixed(4), tag: 'pub', src: cite, g: 'z' }, dRow('der', 'distance now (comoving) from the redshift, Planck 2018 cosmology; its own motion through space adds an error of several million light-years'));
+    blurb = 'One of the infrared-bright galaxies of the IRAS PSCz all-sky redshift survey. Its size is not in the catalogue, so it is drawn as a point.'; place = GAL_PLACE; }
+  else if (q.s === 'pulsar') { const how = { px: ['pub', 'distance from its parallax'], assoc: ['pub', 'distance from an associated object (a supernova remnant, cluster or galaxy)'], dm: ['mod', 'distance modelled from its dispersion measure with the YMW16 model of free electrons in the Galaxy; often uncertain by 20–40%'], other: ['pub', 'distance adopted by the catalogue'] }[q.m] || ['pub', ''];
+    rows.push(dRow(how[0], how[1])); if (q.p) rows.push({ k: 'Spin period', v: q.p < 1 ? nf(q.p * 1000, 3) + ' ms' : nf(q.p, 4) + ' s', s: nf(1 / q.p, q.p < 1 ? 1 : 3) + ' turns a second', tag: 'pub', src: cite });
+    if (q.ty) rows.push({ k: 'Kind', v: q.ty.replace(/\bHE\b/, 'high-energy').replace(/\bNRAD\b/, 'not seen in radio').replace(/\bRRAT\b/, 'rotating radio transient').replace(/\bAXP\b/, 'magnetar (AXP)').replace(/\bBINARY\b/, 'binary'), tag: 'pub', src: cite });
+    eyebrow = 'Pulsar · a spinning neutron star'; }
+  else if (q.s === 'ostar' || q.s === 'wr') { rows.push(dRow('pub', 'distance as catalogued' + (q.s === 'ostar' ? ', given to 0.1 kpc (330 ly)' : ''))); if (q.sp) rows.push({ k: 'Spectral type', v: q.sp, tag: 'pub', src: cite }); if (q.V) rows.push({ k: 'Apparent magnitude', v: nf(q.V, 2), s: 'V band', tag: 'pub', src: cite });
+    eyebrow = q.s === 'wr' ? 'Wolf–Rayet star · a massive star stripped to its core' : 'O-type star · among the hottest and most massive'; if (q.alt) blurb = 'Also known as ' + q.alt + '.'; }
+  else if (q.s === 'ucd') { rows.push({ ...dRow('pub', q.m === 'px' ? 'distance from its parallax' : 'distance estimated from its brightness and spectral type'), s: q.ed ? '± ' + Math.round(q.ed * 100) + '%' : '' }, { k: 'Spectral type', v: q.sp, tag: 'pub', src: cite });
+    const c = q.sp[0]; eyebrow = c === 'M' ? 'Ultracool red dwarf · a very low-mass star' : c === 'L' ? 'L dwarf · at the boundary between stars and brown dwarfs' : c === 'T' ? 'T dwarf · a methane brown dwarf' : 'Y dwarf · the coldest brown dwarfs'; }
+  return { name: q.n, eyebrow, c: PSTY_C(q.s), blurb, rows, place, links: [['SIMBAD', simbadId(q.n)]].concat(gal ? [['NED', 'https://ned.ipac.caltech.edu/byname?objname=' + encodeURIComponent(q.n)]] : []), acts: ['go'], pid: q.i };
+}
+const PSTY_C = s => (SKY.PSTY[s] || ['#cfc9e2'])[0];
 function factsStar(st) {
   const [ra, de] = fromGalXYZ(st.gx, st.gy, st.gz), d = Math.hypot(st.gx, st.gy, st.gz), unc = Math.atan2((st.unit || .85) * .87, Math.max(d, .1)) * R2D, uTxt = unc >= 1 ? nf(unc, 0) + '°' : unc >= 1 / 60 ? nf(unc * 60, 0) + '′' : nf(unc * 3600, 0) + '″';
   const bright = st.M - 5 + 5 * Math.log10(d / LY_PC) < 4, src = bright ? 'HYG database v4.1 (Hipparcos, Yale, Gliese)' : 'Gaia DR3 parallax (better than 10%)';
@@ -125,7 +152,7 @@ function factsStar(st) {
     { k: 'Visual luminosity', v: s3(st.L) + ' L☉', tag: 'der', src: 'From the absolute magnitude; no bolometric correction', g: 'vlum' },
     ...(st.R == null ? [] : [{ k: 'Radius (rough estimate)', v: '≈ ' + sig(st.R) + ' R☉', tag: 'der', src: 'From the visual luminosity and colour temperature by the Stefan–Boltzmann law. With no bolometric correction it underestimates very hot and very cool stars; the disc drawn when you approach uses this size', g: 'size' }]),
     { k: 'Spectral class (estimate)', v: st.kind, tag: 'der', src: 'Estimated from colour and absolute magnitude, not from a spectrum' }];
-  return { name: st.name || 'A catalogue star', eyebrow: 'Catalogue star · real measurement', c: st.hex, blurb: st.name ? '' : 'One of the 756,000 stars in the catalogue behind this map, from the Gaia and Hipparcos missions. It has no common name.', rows, place: 'At its measured position in three dimensions. Fly to it to approach it; close in, it is drawn as a disc at its estimated size.', links: [['SIMBAD near here', simbadCone(ra, de, unc * 60 * 1.2)]], acts: ['go'], oi: st.src };
+  return { name: st.name || 'A catalogue star', eyebrow: 'Catalogue star · real measurement', c: st.hex, blurb: st.name ? '' : 'One of the 992,000 stars in the catalogue behind this map, from the Gaia and Hipparcos missions. It has no common name.', rows, place: 'At its measured position in three dimensions. Fly to it to approach it; close in, it is drawn as a disc at its estimated size.', links: [['SIMBAD near here', simbadCone(ra, de, unc * 60 * 1.2)]], acts: ['go'], oi: st.src };
 }
 function facts(n) {
   const pi = SKY.planetInfo(n); if (pi) return factsPlanet(n, pi);
@@ -194,7 +221,7 @@ function renderInsp() {
 }
 function act(a) {
   const F = curFacts; if (!F) return;
-  if (a === 'go') map.pick(F.oi != null ? '★' + F.oi : F.name);
+  if (a === 'go') map.pick(F.pid != null ? '◆' + F.pid : F.oi != null ? '★' + F.oi : F.name);
   else if (a === 'look') openInspect(F.name, () => {});
   else if (a === 'globe') openGlobe(F.name, () => {});
   else if (a === 'host') map.pick(F.host);
@@ -205,7 +232,7 @@ function act(a) {
 function welcome() {
   const box = $('#sxInsp'); box.classList.remove('has'); box.style.setProperty('--c', '#ff9a6b');
   box.innerHTML = `<div class="sx-grab" aria-hidden="true"></div><div class="sx-eye">A scientific explorer</div><h1>The universe, <span>to scale</span></h1>
-    <p class="sx-blurb">Real stars from the Gaia and Hipparcos missions, the planets on today's date, nearby galaxies and distant quasars, from the size of a neutron star to billions of light-years.</p>
+    <p class="sx-blurb">Nearly a million real stars from the Gaia and Hipparcos missions, 4,000 pulsars, 15,000 galaxies at their true distances, the planets on today's date and distant quasars, from the size of a neutron star to billions of light-years.</p>
     <ol class="sx-how"><li><span><b>Tap</b> any object or star to see what is known about it.</span></li><li><span><b>Scroll or pinch</b> to zoom through twenty powers of ten.</span></li><li><span><b>Search</b> a name or sky coordinates with <kbd>/</kbd>.</span></li></ol>
     <div class="sx-tagkey">${Object.entries(TAG).map(([k, [n, d]]) => `<div>${tagHTML(k)}<span>${esc(d)}</span></div>`).join('')}</div>
     <div class="sx-acts"><button class="p" data-a="tour-sun">Start at the Sun</button><button data-a="tour-mw">Our galaxy</button><button data-a="tour-far">The most distant</button></div>`;
@@ -214,20 +241,33 @@ function welcome() {
 }
 function show(n) { sel = n; curFacts = facts(n); if (curFacts) setHash(n); renderInsp(); }
 let lastStar = null;
+function showPoint(q) { sel = null; lastStar = null; curFacts = factsPoint(q); setHash('◆' + q.i); renderInsp(); }
 function showStar(st) { sel = null; lastStar = st; curFacts = factsStar(st); setHash('★' + st.src); renderInsp(); }
 const setHash = n => { try { history.replaceState(null, '', n ? '#o=' + encodeURIComponent(n) : location.pathname); } catch {} };
 
 /* ---- the map itself */
-map = window.__map = uniMap(cv, ALL, { intro: !/#o=/.test(location.hash), z: .4, noMini: true, catLabels: true, onQuality: v => { qual = v; size(); }, onPick: n => { closeBrowse(); if (n[0] === '★') { const oi = +n.slice(1), st = SKY.starInfo(oi); SKY.mark(oi); if (st) { showStar(st); setHash(n); } return; } SKY.mark(null); show(n); }, onEmpty: (x, y, k) => {
-  const st = SKY.identify(x, y, 20 * k); if (!st) { SKY.mark(null); return; } const now = Date.now(), again = tapStar && tapStar.oi === st.src && now - tapStar.t < 400; tapStar = { oi: st.src, t: now };
+map = window.__map = uniMap(cv, ALL, { intro: !/#o=/.test(location.hash), z: .4, noMini: true, catLabels: true, real: true, points: true, onQuality: v => { qual = v; size(); }, onPick: n => { closeBrowse(); SKY.markPoint(null); if (n[0] === '◆') { const q = SKY.pointInfo(+n.slice(1)); SKY.mark(null); SKY.markPoint(+n.slice(1)); if (q) showPoint(q); return; } if (n[0] === '★') { const oi = +n.slice(1), st = SKY.starInfo(oi); SKY.mark(oi); if (st) { showStar(st); setHash(n); } return; } SKY.mark(null); show(n); }, onEmpty: (x, y, k) => {
+  const pt = SKY.identifyPoint(x, y, 20 * k), st0 = SKY.identify(x, y, 20 * k);
+  if (pt && (!st0 || pt.d <= Math.hypot(st0.x - x, st0.y - y))) { const now = Date.now(), again = tapStar && tapStar.pid === pt.i && now - tapStar.t < 400; tapStar = { pid: pt.i, t: now }; if (again) { map.pick('◆' + pt.i); return; } SKY.mark(null); SKY.markPoint(pt.i); showPoint(SKY.pointInfo(pt.i)); return; }   // a galaxy, pulsar or other catalogued object, when it is the nearer mark
+  SKY.markPoint(null); const st = st0; if (!st) { SKY.mark(null); return; } const now = Date.now(), again = tapStar && tapStar.oi === st.src && now - tapStar.t < 400; tapStar = { oi: st.src, t: now };
   if (again) { map.pick('★' + st.src); return; }   // double-tap a star to approach it
   SKY.mark(st.src); showStar(st);
   if (st.name == null) { const t0 = Date.now(), iv = setInterval(() => { if (SKY.namesReady() || Date.now() - t0 > 6000) { clearInterval(iv); st.name = SKY.starName(st.src); if (curFacts && curFacts.c === st.hex) showStar(st); } }, 200); } } });
 
 /* ---- browse */
 const LANDN = () => map.lay.bodies.filter(b => b.ghost && (b.note || b.ghost === 'The Milky Way')).map(b => b.n);
-const distOf = n => { const a = SKY.NEAR[n]; if (a) return a[3]; const g = SKY.GALD[n]; if (g) return g[3] * 1e6; if (n === 'Sagittarius A*') return SGRA.ly; const L = SKY.LANDS[n]; if (L) return L[3]; const LO = SKY.LOCAL.find(x => x.n === n); return LO ? LO.ly : Infinity; };
+const distOf = n => { const a = SKY.NEAR[n]; if (a) return a[3]; const g = SKY.GALD[n]; if (g) return g[3] * 1e6; if (n === 'Sagittarius A*') return SGRA.ly; const L = SKY.LANDS[n]; if (L) return L[3]; const LO = SKY.LOCAL.find(x => x.n === n); return LO ? LO.ly || LO.mly * 1e6 : Infinity; };
 let btab = 'obj', openT = '';
+const PSET = { galaxy: { title: 'Nearby galaxy', short: 'Within 36 million light-years', note: 'From the Updated Nearby Galaxy Catalog (Karachentsev et al. 2013), with measured distances where they exist.' },
+  'galaxy-z': { title: 'Galaxy', short: 'Farther, from their redshifts', note: 'Infrared-bright galaxies of the IRAS PSCz all-sky survey (Saunders et al. 2000), placed by their redshift: their own motions blur the distances by several million light-years.' },
+  pulsar: { title: 'Pulsar', short: 'Pulsars', note: 'Spinning neutron stars of the ATNF Pulsar Catalogue. Most distances are modelled from how much the radio pulses are dispersed by electrons in the Galaxy.' },
+  ostar: { title: 'O-type star', short: 'O stars', note: 'From the Galactic O-Star Catalog (Maíz Apellániz et al. 2004), with spectral types and distances to 0.1 kpc.' },
+  wr: { title: 'Wolf–Rayet star', short: 'Wolf–Rayet stars', note: 'Massive stars stripped to their cores, from the VIIth Catalogue of Galactic Wolf–Rayet Stars (van der Hucht 2001).' },
+  ucd: { title: 'Ultracool dwarf', short: 'Ultracool dwarfs', note: 'From the UltracoolSheet (Best et al. 2025), with spectral types: these are too faint for the star catalogue’s colours to classify.' } };
+function pointGroups() {   // the points catalogue sorted into the list's groups: ultracool M dwarfs with red dwarfs, L, T and Y dwarfs with brown dwarfs, pulsars with neutron stars, O and Wolf–Rayet stars with blue giants
+  if (pointGroups.c) return pointGroups.c; const R = SKY.pointRows(); if (!R) { SKY.ptLoad(); clearTimeout(pointGroups.w); pointGroups.w = setTimeout(() => drawList($('#sxQ').value.trim()), 900); return null; }
+  const G = { brown: [], reddwarf: [], neutron: [], bluegiant: [], galaxies: [] }; R.forEach((r, i) => { const x = { i, ...r }; if (r.s === 'ucd') (r.sp[0] === 'M' ? G.reddwarf : G.brown).push(x); else if (r.s === 'pulsar') G.neutron.push(x); else if (r.s === 'ostar' || r.s === 'wr') G.bluegiant.push(x); else G.galaxies.push(x); });
+  return (pointGroups.c = G); }
 function drawList(filter = '') {
   const box = $('#sxList'), sortBy = $('#sxSort').value, f = filter.toLowerCase(), by = (a, sz, dk = x => distOf(x.n)) => a.sort(sortBy === 'name' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'size' ? (x, y) => sz(y) - sz(x) : (x, y) => dk(x) - dk(y) || x.n.localeCompare(y.n));
   const row = (n, sub, c, right) => `<button class="sx-row ${n === sel ? 'cur' : ''}" data-n="${esc(n)}" style="--c:${c}"><i></i><span><b>${esc(n)}</b><small>${esc(sub)}</small></span><em>${esc(right)}</em></button>`;
@@ -235,17 +275,23 @@ function drawList(filter = '') {
   if (btab === 'obj') { const CG = SKY.catGroups();   // every star the map draws counts: the featured objects plus the catalogue stars of each type
     const onScreen = () => { const r = box.getBoundingClientRect(), st = getComputedStyle(box.closest('aside, section, div') || box); return r.width > 0 && r.height > 0 && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight && st.visibility !== 'hidden' && +st.opacity !== 0; };
     if (!CG && onScreen()) { SKY.catLoad(); clearTimeout(drawList.w); drawList.w = setTimeout(() => drawList($('#sxQ').value.trim()), 700); }
-    box.innerHTML = SKY.OBJ.map((o, i) => { const items = by(ALL.filter(b => b.idx === i && (!f || b.n.toLowerCase().includes(f))), b => SKY.physR(b)), all = ALL.filter(b => b.idx === i).length, cn = CG && CG.n[o.id] || 0;
-      const cat = CG && CG.named[o.id] ? CG.named[o.id].filter(x => !f || x.name.toLowerCase().includes(f)) : []; if (!items.length && !cat.length) return ''; const on = !!f || openT === o.id;
-      const cs = on ? cat.slice().sort(sortBy === 'name' ? (x, y) => x.name.localeCompare(y.name) : sortBy === 'size' ? (x, y) => y.R - x.R : (x, y) => x.ly - y.ly) : [], SHOW = 40;
+    const PG = pointGroups(), SHOW = 40, sortPts = L => L.slice().sort(sortBy === 'name' ? (x, y) => x.n.localeCompare(y.n) : sortBy === 'size' ? (x, y) => (y.dk || 0) - (x.dk || 0) || x.d - y.d : (x, y) => x.d - y.d);
+    const ptSection = (title, note, L, c) => { const M = L.filter(x => !f || x.n.toLowerCase().includes(f)); if (!M.length) return ''; const cs = sortPts(M);   // one specialist catalogue: its count, where it comes from, the first 40 by the chosen order
+      return `<div class="sx-sub">${esc(title)}: ${nf(M.length)}<small>${esc(note)}${cs.length > SHOW ? ` The ${SHOW} ${sortBy === 'name' ? 'first by name' : sortBy === 'size' ? 'largest' : 'nearest'} are listed; search for the rest.` : ''}</small></div>` + cs.slice(0, SHOW).map(x => row('◆' + x.i, (x.sp || PSET[x.s].title), c, sortBy === 'size' && x.dk ? '≈ ' + fmtLen(x.dk * 3261.56) : fmtLen(x.d)).replace(`<b>◆${x.i}</b>`, `<b>${esc(x.n)}</b>`)).join(''); };
+    let html = SKY.OBJ.map((o, i) => { const items = by(ALL.filter(b => b.idx === i && (!f || b.n.toLowerCase().includes(f))), b => SKY.physR(b)), all = ALL.filter(b => b.idx === i).length, cn = CG && CG.n[o.id] || 0, pts = PG && PG[o.id] || [];
+      const cat = CG && CG.named[o.id] ? CG.named[o.id].filter(x => !f || x.name.toLowerCase().includes(f)) : [], ptsF = pts.filter(x => !f || x.n.toLowerCase().includes(f)); if (!items.length && !cat.length && !ptsF.length) return ''; const on = !!f || openT === o.id;
+      const cs = on ? cat.slice().sort(sortBy === 'name' ? (x, y) => x.name.localeCompare(y.name) : sortBy === 'size' ? (x, y) => y.R - x.R : (x, y) => x.ly - y.ly) : [];
       const catRows = cs.slice(0, SHOW).map(x => row('★' + x.oi, 'Catalogue star', o.c, sortBy === 'size' ? '≈ ' + sig(x.R) + ' R☉' : fmtLen(x.ly)).replace(`<b>★${x.oi}</b>`, `<b>${esc(x.name)}</b>`)).join('');
-      const head = cn ? `<div class="sx-sub">${nf(all)} featured, with full data</div>` : '', tail = cn && on ? `<div class="sx-sub">In the catalogue: ${nf(cn)} stars of this type<small>Classified from colour and brightness, not spectra. The catalogue holds stars brighter than magnitude 10.5, so luminous giants are over-represented and faint dwarfs rare. ${nf(CG.named[o.id].length)} have a proper name${cs.length > SHOW ? `; the ${SHOW} ${sortBy === 'name' ? 'first by name' : sortBy === 'size' ? 'largest' : 'nearest'} are listed, search for the rest` : ''}. Tap any other star on the map to identify it.</small></div>${catRows}` : '';
-      return `<div class="sx-grp ${on ? 'on' : ''}"><button class="sx-gh" data-t="${o.id}" style="--c:${o.c}" aria-expanded="${on}"><i></i><span>${esc(o.name.replace(/y$/, 'ie') + 's')}</span><em>${nf(all + cn)}</em></button>${on ? head + items.map(b => row(b.n, b.kind, o.c, sortBy === 'size' ? radText(SKY.physR(b))[0] : dTxt(b.n))).join('') + tail : ''}</div>`; }).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
+      const head = cn || pts.length ? `<div class="sx-sub">${nf(all)} featured, with full data</div>` : '', tail = cn && on ? `<div class="sx-sub">From the star catalogue: ${nf(cn)}<small>Classified from colour and brightness, not spectra. Beyond 100 pc (326 ly) the catalogue holds only stars brighter than magnitude 10.5, so luminous giants are over-represented there and faint dwarfs rare. ${nf(CG.named[o.id].length)} have a proper name${cs.length > SHOW ? `; the ${SHOW} ${sortBy === 'name' ? 'first by name' : sortBy === 'size' ? 'largest' : 'nearest'} are listed, search for the rest` : ''}. Tap any other star on the map to identify it.</small></div>${catRows}` : '';
+      const ptail = on && pts.length ? [...new Set(pts.map(x => x.s))].map(st => ptSection(PSET[st].short, PSET[st].note, pts.filter(x => x.s === st), o.c)).join('') : '';
+      return `<div class="sx-grp ${on ? 'on' : ''}"><button class="sx-gh" data-t="${o.id}" style="--c:${o.c}" aria-expanded="${on}"><i></i><span>${esc(o.name.replace(/y$/, 'ie') + 's')}</span><em>${nf(all + cn + pts.length)}</em></button>${on ? head + items.map(b => row(b.n, b.kind, o.c, sortBy === 'size' ? radText(SKY.physR(b))[0] : dTxt(b.n))).join('') + tail + ptail : ''}</div>`; }).join('');
+    if (PG && PG.galaxies.length) { const on = !!f || openT === 'galaxies', G = PG.galaxies, gm = G.filter(x => !f || x.n.toLowerCase().includes(f)); if (gm.length) html += `<div class="sx-grp ${on ? 'on' : ''}"><button class="sx-gh" data-t="galaxies" style="--c:#d9d2f0" aria-expanded="${on}"><i></i><span>Galaxies</span><em>${nf(G.length)}</em></button>${on ? ['galaxy', 'galaxy-z'].map(st => ptSection(PSET[st].short, PSET[st].note, G.filter(x => x.s === st), '#d9d2f0')).join('') : ''}</div>`; }   // galaxies with no featured stars in them
+    box.innerHTML = html || '<p class="sx-none">Nothing by that name.</p>'; }
   else if (btab === 'pl') { const groups = Object.entries(SKY.PLANETS).map(([h, L]) => [h, by(L.map(p => ({ n: p[0], p })).filter(x => !f || x.n.toLowerCase().includes(f) || h.toLowerCase().includes(f)), x => x.p[1], x => x.p[2])]).filter(g => g[1].length);
     box.innerHTML = groups.map(([h, L]) => `<div class="sx-grp on"><div class="sx-gh static"><span>${esc(h === 'The Sun' ? 'Solar System' : h)}</span><em>${L.length}</em></div>${L.map(x => row(x.n, h === 'The Sun' ? KINDS[x.p[4]] || 'Planet' : 'Planet of ' + h, '#bcd2ff', sortBy === 'size' ? sig(x.p[1]) + ' R⊕' : sig(x.p[2]) + ' AU')).join('')}${h === 'The Sun' ? Object.entries(SKY.MOONS).flatMap(([pl, M]) => M.filter(m => !f || m[0].toLowerCase().includes(f)).map(m => row(m[0], 'Moon of ' + pl, '#9fb2d8', nf(m[1]) + ' km'))).join('') : ''}</div>`).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
   else { const L = by(LANDN().filter(n => !f || n.toLowerCase().includes(f)).map(n => ({ n })), x => { const a = SKY.LANDS[x.n]; return a ? a[4] : (SKY.LOCAL.find(y => y.n === x.n) || {}).rly || 0; });
     box.innerHTML = L.map(x => { const a = SKY.LANDS[x.n], LO = SKY.LOCAL.find(y => y.n === x.n); return row(x.n, a ? LAND_KIND[a[5]] || 'Nebula' : LO ? 'Galaxy' : SKY.STRUCT[x.n] ? 'Galactic structure' : x.n === 'The Milky Way' ? 'Our galaxy' : 'Landmark', '#cfc9e2', dTxt(x.n)); }).join('') || '<p class="sx-none">Nothing by that name.</p>'; }
-  $$('.sx-gh[data-t]', box).forEach(b => b.onclick = () => { openT = openT === b.dataset.t ? '' : b.dataset.t; map.setFilter(openT ? new Set([openT]) : null); drawList($('#sxQ').value.trim()); });
+  $$('.sx-gh[data-t]', box).forEach(b => b.onclick = () => { openT = openT === b.dataset.t ? '' : b.dataset.t; map.setFilter(openT && openT !== 'galaxies' ? new Set([openT]) : null); drawList($('#sxQ').value.trim()); });
   $$('.sx-row', box).forEach(b => b.onclick = () => map.pick(b.dataset.n));
 }
 $$('.sx-tabs button').forEach(b => b.onclick = () => { btab = b.dataset.b; $$('.sx-tabs button').forEach(x => x.classList.toggle('on', x === b)); openT = ''; map.setFilter(null); drawList($('#sxQ').value.trim()); });
@@ -268,8 +314,8 @@ function search(v) {
     html = `<div class="sx-res-h">Nearest to RA ${fmtRA(c[0])}, Dec ${fmtDec(c[1])}</div>${near.map(([n, d, k]) => `<button data-n="${esc(n)}"><b>${esc(n)}</b><span>${esc(k)}</span><em>${d < 1 ? nf(d * 60, 1) + '′' : nf(d, 1) + '°'} away</em></button>`).join('')}<a class="sx-res-ext" href="${simbadCone(c[0], c[1], 10)}" target="_blank" rel="noopener">Search every catalogued object within 10′ on SIMBAD ↗</a>`; }
   else { const f = q.toLowerCase(), hits = [...ALL.map(b => [b.n, SKY.OBJ[b.idx].name]), ...Object.values(SKY.PLANETS).flat().map(p => [p[0], 'Planet']), ...Object.values(SKY.MOONS).flat().map(m => [m[0], 'Moon']), ...LANDN().map(n => [n, 'Landmark'])].filter(([n]) => n.toLowerCase().includes(f)).sort((a, b) => (a[0].toLowerCase().indexOf(f) - b[0].toLowerCase().indexOf(f)) || a[0].localeCompare(b[0])).slice(0, 10);
     const ready = SKY.namesReady(); if (!ready) { SKY.catLoad(); clearTimeout(search.w); search.w = setTimeout(() => { if ($('#sxQ').value.trim() === q) search(q); }, 400); }
-    const stars = ready && q.length >= 2 ? SKY.starSearch(q, Math.max(3, 12 - hits.length)) : [], du = ly => PREF.unit === 'pc' ? nf(ly / 3.2616, ly < 32.6 ? 1 : 0) + ' pc' : nf(ly, ly < 100 ? 1 : 0) + ' ly';
-    const rows = [...hits.map(([n, k]) => [n, n, k]), ...stars.map(s => ['★' + s.oi, s.name, 'Catalogue star · ' + du(s.ly)])];   // the 111,000 named stars of the catalogue, brightest first
+    SKY.ptLoad(); const pts = SKY.ptReady() && q.length >= 2 ? SKY.pointSearch(q, 6) : [], stars = ready && q.length >= 2 ? SKY.starSearch(q, Math.max(3, 12 - hits.length - pts.length)) : [], du = ly => PREF.unit === 'pc' ? nf(ly / 3.2616, ly < 32.6 ? 1 : 0) + ' pc' : nf(ly, ly < 100 ? 1 : 0) + ' ly';
+    const rows = [...hits.map(([n, k]) => [n, n, k]), ...pts.map(p => ['◆' + p.i, p.n, (SKY.pointInfo(p.i).set.title) + (p.sp ? ' ' + p.sp : '') + ' · ' + (p.d >= 1e6 ? nf(p.d / 1e6, 1) + ' Mly' : du(p.d))]), ...stars.map(s => ['★' + s.oi, s.name, 'Catalogue star · ' + du(s.ly)])];   // the 111,000 named stars of the catalogue, brightest first
     html = rows.length ? rows.map(([id, n, k]) => `<button data-n="${esc(id)}"><b>${esc(n)}</b><span>${esc(k)}</span></button>`).join('') + (ready ? '' : '<p class="sx-res-wait">Loading the names of catalogue stars…</p>') : ready ? `<p>Nothing by that name here, among the drawn objects or the 111,000 named stars of the catalogue.</p><a class="sx-res-ext" href="${simbadId(q)}" target="_blank" rel="noopener">Look up “${esc(q)}” on SIMBAD ↗</a>` : '<p class="sx-res-wait">Loading the names of catalogue stars…</p>'; }
   res.innerHTML = html; res.hidden = false; $$('button', res).forEach(b => b.onclick = () => { res.hidden = true; $('#sxQ').blur(); map.pick(b.dataset.n); });
 }
@@ -313,19 +359,29 @@ const legendHTML = () => `<h2>How to read this map</h2>
   <li>Glows, halos and the brightness of objects are tuned so things stay visible. They are not photometry.</li></ul>`;
 const methodsHTML = () => `<h2>Data &amp; methods</h2>
   <h3>Sources</h3><ul class="sx-src-list">
-  <li><b>Gaia DR3</b> (European Space Agency): stars brighter than G = 10.5 with parallaxes better than 10%. This work has made use of data from the ESA mission Gaia (<a href="https://www.cosmos.esa.int/gaia" target="_blank" rel="noopener">cosmos.esa.int/gaia</a>), processed by the Gaia Data Processing and Analysis Consortium (DPAC). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement.</li>
+  <li><b>Gaia DR3</b> (European Space Agency): every star within 100 pc (326 ly) with a parallax better than 10% (fainter than G = 10.5 only with a well-behaved astrometric fit, RUWE &lt; 1.4), and beyond that the stars brighter than G = 10.5 with parallaxes better than 10%; queried through the GAVO and ARI Heidelberg mirrors of the Gaia archive. This work has made use of data from the ESA mission Gaia (<a href="https://www.cosmos.esa.int/gaia" target="_blank" rel="noopener">cosmos.esa.int/gaia</a>), processed by the Gaia Data Processing and Analysis Consortium (DPAC). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement.</li>
   <li><b>HYG database v4.1</b> (David Nash; Hipparcos, Yale Bright Star and Gliese catalogues) for stars brighter than magnitude 4, which saturate Gaia. CC BY-SA 4.0.</li>
   <li><b>Named objects</b> (about 140 stars, white dwarfs, neutron stars and quasars, with their planets): positions, distances, radii, masses and temperatures compiled from the published literature and rounded. Per-value citations are not yet attached; each object links to its SIMBAD record for the primary references.</li>
   <li><b>Solar System planets:</b> J2000 mean orbital elements (E. M. Standish, JPL) and Kepler's equation. Physical values from NASA planetary fact sheets.</li>
   <li><b>Surface maps:</b> NASA Blue Marble and Black Marble (public domain), NASA SVS CGI Moon Kit from LRO (public domain), Solar System Scope maps based on NASA imagery (CC BY 4.0).</li>
-  <li><b>Sagittarius A*</b> distance: GRAVITY Collaboration (2019), A&amp;A 625, L10.</li></ul>
+  <li><b>Sagittarius A*</b> distance: GRAVITY Collaboration (2019), A&amp;A 625, L10.</li>
+  <li><b>Nearby galaxies:</b> Updated Nearby Galaxy Catalog, Karachentsev, Makarov &amp; Kaisina (2013), AJ 145, 101: 863 galaxies within about 11 Mpc, distances by the methods named in each.</li>
+  <li><b>Farther galaxies:</b> IRAS PSCz redshift survey, Saunders et al. (2000), MNRAS 317, 55: 14,409 galaxies, placed by redshift (above 1,000 km/s).</li>
+  <li><b>Pulsars:</b> ATNF Pulsar Catalogue v2.9.0, Manchester et al. (2005), AJ 129, 1993, with the distances it adopts (parallax, association, or the YMW16 electron-density model: Yao, Manchester &amp; Wang 2017, ApJ 835, 29).</li>
+  <li><b>O and Wolf–Rayet stars:</b> Galactic O-Star Catalog, Maíz Apellániz et al. (2004), ApJS 151, 103; VIIth Catalogue of Galactic Wolf–Rayet Stars, van der Hucht (2001), New Astron. Rev. 45, 135.</li>
+  <li><b>Ultracool dwarfs:</b> UltracoolSheet v2.0, Best, Dupuy, Liu et al. (2025), doi:10.5281/zenodo.15802304, CC BY 4.0.</li>
+  <li>Catalogues reached through NASA's HEASARC, Zenodo and the ATNF.</li>
+  <li><b>Cosmology</b> for the distances of far galaxies now (comoving): flat ΛCDM, Planck Collaboration (2020), A&amp;A 641, A6 (H₀ = 67.66 km/s/Mpc, Ωm = 0.311).</li></ul>
   <h3>Accuracy</h3>
   <table class="sx-acc"><thead><tr><th>Quantity</th><th>Accuracy here</th></tr></thead><tbody>
   <tr><td>Catalogue star distances</td><td>Parallax error under 10% (Gaia); HYG for the brightest stars</td></tr>
-  <tr><td>Catalogue star coordinates</td><td>Stored to the nearest 0.84 ly in 3D, so a few arcminutes for distant stars and up to several degrees for the nearest. The inspector states the uncertainty and links to SIMBAD for exact values.</td></tr>
+  <tr><td>Catalogue star coordinates</td><td>Within 100 pc, stored to 0.01 ly in 3D; beyond, to the nearest 0.85 ly, a few arcminutes for distant stars. The inspector states the uncertainty and links to SIMBAD for exact values.</td></tr>
   <tr><td>Planet positions</td><td>About 1° in ecliptic longitude. Orbital inclinations are not drawn.</td></tr>
   <tr><td>The Moon's position</td><td>Mean motion only: up to about 6° out.</td></tr>
-  <tr><td>Named-object values</td><td>Rounded literature values; uncertainties not yet shown.</td></tr></tbody></table>
+  <tr><td>Named-object values</td><td>Rounded literature values; uncertainties not yet shown.</td></tr>
+  <tr><td>Galaxy distances</td><td>Nearby: as measured (tip of the red giant branch, Cepheids and others), typically 5–10%; farther: from redshift, blurred by several million ly by each galaxy's own motion. Far ones are placed at their comoving distance now.</td></tr>
+  <tr><td>Pulsar distances</td><td>Most are modelled from the dispersion measure and often uncertain by 20–40%; the panel says which method applies.</td></tr>
+  <tr><td>The map's third dimension</td><td>Everything is seen from above the Milky Way's disc: height above or below the disc is not shown, so objects far above it (many galaxies) appear nearer the centre than they are.</td></tr></tbody></table>
   <p class="sx-note">Scorcher Sky is for learning and exploring. It is not an ephemeris or a research catalogue: for precise positions use <a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">JPL Horizons</a> for the Solar System and <a href="https://simbad.cds.unistra.fr/simbad/" target="_blank" rel="noopener">SIMBAD</a> or the <a href="https://gea.esac.esa.int/archive/" target="_blank" rel="noopener">Gaia Archive</a> for stars.</p>
   <h3>Coming next</h3><ul><li>Planet and Moon positions from a full ephemeris (astronomy-engine), with any date and time.</li><li>Citations and published uncertainties on every named-object value.</li></ul>`;
 const helpHTML = () => `<h2>Help</h2><table class="sx-acc"><tbody>
@@ -346,4 +402,4 @@ document.addEventListener('keydown', e => {
 });
 
 drawList(); renderInsp();
-{ const m = location.hash.match(/#o=(.+)$/); if (m) { const n = decodeURIComponent(m[1]); if (n[0] === '★') { SKY.catLoad(); const t0 = Date.now(), iv = setInterval(() => { if (SKY.namesReady() && SKY.catAnchor(+n.slice(1))) { clearInterval(iv); map.pick(n); } else if (Date.now() - t0 > 15000) clearInterval(iv); }, 250); } else setTimeout(() => map.pick(n), 350); } }
+{ const m = location.hash.match(/#o=(.+)$/); if (m) { const n = decodeURIComponent(m[1]); if (n[0] === '★' || n[0] === '◆') { const pnt = n[0] === '◆'; if (pnt) SKY.ptLoad(); else SKY.catLoad(); const t0 = Date.now(), iv = setInterval(() => { if (pnt ? SKY.ptReady() && SKY.pointAnchor(+n.slice(1)) : SKY.namesReady() && SKY.catAnchor(+n.slice(1))) { clearInterval(iv); map.pick(n); } else if (Date.now() - t0 > 15000) clearInterval(iv); }, 250); } else setTimeout(() => map.pick(n), 350); } }

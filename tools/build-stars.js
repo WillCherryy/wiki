@@ -34,7 +34,7 @@ function hygName(v, c) { const g = k => c[k] >= 0 ? v(c[k]) : ''; const pr = g('
 const readIn = f => { let b = fs.readFileSync(f); if (/\.gz$/.test(f)) b = require('zlib').gunzipSync(b); const t = b.toString('utf8'); return /^\s*<\?xml|<VOTABLE/.test(t.slice(0, 500)) ? votToCsv(t) : t; };
 const get = u => new Promise((res, rej) => https.get(u, r => { if (r.statusCode !== 200) return rej(new Error('HTTP ' + r.statusCode)); const b = []; r.on('data', d => b.push(d)); r.on('end', () => res(Buffer.concat(b).toString('utf8'))); }).on('error', rej));
 const M = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]];   // J2000 equatorial -> galactic
-(async () => {
+if (require.main === module) (async () => {
   const args = process.argv.slice(2), files = []; for (const a of args) files.push(readIn(a)); if (!files.some(t => /(^|,)"?dist"?(,|$)/m.test(t.slice(0, 2000)))) files.unshift(await get(URL));
   const isG = t => /parallax/.test(t.slice(0, 2000)), withGaia = files.some(isG); files.sort((a, b) => isG(a) - isG(b));   // HYG first: its names are matched onto the Gaia stars
   global.window = {}; require(path.join(ROOT, 'skyobjects.js')); const named = new Set(); for (const L of Object.values(window.SKY.POOL)) for (const q of L) named.add(q.n);   // collectable objects are drawn by the game itself
@@ -58,3 +58,4 @@ const M = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448
   console.log(`stars/catalogue.bin: ${keep.length} stars, ${(buf.length / 1e6).toFixed(2)} MB, ${unit} ly per unit (${skipped + stars.length - keep.length} skipped: no distance, too far, or already a collectable object)`);
   if (withGaia) console.log('Credit to add (stars/CREDITS.md and the Terms): "This work has made use of data from the European Space Agency (ESA) mission Gaia (https://www.cosmos.esa.int/gaia), processed by the Gaia Data Processing and Analysis Consortium (DPAC)."');
 })().catch(e => { console.error(e.message); process.exit(1); });
+module.exports = { hygName, M, votToCsv, readIn };
