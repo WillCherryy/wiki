@@ -1,5 +1,9 @@
 {
   "name": "Mammalia",
+  "mrca": [
+    "Ornithorhynchus anatinus",
+    "Homo sapiens"
+  ],
   "common": "Mammals",
   "blurb": "Animals that feed their young on milk and have hair and a jaw joint of their own. The platypus and echidna still lay eggs.",
   "relationship": {
@@ -8,16 +12,17 @@
   "age": {
     "fossilMin": {
       "ma": 164.9,
-      "taxon": "Ambondro mahabo",
-      "formation": "Madagascar (a member of the monotreme lineage, Australosphenida)",
+      "taxon": "Ambondro mahabo (UA10602), an australosphenidan on the monotreme stem",
+      "formation": "Upper Isalo \"Group\", Madagascar (Bathonian, Middle Jurassic)",
+      "dating": "Top of the Bathonian, 166.1 ± 1.2 Ma, giving 164.9 Ma",
       "cite": "benton2015",
-      "checked": "https://zenodo.org/records/13305933"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 57 (Crown Mammalia)"
     },
     "softMax": {
       "ma": 201.5,
-      "basis": "Triassic–Jurassic boundary: earlier mammaliaform faunas lack members of either crown lineage",
+      "basis": "Late Triassic and Early Jurassic mammaliaform faunas contain no member of either crown lineage: Triassic–Jurassic boundary, 201.3 ± 0.2 Ma",
       "cite": "benton2015",
-      "checked": "https://zenodo.org/records/13305933"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 57 (Crown Mammalia)"
     },
     "display": {
       "lo": 164.9,

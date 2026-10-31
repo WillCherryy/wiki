@@ -1,5 +1,10 @@
 {
   "name": "Placentalia",
+  "mrca": [
+    "Loxodonta africana",
+    "Dasypus novemcinctus",
+    "Homo sapiens"
+  ],
   "common": "Placental mammals",
   "blurb": "Mammals whose young develop to an advanced stage inside the mother, nourished through a placenta. Where the root of their tree lies is one of the classic open questions in mammal evolution.",
   "relationship": {
@@ -23,26 +28,34 @@
   "age": {
     "softMax": {
       "ma": 164.6,
-      "basis": "Juramaia, the oldest eutherian (its Jurassic age is disputed)",
+      "basis": "Divergence of Eutheria from other mammals, marked by Juramaia (Tiaojishan Formation, Oxfordian): base of the Oxfordian, 163.5 ± 1.1 Ma",
       "cite": "benton2015",
-      "checked": "secondary table citing Benton et al. 2015"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 60 (Crown Placentalia)"
     },
     "clock": [
       {
-        "lo": 86,
-        "mid": 93,
-        "hi": 100,
-        "method": "Bayesian relaxed molecular clock",
-        "data": "Phylogenomic data, placental mammals",
+        "lo": 86.43,
+        "mid": 92.96,
+        "hi": 99.91,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
         "cite": "tarver2016",
-        "checked": "search summary of the paper"
+        "checked": "Tarver et al. 2016, Table 6, node 40"
       }
     ],
     "display": {
-      "lo": 86,
-      "mid": 93,
-      "hi": 100,
+      "lo": 86.43,
+      "mid": 92.96,
+      "hi": 99.91,
       "source": "synthesis"
+    },
+    "fossilMin": {
+      "ma": 61.6,
+      "taxon": "Ravenictis krausei (UALVP 31175), a carnivoran",
+      "formation": "Ravenscrag Formation, Saskatchewan, Canada",
+      "dating": "Early Puercan, earliest Danian; treated as early Paleocene, top 61.7 ± 0.1 Ma gives 61.6 Ma",
+      "cite": "benton2015",
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 60 (Crown Placentalia)"
     }
   },
   "review": null

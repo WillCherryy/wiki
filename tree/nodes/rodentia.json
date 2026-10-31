@@ -1,5 +1,10 @@
 {
   "name": "Rodentia",
+  "mrca": [
+    "Sciurus vulgaris",
+    "Hydrochoerus hydrochaeris",
+    "Mus musculus"
+  ],
   "common": "Rodents",
   "blurb": "The largest order of mammals: squirrels, capybaras, mice and rats, with ever-growing incisors.",
   "relationship": {
@@ -9,21 +14,34 @@
   "age": {
     "fossilMin": {
       "ma": 56,
-      "taxon": "",
-      "formation": "",
+      "taxon": "Paramys atavus (YPM-PU 14200), a sciuromorph",
+      "formation": "Fort Union Formation, Eagle Mine, Carbon County, Montana, USA",
+      "dating": "Clarkforkian index taxon, late Paleocene (Thanetian); top of the Thanetian, 56.0 Ma",
       "cite": "benton2015",
-      "checked": "https://zenodo.org/records/13305955"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 77 (Crown Rodentia)"
     },
     "softMax": {
       "ma": 66,
-      "basis": "Fossil calibration bracket",
+      "basis": "Stem rodents and other Glires (Heomys, Mimotona) but no crown rodents: base of the Paleocene, 66.04 ± 0.4 Ma",
       "cite": "benton2015",
-      "checked": "https://zenodo.org/records/13305955"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 77 (Crown Rodentia)"
     },
     "display": {
-      "lo": 56,
-      "hi": 66,
-      "source": "calibration"
-    }
+      "lo": 60.07,
+      "mid": 61.97,
+      "hi": 63.78,
+      "source": "synthesis"
+    },
+    "clock": [
+      {
+        "lo": 60.07,
+        "mid": 61.97,
+        "hi": 63.78,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 60"
+      }
+    ]
   }
 }

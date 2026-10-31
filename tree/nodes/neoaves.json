@@ -1,10 +1,33 @@
 {
   "name": "Neoaves",
+  "mrca": [
+    "Columba livia",
+    "Corvus corax"
+  ],
   "common": "Neoaves",
-  "blurb": "Almost all living birds. Their early lineages split so rapidly that their exact branching order remains hard to resolve, so it is shown unresolved here.",
+  "blurb": "Almost all living birds. Their early lineages split so rapidly, around the end-Cretaceous extinction, that their branching order is still debated.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 65.2,
+        "mid": 66.5,
+        "hi": 67.9,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), 95% credible interval",
+        "data": "Whole genomes of 363 species from 218 bird families",
+        "cite": "stiller2024",
+        "checked": "Stiller et al. 2024, main text (\"Most Neoaves diversified post K–Pg\")",
+        "note": "The split of Columbaves (here the pigeon) from the other sampled Neoaves. Crown Neoaves, including grebes and flamingos, which are not in this selection, is dated 67.4 Ma (66.2–68.9)."
+      }
+    ],
+    "display": {
+      "lo": 65.2,
+      "mid": 66.5,
+      "hi": 67.9,
+      "source": "synthesis"
+    }
+  },
   "review": null
 }

@@ -1,0 +1,10 @@
+{
+  "_note": "Hand-chosen Commons files, used instead of the species' Wikidata image (P18) when that image cannot be used: a licence outside CC0 / public domain / CC BY / CC BY-SA (rule 8), or an author the credit cannot name. The build still checks each file's licence and reads its credit from Commons.",
+  "Equus caballus": { "file": "White horse portrait.jpg", "why": "Wikidata image uses the Commons 'Attribution' licence, not one of the four allowed" },
+  "Osphranter rufus": { "file": "Osphranter rufus - Tierpark Hagenbeck 01.jpg", "why": "Wikidata image is GFDL only" },
+  "Tachyglossus aculeatus": { "file": "Short-beaked echidna (Tachyglossus aculeatus) Freycinet.jpg", "why": "Wikidata image is GFDL only" },
+  "Rhinella marina": { "file": "Cane toad (Rhinella marina) Taveuni.jpg", "why": "Wikidata image is GFDL only" },
+  "Danio rerio": { "file": "Danio rerio port.jpg", "why": "Wikidata image is 'Copyrighted free use', not one of the four allowed" },
+  "Pipistrellus pipistrellus": { "file": "Pipistrellus pipistrellus (cropped).jpg", "why": "Wikidata image is CC BY-SA with an unknown author, so the attribution it requires cannot be given" },
+  "Neoceratodus forsteri": { "file": "Neoceratodus forsteri Nagoya1.jpg", "why": "Wikidata image is CC BY-SA with an unknown author" }
+}

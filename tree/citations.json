@@ -6,7 +6,8 @@
     "journal": "Palaeontologia Electronica 18.1.1FC",
     "doi": "10.26879/424",
     "url": "https://palaeo-electronica.org/content/fc-1",
-    "verified": false
+    "verified": true,
+    "verifiedAt": "2026-10-31"
   },
   "ezcurra2014": {
     "authors": "Ezcurra, Scheyer & Butler",
@@ -14,7 +15,8 @@
     "title": "The origin and early evolution of Sauria: reassessing the Permian saurian fossil record and the timing of the crocodile-lizard divergence",
     "journal": "PLOS ONE 9(2): e89165",
     "doi": "10.1371/journal.pone.0089165",
-    "verified": false
+    "verified": true,
+    "verifiedAt": "2026-10-31"
   },
   "tarver2016": {
     "authors": "Tarver, dos Reis, Mirarab, Moran, Parker, O’Reilly, King, O’Connell, Asher, Warnow, Peterson, Donoghue & Pisani",
@@ -22,7 +24,8 @@
     "title": "The interrelationships of placental mammals and the limits of phylogenetic inference",
     "journal": "Genome Biology and Evolution 8(2): 330–344",
     "doi": "10.1093/gbe/evv261",
-    "verified": false
+    "verified": true,
+    "verifiedAt": "2026-10-31"
   },
   "claramunt2015": {
     "authors": "Claramunt & Cracraft",
@@ -30,6 +33,44 @@
     "title": "A new time tree reveals Earth history’s imprint on the evolution of modern birds",
     "journal": "Science Advances 1(11): e1501005",
     "doi": "10.1126/sciadv.1501005",
-    "verified": false
+    "verified": true,
+    "verifiedAt": "2026-10-31"
+  },
+  "long2025": {
+    "authors": "Long, Niedźwiedzki, Garvey, Clement, Camens, Eury, Eason & Ahlberg",
+    "year": 2025,
+    "title": "Earliest amniote tracks recalibrate the timeline of tetrapod evolution",
+    "journal": "Nature 641: 1193–1200",
+    "doi": "10.1038/s41586-025-08884-5",
+    "verified": true,
+    "verifiedAt": "2026-10-31"
+  },
+  "irisarri2017": {
+    "authors": "Irisarri, Baurain, Brinkmann, Delsuc, Sire, Kupfer, Petersen, Jarek, Meyer, Vences & Philippe",
+    "year": 2017,
+    "title": "Phylotranscriptomic consolidation of the jawed vertebrate timetree",
+    "journal": "Nature Ecology & Evolution 1: 1370–1378",
+    "doi": "10.1038/s41559-017-0240-5",
+    "verified": true,
+    "verifiedAt": "2026-10-31"
+  },
+  "stiller2024": {
+    "authors": "Stiller, Feng, Chowdhury, Rivas-González, Duchêne, Fang, Deng, Kozlov, Stamatakis, Claramunt et al.",
+    "year": 2024,
+    "title": "Complexity of avian evolution revealed by family-level genomes",
+    "journal": "Nature 629: 851–860",
+    "doi": "10.1038/s41586-024-07323-1",
+    "verified": true,
+    "verifiedAt": "2026-10-31"
+  },
+  "kumar2022": {
+    "authors": "Kumar, Suleski, Craig, Kasprowicz, Sanderford, Li, Stecher & Hedges",
+    "year": 2022,
+    "title": "TimeTree 5: an expanded resource for species divergence times",
+    "journal": "Molecular Biology and Evolution 39(8): msac174",
+    "doi": "10.1093/molbev/msac174",
+    "url": "https://timetree.org",
+    "verified": true,
+    "verifiedAt": "2026-10-31"
   }
 }

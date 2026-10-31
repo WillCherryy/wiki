@@ -1,0 +1,31 @@
+{
+  "name": "Glires",
+  "common": "Rodents and rabbits",
+  "mrca": [
+    "Oryctolagus cuniculus",
+    "Mus musculus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 67.22,
+        "mid": 70.34,
+        "hi": 73.53,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 58"
+      }
+    ],
+    "display": {
+      "lo": 67.22,
+      "mid": 70.34,
+      "hi": 73.53,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

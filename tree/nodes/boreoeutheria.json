@@ -1,10 +1,32 @@
 {
   "name": "Boreoeutheria",
+  "mrca": [
+    "Canis lupus",
+    "Homo sapiens"
+  ],
   "common": "Northern placentals",
   "blurb": "The placental lineages that radiated on the northern continents: primates, rodents, carnivores, hoofed mammals, bats, whales and their relatives.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 79.93,
+        "mid": 85.07,
+        "hi": 90.42,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 45"
+      }
+    ],
+    "display": {
+      "lo": 79.93,
+      "mid": 85.07,
+      "hi": 90.42,
+      "source": "synthesis"
+    }
+  },
   "review": null
 }

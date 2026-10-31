@@ -1,0 +1,31 @@
+{
+  "name": "Cetruminantia",
+  "common": "Whales, hippos and ruminants",
+  "mrca": [
+    "Bos taurus",
+    "Tursiops truncatus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 52.1,
+        "mid": 52.98,
+        "hi": 54.26,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 55 (\"Dolphin/Cow\")"
+      }
+    ],
+    "display": {
+      "lo": 52.1,
+      "mid": 52.98,
+      "hi": 54.26,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}

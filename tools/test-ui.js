@@ -53,7 +53,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     errs.length = 0; await page.goto(`http://localhost:${PORT}/tree`); await page.waitForTimeout(1500);
     { const r = await page.evaluate(async () => { const T = window.__tree, side = () => document.getElementById('txSide').innerText, out = {}; if (!T) return { load: false }; out.load = true;
         T.select('homo-sapiens', true); out.taxon = /Homo sapiens/.test(side()) && /Closest relatives/i.test(side());
-        T.select('placentalia', true); out.node = /Atlantogenata/.test(side()) && /not yet sourced/.test(side());
+        T.select('placentalia', true); out.node = /Atlantogenata/.test(side()) && /Ravenictis/.test(side()) && /Tarver/.test(side()); T.select('vertebrata', true); out.node = out.node && /not yet sourced/.test(side());
         T.setCompare(['homo-sapiens', 'gallus-gallus']); out.cmp = /Last common ancestor/i.test(side()) && /Amniot/.test(side());
         const was = T.byId.get('teleostei').row; T.toggle('teleostei'); out.open = T.byId.get('danio-rerio').row != null;
         const q = document.getElementById('txQ'); q.value = 'coelac'; q.dispatchEvent(new Event('input')); out.search = /coelacanth/i.test(document.getElementById('txRes').innerText);

@@ -1,10 +1,32 @@
 {
   "name": "Laurasiatheria",
+  "mrca": [
+    "Erinaceus europaeus",
+    "Canis lupus"
+  ],
   "common": "Laurasiatherians",
-  "blurb": "Hedgehogs, bats, carnivores, horses and rhinos, and the even-toed hoofed mammals including whales. How the main lineages are related is still debated, so it is shown unresolved here.",
+  "blurb": "Hedgehogs, bats, carnivores, horses and rhinos, and the even-toed hoofed mammals including whales. How their main lineages are related to one another is still debated.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 73.75,
+        "mid": 77.74,
+        "hi": 81.96,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 46"
+      }
+    ],
+    "display": {
+      "lo": 73.75,
+      "mid": 77.74,
+      "hi": 81.96,
+      "source": "synthesis"
+    }
+  },
   "review": null
 }

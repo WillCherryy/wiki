@@ -1,5 +1,9 @@
 {
   "name": "Actinopterygii",
+  "mrca": [
+    "Polypterus senegalus",
+    "Danio rerio"
+  ],
   "common": "Ray-finned fishes",
   "blurb": "Fishes whose fins are webs of skin on bony rays. About half of all living vertebrate species belong here.",
   "relationship": {

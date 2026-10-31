@@ -1,5 +1,9 @@
 {
   "name": "Theria",
+  "mrca": [
+    "Didelphis virginiana",
+    "Homo sapiens"
+  ],
   "common": "Live-bearing mammals",
   "blurb": "Marsupials and placental mammals.",
   "relationship": {
@@ -8,31 +12,33 @@
   "age": {
     "fossilMin": {
       "ma": 156.3,
-      "taxon": "",
-      "formation": "",
+      "taxon": "Juramaia sinensis (BMNH PM1143), the oldest eutherian",
+      "formation": "Daxigou site, Tiaojishan Formation, Liaoning, China",
+      "dating": "Radiometrically constrained to just over 160 Ma (Oxfordian); top of the Oxfordian 157.3 ± 1.0 Ma gives 156.3 Ma",
       "cite": "benton2015",
-      "checked": "https://fossilcalibrations.org/Show_Calibration.php?CalibrationID=247"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 59 (Crown Theria)"
     },
     "softMax": {
       "ma": 169.6,
-      "basis": "Allows for southern tribosphenic mammals such as Ambondro possibly being therians",
+      "basis": "Allows for southern tribosphenic mammals such as Ambondro being therians: Bathonian, 168.3 ± 1.3 Ma",
       "cite": "benton2015",
-      "checked": "https://fossilcalibrations.org/Show_Calibration.php?CalibrationID=247"
+      "checked": "Benton et al. 2015, full text (palaeo-electronica.org/content/pdfs/424.pdf), node 59 (Crown Theria)"
     },
     "display": {
-      "lo": 156.3,
-      "hi": 169.6,
-      "source": "calibration"
+      "lo": 156.67,
+      "mid": 163.92,
+      "hi": 169.79,
+      "source": "synthesis"
     },
     "clock": [
       {
-        "lo": 157,
-        "mid": 164,
-        "hi": 170,
-        "method": "Bayesian relaxed molecular clock",
-        "data": "Phylogenomic data",
+        "lo": 156.67,
+        "mid": 163.92,
+        "hi": 169.79,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
         "cite": "tarver2016",
-        "checked": "search summary of the paper"
+        "checked": "Tarver et al. 2016, Table 6, node 38"
       }
     ]
   },

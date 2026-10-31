@@ -1,5 +1,9 @@
 {
   "name": "Aves",
+  "mrca": [
+    "Struthio camelus",
+    "Gallus gallus"
+  ],
   "common": "Birds",
   "blurb": "Living birds: the descendants of feathered theropod dinosaurs that survived the end-Cretaceous extinction.",
   "relationship": {
@@ -9,17 +13,17 @@
     "clock": [
       {
         "lo": 84.2,
-        "mid": 95,
+        "mid": 96.6,
         "hi": 114.3,
-        "method": "Bayesian relaxed molecular clock (95% HPD)",
-        "data": "Time tree of modern birds",
+        "method": "Bayesian relaxed molecular clock (BEAST), median and 95% HPD",
+        "data": "Clock-like genes for most bird families (genomic data set) with 130 fossil calibrations",
         "cite": "claramunt2015",
-        "checked": "https://advances.sciencemag.org/content/1/11/e1501005.full"
+        "checked": "Claramunt & Cracraft 2015, Results: genomic data set (the abstract rounds the median to 95 Ma; the RAG-1/2 data set gives 91.5 Ma, 79.8–106.8)"
       }
     ],
     "display": {
       "lo": 84.2,
-      "mid": 95,
+      "mid": 96.6,
       "hi": 114.3,
       "source": "synthesis"
     }

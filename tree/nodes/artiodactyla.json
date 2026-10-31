@@ -1,10 +1,34 @@
 {
   "name": "Artiodactyla",
+  "mrca": [
+    "Sus scrofa",
+    "Bos taurus",
+    "Tursiops truncatus"
+  ],
   "common": "Even-toed hoofed mammals and whales",
   "blurb": "Pigs, cattle, giraffes, hippos and whales. Whales are the closest living relatives of hippopotamuses.",
   "relationship": {
     "status": "pending"
   },
-  "age": {},
+  "age": {
+    "clock": [
+      {
+        "lo": 56.92,
+        "mid": 58.62,
+        "hi": 60.23,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 54 (\"Pig/Cow\")",
+        "note": "Tarver et al.'s crown Artiodactyla (node 53: 61.40 Ma, 59.38–63.40) contains a lineage outside pig + cow that is not in this selection, so the split of pigs from cattle and whales is their node 54."
+      }
+    ],
+    "display": {
+      "lo": 56.92,
+      "mid": 58.62,
+      "hi": 60.23,
+      "source": "synthesis"
+    }
+  },
   "review": null
 }

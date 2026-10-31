@@ -1,0 +1,31 @@
+{
+  "name": "Carnivora",
+  "common": "Carnivorans",
+  "mrca": [
+    "Felis catus",
+    "Canis lupus"
+  ],
+  "relationship": {
+    "status": "pending"
+  },
+  "age": {
+    "clock": [
+      {
+        "lo": 45.22,
+        "mid": 52.61,
+        "hi": 59.7,
+        "method": "Bayesian relaxed molecular clock (MCMCTree), posterior mean and 95% HPD",
+        "data": "14,631 nuclear genes, 36 mammals, 23 fossil calibrations",
+        "cite": "tarver2016",
+        "checked": "Tarver et al. 2016, Table 6, node 51"
+      }
+    ],
+    "display": {
+      "lo": 45.22,
+      "mid": 52.61,
+      "hi": 59.7,
+      "source": "synthesis"
+    }
+  },
+  "review": null
+}
