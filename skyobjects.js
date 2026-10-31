@@ -1090,14 +1090,16 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       const [c, sp, em] = surfaceAt(kind, nm, x, y, z, sd), i = py * S + px; A[i * 3] = c[0]; A[i * 3 + 1] = c[1]; A[i * 3 + 2] = c[2]; Sp[i] = sp; if (em) { E[i * 3] = em[0]; E[i * 3 + 1] = em[1]; E[i * 3 + 2] = em[2]; } }
     m = { A, Sp, E, S }; PMAP.set(key, m); return m;
   }
+  const AIRLESS = new Set(['moon', 'mercury', 'callisto', 'ganymede', 'europa', 'rock', 'lava']);
   const ATM = { titan: [[255, 190, 110], 1.4], triton: [[200, 210, 255], .2], io: [[255, 230, 160], .08],  earth: [[110, 160, 255], .9], ocean: [[110, 170, 255], 1], super: [[150, 180, 230], .7], venus: [[255, 236, 190], 1.1], neptune: [[120, 170, 255], .8], uranus: [[170, 236, 240], .8], jupiter: [[230, 220, 210], .35], saturn: [[240, 224, 190], .35], gas: [[210, 210, 230], .4], hot: [[255, 140, 90], .5], hotblue: [[130, 170, 255], .7], mars: [[230, 170, 140], .25], desert: [[220, 190, 150], .4] };
   function planetFace(kind, nm, S, la) {   // la: the direction of the star (radians, screen space) or null for the comparison view's soft key light
     const q = la == null ? -1 : Math.round(((la % TAU) + TAU) % TAU / TAU * 24) % 24, key = nm + '|' + S + '|' + q; let c = PLIT.get(key); if (c) { PLIT.delete(key); PLIT.set(key, c); return c; } if (PLIT.size > 40) PLIT.delete(PLIT.keys().next().value);
     const m = planetMaps(kind, nm, S), ang = q < 0 ? -2.35 : q / 24 * TAU, lz = q < 0 ? .62 : .32, lxy = Math.sqrt(1 - lz * lz), Lx = Math.cos(ang) * lxy, Ly = Math.sin(ang) * lxy, at = ATM[kind], giant = !!GIANT[kind] || kind === 'gas', night0 = nm === 'Earth' ? 0 : .25;
-    const rc = Math.cos(-.32), rs2 = Math.sin(-.32), RN = [-.94 * rs2, .94 * rc, -.34], nL = RN[0] * Lx + RN[1] * Ly + RN[2] * lz;   // Saturn's ring plane, as the rings are drawn (tilted 20 degrees, turned -0.32 rad)
+    const airless = AIRLESS.has(kind) && !GIANT[kind], rc = Math.cos(-.32), rs2 = Math.sin(-.32), RN = [-.94 * rs2, .94 * rc, -.34], nL = RN[0] * Lx + RN[1] * Ly + RN[2] * lz;   // Saturn's ring plane, as the rings are drawn (tilted 20 degrees, turned -0.32 rad)
     c = mk(S); const g = c.getContext('2d'), img = g.createImageData(S, S), D = img.data, R = S / 2;
     for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) { const dx = (px + .5 - R) / R, dy = (py + .5 - R) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue; const dz = Math.sqrt(1 - r2), i = py * S + px, k = i * 4;
       const nd = dx * Lx + dy * Ly + dz * lz, dif = sstep(-.12, .55, nd) * (.25 + .75 * Math.max(0, nd)) + .02, hv = dz + lz, hx = Lx, hy = Ly, hl = Math.hypot(hx, hy, hv), sp = m.Sp[i] * Math.pow(Math.max(0, (dx * hx + dy * hy + dz * hv) / hl), 60) * sstep(0, .3, nd);
+      if (airless) dif = (nd > 0 ? Math.pow(nd, .66) * Math.pow(Math.max(dz, .06), -.34) : 0) * .95 + .02;   /* an airless world (the Moon, Mercury, the icy and rocky moons): Minnaert's law, the standard model of lunar brightness: sharp terminator, darker limb, a full centre */
       let ld = giant ? .5 + .5 * Math.pow(dz, .6) : 1;   // gas giants darken towards the limb: we look through more of the cloud-top haze there
       if (kind === 'saturn' && Math.abs(nL) > .02) { const s2 = -(RN[0] * dx + RN[1] * dy + RN[2] * dz) / nL; if (s2 > 0) { const qx = dx + s2 * Lx, qy = dy + s2 * Ly, qz = dz + s2 * lz, rho = Math.hypot(qx, qy, qz); if (rho > 1.24 && rho < 2.29) ld *= 1 - (rho < 1.52 ? .25 : rho < 1.95 ? .8 : rho < 2.03 ? .05 : .55) * .9; } }   // the rings cast their shadow across the globe
       let r = m.A[i * 3] * dif * ld + 255 * sp, gg = m.A[i * 3 + 1] * dif * ld + 245 * sp, b = m.A[i * 3 + 2] * dif * ld + 230 * sp; const night = 1 - sstep(-.15, .2, nd); r += m.E[i * 3] * (night0 + (1 - night0) * night); gg += m.E[i * 3 + 1] * (night0 + (1 - night0) * night); b += m.E[i * 3 + 2] * (night0 + (1 - night0) * night);
@@ -1117,7 +1119,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       if (row < H) setTimeout(step, 0); else done({ W, H, A, E }); };
     step(); return () => { dead = true; };
   }
-  const GLOBEFS = `precision highp float; varying vec2 vP; uniform sampler2D uA, uE; uniform mat3 uR; uniform vec3 uL, uAtm; uniform float uAtmK, uGiant, uNight0, uRing, uScale, uAsp, uPix;
+  const GLOBEFS = `precision highp float; varying vec2 vP; uniform sampler2D uA, uE; uniform mat3 uR; uniform vec3 uL, uAtm; uniform float uAir, uAtmK, uGiant, uNight0, uRing, uScale, uAsp, uPix;
     float ringD(float r) { if (r < 1.24 || r > 2.29) return 0.; float d = r < 1.52 ? .22 : r < 1.95 ? .85 : r < 2.03 ? .05 : (r > 2.21 && r < 2.23) ? .08 : .6; return d * (.82 + .18 * sin(r * 431.) * sin(r * 157.)); }
     vec3 ringC(float r) { return r < 1.52 ? vec3(.62, .57, .5) : r < 1.95 ? vec3(.93, .86, .7) : vec3(.84, .78, .65); }
     void main() { vec2 p = vec2(vP.x * uAsp, vP.y) / uScale; float r2 = dot(p, p); vec3 col = vec3(0.); float al = 0.; vec3 RN = uR * vec3(0., 1., 0.);
@@ -1125,7 +1127,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       if (uRing > .5 && abs(RN.z) > .002) { rz = -(p.x * RN.x + p.y * RN.y) / RN.z; vec3 q = vec3(p, rz); float rho = length(q); rd = ringD(rho);
         if (rd > 0.) { float b = dot(q, uL), c = dot(q, q) - 1., disc = b * b - c; float sh = (disc > 0. && -b - sqrt(disc) > 0.) ? .06 : 1.; rc = ringC(rho) * (.3 + .7 * abs(dot(RN, uL))) * sh; } }
       if (r2 < 1.) { vec3 n = vec3(p, sqrt(1. - r2)); vec3 bd = n * uR; float lon = atan(bd.x, bd.z), lat = asin(clamp(bd.y, -1., 1.)); vec2 uv = vec2(lon / 6.2831853 + .5, .5 - lat / 3.1415927);
-        vec4 A = texture2D(uA, uv); vec3 E = texture2D(uE, uv).rgb; float nd = dot(n, uL), dif = smoothstep(-.12, .55, nd) * (.25 + .75 * max(nd, 0.)) + .012; vec3 h = normalize(uL + vec3(0., 0., 1.));
+        vec4 A = texture2D(uA, uv); vec3 E = texture2D(uE, uv).rgb; float nd = dot(n, uL), dif = smoothstep(-.12, .55, nd) * (.25 + .75 * max(nd, 0.)) + .012; if (uAir > .5) dif = (nd > 0. ? pow(nd, .66) * pow(max(n.z, .06), -.34) : 0.) * .95 + .02; /* Minnaert, for airless worlds */ vec3 h = normalize(uL + vec3(0., 0., 1.));
         float sp = A.a * pow(max(dot(n, h), 0.), 60.) * smoothstep(0., .3, nd), ld = uGiant > .5 ? .5 + .5 * pow(n.z, .6) : 1.;
         if (uRing > .5 && abs(dot(uL, RN)) > .01) { float t = -dot(n, RN) / dot(uL, RN); if (t > 0.) ld *= 1. - ringD(length(n + t * uL)) * .85; }   // the rings' shadow on the globe
         vec3 c = A.rgb * dif * ld + vec3(1., .96, .9) * sp; c = mix(c, uAtm * dif * .9, clamp(uAtmK * .3 * pow(1. - n.z, 1.6), 0., .55)); float night = 1. - smoothstep(-.15, .2, nd); c += E * (uNight0 + (1. - uNight0) * night);
@@ -1151,7 +1153,7 @@ void main(){ vec2 p = (gl_FragCoord.xy - uRes * .5) / uScale; float x = p.x, y =
       draw(spin, pitch, zoom) { const w = cv.width, h = cv.height; gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniformMatrix3fv(U('uR'), false, new Float32Array(mat(spin, pitch)));   // body -> view: spin about the axis, the axis tilted by the obliquity, then the viewer's pitch
         const L = [-.62, .4, .68], ll = Math.hypot(...L); gl.uniform3f(U('uL'), L[0] / ll, L[1] / ll, L[2] / ll);
-        gl.uniform3f(U('uAtm'), at ? at[0][0] / 255 : 0, at ? at[0][1] / 255 : 0, at ? at[0][2] / 255 : 0); gl.uniform1f(U('uAtmK'), at ? at[1] : 0); gl.uniform1f(U('uGiant'), GIANT[kind] || kind === 'gas' ? 1 : 0);
+        gl.uniform3f(U('uAtm'), at ? at[0][0] / 255 : 0, at ? at[0][1] / 255 : 0, at ? at[0][2] / 255 : 0); gl.uniform1f(U('uAtmK'), at ? at[1] : 0); gl.uniform1f(U('uGiant'), GIANT[kind] || kind === 'gas' ? 1 : 0); gl.uniform1f(U('uAir'), AIRLESS.has(kind) && !GIANT[kind] ? 1 : 0);
         gl.uniform1f(U('uNight0'), nm === 'Earth' ? 0 : .25); gl.uniform1f(U('uRing'), kind === 'saturn' ? 1 : 0); const sc = zoom * (kind === 'saturn' ? .36 : .78) * Math.min(1, w / h); gl.uniform1f(U('uScale'), sc); gl.uniform1f(U('uAsp'), w / h); gl.uniform1f(U('uPix'), h / 2);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }, stop() { stopB && stopB(); const x = gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } };
     return api;
