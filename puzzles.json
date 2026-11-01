@@ -1216,6 +1216,238 @@
     "Science",
     "Space"
    ]
+  },
+  "2026-12-08": {
+   "from": "Wolfgang Amadeus Mozart",
+   "to": "Tiger Woods",
+   "par": 3,
+   "route": [
+    "Wolfgang Amadeus Mozart",
+    "Palace of Versailles",
+    "Monogram",
+    "Tiger Woods"
+   ],
+   "alts": [
+    [
+     "Wolfgang Amadeus Mozart",
+     "Billiards",
+     "Golf",
+     "Tiger Woods"
+    ],
+    [
+     "Wolfgang Amadeus Mozart",
+     "Billiards",
+     "Golf club",
+     "Tiger Woods"
+    ]
+   ],
+   "cats": [
+    "Arts",
+    "Sport"
+   ]
+  },
+  "2026-12-09": {
+   "from": "Elephant",
+   "to": "Frida Kahlo",
+   "par": 3,
+   "route": [
+    "Elephant",
+    "Sub-Saharan Africa",
+    "Latin America",
+    "Frida Kahlo"
+   ],
+   "alts": [
+    [
+     "Elephant",
+     "Savanna",
+     "Mexico",
+     "Frida Kahlo"
+    ],
+    [
+     "Elephant",
+     "Testosterone",
+     "Moustache",
+     "Frida Kahlo"
+    ]
+   ],
+   "cats": [
+    "Nature",
+    "Arts"
+   ]
+  },
+  "2026-12-10": {
+   "from": "Big Ben",
+   "to": "Andromeda Galaxy",
+   "par": 3,
+   "route": [
+    "Big Ben",
+    "George Biddell Airy",
+    "Astronomy",
+    "Andromeda Galaxy"
+   ],
+   "alts": [
+    [
+     "Big Ben",
+     "UNESCO",
+     "Astronomy",
+     "Andromeda Galaxy"
+    ],
+    [
+     "Big Ben",
+     "Roman numeral",
+     "Astronomy",
+     "Andromeda Galaxy"
+    ]
+   ],
+   "cats": [
+    "Places",
+    "Space"
+   ]
+  },
+  "2026-12-11": {
+   "from": "Nikola Tesla",
+   "to": "Anime",
+   "par": 3,
+   "route": [
+    "Nikola Tesla",
+    "Futurist",
+    "Futurism",
+    "Anime"
+   ],
+   "alts": [
+    [
+     "Nikola Tesla",
+     "Electricity supply",
+     "Tokyo",
+     "Anime"
+    ],
+    [
+     "Nikola Tesla",
+     "Telephony",
+     "Japan",
+     "Anime"
+    ]
+   ],
+   "cats": [
+    "Technology",
+    "Arts"
+   ]
+  },
+  "2026-12-12": {
+   "from": "Isaac Newton",
+   "to": "Muhammad Ali",
+   "par": 3,
+   "route": [
+    "Isaac Newton",
+    "Color theory",
+    "Red",
+    "Muhammad Ali"
+   ],
+   "alts": [
+    [
+     "Isaac Newton",
+     "Visible spectrum",
+     "Red",
+     "Muhammad Ali"
+    ],
+    [
+     "Isaac Newton",
+     "University of Cambridge",
+     "Stephen Frears",
+     "Muhammad Ali"
+    ]
+   ],
+   "cats": [
+    "Society",
+    "Sport"
+   ]
+  },
+  "2026-12-13": {
+   "from": "Formula One",
+   "to": "Ice cream",
+   "par": 3,
+   "route": [
+    "Formula One",
+    "Motorsport",
+    "United States",
+    "Ice cream"
+   ],
+   "alts": [
+    [
+     "Formula One",
+     "Open-wheel",
+     "Charles Leclerc",
+     "Ice cream"
+    ],
+    [
+     "Formula One",
+     "Auto racing",
+     "Sicily",
+     "Ice cream"
+    ]
+   ],
+   "cats": [
+    "Sport",
+    "Food"
+   ]
+  },
+  "2026-12-14": {
+   "from": "Tennis",
+   "to": "Reptile",
+   "par": 3,
+   "route": [
+    "Tennis",
+    "France",
+    "Bay of Biscay",
+    "Reptile"
+   ],
+   "alts": [
+    [
+     "Tennis",
+     "France",
+     "Oceania",
+     "Reptile"
+    ],
+    [
+     "Tennis",
+     "France",
+     "Paleozoic",
+     "Reptile"
+    ]
+   ],
+   "cats": [
+    "Sport",
+    "Nature"
+   ]
+  },
+  "2026-12-15": {
+   "from": "Association football",
+   "to": "Wright brothers",
+   "par": 3,
+   "route": [
+    "Association football",
+    "Goal (sport)",
+    "Forward pass",
+    "Wright brothers"
+   ],
+   "alts": [
+    [
+     "Association football",
+     "Overtime (sports)",
+     "North Carolina",
+     "Wright brothers"
+    ],
+    [
+     "Association football",
+     "Football",
+     "Forward pass",
+     "Wright brothers"
+    ]
+   ],
+   "cats": [
+    "Sport",
+    "Technology"
+   ]
   }
  }
 }
