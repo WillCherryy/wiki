@@ -4,155 +4,124 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Scorcher — concept mockup of the suite page</title>
+<link rel="stylesheet" href="family.css">
 <style>
+/* The suite page speaks the Play and Science family. Build appears as a guest brand in its own type and colour. */
 @font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
 @font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
-:root {
-  --ground: #f3f4f1; --ink: #0d0f0e; --ink-2: #474c49; --ink-3: #6f7571; --rule: rgba(13, 15, 14, .16);
-  --race: #e8401c; --sky: #0b1234; --sky-2: #9fb4ff; --tree: #1d4a2c; --tree-2: #b9e3a6; --build: #1d3aa8; --signal: #e4ff3a;
-  --pub: #1f7a48; --der: #2b5aa0; --mod: #9a6a08; --ill: #7a4bb8;
-  --sans: 'Mona Sans', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; --pad: clamp(20px, 4vw, 64px);
-}
-* { box-sizing: border-box; margin: 0; }
-html { scroll-behavior: smooth; overflow-x: clip; }
-body { background: var(--ground); color: var(--ink); font: 400 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
-::selection { background: var(--ink); color: var(--signal); }
-:focus-visible { outline: 2px solid var(--build); outline-offset: 3px; }
-a { color: inherit; text-underline-offset: .2em; }
-::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-thumb { background: var(--ink); } ::-webkit-scrollbar-track { background: #e8eae6; }
-.btn { display: inline-flex; align-items: center; gap: 14px; height: 52px; padding: 0 22px; border: 1.5px solid currentColor; background: var(--ink); color: var(--ground); border-color: var(--ink); font: 560 15px var(--sans); font-stretch: 108%; text-decoration: none; transition: background .25s cubic-bezier(.2, .9, .1, 1), color .25s, border-color .25s; }
-.btn:hover { background: var(--race); border-color: var(--race); }
-.btn.line { background: transparent; color: var(--ink); } .btn.line:hover { background: var(--ink); color: var(--ground); }
-.btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-.concept { position: fixed; z-index: 90; left: 0; bottom: 0; padding: 7px 12px; background: var(--ink); color: var(--ground); font: 400 12px var(--mono); }
+html { scroll-behavior: smooth; }
+.bar .btn { margin-left: auto; height: 38px; padding: 0 14px; font-size: 14px; }
+.bar nav { margin-left: 8px; }
 
-.bar { position: fixed; z-index: 80; inset: 0 0 auto; height: 64px; display: flex; align-items: center; gap: 36px; padding: 0 var(--pad); background: color-mix(in srgb, var(--ground) 92%, transparent); border-bottom: 1px solid var(--rule); }
-.mark { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 700 20px var(--sans); font-stretch: 125%; letter-spacing: -.02em; }
-.mark i { display: grid; grid-template-columns: 1fr 1fr; width: 16px; height: 16px; } .mark i b { display: block; } .mark i b:nth-child(1) { background: var(--race); } .mark i b:nth-child(2) { background: var(--sky); } .mark i b:nth-child(3) { background: var(--tree); } .mark i b:nth-child(4) { background: var(--build); }
-.bar nav { display: flex; gap: 28px; margin-left: auto; font-size: 15px; } .bar nav a { text-decoration: none; color: var(--ink-2); } .bar nav a:hover { color: var(--ink); }
-.bar .btn { height: 40px; padding: 0 16px; font-size: 14px; }
-
-/* first viewport: the claim, then the mechanism proved in one sentence */
-.top { min-height: 100vh; padding: 64px 0 0; display: grid; grid-template-columns: 5fr 7fr; border-bottom: 1px solid var(--rule); }
-.top .claim { padding: clamp(48px, 9vh, 120px) var(--pad) 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 48px; border-right: 1px solid var(--rule); }
-.top h1 { font-size: clamp(56px, 7vw, 116px); font-weight: 660; font-stretch: 122%; letter-spacing: -.04em; line-height: .92; text-wrap: balance; }
-.top .lede { margin-top: 28px; font-size: clamp(18px, 1.4vw, 21px); color: var(--ink-2); max-width: 40ch; }
+.top { display: grid; grid-template-columns: 5fr 7fr; min-height: calc(100vh - 60px); border-bottom: 1px solid var(--rule); }
+.top .claim { padding: clamp(44px, 8vh, 110px) var(--pad) 48px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; }
+.top h1 { font-size: clamp(54px, 6.6vw, 108px); }
+.top .t-lede { margin-top: 24px; }
 .top .acts { display: flex; flex-wrap: wrap; gap: 10px; }
-.proof { position: relative; padding: clamp(48px, 9vh, 120px) var(--pad) 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; background: #fff; }
-.proof .sentence { font-size: clamp(30px, 3.3vw, 54px); font-weight: 480; font-stretch: 104%; letter-spacing: -.022em; line-height: 1.32; max-width: 22ch; text-wrap: pretty; }
-.v { position: relative; font-weight: 640; border-bottom: 3px solid var(--c); cursor: help; }
-.v sup { position: relative; top: -.95em; margin-left: .18em; padding: 2px 6px; background: var(--c); color: #fff; font: 500 11px var(--mono); letter-spacing: 0; vertical-align: baseline; }
-.v .src { position: absolute; left: 0; max-width: min(340px, 78vw); white-space: normal; top: calc(100% + 12px); z-index: 4; width: max-content; max-width: 340px; padding: 10px 12px; background: var(--ink); color: var(--ground); font: 400 13px/1.45 var(--sans); letter-spacing: 0; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s; }
+.top .acts .btn:first-child { background: var(--t5); border-color: var(--t5); } .top .acts .btn:first-child:hover { background: var(--ink); border-color: var(--ink); }
+.proof { padding: clamp(44px, 8vh, 110px) var(--pad) 48px; background: #fff; border-left: 1px solid var(--rule); display: flex; flex-direction: column; justify-content: space-between; gap: 40px; }
+.proof .sentence { font-size: clamp(28px, 3.1vw, 50px); font-weight: 500; letter-spacing: -.02em; line-height: 1.34; max-width: 22ch; text-wrap: pretty; }
+.v { position: relative; white-space: nowrap; font-weight: 760; border-bottom: 4px solid var(--c); cursor: help; }
+.v sup { position: relative; top: -.95em; margin-left: .16em; padding: 2px 6px; background: var(--c); color: #fff; font: 700 12px var(--sans); letter-spacing: 0; vertical-align: baseline; }
+.v .src { position: absolute; left: 0; top: calc(100% + 12px); z-index: 4; width: max-content; max-width: min(340px, 78vw); padding: 10px 12px; background: var(--ink); color: #fff; font: 400 14px/1.45 var(--sans); letter-spacing: 0; white-space: normal; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s; }
 .v:hover .src, .v:focus .src, .v.show .src { opacity: 1; transform: none; }
-.legend { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1.5px solid var(--ink); }
-.legend div { padding: 14px 16px 0 0; } .legend b { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; } .legend b::before { content: ''; width: 10px; height: 10px; background: var(--c); }
-.legend span { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+.legend { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
+.legend div { padding: 14px 16px 0 0; } .legend .ev { font-size: 15px; } .legend span:not(.ev) { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
 
-/* the suite as an index */
-.index { border-bottom: 1px solid var(--rule); }
-.row { display: grid; grid-template-columns: 14px 1.1fr 1.6fr auto; gap: 32px; align-items: center; padding: 34px var(--pad); border-top: 1px solid var(--rule); text-decoration: none; transition: background .3s; position: relative; overflow: hidden; }
-.row:first-child { border-top: 0; }
-.row::before { content: ''; position: absolute; inset: 0; background: var(--c); transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.2, .9, .1, 1); z-index: 0; }
-.row:hover::before { transform: scaleX(1); } .row > * { position: relative; z-index: 1; transition: color .3s; } .row:hover > * { color: var(--on, #fff); }
-.row i { width: 14px; height: 14px; background: var(--c); } .row:hover i { background: var(--on, #fff); }
-.row h3 { font-size: clamp(32px, 3.6vw, 56px); font-weight: 640; font-stretch: 120%; letter-spacing: -.035em; line-height: 1; }
-.row p { color: var(--ink-2); font-size: 17px; max-width: 46ch; }
-.row .st { font: 400 13px var(--mono); color: var(--ink-3); white-space: nowrap; }
+/* three ways in */
+.ways { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid var(--rule); }
+.way { position: relative; padding: 44px var(--pad) 40px; display: flex; flex-direction: column; gap: 14px; text-decoration: none; min-height: 340px; transition: background .3s; }
+.way + .way { border-left: 1px solid var(--rule); }
+.way .sw { height: 10px; width: 100%; } .way h2 { margin-top: 18px; font-size: clamp(34px, 3.4vw, 52px); font-weight: 790; letter-spacing: -.035em; line-height: 1; }
+.way p { color: var(--ink-2); max-width: 36ch; } .way .for { margin-top: auto; font-size: 14px; color: var(--ink-3); }
+.way:hover { background: #fff; }
+.way.play .sw { background: var(--heat); } .way.sci .sw { background: linear-gradient(90deg, var(--pub) 25%, var(--der) 25% 50%, var(--mod) 50% 75%, var(--ill) 75%); }
+.way.bw { background: #1d3aa8; color: #eef1ff; } .way.bw:hover { background: #17308f; }
+.way.bw .sw { background: linear-gradient(90deg, #1d3aa8, #fff 50%, #b8142f); }
+.way.bw h2 { font-family: 'Mona Sans', sans-serif; font-weight: 640; font-stretch: 122%; letter-spacing: -.04em; } .way.bw p { color: #c9d2ff; font-family: 'Mona Sans', sans-serif; } .way.bw .for { color: #9fb0f0; font-family: 'Geist Mono', monospace; font-size: 13px; }
 
-/* product fields: each product owns a whole colour, its screen slides in */
-.field { position: relative; display: grid; grid-template-columns: 4fr 8fr; min-height: 92vh; background: var(--c); color: var(--on); overflow: hidden; }
-.field .txt { padding: 120px var(--pad); display: flex; flex-direction: column; justify-content: space-between; gap: 40px; }
-.field h2 { font-size: clamp(38px, 4.6vw, 74px); font-weight: 640; font-stretch: 118%; letter-spacing: -.035em; line-height: .96; text-wrap: balance; }
-.field p { margin-top: 20px; font-size: 18px; max-width: 38ch; opacity: .85; }
-.field .facts { list-style: none; padding: 0; border-top: 1.5px solid currentColor; } .field .facts li { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 30%, transparent); font-size: 15px; } .field .facts b { font: 400 15px var(--mono); font-variant-numeric: tabular-nums; }
-.field .btn { align-self: flex-start; background: var(--on); color: var(--c); border-color: var(--on); } .field .btn:hover { background: var(--signal); color: var(--ink); border-color: var(--signal); }
-.field .screen { position: relative; align-self: center; margin: 80px 0 80px; clip-path: inset(0 0 0 calc((1 - var(--v, 0)) * 100%)); transform: translateX(calc((1 - var(--v, 0)) * 60px)); }
-.field .screen img { width: 100%; display: block; box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
-.field .screen .cap { margin-top: 12px; font: 400 12px var(--mono); opacity: .7; }
-.field.build .screen { margin-right: 0; } .field.build canvas { width: 100%; height: 66vh; display: block; background: #fff; }
+/* play and science, each with its screens */
+.field { display: grid; grid-template-columns: 4fr 8fr; border-bottom: 1px solid var(--rule); overflow: hidden; }
+.field .txt { padding: 96px var(--pad); display: flex; flex-direction: column; justify-content: space-between; gap: 36px; }
+.field .t-lede { margin-top: 16px; }
+.field .facts { list-style: none; padding: 0; border-top: 2px solid var(--ink); } .field .facts li { display: flex; justify-content: space-between; gap: 20px; padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 15px; } .field .facts b { font: 400 15px var(--mono); }
+.screens { position: relative; padding: 72px var(--pad) 72px 0; display: grid; gap: 18px; align-content: center; clip-path: inset(0 0 0 calc((1 - var(--v, 0)) * 100%)); transform: translateX(calc((1 - var(--v, 0)) * 50px)); }
+.screens img { display: block; width: 100%; border: 1px solid var(--rule); }
+.screens.two { grid-template-columns: 1fr 1fr; } .screens .cap { grid-column: 1 / -1; font-size: 13px; color: var(--ink-3); }
+.field.play { background: #fff; } .field.play .heat { height: 6px; background: var(--heat); margin-bottom: 4px; }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; } .tools span { padding: 4px 10px; border: 1.5px solid var(--rule-2); font-size: 14px; background: #fff; }
 
-/* learn and data */
-.duo { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--rule); }
-.duo > div { padding: 110px var(--pad); } .duo > div + div { border-left: 1px solid var(--rule); }
-.duo h2 { font-size: clamp(30px, 3vw, 46px); font-weight: 640; font-stretch: 116%; letter-spacing: -.03em; line-height: 1; }
-.duo p { margin-top: 16px; color: var(--ink-2); max-width: 44ch; }
-.duo .soon { display: inline-block; margin-top: 22px; font: 400 13px var(--mono); color: var(--ink-3); }
-.duo pre { margin-top: 28px; padding: 18px 20px; background: var(--ink); color: #dfe5ff; font: 400 13px/1.65 var(--mono); overflow: auto; } .duo pre .c { color: #8a90a8; } .duo pre .s { color: var(--signal); }
+/* Build: its own brand on its own field */
+.build { --b: #1d3aa8; display: grid; grid-template-columns: 4fr 8fr; background: var(--b); color: #eef1ff; font-family: 'Mona Sans', sans-serif; overflow: hidden; }
+.build .txt { padding: 96px var(--pad); display: flex; flex-direction: column; justify-content: space-between; gap: 36px; }
+.build .wm { display: flex; align-items: center; gap: 10px; font: 700 18px 'Mona Sans'; font-stretch: 125%; letter-spacing: -.02em; } .build .wm i { width: 14px; height: 14px; background: linear-gradient(90deg, #fff 50%, #b8142f 50%); }
+.build h2 { margin-top: 26px; font-size: clamp(38px, 4.4vw, 70px); font-weight: 640; font-stretch: 120%; letter-spacing: -.04em; line-height: .96; text-wrap: balance; }
+.build p { margin-top: 18px; font-size: 18px; max-width: 38ch; color: #c9d2ff; }
+.build .btn { align-self: flex-start; height: 52px; background: #eef1ff; color: var(--b); border-color: #eef1ff; font: 560 15px 'Mona Sans'; font-stretch: 108%; } .build .btn:hover { background: #e4ff3a; border-color: #e4ff3a; color: #0d0f0e; }
+.build .screens { padding-right: 0; } .build canvas { width: 100%; height: 64vh; display: block; background: #fff; } .build .cap { font: 400 12px 'Geist Mono', monospace; color: #9fb0f0; }
+.build .note { font: 400 13px 'Geist Mono', monospace; color: #9fb0f0; }
 
-.close { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 40px; padding: 110px var(--pad) 90px; }
-.close p { font-size: clamp(40px, 5.4vw, 88px); font-weight: 660; font-stretch: 122%; letter-spacing: -.04em; line-height: .94; max-width: 13ch; }
-.fine { padding: 24px var(--pad) 60px; border-top: 1px solid var(--rule); font: 400 12px/1.7 var(--mono); color: var(--ink-3); display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+.close { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 40px; padding: 100px var(--pad) 80px; }
+.close p { font-size: clamp(40px, 5vw, 80px); font-weight: 790; letter-spacing: -.035em; line-height: .96; max-width: 13ch; }
+.close .btn { background: var(--t5); border-color: var(--t5); height: 56px; font-size: 17px; }
+.fine { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; padding: 28px var(--pad) 64px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-3); }
 
 @media (max-width: 960px) {
-  .bar nav { display: none; } .top, .field, .duo, .close, .fine { grid-template-columns: 1fr; } .top .claim { border-right: 0; }
-  .legend { grid-template-columns: 1fr 1fr; gap: 0 12px; } .row { grid-template-columns: 14px 1fr; } .row p, .row .st { grid-column: 2; }
-  .field .txt { padding: 80px var(--pad) 20px; } .v.show .src { opacity: 0; } .v:focus .src { opacity: 1; } .v .src { left: auto; right: 0; } .field .screen { margin: 20px var(--pad) 60px; } .duo > div + div { border-left: 0; border-top: 1px solid var(--rule); }
+  .top, .ways, .field, .build, .close, .fine { grid-template-columns: minmax(0, 1fr); } .proof { border-left: 0; border-top: 1px solid var(--rule); }
+  .legend { grid-template-columns: 1fr 1fr; gap: 0 12px; } .v { white-space: normal; } .v .src { left: auto; right: 0; } .v.show .src { opacity: 0; } .v:focus .src { opacity: 1; }
+  .way { min-height: 0; } .way + .way { border-left: 0; border-top: 1px solid var(--rule); }
+  .field .txt, .build .txt { padding: 64px var(--pad) 12px; } .screens, .build .screens { padding: 24px var(--pad) 56px; } .screens.two { grid-template-columns: 1fr; }
 }
-@media (prefers-reduced-motion: reduce) { .field .screen { clip-path: none; transform: none; } html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) { .screens { clip-path: none; transform: none; } html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
 <div class="concept">Concept mockup · would live at /suite</div>
-<header class="bar"><a class="mark" href="#"><i><b></b><b></b><b></b><b></b></i>Scorcher</a>
-  <nav><a href="#race">Race</a><a href="#sky">Sky</a><a href="#tree">Tree</a><a href="#build">Build</a><a href="#data">Data</a></nav>
-  <a class="btn" href="/">Play today’s race</a></header>
-
+<header class="bar"><a class="mark" href="#"><i></i>Scorcher</a>
+  <nav><a href="#play">Play</a><a href="#science">Science</a><a href="#build">Build</a></nav>
+  <a class="btn" href="play.html">Play today’s race</a></header>
 <main>
-<section class="top" id="top">
-  <div class="claim"><div><h1>Science you can check.</h1><p class="lede">A daily game, and tools for exploring the universe, life and energy, where every number shows where it came from.</p></div>
-    <div class="acts"><a class="btn" href="/">Play today’s race <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a><a class="btn line" href="#sky">Explore the sky</a></div></div>
+<section class="top">
+  <div class="claim"><div><h1 class="t-display">Science you can check.</h1><p class="t-lede">A daily game, and tools for exploring the universe and the tree of life, where every number shows where it came from.</p></div>
+    <div class="acts"><a class="btn" href="play.html">Play today’s race <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a><a class="btn line" href="science.html">Open Scorcher Science</a></div></div>
   <div class="proof">
     <p class="sentence">Betelgeuse is <span class="v" tabindex="0" style="--c:var(--pub)">548 light-years<sup>published</sup><span class="src">A literature value, rounded. Its SIMBAD record lists the primary references.</span></span> away, <span class="v" tabindex="0" style="--c:var(--pub)">764 times<sup>published</sup><span class="src">Published radius in solar radii; estimates for this star vary widely.</span></span> the Sun’s width, and shines <span class="v show" tabindex="0" style="--c:var(--der)">88,300 times<sup>derived</sup><span class="src">Calculated here with the Stefan–Boltzmann law from its radius and its 3,600 K temperature.</span></span> as brightly.</p>
-    <div class="legend"><div style="--c:var(--pub)"><b>Published</b><span>From the literature or a survey</span></div><div style="--c:var(--der)"><b>Derived</b><span>Calculated here, method stated</span></div><div style="--c:var(--mod)"><b>Modelled</b><span>From a general relation</span></div><div style="--c:var(--ill)"><b>Illustrative</b><span>A picture, not data</span></div></div>
+    <div class="legend"><div><span class="ev pub">Published</span><span>From the literature or a survey</span></div><div><span class="ev der">Derived</span><span>Calculated here, method stated</span></div><div><span class="ev mod">Modelled</span><span>From a general relation</span></div><div><span class="ev ill">Illustrative</span><span>A picture, not data</span></div></div>
   </div>
 </section>
 
-<section class="index" aria-label="The suite">
-  <a class="row" href="/" style="--c:var(--race)"><i></i><h3>Race</h3><p>Get from one Wikipedia article to another using only links. A new puzzle every day.</p><span class="st">Live · free</span></a>
-  <a class="row" href="#sky" style="--c:var(--sky)"><i></i><h3>Sky</h3><p>Nearly a million real stars and 15,000 galaxies at their true distances.</p><span class="st">Live · free</span></a>
-  <a class="row" href="#tree" style="--c:var(--tree)"><i></i><h3>Tree</h3><p>How every vertebrate is related, with the fossils and clocks behind each branch.</p><span class="st">Live · free</span></a>
-  <a class="row" href="#build" style="--c:var(--build)"><i></i><h3>Build</h3><p>Test AI agents on your own engineering work before you pay for them.</p><span class="st">Pilots 2027</span></a>
+<section class="ways" aria-label="Three ways in">
+  <a class="way play" href="#play"><span class="sw"></span><h2>Play</h2><p>A daily race through Wikipedia, and an evolution game on the way. Good play earns real stars and species.</p><span class="for">For everyone · free</span></a>
+  <a class="way sci" href="#science"><span class="sw"></span><h2>Science</h2><p>Scorcher Sky, Scorcher Tree and the tools to measure, compare, cite and teach with them.</p><span class="for">For students, teachers and researchers · free</span></a>
+  <a class="way bw" href="#build"><span class="sw"></span><h2>Build</h2><p>Test AI agents on your own engineering work before you pay for them.</p><span class="for">For engineering and energy firms · pilots 2027</span></a>
 </section>
 
-<section class="field" id="race" style="--c:var(--race);--on:#fff6f2"><div class="txt"><div><h2>Five minutes of curiosity, every day.</h2><p>Race through Wikipedia using only links. The page warms as you get closer. Good routes earn real stars, galaxies and quasars for your own sky.</p></div><a class="btn" href="/">Play today’s race</a></div>
-  <div class="screen rv"><img src="img/shot-race.jpg" alt="The Scorcher daily race"><p class="cap">The daily race, live today</p></div></section>
+<section class="field play" id="play"><div class="txt"><div><h2 class="t-h2">Five minutes of curiosity, every day.</h2><p class="t-lede">Race through Wikipedia using only links. The page warms as you close in. Good routes earn real stars, galaxies and quasars for Your Sky.</p></div>
+  <div><div class="heat"></div><ul class="facts"><li>Daily race, friends, streams, packs<b>Live</b></li><li>Your Sky<b>Live</b></li><li>Evolution game and Your Tree<b>Coming</b></li></ul><a class="btn" href="play.html" style="margin-top:26px">Play today’s race</a></div></div>
+  <div class="screens rv"><img src="img/shot-race.jpg" alt="The Scorcher daily race"><p class="cap">The daily race, live today</p></div></section>
 
-<section class="field" id="sky" style="--c:var(--sky);--on:#eef1ff"><div class="txt"><div><h2>The universe, at its true scale.</h2><p>Zoom from a neutron star to the most distant quasars. Tap any star for what is measured about it, and what is only a picture.</p></div>
-  <div><ul class="facts"><li>Real stars from Gaia and Hipparcos<b>992,000</b></li><li>Galaxies at their measured distances<b>15,272</b></li><li>Pulsars<b>4,418</b></li></ul><a class="btn" href="/sky" style="margin-top:28px">Open Scorcher Sky</a></div></div>
-  <div class="screen rv"><img src="img/shot-sky-star.jpg" alt="Betelgeuse in Scorcher Sky"><p class="cap">Betelgeuse in Scorcher Sky, every value labelled</p></div></section>
+<section class="field" id="science"><div class="txt"><div><h2 class="t-h2">The real sky. The real tree.</h2><p class="t-lede">Nearly a million stars at measured distances, every vertebrate branch dated from fossils and clocks, and the tools to work with both.</p></div>
+  <div><ul class="facts"><li>Stars from Gaia and Hipparcos<b>992,000</b></li><li>Galaxies at measured distances<b>15,272</b></li><li>Vertebrate branch points dated<b>84 of 90</b></li></ul>
+    <div class="tools" style="margin-top:18px"><span>Search</span><span>Coordinates</span><span>Redshift</span><span>Luminosity</span><span>Common ancestor</span><span>Cite</span><span>Worksheets</span><span>API</span></div>
+    <a class="btn" href="science.html" style="margin-top:26px">Open Scorcher Science</a></div></div>
+  <div class="screens two rv"><img src="img/shot-sky-star.jpg" alt="Betelgeuse in Scorcher Sky"><img src="img/shot-tree.jpg" alt="Scorcher Tree comparing a human and a chicken"><p class="cap">Betelgeuse in Scorcher Sky, and a human and a chicken traced to Amniota in Scorcher Tree</p></div></section>
 
-<section class="field" id="tree" style="--c:var(--tree);--on:#eef8e8"><div class="txt"><div><h2>Find the ancestor you share with a chicken.</h2><p>Pick any two animals and follow their lines back to their last common ancestor, with the fossils, the clocks and the papers behind each date.</p></div>
-  <div><ul class="facts"><li>Vertebrate species, photographed<b>91</b></li><li>Branch points dated from the literature<b>84 of 90</b></li><li>Citations checked against Crossref<b>8 of 8</b></li></ul><a class="btn" href="/tree" style="margin-top:28px">Open Scorcher Tree</a></div></div>
-  <div class="screen rv"><img src="img/shot-tree.jpg" alt="Scorcher Tree comparing a human and a chicken"><p class="cap">Human and chicken: their last common ancestor, Amniota</p></div></section>
+<section class="build" id="build"><div class="txt"><div><span class="wm"><i></i>Scorcher Build</span><h2>Prove an agent on your own work.</h2><p>For engineering and energy firms: test your agent or ours on real tasks in QGIS, seismic, drilling, solar and wind, against how your team works today. Subscribe only if it pays.</p></div>
+  <div><a class="btn" href="build.html">Visit Scorcher Build</a><p class="note" style="margin-top:14px">A separate brand: its own type and colour, for buyers at work.</p></div></div>
+  <div class="screens rv"><canvas id="seis" aria-label="A synthetic seismic section"></canvas><p class="cap">Synthetic seismic section, generated in the page</p></div></section>
 
-<section class="field build" id="build" style="--c:var(--build);--on:#eef1ff"><div class="txt"><div><h2>Prove an agent on your own work.</h2><p>For engineering and energy firms: test your agent or ours on real tasks in QGIS, seismic, drilling, solar and wind, against how your team works today. Subscribe only if it pays.</p></div><a class="btn" href="build.html">See Scorcher Build</a></div>
-  <div class="screen rv"><canvas id="seis" aria-label="A synthetic seismic section"></canvas><p class="cap">Synthetic seismic section, generated in the page</p></div></section>
-
-<section class="duo" id="data">
-  <div><h2>Learn the why.</h2><p>With Demosthenes Academy, every star and branch point will link to lessons and practice: how a parallax works, how a molecular clock is calibrated, why a fossil only gives a minimum age.</p><span class="soon">Planned</span></div>
-  <div><h2>Use the data.</h2><p>A public, read-only API for stars, galaxies and tree nodes, each value with its source, label and licence.</p>
-    <pre><span class="c"># planned, not live</span>
-GET /api/v1/tree/node/amniota
-
-{ "name": "Amniota",
-  "fossilMin": { "ma": 318, "label": <span class="s">"published"</span>,
-                 "cite": "Benton et al. 2015" } }</pre></div>
-</section>
-
-<section class="close"><p>Curious? Start with today’s race.</p><a class="btn" href="/">Play today’s race <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>
-<div class="fine"><span>Scorcher · playscorcher.com</span><span>Screens are the live Scorcher pages. Mona Sans (GitHub) and Geist Mono (Vercel), SIL Open Font License. The seismic section is generated in the page.</span></div>
+<section class="close"><p>Curious? Start with today’s race.</p><a class="btn" href="play.html">Play today’s race <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>
+<div class="fine"><span>Scorcher · playscorcher.com</span><span>Screens are the live Scorcher pages. Atkinson Hyperlegible Next and Mono (Braille Institute); Build uses Mona Sans (GitHub) and Geist Mono (Vercel); all SIL Open Font License. The seismic section is generated in the page.</span></div>
 </main>
-
 <script>
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-// the same synthetic section as Scorcher Build, drawn once
 (function () { const cv = document.getElementById('seis'), g = cv.getContext('2d'), d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; const W = cv.width, H = cv.height, NT = 84, NS = 420;
   let sd = 7; const rnd = () => { sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646; };
   const hz = Array.from({ length: 34 }, (_, k) => ({ z: .04 + k * .028 + rnd() * .012, a: (rnd() - .45) * (k % 5 ? .55 : 1.25), dip: (rnd() - .5) * .1, w: rnd() * 6 })), rk = t => { const x = Math.PI * .05 * t; return (1 - 2 * x * x) * Math.exp(-x * x); };
   const tr = []; for (let i = 0; i < NT; i++) { const u = i / (NT - 1), r = new Float32Array(NS); hz.forEach(h => { const z = (h.z + h.dip * u + .018 * Math.sin(u * 6 + h.w) + (h.z > .3 && u > .58 ? .045 : 0)) * NS; for (let s = Math.max(0, z - 30 | 0); s < Math.min(NS, z + 30); s++) r[s] += h.a * rk(s - z); }); let n = 0; for (let s = 0; s < NS; s++) { n = .85 * n + (rnd() - .5) * .06; r[s] += n; } tr.push(r); }
   const vd = document.createElement('canvas'); vd.width = NT; vd.height = NS; const im = vd.getContext('2d').createImageData(NT, NS); for (let i = 0; i < NT; i++) for (let s = 0; s < NS; s++) { const v = Math.max(-1, Math.min(1, tr[i][s] * 1.1)), o = (s * NT + i) * 4, a = Math.pow(Math.abs(v), .8), c = v > 0 ? [184, 20, 47] : [29, 58, 168]; im.data[o] = 255 + (c[0] - 255) * a; im.data[o + 1] = 255 + (c[1] - 255) * a; im.data[o + 2] = 255 + (c[2] - 255) * a; im.data[o + 3] = 255; }
   vd.getContext('2d').putImageData(im, 0, 0); g.drawImage(vd, 0, 0, W, H); g.strokeStyle = 'rgba(13,15,14,.5)'; g.lineWidth = d * .8; const dx = W / NT; for (let i = 0; i < NT; i += 4) { g.beginPath(); for (let s = 0; s < NS; s++) { const x = (i + .5) * dx + tr[i][s] * dx * 2.2, y = s / NS * H; s ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); } })();
-// one authored motion: each product's screen is wiped in from its field as it arrives
+// one authored motion: each product's screens wipe in as they arrive
 const rv = [...document.querySelectorAll('.rv')];
 (function frame() { rv.forEach(el => { const r = el.getBoundingClientRect(); el.style.setProperty('--v', clamp((innerHeight * .95 - r.top) / (innerHeight * .55))); }); requestAnimationFrame(frame); })();
 </script>

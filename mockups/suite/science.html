@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scorcher Science — concept mockup</title>
+<link rel="stylesheet" href="family.css">
+<style>
+/* Science: the family at its most useful. Light ground, dense but calm, every output carries its label and method. */
+.bar .search { margin-left: auto; display: flex; align-items: center; gap: 10px; height: 38px; width: min(360px, 34vw); padding: 0 12px; border: 1.5px solid var(--rule-2); background: #fff; color: var(--ink-3); font-size: 15px; }
+.bar .search kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--rule-2); font: 400 12px var(--mono); }
+
+.head { display: grid; grid-template-columns: 1fr minmax(0, 620px); gap: 48px; align-items: end; padding: 56px var(--pad) 36px; border-bottom: 1px solid var(--rule); }
+.head h1 { font-size: clamp(44px, 5.4vw, 84px); }
+.head .t-lede { margin-top: 18px; }
+.find { position: relative; }
+.find label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--ink-3); }
+.find .box { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 16px; border: 2px solid var(--ink); background: #fff; }
+.find .box input { flex: 1; min-width: 0; border: 0; outline: 0; font: 500 20px var(--sans); color: var(--ink); background: transparent; }
+.find .box .ico { width: 20px; height: 20px; }
+.find ul { list-style: none; padding: 0; border: 2px solid var(--ink); border-top: 0; background: #fff; }
+.find li { display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; align-items: baseline; padding: 11px 16px; border-top: 1px solid var(--rule); font-size: 16px; cursor: pointer; }
+.find li:first-child { border-top: 0; background: var(--sunk); }
+.find li .k { font-size: 13px; color: var(--ink-3); } .find li .m { font: 400 13px var(--mono); color: var(--ink-3); }
+.find .eg { margin-top: 10px; font-size: 14px; color: var(--ink-3); } .find .eg a { margin-right: 12px; color: var(--ink-2); }
+
+/* the bench: tools down the side, the open tool beside them */
+.bench { display: grid; grid-template-columns: 260px 1fr; border-bottom: 1px solid var(--rule); min-height: 620px; }
+.tools { padding: 28px 0; border-right: 1px solid var(--rule); background: var(--sunk); }
+.tools h2 { padding: 0 var(--pad) 10px 24px; font-size: 14px; font-weight: 700; color: var(--ink-3); }
+.tools h2 + button, .tools button + h2 { margin-top: 0; } .tools button + h2 { margin-top: 18px; }
+.tools button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 24px; border: 0; border-left: 3px solid transparent; background: none; font: 500 16px var(--sans); color: var(--ink-2); text-align: left; cursor: pointer; }
+.tools button:hover { color: var(--ink); background: rgba(0, 0, 0, .035); }
+.tools button[aria-selected=true] { color: var(--ink); font-weight: 700; border-left-color: var(--ink); background: #fff; }
+.tools button .st { margin-left: auto; white-space: nowrap; padding-left: 8px; font-size: 12px; color: var(--ink-3); font-weight: 400; }
+.tool { display: none; padding: 36px var(--pad) 44px; } .tool.on { display: block; }
+.tool .top { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+.tool h3 { font-size: 30px; font-weight: 760; letter-spacing: -.02em; }
+.tool .what { margin-top: 6px; max-width: 64ch; color: var(--ink-2); }
+.ins { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-top: 26px; max-width: 900px; }
+.outs { margin-top: 26px; border-top: 2px solid var(--ink); max-width: 900px; }
+.out { display: grid; grid-template-columns: 1.1fr auto 1.4fr; gap: 20px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.out .n { font-size: 16px; } .out .v { font: 500 26px var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; text-align: right; white-space: nowrap; }
+.out .v small { font-size: 15px; color: var(--ink-3); margin-left: 6px; }
+.out .how { font-size: 14px; color: var(--ink-3); line-height: 1.45; } .out .how .ev { margin-bottom: 3px; }
+.tool .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.tool .note { margin-top: 18px; max-width: 72ch; font-size: 14px; color: var(--ink-3); }
+
+/* the full index of tools */
+.sec { padding: 84px var(--pad); border-bottom: 1px solid var(--rule); }
+.sec > .t-lede { margin-top: 14px; }
+.idx { margin-top: 40px; border-top: 2px solid var(--ink); }
+.grp { display: grid; grid-template-columns: 200px 1fr; gap: 32px; padding: 22px 0; border-bottom: 1px solid var(--rule); }
+.grp h3 { font-size: 22px; font-weight: 760; letter-spacing: -.015em; }
+.grp ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px 32px; }
+.grp li b { display: block; font-size: 16px; } .grp li span { display: block; font-size: 14px; color: var(--ink-3); line-height: 1.45; }
+.grp li .s { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--ink-2); padding: 1px 6px; border: 1px solid var(--rule-2); }
+.grp li .s.live { color: var(--pub); border-color: var(--pub); }
+
+/* teach */
+.teach { display: grid; grid-template-columns: 5fr 7fr; gap: 0; border-bottom: 1px solid var(--rule); }
+.teach > div { padding: 84px var(--pad); } .teach > div + div { border-left: 1px solid var(--rule); background: #fff; }
+.teach ul.feat { margin-top: 30px; list-style: none; padding: 0; border-top: 1px solid var(--rule); }
+.teach ul.feat li { padding: 12px 0; border-bottom: 1px solid var(--rule); } .teach ul.feat b { display: block; } .teach ul.feat span { font-size: 15px; color: var(--ink-3); }
+.sheet .meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--ink-3); }
+.sheet h3 { margin-top: 10px; font-size: 26px; font-weight: 760; letter-spacing: -.02em; }
+.sheet .given { margin-top: 18px; padding: 14px 16px; background: var(--sunk); font-size: 16px; }
+.sheet .given .num { font-size: 15px; }
+.q { margin-top: 22px; } .q p { font-weight: 600; } .q p .num { font-weight: 400; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.opts button { padding: 12px 14px; border: 1.5px solid var(--rule-2); background: #fff; text-align: left; font: 400 16px var(--mono); cursor: pointer; transition: border-color .15s, background .15s; }
+.opts button:hover { border-color: var(--ink); }
+.opts button.right { border-color: var(--pub); background: #e9f4ee; } .opts button.wrong { border-color: #b8142f; background: #fbecee; }
+.work { margin-top: 12px; padding: 14px 16px; border-left: 3px solid var(--der); background: #f0f4fd; font-size: 15px; display: none; } .work.show { display: block; }
+.work .num { font-size: 14px; }
+
+/* cite and data */
+.duo { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--rule); }
+.duo > div { padding: 84px var(--pad); } .duo > div + div { border-left: 1px solid var(--rule); }
+.duo p.t-lede { margin-top: 14px; }
+.rec { margin-top: 28px; border: 1.5px solid var(--ink); background: #fff; }
+.rec .h { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--rule); font-weight: 700; }
+.rec dl { display: grid; grid-template-columns: 130px 1fr; } .rec dt, .rec dd { padding: 9px 16px; border-bottom: 1px solid var(--rule); font-size: 15px; } .rec dt { color: var(--ink-3); } .rec dd { margin: 0; }
+.tabs { display: flex; border-bottom: 1px solid var(--rule); } .tabs span { padding: 9px 16px; font-size: 14px; color: var(--ink-3); border-right: 1px solid var(--rule); } .tabs span.on { color: var(--ink); font-weight: 700; background: var(--sunk); }
+pre { margin: 0; padding: 16px; font: 400 13.5px/1.65 var(--mono); overflow: auto; color: var(--ink); background: #fff; }
+pre .c { color: var(--ink-3); } pre .k { color: var(--der); } pre .s { color: var(--pub); }
+.duo .api { margin-top: 28px; border: 1.5px solid var(--ink); }
+.fine { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; padding: 28px var(--pad) 64px; font-size: 14px; color: var(--ink-3); }
+
+@media (max-width: 960px) {
+  .bar .search { width: auto; flex: 1; } .bar .search span { display: none; }
+  .head, .teach, .duo, .fine { grid-template-columns: minmax(0, 1fr); } .field input { width: 100%; min-width: 0; } .head { gap: 28px; }
+  .bench { grid-template-columns: minmax(0, 1fr); } .tools { display: flex; overflow-x: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .tools h2 { display: none; } .tools button { flex: none; width: auto; padding: 14px 16px; border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; } .tools button[aria-selected=true] { border-bottom-color: var(--ink); } .tools button .st { display: none; }
+  .out { grid-template-columns: 1fr auto; } .out .how { grid-column: 1 / -1; } .out .v { font-size: 22px; }
+  .grp { grid-template-columns: 1fr; gap: 12px; } .teach > div + div, .duo > div + div { border-left: 0; border-top: 1px solid var(--rule); } .opts { grid-template-columns: 1fr; }
+  .find li { grid-template-columns: 64px 1fr; } .find li .m { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="concept">Concept mockup · Scorcher Science</div>
+<header class="bar"><a class="mark" href="landing.html"><i></i>Scorcher <small>Science</small></a>
+  <nav><a href="#bench" class="on">Tools</a><a href="/sky">Sky</a><a href="/tree">Tree</a><a href="#teach">Teach</a><a href="#cite">Cite</a><a href="#data">Data</a></nav>
+  <div class="search" role="search"><svg class="ico" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg><span>Search everything</span><kbd>/</kbd></div></header>
+<main>
+<section class="head">
+  <div><h1 class="t-display">Look it up. Check the source.</h1>
+    <p class="t-lede">Tools for the universe and the tree of life, for classrooms and research. Every value says whether it was published, derived, modelled or only illustrative.</p></div>
+  <div class="find"><label for="q">Search stars, galaxies, species, coordinates or a DOI</label>
+    <div class="box"><svg class="ico" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg><input id="q" value="Betelgeuse" autocomplete="off" spellcheck="false"></div>
+    <ul aria-label="Suggestions (mockup)">
+      <li><span class="k">Star</span><span>Betelgeuse, α Orionis</span><span class="m">l 199.79° b −8.96°</span></li>
+      <li><span class="k">Lesson</span><span>Why Betelgeuse looks red</span><span class="m">14 min</span></li>
+      <li><span class="k">Glossary</span><span>Red supergiant</span><span class="m">Sky glossary</span></li>
+    </ul>
+    <p class="eg">Try <a href="#">05 55 10 +07 24 25</a><a href="#">Gallus gallus</a><a href="#">z = 1</a></p></div>
+</section>
+
+<section class="bench" id="bench" aria-label="Tools">
+  <div class="tools" role="tablist">
+    <h2>Measure</h2>
+    <button role="tab" aria-selected="true" data-t="coord">Sky coordinates</button>
+    <button role="tab" aria-selected="false" data-t="z">Distance from redshift</button>
+    <button role="tab" aria-selected="false" data-t="lum">Star luminosity</button>
+    <button role="tab" aria-selected="false" data-t="unit">Distance units</button>
+    <h2>Compare</h2>
+    <button role="tab" aria-selected="false" data-t="mrca">Common ancestor<span class="st">In Tree</span></button>
+    <button role="tab" aria-selected="false" data-t="size">Sizes side by side<span class="st">Planned</span></button>
+  </div>
+
+  <div>
+  <div class="tool on" id="t-coord" role="tabpanel">
+    <div class="top"><h3>Sky coordinates</h3><span class="ev der">Derived</span></div>
+    <p class="what">Equatorial to galactic coordinates (J2000), and the position in light-years in the frame Scorcher Sky uses: the Sun at the origin, x towards the Galactic centre, z towards the north galactic pole.</p>
+    <div class="ins">
+      <label class="field"><span>Right ascension (h m s or degrees)</span><input id="ra" value="05 55 10.31"></label>
+      <label class="field"><span>Declination (° ′ ″ or degrees)</span><input id="dec" value="+07 24 25.4"></label>
+      <label class="field"><span>Distance (light-years, optional)</span><input id="dist" value="548"></label>
+    </div>
+    <div class="outs">
+      <div class="out"><span class="n">Galactic longitude, l</span><span class="v" id="o-l">–</span><span class="how">IAU rotation matrix (Hipparcos convention, J2000)</span></div>
+      <div class="out"><span class="n">Galactic latitude, b</span><span class="v" id="o-b">–</span><span class="how">The same rotation</span></div>
+      <div class="out"><span class="n">Position x, y, z</span><span class="v" id="o-xyz">–</span><span class="how">d cos b cos l, d cos b sin l, d sin b. Only as good as the distance.</span></div>
+    </div>
+    <div class="acts"><a class="btn sm" href="/sky#o=Betelgeuse">Open in Scorcher Sky</a><button class="btn sm line">Copy with method</button></div>
+  </div>
+
+  <div class="tool" id="t-z" role="tabpanel">
+    <div class="top"><h3>Distance from redshift</h3><span class="ev mod">Modelled</span></div>
+    <p class="what">The distance to a galaxy or quasar from its redshift depends on the cosmological model as much as on the measurement. This uses flat ΛCDM with the Planck 2018 parameters.</p>
+    <div class="ins">
+      <label class="field"><span>Redshift, z</span><input id="zin" value="1"></label>
+      <label class="field"><span>Hubble constant, H₀ (km/s/Mpc)</span><input id="h0" value="67.66"></label>
+      <label class="field"><span>Matter density, Ωm</span><input id="om" value="0.3111"></label>
+    </div>
+    <div class="outs">
+      <div class="out"><span class="n">Comoving distance today</span><span class="v" id="o-dc">–</span><span class="how">c/H₀ ∫ dz/E(z), E(z) = √(Ωm(1+z)³ + ΩΛ). Where the object is now.</span></div>
+      <div class="out"><span class="n">Light-travel distance</span><span class="v" id="o-lt">–</span><span class="how">c × lookback time. How far the light went.</span></div>
+      <div class="out"><span class="n">Lookback time</span><span class="v" id="o-tl">–</span><span class="how">1/H₀ ∫ dz/((1+z)E(z))</span></div>
+      <div class="out"><span class="n">Age of the universe then</span><span class="v" id="o-age">–</span><span class="how">Age today minus the lookback time</span></div>
+    </div>
+    <p class="note">Radiation is neglected, which matters only at very high redshift. Planck Collaboration 2020, A&amp;A 641, A6 (TT,TE,EE+lowE+lensing+BAO). A local measurement of H₀ near 73 km/s/Mpc shortens every distance by about 7 %: try it.</p>
+  </div>
+
+  <div class="tool" id="t-lum" role="tabpanel">
+    <div class="top"><h3>Star luminosity</h3><span class="ev der">Derived</span></div>
+    <p class="what">A star's power output from its radius and surface temperature, treating it as a black body: the Stefan–Boltzmann law in solar units.</p>
+    <div class="ins">
+      <label class="field"><span>Radius (solar radii)</span><input id="rr" value="764"></label>
+      <label class="field"><span>Surface temperature (K)</span><input id="tt" value="3600"></label>
+    </div>
+    <div class="outs">
+      <div class="out"><span class="n">Luminosity</span><span class="v" id="o-L">–</span><span class="how">L/L☉ = (R/R☉)² (T/5772 K)⁴. The solar value is the IAU 2015 nominal temperature.</span></div>
+      <div class="out"><span class="n">Peak wavelength</span><span class="v" id="o-pk">–</span><span class="how">Wien's law, λ = 2.898 × 10⁻³ m K / T</span></div>
+      <div class="out"><span class="n">Where the peak falls</span><span class="v" id="o-band" style="font-family:var(--sans);font-size:20px">–</span><span class="how">Visible light spans about 380–750 nm</span></div>
+    </div>
+    <p class="note">The defaults are Betelgeuse. Its published radius ranges from about 640 to 1,000 solar radii depending on method, so its luminosity is uncertain by a factor of two or more; the tool shows the value only to three figures for that reason.</p>
+  </div>
+
+  <div class="tool" id="t-unit" role="tabpanel">
+    <div class="top"><h3>Distance units</h3><span class="ev der">Derived</span></div>
+    <p class="what">Exact conversions between the units astronomers use. The astronomical unit is defined (IAU 2012); the parsec follows from it.</p>
+    <div class="ins"><label class="field"><span>Value</span><input id="uv" value="1"></label>
+      <label class="field"><span>Unit</span><select id="uu"><option value="pc" selected>parsec</option><option value="ly">light-year</option><option value="au">astronomical unit</option><option value="km">kilometre</option><option value="mpc">megaparsec</option></select></label></div>
+    <div class="outs" id="o-units"></div>
+  </div>
+
+  <div class="tool" id="t-mrca" role="tabpanel">
+    <div class="top"><h3>Last common ancestor</h3><span class="ev pub">Published</span></div>
+    <p class="what">Pick two species to find the branch point they share, with the oldest fossil that proves it, the molecular clock estimates and the studies behind both.</p>
+    <div class="ins"><label class="field"><span>First species</span><input value="Homo sapiens"></label><label class="field"><span>Second species</span><input value="Gallus gallus"></label></div>
+    <div class="outs"><div class="out"><span class="n">Shared ancestor</span><span class="v" style="font-family:var(--sans)">Amniota</span><span class="how">The first animals to lay eggs on land</span></div>
+      <div class="out"><span class="n">Oldest fossil, a minimum age</span><span class="v">318 <small>Ma</small></span><span class="how"><span class="ev pub">Published</span><br>Benton et al. 2015, Palaeontologia Electronica</span></div></div>
+    <div class="acts"><a class="btn sm" href="/tree">Compare in Scorcher Tree</a></div>
+  </div>
+
+  <div class="tool" id="t-size" role="tabpanel">
+    <div class="top"><h3>Sizes side by side</h3><span class="ev ill">Planned</span></div>
+    <p class="what">Any two objects drawn to one scale, from planets to galaxies, with each size's label shown. Planned.</p>
+  </div>
+  </div>
+</section>
+
+<section class="sec" id="tools">
+  <h2 class="t-h2">Every tool, by what you are trying to do.</h2>
+  <p class="t-lede">Live means it works in Scorcher Sky or Scorcher Tree today. Everything else is proposed.</p>
+  <div class="idx">
+    <div class="grp"><h3>Explore</h3><ul>
+      <li><b>Scorcher Sky</b><span>992,000 stars and 15,272 galaxies at measured distances, from a neutron star to the edge of the observable universe.</span><span class="s live">Live</span></li>
+      <li><b>Scorcher Tree</b><span>Vertebrate relationships, with fossils, clocks and reviews behind each branch point.</span><span class="s live">Live</span></li></ul></div>
+    <div class="grp"><h3>Find</h3><ul>
+      <li><b>Name and catalogue search</b><span>Proper names, Bayer and HD designations, galaxy catalogues.</span><span class="s live">Live</span></li>
+      <li><b>Coordinate search</b><span>Go to any RA and Dec and identify what is there.</span><span class="s live">Live</span></li>
+      <li><b>Species search</b><span>Common or scientific name, to its place in the tree.</span><span class="s live">Live</span></li>
+      <li><b>DOI lookup</b><span>Every value in the suite that cites a paper.</span><span class="s">Planned</span></li></ul></div>
+    <div class="grp"><h3>Measure</h3><ul>
+      <li><b>Coordinates, units, redshift, luminosity</b><span>The calculators above, each output labelled with its method.</span><span class="s">Planned</span></li>
+      <li><b>Parallax to distance</b><span>With the uncertainty, and why simply inverting it fails when the error is large.</span><span class="s">Planned</span></li>
+      <li><b>Light-time</b><span>When the light you see now set out.</span><span class="s">Planned</span></li></ul></div>
+    <div class="grp"><h3>Compare</h3><ul>
+      <li><b>Last common ancestor</b><span>Two species, their shared branch point and its dates.</span><span class="s live">Live</span></li>
+      <li><b>Divergence dates</b><span>Fossil minimum, clock estimates and their spread on one axis.</span><span class="s live">Live</span></li>
+      <li><b>Sizes and distances</b><span>Any two objects at one scale.</span><span class="s">Planned</span></li></ul></div>
+    <div class="grp"><h3>Cite</h3><ul>
+      <li><b>Source on every value</b><span>Its label, its paper or survey, and how it was used.</span><span class="s live">Live</span></li>
+      <li><b>Export references</b><span>BibTeX and RIS for an object, a node or a whole view.</span><span class="s">Planned</span></li>
+      <li><b>Evidence report</b><span>A printable sheet of what is measured and what is not.</span><span class="s">Planned</span></li></ul></div>
+    <div class="grp"><h3>Teach</h3><ul>
+      <li><b>Lessons</b><span>Short guided paths through the Sky and the Tree.</span><span class="s">Planned</span></li>
+      <li><b>Worksheets with worked answers</b><span>Built from real values, printable.</span><span class="s">Planned</span></li>
+      <li><b>Class sets</b><span>A teacher shares a view; students see the same objects.</span><span class="s">Planned</span></li></ul></div>
+    <div class="grp"><h3>Data</h3><ul>
+      <li><b>Downloads</b><span>The catalogues Scorcher builds, with their licences.</span><span class="s">Planned</span></li>
+      <li><b>Public API</b><span>Read-only, every value with its source and label.</span><span class="s">Planned</span></li></ul></div>
+  </div>
+</section>
+
+<section class="teach" id="teach">
+  <div><h2 class="t-h2">Teach from real numbers.</h2>
+    <p class="t-lede" style="margin-top:14px">Worksheets built from the same values the tools use, with the method shown, so students can check every step.</p>
+    <ul class="feat"><li><b>Pitched by level</b><span>GCSE, A level and first-year university versions of each sheet.</span></li><li><b>Worked answers</b><span>Revealed one step at a time.</span></li><li><b>Honest uncertainty</b><span>Questions that ask why two sources disagree.</span></li></ul></div>
+  <div class="sheet">
+    <div class="meta"><span>Worksheet · A level physics</span><span>Stellar radiation</span><span class="ev pub">Values published</span></div>
+    <h3>How bright is Betelgeuse, and why is it red?</h3>
+    <div class="given">Given: radius <span class="num">R = 764 R☉</span>, surface temperature <span class="num">T = 3,600 K</span>, Sun <span class="num">T☉ = 5,772 K</span>, Wien's constant <span class="num">b = 2.898 × 10⁻³ m K</span>.</div>
+    <div class="q" data-q="1"><p>1. At what wavelength does Betelgeuse's spectrum peak?</p>
+      <div class="opts"><button>480 nm</button><button>650 nm</button><button data-ok>805 nm</button><button>1.61 µm</button></div>
+      <div class="work">λ<sub>max</sub> = b / T = 2.898 × 10⁻³ / 3,600 = <span class="num">8.05 × 10⁻⁷ m = 805 nm</span>, just beyond the red end of the visible. The star emits more strongly at red wavelengths than at blue, so it looks orange-red.</div></div>
+    <div class="q" data-q="2"><p>2. How many times more luminous than the Sun is it?</p>
+      <div class="opts"><button>about 3,900</button><button>about 220,000</button><button>about 580,000</button><button data-ok>about 88,000</button></div>
+      <div class="work">L/L☉ = (R/R☉)² (T/T☉)⁴ = 764² × (3,600/5,772)⁴ = 583,700 × 0.1513 ≈ <span class="num">88,300</span>. The radius alone gives 583,700; the cooler surface cuts each square metre's output to 15 %. The radius is the weaker value: published estimates span about 640 to 1,000 R☉.</div></div>
+  </div>
+</section>
+
+<section class="duo" id="cite">
+  <div><h2 class="t-h2">Cite what you used.</h2><p class="t-lede">Every value opens to its record: what it is, where it came from, and how Scorcher used it.</p>
+    <div class="rec"><div class="h">Betelgeuse · luminosity <span class="ev der">Derived</span></div>
+      <dl><dt>Value</dt><dd class="num">88,300 L☉</dd><dt>Method</dt><dd>Stefan–Boltzmann law from radius and temperature</dd><dt>Inputs</dt><dd>Radius 764 R☉ <span class="ev pub">Published</span><br>Temperature 3,600 K <span class="ev pub">Published</span></dd><dt>Caveat</dt><dd>Radius estimates differ by up to 50 %</dd></dl>
+      <div class="tabs"><span class="on">BibTeX</span><span>RIS</span><span>Plain</span></div>
+<pre><span class="k">@misc</span>{scorcher_sky,
+  title  = {<span class="s">Scorcher Sky</span>},
+  url    = {<span class="s">https://playscorcher.com/sky</span>},
+  note   = {<span class="s">Betelgeuse, luminosity (derived). Accessed 4 November 2026</span>}
+}</pre></div></div>
+  <div id="data"><h2 class="t-h2">Use the data.</h2><p class="t-lede">A read-only API and downloads, every value with its source, label and licence. Proposed, not live.</p>
+    <div class="api"><div class="tabs"><span class="on">Request</span><span>Python</span><span>R</span></div>
+<pre><span class="c"># proposed</span>
+GET /api/v1/sky/object/betelgeuse
+
+{ <span class="k">"name"</span>: <span class="s">"Betelgeuse"</span>,
+  <span class="k">"galactic"</span>: { <span class="k">"l"</span>: 199.79, <span class="k">"b"</span>: -8.96 },
+  <span class="k">"distance_ly"</span>: { <span class="k">"value"</span>: 548, <span class="k">"label"</span>: <span class="s">"published"</span> },
+  <span class="k">"luminosity_lsun"</span>: { <span class="k">"value"</span>: 88300, <span class="k">"label"</span>: <span class="s">"derived"</span>,
+    <span class="k">"method"</span>: <span class="s">"stefan-boltzmann"</span> } }</pre></div></div>
+</section>
+<div class="fine"><span>Scorcher Science · playscorcher.com</span><span>The calculators on this page work; the search results, worksheet layout and API response are a mockup. Atkinson Hyperlegible Next and Mono (Braille Institute), SIL Open Font License.</span></div>
+</main>
+<script>
+const $ = id => document.getElementById(id), fmt = (v, d = 0) => v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sig = (v, n = 3) => { if (!isFinite(v)) return '–'; const p = Math.pow(10, n - 1 - Math.floor(Math.log10(Math.abs(v)))); return fmt(Math.round(v * p) / p, Math.max(0, -Math.floor(Math.log10(Math.abs(v))) + n - 1)); };
+// tool switching
+document.querySelectorAll('.tools button').forEach(b => b.onclick = () => { document.querySelectorAll('.tools button').forEach(x => x.setAttribute('aria-selected', x === b)); document.querySelectorAll('.tool').forEach(t => t.classList.toggle('on', t.id === 't-' + b.dataset.t)); });
+// sexagesimal or decimal
+function parseAng(s, hours) { s = s.trim(); const neg = /^-/.test(s); const p = s.replace(/[hdms°′″'"+:-]/g, ' ').trim().split(/\s+/).map(Number); if (p.some(isNaN) || !p.length) return NaN; let v = p[0] + (p[1] || 0) / 60 + (p[2] || 0) / 3600; if (hours && p.length > 1) v *= 15; return neg ? -v : v; }
+// ICRS to galactic (Hipparcos)
+const G = [[-0.0548755604, -0.8734370902, -0.4838350155], [0.4941094279, -0.4448296300, 0.7469822445], [-0.8676661490, -0.1980763734, 0.4559837762]], R = Math.PI / 180;
+function coord() { const ra = parseAng($('ra').value, /[hm\s:]/.test($('ra').value.trim())) * R, de = parseAng($('dec').value) * R, d = parseFloat($('dist').value);
+  if (!isFinite(ra) || !isFinite(de)) { ['o-l', 'o-b', 'o-xyz'].forEach(i => $(i).textContent = '–'); return; }
+  const e = [Math.cos(de) * Math.cos(ra), Math.cos(de) * Math.sin(ra), Math.sin(de)], g = G.map(r => r[0] * e[0] + r[1] * e[1] + r[2] * e[2]);
+  let l = Math.atan2(g[1], g[0]) / R; if (l < 0) l += 360; const b = Math.asin(g[2]) / R;
+  $('o-l').innerHTML = fmt(l, 3) + '<small>°</small>'; $('o-b').innerHTML = (b < 0 ? '−' : '+') + fmt(Math.abs(b), 3) + '<small>°</small>';
+  $('o-xyz').innerHTML = isFinite(d) && d > 0 ? g.map(v => (v < 0 ? '−' : '') + fmt(Math.abs(v * d), 0)).join(', ') + '<small>ly</small>' : '<small>add a distance</small>'; }
+// flat LCDM, Simpson's rule
+const C = 299792.458, HUBBLE_GYR = 977.792;
+function integ(f, a, b, n = 2000) { const h = (b - a) / n; let s = f(a) + f(b); for (let i = 1; i < n; i++) s += f(a + i * h) * (i % 2 ? 4 : 2); return s * h / 3; }
+function cosmo() { const z = parseFloat($('zin').value), H = parseFloat($('h0').value), om = parseFloat($('om').value), ids = ['o-dc', 'o-lt', 'o-tl', 'o-age'];
+  if (!(z >= 0 && z <= 20 && H > 0 && om > 0 && om < 1)) { ids.forEach(i => $(i).textContent = '–'); return; }
+  const E = x => Math.sqrt(om * Math.pow(1 + x, 3) + 1 - om), th = HUBBLE_GYR / H;
+  const dc = C / H * integ(x => 1 / E(x), 0, z), tl = th * integ(x => 1 / ((1 + x) * E(x)), 0, z);
+  const age = th * integ(a => 1 / (a * Math.sqrt(om / (a * a * a) + 1 - om)), 1e-6, 1, 20000); // in scale factor, no singularity
+  const GLY = 3.26156e-3; $('o-dc').innerHTML = fmt(dc, 0) + '<small>Mpc</small> <small>' + sig(dc * GLY) + ' Gly</small>';
+  $('o-lt').innerHTML = sig(tl) + '<small>Gly</small>'; $('o-tl').innerHTML = sig(tl) + '<small>Gyr</small>'; $('o-age').innerHTML = sig(age - tl) + '<small>Gyr</small>'; }
+function lum() { const r = parseFloat($('rr').value), t = parseFloat($('tt').value); if (!(r > 0 && t > 0)) return;
+  const L = r * r * Math.pow(t / 5772, 4), pk = 2.897771955e-3 / t * 1e9; $('o-L').innerHTML = sig(L) + '<small>L☉</small>';
+  $('o-pk').innerHTML = pk >= 1000 ? sig(pk / 1000) + '<small>µm</small>' : sig(pk) + '<small>nm</small>';
+  $('o-band').textContent = pk < 10 ? 'X-ray' : pk < 380 ? 'Ultraviolet' : pk <= 750 ? 'Visible' : pk < 1e6 ? 'Infrared' : 'Microwave'; }
+const KM = { km: 1, au: 149597870.7, ly: 9460730472580.8, pc: 149597870.7 * 648000 / Math.PI }; KM.mpc = KM.pc * 1e6;
+const UN = { pc: 'parsecs', ly: 'light-years', au: 'astronomical units', km: 'kilometres', mpc: 'megaparsecs' };
+function units() { const v = parseFloat($('uv').value), u = $('uu').value; if (!isFinite(v)) return; const km = v * KM[u];
+  $('o-units').innerHTML = Object.keys(KM).filter(k => k !== u).map(k => { const x = km / KM[k], s = Math.abs(x) >= 1e6 || Math.abs(x) < 1e-3 ? x.toExponential(5).replace('e', ' × 10^').replace(/\^\+?(-?\d+)/, (m, p) => '<sup>' + p.replace('-', '−') + '</sup>') : sig(x, 6); return '<div class="out"><span class="n">' + UN[k] + '</span><span class="v">' + s + '</span><span class="how">' + (k === 'au' || u === 'au' ? 'IAU 2012: 1 au = 149,597,870.7 km exactly' : k === 'ly' || u === 'ly' ? 'Julian year × c' : '1 pc = 648,000/π au') + '</span></div>'; }).join(''); }
+['ra', 'dec', 'dist'].forEach(i => $(i).oninput = coord); ['zin', 'h0', 'om'].forEach(i => $(i).oninput = cosmo); ['rr', 'tt'].forEach(i => $(i).oninput = lum); $('uv').oninput = $('uu').onchange = units;
+coord(); cosmo(); lum(); units();
+// worksheet
+document.querySelectorAll('.q').forEach(q => q.querySelectorAll('.opts button').forEach(b => b.onclick = () => { b.classList.add(b.hasAttribute('data-ok') ? 'right' : 'wrong'); if (b.hasAttribute('data-ok')) q.querySelector('.work').classList.add('show'); }));
+</script>
+</body>
+</html>

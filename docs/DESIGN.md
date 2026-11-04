@@ -1,57 +1,77 @@
-# Scorcher design system (suite, November 2026)
+# Scorcher design system (November 2026)
 
-The system behind `mockups/suite/landing.html` and `mockups/suite/build.html`, to be carried into the live Race, Sky and Tree. Guided by the impeccable craft floor and the UI/UX Pro Max checklist; the owner's brief: minimal and brilliant, sharp edges, modern, innovative, clean, not generic, cool typography; no all-caps subheadings, no overuse of italics, short headings.
+Three styles, decided by the owner in November 2026:
 
-## Principles
+1. **Play**: the Wiki race, the evolution game, Your Sky and Your Tree.
+2. **Science**: Scorcher Sky, Scorcher Tree and the Science tools, built above all for usefulness, with many tools for education and research.
+3. **Build**: Scorcher Build, the engineering platform, a separately branded product.
 
-- **Prove, don't claim.** The first viewport demonstrates the mechanism: the evidence labels inside a real sentence (suite), an agent's pick on a seismic section (Build).
-- **One idea per heading,** eight words or fewer, sentence case, a full stop when it is a statement. No eyebrow or kicker labels above headings, ever.
-- **No italics for emphasis.** Emphasis comes from weight, size or colour. Italics stay only where convention needs them (species names, titles of works).
-- **No all-caps** for labels or headings. Small labels are sentence case.
-- **Sharp edges:** border radius 0 everywhere (buttons, inputs, panels, images, tags).
-- **Colour owns whole regions.** Each product has one field colour that fills its section; accents are not sprinkled.
-- **One authored motion per page** (the trace wipe on Build, the screen wipe on the suite page), exponential ease-out, content visible by default, `prefers-reduced-motion` honoured.
-- **Data looks like data:** monospace with tabular figures only for numbers, code, file names and measurements; never as a "technical" costume.
-- **Honest material:** generated visuals and synthetic examples are labelled as such where a visitor could mistake them for real data. No invented prices, customers or capabilities.
+Play and Science are one family (one type, one ground, one set of evidence colours); Play adds the temperature scale. Build has its own type and colour.
 
-## Type
+Mockups: `mockups/suite/play.html`, `science.html`, `landing.html` (the suite page, in the family style, with Build as a guest band) and `build.html`. The shared family stylesheet is `mockups/suite/family.css`.
 
-| Role | Face | Setting |
-|---|---|---|
-| Display | Mona Sans | weight 640–660, width 118–122 %, tracking −0.035 to −0.04 em, line height 0.92–0.96, `text-wrap: balance` |
-| Section heading | Mona Sans | weight 620, width 112 %, tracking −0.03 em |
-| Item heading | Mona Sans | weight 600–620, width 110 % |
-| Body | Mona Sans | 17 px, weight 400, width 100 %, line height 1.55, measure 40–52 ch, `text-wrap: pretty` |
-| Data, code, captions | Geist Mono | 12–15 px, tabular figures |
+## Rules for all three
 
-Both faces are self-hosted (SIL Open Font License): `mockups/suite/fonts/`. Mona Sans is variable in width as well as weight; the width axis is the signature (wide for display, normal for reading).
+These follow the impeccable craft floor and the UI/UX Pro Max checklist. The owner's brief: minimal and brilliant, sharp edges, modern, clean, not generic.
 
-## Colour
+- **Prove, don't claim.** The first view shows how the thing works: the evidence labels in a real sentence (suite), a working calculator (Science), a route warming towards its target (Play), an agent's pick on a seismic section (Build).
+- **Headings** carry one idea, eight words or fewer, in sentence case. No eyebrow or kicker labels.
+- **No italics for emphasis** and **no all-caps**. Italics stay only where convention needs them (species names, titles of works).
+- **Sharp edges.** Radius 0 everywhere.
+- **One authored motion per page.** It uses an exponential ease-out, content is visible by default, and `prefers-reduced-motion` is honoured.
+- **Monospace only for data:** numbers, code, coordinates, file names.
+- **Honest material.** Generated visuals, example puzzles and proposed features are labelled. Never invent prices, customers or capabilities.
+- **Evidence labels are the same colours everywhere:**
 
-| Token | Value | Use |
-|---|---|---|
-| ground | #f3f4f1 | page (cool, not cream) |
-| ink | #0d0f0e | text, primary buttons, rules at 16 % |
-| race | #e8401c | the race's field |
-| sky | #0b1234 | the sky's field (Scorcher Sky itself stays dark) |
-| tree | #1d4a2c | the tree's field |
-| build | #1d3aa8 | Build's field; with #b8142f, the seismic polarity pair |
-| signal | #e4ff3a | the one highlight: focus of attention on dark fields, the key plan's button, selection |
-| published / derived / modelled / illustrative | #1f7a48 / #2b5aa0 / #9a6a08 / #7a4bb8 | the evidence labels, everywhere the same |
+  | Label | Colour |
+  |---|---|
+  | Published | #1f7a48 |
+  | Derived | #2457d6 |
+  | Modelled | #9a6a08 |
+  | Illustrative | #7a4bb8 |
 
-Light ground for the suite and Build (people evaluating at desks in daylight); dark only where the subject is the night sky.
+## The family: Play and Science
 
-## Components
+| | |
+|---|---|
+| Type | **Atkinson Hyperlegible Next** (variable 200–800) and **Atkinson Hyperlegible Mono**, from the Braille Institute, chosen for legibility for learners. The slashed zero is part of the design and stays. Self-hosted, SIL OFL. |
+| Ground | #fbfbf9 page, #ffffff panels, #f1f2ef sunk areas, ink #121417 |
+| Display | weight 780–790, tracking −0.03 em, line height about 0.96 |
+| Section heading | weight 760, 28–44 px |
+| Body | 17 px, weight 400, line height 1.55 |
+| Mark | the word Scorcher beside a square filled with the temperature scale |
 
-- **Buttons:** 52 px (40 px in the bar), square, 1.5 px border; one primary per view (ink, or the field's light colour on a field); hover fills with the field colour or the signal.
-- **Inputs:** square cells sharing 1.5 px rules, label above value in sentence case.
-- **Rows instead of cards:** indexes and lists are full-width rows with hairline rules; a row fills with its colour on hover.
-- **Tables:** right-aligned tabular figures, hairline rules, the recommended row tinted, never zebra-striped.
-- **Evidence label:** a small square swatch plus the word; inline in prose as a coloured underline and a small tag, with the source on hover or focus.
-- **Browser surfaces:** themed selection (ink on signal), square scrollbar, 2 px focus ring offset 3 px.
+**Science adds utility.**
+- A global search for objects, species, coordinates and DOIs.
+- A tool bench: tools listed by task, with the open tool beside them.
+- The tasks: Explore, Find, Measure, Compare, Cite, Teach and Data.
+- Every output shows its value, its label and its method on one row.
+- Worksheets give worked answers, revealed step by step.
+- A citation record and export for every value.
+- Live versus planned is always stated.
+- Scorcher Sky itself keeps its dark field, because its subject is the night sky.
+
+**Play adds warmth.**
+- The temperature scale: #2456c7 → #3f8fd0 → #9fbf6a → #f2b233 → #f07a1f → #e2361b. It is the race's own mechanic (the page warms as you close in) and is used for progress, the primary action and the mark.
+- Larger display type for the puzzle.
+- One big action.
+- Earned objects, each linking to Scorcher Sky or Tree.
+
+## Build
+
+Build keeps the brand in `build.html`:
+
+| | |
+|---|---|
+| Type | Mona Sans with a variable width axis (wide for display) and Geist Mono |
+| Ground | cool #f3f4f1 |
+| Field colour | #1d3aa8, with #b8142f as the seismic polarity pair |
+| Highlight | signal #e4ff3a |
+
+Build is for buyers at work. It never uses the temperature scale. It uses the evidence colours only in its reports.
 
 ## Carrying it into the live apps (next)
 
-- Race: replace small tracked capitals and italic display serif in headings with the type roles above; square the remaining rounded corners.
-- Sky: keep its dark field; swap the italic Garamond names in the inspector and the capitalised eyebrows for Mona Sans; evidence tags as above.
-- Tree: the paper ground becomes the cool ground; species names stay italic (convention); clade labels in sentence case instead of spaced capitals.
+- **Race:** move to Atkinson and the Play tokens; remove the italic display serif and the small tracked capitals; square the corners.
+- **Sky:** keep the dark field; use Atkinson in the inspector instead of italic Garamond; keep the evidence tags as above; add the Science bar and search.
+- **Tree:** move to the family ground and Atkinson; species names stay italic; clade labels in sentence case.
