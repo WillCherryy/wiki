@@ -1,6 +1,6 @@
 # Scorcher
 
-Start by reading `docs/PLATFORM.md`: the platform vision (Wiki race, Scorcher Sky, Scorcher Tree, a later evolution game, Your Sky and Your Tree), current status and next steps. Scorcher Tree's data and evidence rules are in `docs/tree-data.md`.
+Start by reading `docs/PLATFORM.md`: the platform vision (Wiki race, Scorcher Sky, Scorcher Tree, a later evolution game, Your Sky and Your Tree), current status and next steps. Scorcher Tree's data and evidence rules are in `docs/tree-data.md`. The suite scope (landing page, agentic Solar/Wind/Geothermal/Engineering platforms, public API, Tree expansions) is in `docs/SUITE.md`.
 
 - Run `npm test` before committing; it includes browser checks of `/sky` and `/tree` (Playwright).
 - Dev server: `node server.js` (http://localhost:3000). Tree data: `node tools/build-tree.js`; check it with `node tools/check-tree.js`.
