@@ -4,217 +4,293 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Scorcher Build — concept mockup</title>
-<!-- A concept mockup of Scorcher's applied-science space: agents for solar, wind, geothermal and engineering.
-     Nothing here is a working product. Photographs: Wikimedia Commons, credited at the foot of the page (img/credits.json). -->
 <style>
-@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
-@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
-@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
-@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
-@font-face { font-family: 'EB Garamond'; src: url(../../fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); font-style: italic; }
-@font-face { font-family: 'IBM Plex Mono'; src: url(../../fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); }
-:root { --bg: #07080a; --ink: #f2f1ec; --ink2: #b7b5ad; --mute: #7d7b74; --line: rgba(255, 255, 255, .1); --accent: #ff5a2b; --sun: #ffb347; --wind: #8fd0ff; --geo: #ff7a5c; --eng: #c7b6ff;
-  --sans: 'Instrument Sans', system-ui, sans-serif; --serif: 'EB Garamond', Georgia, serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --t-meas: #7fe0a8; --t-mod: #8fb8ff; --t-ass: #f2c46d; }
-* { box-sizing: border-box; } html { scroll-behavior: smooth; } body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
-a { color: inherit; } img { display: block; }
-.concept { position: fixed; z-index: 90; right: 18px; bottom: 18px; padding: 6px 12px; border-radius: 99px; background: rgba(255, 255, 255, .08); backdrop-filter: blur(12px); border: 1px solid var(--line); font: 500 10.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+@font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
+:root {
+  --ground: #f3f4f1; --ground-2: #e8eae6; --ink: #0d0f0e; --ink-2: #474c49; --ink-3: #6f7571; --rule: rgba(13, 15, 14, .16);
+  --pos: #b8142f; --neg: #1d3aa8; --neg-deep: #0f2276; --signal: #e4ff3a;
+  --sans: 'Mona Sans', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+  --pad: clamp(20px, 4vw, 64px);
+}
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--ground); color: var(--ink); font: 400 17px/1.55 var(--sans); font-stretch: 100%; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+::selection { background: var(--ink); color: var(--signal); }
+:focus-visible { outline: 2px solid var(--neg); outline-offset: 3px; }
+a { color: inherit; text-underline-offset: .2em; }
+::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-thumb { background: var(--ink); } ::-webkit-scrollbar-track { background: var(--ground-2); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-/* nav */
-.nav { position: fixed; z-index: 80; inset: 0 0 auto; display: flex; align-items: center; gap: 28px; padding: 18px 32px; transition: background .4s, backdrop-filter .4s; }
-.nav.solid { background: rgba(7, 8, 10, .62); backdrop-filter: blur(18px) saturate(1.4); border-bottom: 1px solid var(--line); }
-.brand { display: flex; align-items: baseline; gap: 10px; font: 600 20px var(--sans); letter-spacing: -.01em; text-decoration: none; } .brand i { font: italic 400 22px var(--serif); color: var(--accent); } .brand span { font: 500 11px var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--ink2); padding-left: 10px; border-left: 1px solid var(--line); }
-.nav nav { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--ink2); } .nav nav a { text-decoration: none; } .nav nav a:hover { color: var(--ink); }
-.btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 99px; background: var(--ink); color: #0b0b0c; font: 600 14px var(--sans); text-decoration: none; border: 0; cursor: pointer; transition: transform .2s; } .btn:hover { transform: translateY(-1px); }
-.btn.ghost { background: transparent; color: var(--ink); border: 1px solid rgba(255, 255, 255, .28); } .btn .ar { transition: transform .2s; } .btn:hover .ar { transform: translateX(3px); }
+/* type roles */
+.display { font-weight: 640; font-stretch: 118%; letter-spacing: -.035em; line-height: .96; text-wrap: balance; }
+.h2 { font-size: clamp(34px, 4.4vw, 68px); font-weight: 620; font-stretch: 112%; letter-spacing: -.03em; line-height: 1; text-wrap: balance; }
+.lede { font-size: clamp(18px, 1.4vw, 21px); color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
+.meta { font: 400 13px/1.4 var(--mono); color: var(--ink-3); }
 
-/* hero: the photo slowly pushes in and darkens as you scroll away */
-.hero { position: relative; height: 140vh; }
-.hero .pin { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-.hero .ph { position: absolute; inset: -4%; background: url(img/wind-sunset.jpg) center 62% / cover; transform: scale(calc(1.04 + var(--p, 0) * .14)); filter: saturate(1.1) brightness(calc(.86 - var(--p, 0) * .45)); will-change: transform; }
-.hero .grain { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 110%, rgba(7, 8, 10, .95), transparent 60%), linear-gradient(rgba(7, 8, 10, .55), transparent 30%); }
-.hero .copy { position: absolute; left: 6vw; right: 6vw; bottom: 12vh; transform: translateY(calc(var(--p, 0) * -60px)); opacity: calc(1 - var(--p, 0) * 1.3); }
-.eyebrow { font: 500 12px var(--sans); letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
-.hero h1 { margin: 14px 0 20px; font: 600 clamp(48px, 8.4vw, 132px)/.92 var(--sans); letter-spacing: -.045em; max-width: 12ch; }
-.hero h1 em { font: italic 400 1.04em var(--serif); letter-spacing: -.02em; color: var(--sun); }
-.hero p { max-width: 560px; margin: 0 0 28px; font-size: 19px; color: var(--ink2); } .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.scrollcue { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font: 500 11px var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--ink2); opacity: calc(1 - var(--p, 0) * 4); }
-.scrollcue::after { content: ''; display: block; width: 1px; height: 38px; margin: 10px auto 0; background: linear-gradient(var(--ink2), transparent); animation: cue 2s ease-in-out infinite; } @keyframes cue { 0%, 100% { transform: scaleY(.3); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } }
+/* controls: square, flat, one primary */
+.btn { display: inline-flex; align-items: center; gap: 14px; height: 52px; padding: 0 22px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--ground); font: 560 15px var(--sans); font-stretch: 108%; text-decoration: none; cursor: pointer; transition: background .25s cubic-bezier(.2, .9, .1, 1), color .25s; }
+.btn:hover { background: var(--neg); border-color: var(--neg); }
+.btn.line { background: transparent; color: var(--ink); } .btn.line:hover { background: var(--ink); color: var(--ground); }
+.btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 
-/* statement */
-.state { padding: 18vh 6vw 14vh; max-width: 1240px; margin: 0 auto; }
-.state p { margin: 0; font: 500 clamp(28px, 3.7vw, 54px)/1.14 var(--sans); letter-spacing: -.025em; }
-.state p span { color: rgba(242, 241, 236, calc(.16 + var(--w, 0) * .84)); transition: color .25s; }
+/* page frame */
+.concept { position: fixed; z-index: 90; left: 0; bottom: 0; padding: 7px 12px; background: var(--ink); color: var(--ground); font: 400 12px var(--mono); }
+.bar { position: fixed; z-index: 80; inset: 0 0 auto; height: 64px; display: flex; align-items: center; gap: 36px; padding: 0 var(--pad); background: color-mix(in srgb, var(--ground) 92%, transparent); border-bottom: 1px solid var(--rule); }
+.mark { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 700 19px var(--sans); font-stretch: 125%; letter-spacing: -.02em; }
+.mark i { display: block; width: 14px; height: 14px; background: linear-gradient(90deg, var(--neg) 50%, var(--pos) 50%); }
+.mark span { font-weight: 450; font-stretch: 100%; color: var(--ink-3); letter-spacing: 0; }
+.bar nav { display: flex; gap: 28px; margin-left: auto; font-size: 15px; } .bar nav a { text-decoration: none; color: var(--ink-2); } .bar nav a:hover { color: var(--ink); }
+.bar .btn { height: 40px; padding: 0 16px; font-size: 14px; }
 
-/* chapters: one stage, photos wiping into each other as the text scrolls */
-.chapters { position: relative; height: 480vh; }
-.chapters .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-.chapters .slide { position: absolute; inset: 0; clip-path: inset(var(--clip, 100%) 0 0 0); }
-.chapters .slide .img { position: absolute; inset: -6%; background-size: cover; background-position: center; transform: scale(calc(1.18 - var(--k, 0) * .14)) translateY(calc((1 - var(--k, 0)) * 4%)); filter: brightness(.62) saturate(1.05); }
-.chapters .slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7, 8, 10, .82), rgba(7, 8, 10, .1) 62%), linear-gradient(transparent 60%, rgba(7, 8, 10, .7)); }
-.chapters .card { position: absolute; z-index: 2; left: 6vw; top: 50%; width: min(560px, 88vw); transform: translateY(calc(-50% + (1 - var(--k, 0)) * 60px)); opacity: var(--k, 0); }
-.chapters .num { font: 400 13px var(--mono); color: var(--c); } .chapters h2 { margin: 10px 0 14px; font: 600 clamp(40px, 5.6vw, 84px)/.95 var(--sans); letter-spacing: -.04em; } .chapters h2 em { font: italic 400 1.05em var(--serif); color: var(--c); letter-spacing: -.01em; }
-.chapters .q { margin: 0 0 18px; font-size: 19px; color: var(--ink2); max-width: 500px; }
-.chapters ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; color: var(--ink2); } .chapters li { display: flex; gap: 10px; } .chapters li::before { content: ''; width: 18px; height: 1px; background: var(--c); margin-top: 10px; flex: none; }
-.chapters li b { color: var(--ink); font-weight: 500; }
-.chapters .rail { position: absolute; z-index: 3; right: 4vw; top: 50%; transform: translateY(-50%); display: grid; gap: 18px; }
-.chapters .rail div { display: flex; align-items: center; gap: 12px; justify-content: flex-end; font: 500 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--mute); transition: color .3s; }
-.chapters .rail div i { width: 26px; height: 2px; background: rgba(255, 255, 255, .2); position: relative; overflow: hidden; } .chapters .rail div i::after { content: ''; position: absolute; inset: 0; background: var(--c); transform: scaleX(var(--f, 0)); transform-origin: left; }
-.chapters .rail div.on { color: var(--ink); }
-.chapters .tag { display: inline-block; margin-top: 18px; padding: 5px 10px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, .2); font: 500 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+/* depth rail: the page is a borehole; sections sit at depths */
+.rail { position: fixed; z-index: 70; left: 0; top: 64px; bottom: 0; width: 44px; border-right: 1px solid var(--rule); background: var(--ground); }
+.rail .tick { position: absolute; left: 0; height: 1px; background: var(--ink); opacity: .35; } .rail .tick.l { width: 14px; opacity: .7; } .rail .tick:not(.l) { width: 7px; }
+.rail .bit { position: absolute; left: 0; width: 44px; height: 2px; background: var(--pos); transition: top .1s linear; }
+.rail .d { position: absolute; left: 6px; transform: rotate(-90deg) translateX(-100%); transform-origin: left top; font: 400 11px var(--mono); color: var(--ink-3); white-space: nowrap; }
+main { margin-left: 44px; }
 
-/* agent run: the console types itself out as you scroll; the report fills in beside it */
-.run { position: relative; height: 320vh; background: #0b0c0f; }
-.run .stage { position: sticky; top: 0; height: 100vh; display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; padding: 96px 5vw 48px; align-items: center; }
-.run h2 { grid-column: 1 / -1; align-self: end; margin: 0; font: 600 clamp(30px, 3.4vw, 50px)/1 var(--sans); letter-spacing: -.035em; } .run h2 em { font: italic 400 1.05em var(--serif); color: var(--sun); }
-.console { height: 100%; max-height: 560px; border-radius: 18px; background: #060709; border: 1px solid var(--line); box-shadow: 0 40px 120px rgba(0, 0, 0, .5); overflow: hidden; display: flex; flex-direction: column; }
-.console header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font: 500 12px var(--sans); color: var(--ink2); } .console header i { width: 10px; height: 10px; border-radius: 50%; background: #2a2b2f; } .console header b { margin-left: 8px; font-weight: 500; color: var(--ink); } .console header .live { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--t-meas); } .console header .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
-.console .body { flex: 1; overflow: hidden; padding: 16px 18px; font: 400 12.5px/1.65 var(--mono); }
-.ln { opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; white-space: pre-wrap; } .ln.on { opacity: 1; transform: none; }
-.ln .who { color: var(--mute); } .ln .tool { color: var(--wind); } .ln .ok { color: var(--t-meas); } .ln .num { color: var(--ink); } .ln .warn { color: var(--t-ass); } .ln .user { color: var(--sun); }
-.report { height: 100%; max-height: 560px; border-radius: 18px; background: linear-gradient(160deg, #f6f3ec, #ece6da); color: #16140f; padding: 28px 30px; overflow: hidden; box-shadow: 0 40px 120px rgba(0, 0, 0, .5); }
-.report .rk { font: 500 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: #8a5a2b; } .report h3 { margin: 6px 0 2px; font: 600 26px var(--sans); letter-spacing: -.02em; } .report .sub { margin: 0 0 16px; color: #5c564c; font-size: 13.5px; }
-.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; } .kpi { border-radius: 12px; background: #fff; padding: 12px 12px 10px; border: 1px solid #e2dbcd; } .kpi b { display: block; font: 600 24px var(--sans); letter-spacing: -.02em; } .kpi small { color: #6d665a; font-size: 11.5px; }
-.rrow { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid #e2dbcd; font-size: 13px; opacity: .15; transition: opacity .4s; } .rrow.on { opacity: 1; } .rrow b { font: 500 13px var(--mono); }
-.pill { padding: 2px 8px; border-radius: 99px; font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; } .pill.m { background: rgba(31, 140, 80, .14); color: #1f7a48; } .pill.d { background: rgba(43, 90, 160, .14); color: #2b5aa0; } .pill.a { background: rgba(170, 120, 20, .16); color: #8a6212; }
-.bars { display: flex; gap: 4px; align-items: flex-end; height: 64px; margin: 10px 0 4px; } .bars i { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(#ffb347, #ff7a2b); height: calc(var(--h) * var(--g, 0)); transition: height .6s cubic-bezier(.2, .8, .2, 1); }
-.months { display: flex; gap: 4px; font: 400 9.5px var(--mono); color: #8a8374; } .months span { flex: 1; text-align: center; }
+/* first viewport */
+.top { position: relative; min-height: 100vh; padding: 64px 0 0; display: grid; grid-template-columns: minmax(380px, 5fr) 7fr; border-bottom: 1px solid var(--rule); }
+.top .copy { padding: clamp(40px, 7vh, 96px) var(--pad) 48px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; border-right: 1px solid var(--rule); }
+.top h1 { font-size: clamp(44px, 5.4vw, 92px); }
+.top .lede { margin-top: 26px; }
+.start { border: 1.5px solid var(--ink); background: var(--ground); }
+.start .row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1.5px solid var(--ink); }
+.start label { display: block; padding: 12px 14px 14px; border-right: 1.5px solid var(--ink); } .start label:last-child { border-right: 0; }
+.start label span { display: block; font-size: 13px; color: var(--ink-3); margin-bottom: 4px; }
+.start select { width: 100%; border: 0; background: none; font: 560 17px var(--sans); color: var(--ink); appearance: none; cursor: pointer; padding-right: 20px; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(-45deg, transparent 50%, var(--ink) 50%); background-size: 6px 6px; background-position: right 6px center, right 0 center; background-repeat: no-repeat; }
+.start .go { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-left: 14px; } .start .go .meta { color: var(--ink-2); } .start .btn { border: 0; height: 56px; }
+.section-plot { position: relative; background: #fff; overflow: hidden; }
+.section-plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.section-plot .cap { position: absolute; left: 0; top: 0; right: 0; padding: 10px 16px; background: rgba(255, 255, 255, .9); border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 20px; font: 400 12px var(--mono); color: var(--ink-2); }
+.section-plot .cap b { font-weight: 500; color: var(--ink); }
+.section-plot .pick { position: absolute; left: 0; right: 0; pointer-events: none; }
+.section-plot .pick span { position: absolute; right: 16px; top: -30px; padding: 3px 7px; background: var(--ink); color: var(--signal); font: 400 12px var(--mono); }
 
-/* pilot: cards move sideways as you scroll down */
-.pilot { position: relative; height: 300vh; }
-.pilot .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-.pilot .head { padding: 0 6vw; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: end; gap: 24px; }
-.pilot h2 { margin: 10px 0 0; font: 600 clamp(36px, 4.8vw, 72px)/.95 var(--sans); letter-spacing: -.04em; max-width: 13ch; } .pilot h2 em { font: italic 400 1.05em var(--serif); color: var(--accent); }
-.pilot .lead { max-width: 440px; color: var(--ink2); font-size: 17px; margin: 0; }
-.track { display: flex; gap: 22px; padding: 0 6vw; transform: translateX(calc(var(--x, 0) * -1px)); will-change: transform; }
-.uc { flex: none; width: min(420px, 78vw); height: 420px; border-radius: 22px; position: relative; overflow: hidden; border: 1px solid var(--line); background: #101114; padding: 26px; display: flex; flex-direction: column; }
-.uc .bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .32; filter: saturate(.8); transition: opacity .4s, transform .8s; } .uc:hover .bg { opacity: .48; transform: scale(1.05); }
-.uc::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 20%, rgba(10, 11, 14, .92) 75%); }
-.uc > * { position: relative; z-index: 1; } .uc .n { font: 400 12px var(--mono); color: var(--ink2); } .uc h3 { margin: auto 0 10px; font: 600 26px/1.05 var(--sans); letter-spacing: -.02em; } .uc p { margin: 0 0 14px; color: var(--ink2); font-size: 14.5px; }
-.uc .verdict { display: flex; gap: 8px; flex-wrap: wrap; } .uc .verdict span { padding: 4px 9px; border-radius: 99px; background: rgba(255, 255, 255, .08); font: 500 11px var(--sans); color: var(--ink2); } .uc .verdict span.hi { background: rgba(127, 224, 168, .14); color: var(--t-meas); } .uc .verdict span.lo { background: rgba(242, 196, 109, .14); color: var(--t-ass); }
+/* the offer as a log: four depths, one curve that rises as the evidence accumulates */
+.log { display: grid; grid-template-columns: 7fr 5fr; border-bottom: 1px solid var(--rule); }
+.log .intro { padding: 120px var(--pad) 40px; grid-column: 1 / -1; }
+.log ol { list-style: none; padding: 0; border-top: 1px solid var(--rule); }
+.log li { display: grid; grid-template-columns: 120px 1fr; gap: 24px; padding: 36px var(--pad) 40px; border-bottom: 1px solid var(--rule); transition: background .4s; }
+.log li.on { background: #fff; }
+.log li .meta { padding-top: 8px; }
+.log li h3 { font-size: clamp(24px, 2.2vw, 32px); font-weight: 620; font-stretch: 110%; letter-spacing: -.02em; line-height: 1.1; }
+.log li p { margin-top: 10px; color: var(--ink-2); max-width: 52ch; }
+.track { position: relative; border-left: 1px solid var(--rule); border-top: 1px solid var(--rule); background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), var(--rule) calc(20% - 1px) 20%); }
+.track svg { position: sticky; top: 64px; width: 100%; height: calc(100vh - 64px); display: block; }
+.track .lbl { position: sticky; top: 76px; padding: 0 16px; display: flex; justify-content: space-between; font: 400 12px var(--mono); color: var(--ink-3); }
 
-/* principles */
-.princ { padding: 16vh 6vw; display: grid; grid-template-columns: 1fr 1.2fr; gap: 6vw; max-width: 1400px; margin: 0 auto; }
-.princ h2 { margin: 12px 0 0; font: 600 clamp(32px, 3.8vw, 56px)/1 var(--sans); letter-spacing: -.035em; position: sticky; top: 120px; } .princ h2 em { font: italic 400 1.05em var(--serif); color: var(--t-meas); }
-.princ ol { list-style: none; margin: 0; padding: 0; counter-reset: p; } .princ li { counter-increment: p; padding: 26px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 60px 1fr; gap: 10px; opacity: .25; transform: translateY(16px); transition: opacity .6s, transform .6s; } .princ li.on { opacity: 1; transform: none; }
-.princ li::before { content: '0' counter(p); font: 400 13px var(--mono); color: var(--mute); padding-top: 6px; } .princ li b { display: block; font: 600 22px var(--sans); letter-spacing: -.015em; margin-bottom: 6px; } .princ li span { color: var(--ink2); }
+/* domains: photographs revealed through shifting traces */
+.domains { position: relative; height: 640vh; background: var(--ink); color: var(--ground); }
+.domains .stage { position: sticky; top: 64px; height: calc(100vh - 64px); overflow: hidden; }
+.plate { position: absolute; inset: 0; }
+.plate .s { position: absolute; top: 0; bottom: 0; background-size: var(--W) 100%; background-repeat: no-repeat; will-change: transform; }
+.plate canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.plate::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13, 15, 14, .78) 0, rgba(13, 15, 14, .55) 36%, rgba(13, 15, 14, 0) 70%); pointer-events: none; }
+.dtext { position: absolute; z-index: 3; left: var(--pad); bottom: clamp(40px, 9vh, 96px); width: min(560px, 80vw); opacity: 0; transform: translateY(24px); transition: opacity .5s cubic-bezier(.2, .9, .1, 1), transform .5s cubic-bezier(.2, .9, .1, 1); }
+.dtext.on { opacity: 1; transform: none; }
+.dtext h2 { font-size: clamp(40px, 5vw, 80px); font-weight: 640; font-stretch: 118%; letter-spacing: -.035em; line-height: .96; }
+.dtext p { margin-top: 16px; font-size: 18px; color: rgba(243, 244, 241, .82); max-width: 44ch; }
+.dtext .tools { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px; } .dtext .tools span { padding: 4px 8px; border: 1px solid rgba(243, 244, 241, .35); font: 400 12px var(--mono); color: rgba(243, 244, 241, .9); }
+.dindex { position: absolute; z-index: 3; right: var(--pad); top: 40px; display: grid; gap: 2px; text-align: right; padding: 12px 14px; background: rgba(13, 15, 14, .82); }
+.dindex a { font: 400 13px var(--mono); color: rgba(243, 244, 241, .45); text-decoration: none; transition: color .3s; } .dindex a.on { color: var(--signal); }
+.credit { position: absolute; z-index: 3; right: var(--pad); bottom: 16px; padding: 4px 8px; background: rgba(13, 15, 14, .7); font: 400 11px var(--mono); color: rgba(243, 244, 241, .7); }
 
-/* tiers */
-.tiers { padding: 12vh 6vw 16vh; max-width: 1400px; margin: 0 auto; }
-.tiers h2 { margin: 12px 0 40px; font: 600 clamp(32px, 3.8vw, 56px)/1 var(--sans); letter-spacing: -.035em; }
-.tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.tier { border-radius: 22px; border: 1px solid var(--line); padding: 28px; background: linear-gradient(180deg, rgba(255, 255, 255, .04), transparent); display: flex; flex-direction: column; min-height: 440px; }
-.tier.feat { background: linear-gradient(180deg, rgba(255, 90, 43, .16), rgba(255, 90, 43, .02)); border-color: rgba(255, 90, 43, .4); }
-.tier .k { font: 500 12px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); } .tier h3 { margin: 8px 0 4px; font: 600 30px var(--sans); letter-spacing: -.025em; } .tier .price { font: 400 14px var(--mono); color: var(--ink2); margin-bottom: 18px; }
-.tier ul { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; font-size: 14.5px; color: var(--ink2); } .tier li { display: flex; gap: 10px; } .tier li::before { content: '↗'; color: var(--accent); }
-.tier .btn { margin-top: auto; align-self: flex-start; }
+/* a real comparison, drenched in the negative-polarity blue */
+.report { background: var(--neg); color: #eef1ff; padding: 120px var(--pad) 110px; }
+.report .h2 { max-width: 16ch; }
+.report .lede { color: rgba(238, 241, 255, .82); margin-top: 20px; }
+.report .note { margin-top: 18px; font: 400 13px var(--mono); color: rgba(238, 241, 255, .7); }
+table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size: 16px; }
+.cmp th, .cmp td { padding: 16px 12px; border-top: 1px solid rgba(238, 241, 255, .28); text-align: right; vertical-align: baseline; }
+.cmp th:first-child, .cmp td:first-child { text-align: left; padding-left: 0; }
+.cmp thead th { font-weight: 450; font-size: 14px; color: rgba(238, 241, 255, .7); border-top: 0; padding-bottom: 12px; }
+.cmp tbody td { font-family: var(--mono); font-variant-numeric: tabular-nums; } .cmp tbody td:first-child { font-family: var(--sans); font-weight: 560; }
+.cmp .best { background: rgba(238, 241, 255, .1); }
+.cmp .bar { display: inline-block; height: 6px; background: currentColor; vertical-align: middle; margin-right: 10px; opacity: .8; }
+.verdict { margin-top: 40px; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: end; padding-top: 28px; border-top: 1.5px solid #eef1ff; }
+.verdict p { font-size: clamp(22px, 2.2vw, 30px); font-weight: 560; font-stretch: 108%; letter-spacing: -.015em; line-height: 1.2; max-width: 34ch; }
+.verdict .btn { background: #eef1ff; color: var(--neg-deep); border-color: #eef1ff; } .verdict .btn:hover { background: var(--signal); border-color: var(--signal); }
 
-/* footer */
-.foot { border-top: 1px solid var(--line); padding: 40px 6vw 60px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 40px; color: var(--mute); font-size: 13px; }
-.foot h4 { margin: 0 0 10px; font: 500 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); } .foot ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; } .foot a { color: var(--ink2); }
+/* legacy: what the agents connect to */
+.legacy { display: grid; grid-template-columns: 5fr 7fr; border-bottom: 1px solid var(--rule); }
+.legacy .copy { padding: 120px var(--pad); border-right: 1px solid var(--rule); }
+.legacy .copy p { margin-top: 20px; color: var(--ink-2); max-width: 44ch; }
+.core { padding: 120px var(--pad); display: grid; }
+.core div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--rule); }
+.core div:first-child { border-top: 1.5px solid var(--ink); }
+.core b { font-size: 21px; font-weight: 600; font-stretch: 110%; letter-spacing: -.01em; } .core span { color: var(--ink-2); font-size: 15px; } .core em { font-style: normal; font: 400 13px var(--mono); color: var(--ink-3); }
 
-@media (max-width: 860px) { .nav nav { display: none; } .run .stage { grid-template-columns: 1fr; padding-top: 80px; } .report { display: none; } .princ { grid-template-columns: 1fr; } .princ h2 { position: static; } .tgrid { grid-template-columns: 1fr; } .chapters .rail { display: none; } .pilot .head { flex-direction: column; align-items: start; } .foot { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* pricing */
+.price { padding: 120px var(--pad) 140px; }
+.price .h2 { max-width: 14ch; }
+.plans { margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--ink); }
+.plan { padding: 30px 28px 32px; border-right: 1.5px solid var(--ink); display: flex; flex-direction: column; min-height: 400px; }
+.plan:last-child { border-right: 0; } .plan.key { background: var(--ink); color: var(--ground); }
+.plan h3 { font-size: 30px; font-weight: 640; font-stretch: 116%; letter-spacing: -.025em; }
+.plan .meta { margin-top: 6px; } .plan.key .meta { color: rgba(243, 244, 241, .6); }
+.plan ul { list-style: none; padding: 0; margin: 26px 0 30px; display: grid; gap: 12px; font-size: 16px; }
+.plan li { padding-left: 22px; position: relative; } .plan li::before { content: ''; position: absolute; left: 0; top: .65em; width: 10px; height: 1.5px; background: currentColor; }
+.plan .btn { margin-top: auto; align-self: flex-start; } .plan.key .btn { background: var(--signal); color: var(--ink); border-color: var(--signal); } .plan.key .btn:hover { background: #fff; border-color: #fff; }
+
+.close { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 40px; padding: 100px var(--pad) 90px; background: var(--ink); color: var(--ground); }
+.close p { font-size: clamp(36px, 4.6vw, 74px); font-weight: 640; font-stretch: 118%; letter-spacing: -.035em; line-height: .98; max-width: 16ch; }
+.close .btn { background: var(--signal); color: var(--ink); border-color: var(--signal); }
+.fine { padding: 26px var(--pad) 60px; background: var(--ink); color: rgba(243, 244, 241, .55); font: 400 12px/1.7 var(--mono); border-top: 1px solid rgba(243, 244, 241, .14); }
+
+@media (max-width: 960px) {
+  .bar nav { display: none; } .rail { display: none; } main { margin-left: 0; }
+  .top { grid-template-columns: 1fr; } .top .copy { border-right: 0; } .section-plot { min-height: 60vh; }
+  .log { grid-template-columns: 1fr; } .track { display: none; } .log li { grid-template-columns: 1fr; gap: 6px; }
+  .legacy { grid-template-columns: 1fr; } .legacy .copy { border-right: 0; padding-bottom: 20px; } .core { padding-top: 20px; }
+  .plans { grid-template-columns: 1fr; } .plan { border-right: 0; border-bottom: 1.5px solid var(--ink); min-height: 0; }
+  .close, .verdict { grid-template-columns: 1fr; } .report { overflow-x: auto; } .top { grid-template-columns: minmax(0, 1fr); } .start .row { grid-template-columns: 1fr; } .start label { border-right: 0; border-bottom: 1.5px solid var(--ink); } .start .go { flex-direction: column; align-items: stretch; padding: 12px 0 0; } .start .go .meta { padding: 0 14px; } .dindex { display: none; } .cmp { font-size: 14px; } .cmp .bar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .dtext { transition: none; } html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
 <div class="concept">Concept mockup · not a live product</div>
-<header class="nav" id="nav"><a class="brand" href="#"><span style="padding:0;border:0;font:600 20px var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--ink)">Scorch<i>er</i></span><span>Build</span></a>
-  <nav><a href="#chapters">Platforms</a><a href="#run">How it works</a><a href="#pilot">Pilot</a><a href="#tiers">Pricing</a><a href="#">Explore ↗</a></nav><a class="btn" href="#pilot">Join the pilot <span class="ar">→</span></a></header>
+<header class="bar"><a class="mark" href="#"><i></i>Scorcher <span>Build</span></a>
+  <nav><a href="#how">How it works</a><a href="#domains">Domains</a><a href="#report">Example report</a><a href="#legacy">Legacy systems</a><a href="#price">Pricing</a></nav>
+  <a class="btn" href="#top">Start a trial</a></header>
+<div class="rail" id="rail"><div class="bit" id="bit"></div></div>
 
-<section class="hero" id="hero"><div class="pin"><div class="ph"></div><div class="grain"></div>
-  <div class="copy"><div class="eyebrow">Scorcher Build · applied-science agents</div><h1>Agents for the <em>energy transition</em></h1>
-    <p>AI agents that do the groundwork on solar, wind and geothermal projects: they gather site data from authoritative sources, run proven engineering models, and hand you a report in which every number shows where it came from.</p>
-    <div class="cta"><a class="btn" href="#pilot">Join the pilot <span class="ar">→</span></a><a class="btn ghost" href="#run">See an agent work</a></div></div>
-  <div class="scrollcue">Scroll</div></div></section>
+<main>
+<section class="top" id="top">
+  <div class="copy">
+    <div><h1 class="display">Prove an agent on your own work before you buy it.</h1>
+      <p class="lede">Bring your agent or use ours. We run it on tasks from your workflows, measure it against how your team does them today, and show you whether it is worth your time.</p></div>
+    <form class="start" onsubmit="return false" aria-label="Start a trial">
+      <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>Seismic QC</option><option>QGIS processing</option><option>Data analysis</option><option>Drilling engineering</option><option>Solar yield</option><option>Wind resource</option></select></label>
+        <label><span>Agent</span><select aria-label="Agent"><option>Scorcher’s agent</option><option>My own agent</option><option>Both, side by side</option></select></label></div>
+      <div class="go"><span class="meta">Fixed-fee trial · results you keep</span><button class="btn">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button></div>
+    </form>
+  </div>
+  <div class="section-plot" id="plot"><canvas id="seis" aria-label="A synthetic seismic section, drawn live in the page"></canvas>
+    <div class="pick" id="pick"><span>Horizon picked by the agent</span></div>
+    <div class="cap"><span><b>Synthetic section</b>, generated in the page: 84 traces, Ricker wavelet, one fault.</span><span>Illustrative</span></div></div>
+</section>
 
-<section class="state" id="state"><p>The model never makes up a number. <span>It plans the work, calls the tools, checks the results and explains them.</span> <span>Every figure comes from a dataset or a validated engine,</span> <span>and every assumption is written down where you can change it.</span></p></section>
+<section class="log" id="how">
+  <div class="intro"><h2 class="h2">Four steps from curiosity to a decision.</h2></div>
+  <ol id="steps">
+    <li data-y="0.18"><span class="meta">0 m · Bring</span><div><h3>Bring an agent, or borrow ours</h3><p>Connect any agent over an API or the Model Context Protocol, large model or small. No agent yet? Use Scorcher’s for the same workflow.</p></div></li>
+    <li data-y="0.42"><span class="meta">400 m · Test</span><div><h3>Run it on your real tasks</h3><p>Forty to a hundred tasks drawn from your files and tools, in a sandbox. Every tool call, file and answer is recorded.</p></div></li>
+    <li data-y="0.68"><span class="meta">900 m · Compare</span><div><h3>Measure it against your team</h3><p>Success rate, time, cost per task and the failures a person had to fix, beside your current process on the same tasks.</p></div></li>
+    <li data-y="0.9"><span class="meta">1,400 m · Decide</span><div><h3>Subscribe only if it pays</h3><p>If the numbers hold, run the agent in production on a subscription. If they do not, you keep the report and the tasks.</p></div></li>
+  </ol>
+  <div class="track"><div class="lbl"><span>Evidence gathered</span><span>none · enough to decide</span></div><svg id="curve" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path id="cv" fill="none" stroke="#b8142f" stroke-width="2" vector-effect="non-scaling-stroke"/><path id="cvf" fill="rgba(184,20,47,.08)"/></svg></div>
+</section>
 
-<section class="chapters" id="chapters"><div class="stage">
-  <div class="slide" style="--c:var(--sun)"><div class="img" style="background-image:url(img/solar-aerial.jpg)"></div></div>
-  <div class="slide" style="--c:var(--wind)"><div class="img" style="background-image:url(img/wind-akhisar.jpg)"></div></div>
-  <div class="slide" style="--c:var(--geo)"><div class="img" style="background-image:url(img/reykjanes.jpg)"></div></div>
-  <div class="slide" style="--c:var(--eng)"><div class="img" style="background-image:url(img/geothermal.jpg)"></div></div>
-  <div class="card" style="--c:var(--sun)"><div class="num">01 / Solar</div><h2>Every roof, <em>every field</em></h2><p class="q">What would a PV system on this site produce, how certain is that, and does it pay back?</p>
-    <ul><li><span><b>Data:</b> PVGIS, NREL NSRDB, NASA POWER, ERA5</span></li><li><span><b>Engine:</b> pvlib, the open Sandia photovoltaic library</span></li><li><span><b>Output:</b> monthly yield with an uncertainty range, losses, payback range</span></li></ul><span class="tag">First platform · pilot 2027</span></div>
-  <div class="card" style="--c:var(--wind)"><div class="num">02 / Wind</div><h2>Read the <em>wind</em></h2><p class="q">What is the resource at hub height here, which turbine class fits, and what do wakes cost?</p>
-    <ul><li><span><b>Data:</b> Global Wind Atlas, NREL WIND Toolkit, ERA5</span></li><li><span><b>Engine:</b> windpowerlib; PyWake for wake losses</span></li><li><span><b>Output:</b> wind rose, yield P50/P90, turbine comparison</span></li></ul><span class="tag">Next</span></div>
-  <div class="card" style="--c:var(--geo)"><div class="num">03 / Geothermal</div><h2>Heat from <em>below</em></h2><p class="q">Is ground-source or deep geothermal plausible here, and roughly what could it deliver?</p>
-    <ul><li><span><b>Data:</b> Global Heat Flow Database, BGS, USGS, national surveys</span></li><li><span><b>Engine:</b> GEOPHIRES (NREL); borehole heat-exchanger models</span></li><li><span><b>Output:</b> temperature at depth, heat or power range, key risks</span></li></ul><span class="tag">Later</span></div>
-  <div class="card" style="--c:var(--eng)"><div class="num">04 / Engineering</div><h2>Where do agents <em>actually help?</em></h2><p class="q">A research programme, not a product yet: we test LLM agents on real engineering workflows and publish what works and what does not.</p>
-    <ul><li><span><b>Method:</b> paired trials against engineers on the same tasks</span></li><li><span><b>Measured:</b> accuracy, time saved, failure modes</span></li><li><span><b>Output:</b> open results, then agents only where they earn their place</span></li></ul><span class="tag">Research</span></div>
-  <div class="rail"><div style="--c:var(--sun)">Solar<i></i></div><div style="--c:var(--wind)">Wind<i></i></div><div style="--c:var(--geo)">Geothermal<i></i></div><div style="--c:var(--eng)">Engineering<i></i></div></div>
+<section class="domains" id="domains"><div class="stage" id="dstage">
+  <div class="plate" data-img="img/reykjanes.jpg"></div>
+  <div class="plate" data-gen="map"></div>
+  <div class="plate" data-img="img/geothermal.jpg"></div>
+  <div class="plate" data-img="img/solar-aerial.jpg"></div>
+  <div class="plate" data-img="img/wind-akhisar.jpg"></div>
+  <div class="dtext"><h2>Seismic</h2><p>Quality-check SEG-Y volumes, repair headers, pick horizons and flag acquisition problems before an interpreter opens the data.</p><div class="tools"><span>SEG-Y</span><span>Madagascar</span><span>OpendTect</span><span>Python</span></div></div>
+  <div class="dtext"><h2>Geospatial</h2><p>Drive QGIS processing chains: reproject, clip, buffer and join layers, and write the map and the method behind it.</p><div class="tools"><span>QGIS</span><span>GDAL</span><span>Shapefile</span><span>GeoPackage</span></div></div>
+  <div class="dtext"><h2>Drilling</h2><p>Check well plans, casing and torque-and-drag runs against the limits, and turn daily drilling reports into structured data.</p><div class="tools"><span>LAS</span><span>WITSML</span><span>Daily reports</span><span>Excel</span></div></div>
+  <div class="dtext"><h2>Solar</h2><p>Screen sites and re-analyse operating plants: what the weather says a system should have produced, and why it did not.</p><div class="tools"><span>pvlib</span><span>PVGIS</span><span>NSRDB</span><span>SCADA exports</span></div></div>
+  <div class="dtext"><h2>Wind</h2><p>Resource screening, turbine comparisons and wake losses, with every input traced to its dataset.</p><div class="tools"><span>windpowerlib</span><span>PyWake</span><span>Global Wind Atlas</span><span>ERA5</span></div></div>
+  <nav class="dindex" id="dindex"><a>Seismic</a><a>Geospatial</a><a>Drilling</a><a>Solar</a><a>Wind</a></nav>
+  <div class="credit" id="credit"></div>
 </div></section>
 
-<section class="run" id="run"><div class="stage">
-  <h2>Watch an agent <em>do the groundwork</em></h2>
-  <div class="console"><header><i></i><i></i><i></i><b>Solar pre-feasibility · Site 0412</b><span class="live">Running</span></header><div class="body" id="cons"></div></div>
-  <div class="report"><div class="rk">Pre-feasibility report · illustrative example</div><h3>Rooftop PV, 420 kWp</h3><p class="sub">Logistics depot, Midlands, UK · 52.48° N, 1.89° W · flat roof, 3,100 m²</p>
-    <div class="kpis"><div class="kpi"><b id="k1">—</b><small>MWh a year (P50)</small></div><div class="kpi"><b id="k2">—</b><small>specific yield, kWh/kWp</small></div><div class="kpi"><b id="k3">—</b><small>payback, years</small></div></div>
-    <div class="bars" id="bars"></div><div class="months"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
-    <div style="margin-top:14px">
-      <div class="rrow"><span>Irradiation on the plane, 2005–2023</span><b>1,051 kWh/m²</b><span class="pill m">Measured</span></div>
-      <div class="rrow"><span>System losses (soiling, wiring, inverter)</span><b>14 %</b><span class="pill a">Assumed</span></div>
-      <div class="rrow"><span>Annual yield, pvlib model</span><b>392 MWh</b><span class="pill d">Modelled</span></div>
-      <div class="rrow"><span>Year-to-year variation (P90 / P50)</span><b>0.93</b><span class="pill d">Modelled</span></div>
-      <div class="rrow"><span>Electricity price, your tariff</span><b>£0.19/kWh</b><span class="pill a">Assumed</span></div></div></div>
-</div></section>
+<section class="report" id="report">
+  <h2 class="h2">An example report, before you commit.</h2>
+  <p class="lede">Forty SEG-Y quality-control tasks from one survey: two agents and the team’s current process, on the same data.</p>
+  <p class="note">Synthetic example. The layout of a real report; none of these figures are measurements.</p>
+  <table class="cmp">
+    <thead><tr><th>Approach</th><th>Tasks completed</th><th>Median time per task</th><th>Cost per task</th><th>Needed a person to fix</th></tr></thead>
+    <tbody>
+      <tr><td>Current process (engineer)</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>38 min</td><td>£41.00</td><td>—</td></tr>
+      <tr><td>Your agent</td><td><span class="bar" style="width:52px"></span>29 / 40</td><td>6 min</td><td>£1.90</td><td>11</td></tr>
+      <tr class="best"><td>Scorcher’s seismic agent</td><td><span class="bar" style="width:66px"></span>37 / 40</td><td>4 min</td><td>£1.20</td><td>3</td></tr>
+    </tbody>
+  </table>
+  <div class="verdict"><p>In this example Scorcher’s agent saves about 23 of the 25 engineer-hours on the survey; 3 tasks still need a person.</p><a class="btn" href="#price">See the plans</a></div>
+</section>
 
-<section class="pilot" id="pilot"><div class="stage">
-  <div class="head"><div><div class="eyebrow">For energy companies</div><h2>Find out where agents <em>pay off</em></h2></div><p class="lead">A paid pilot: we take one of your workflows, build an agent for it with your team, and measure it honestly against how you work today. You keep the results, whatever they show.</p></div>
-  <div class="track" id="track">
-    <div class="uc"><div class="bg" style="background-image:url(img/solar-aerial.jpg)"></div><div class="n">Workflow 01</div><h3>Pre-feasibility at volume</h3><p>Hundreds of inbound sites a month, each screened with a cited yield estimate before an engineer looks.</p><div class="verdict"><span class="hi">Strong fit: well-defined, data-rich</span></div></div>
-    <div class="uc"><div class="bg" style="background-image:url(img/solar-detail.jpg)"></div><div class="n">Workflow 02</div><h3>Performance re-analysis</h3><p>Compare an operating plant's output with what the weather says it should have made, and explain the gap.</p><div class="verdict"><span class="hi">Strong fit</span><span>needs plant data access</span></div></div>
-    <div class="uc"><div class="bg" style="background-image:url(img/wind-sunset.jpg)"></div><div class="n">Workflow 03</div><h3>Grid and planning documents</h3><p>Draft and check grid-connection and planning submissions against the rules that apply.</p><div class="verdict"><span>Promising</span><span class="lo">human sign-off essential</span></div></div>
-    <div class="uc"><div class="bg" style="background-image:url(img/geothermal.jpg)"></div><div class="n">Workflow 04</div><h3>Alarm and fault triage</h3><p>Summarise SCADA alarms and maintenance logs into a ranked, explained shortlist for the control room.</p><div class="verdict"><span>To be tested</span><span class="lo">safety-critical: advisory only</span></div></div>
-    <div class="uc"><div class="bg" style="background-image:url(img/reykjanes.jpg)"></div><div class="n">Workflow 05</div><h3>Resource screening for heat</h3><p>First-pass geothermal and heat-pump screening for portfolios of buildings or districts.</p><div class="verdict"><span>Promising</span><span class="lo">data patchy outside surveyed areas</span></div></div>
-    <div class="uc" style="background:linear-gradient(160deg,#1b1c22,#101114)"><div class="n">Your workflow</div><h3>Bring us the task that eats your engineers’ week</h3><p>If an agent cannot do it reliably, the pilot says so, with the evidence.</p><div class="verdict"><a class="btn" href="#tiers" style="padding:9px 16px;font-size:13px">Start a pilot <span class="ar">→</span></a></div></div>
-  </div></div></section>
+<section class="legacy" id="legacy">
+  <div class="copy"><h2 class="h2">Built for the software you already run.</h2><p>Smaller firms run on desktop tools, shared drives and file formats older than most of their staff. Our agents work with them where they are, and the small models can run on your own machines when the data cannot leave.</p></div>
+  <div class="core">
+    <div><b>Desktop applications</b><span>QGIS, spreadsheet macros, vendor tools without an API</span></div>
+    <div><b>Industry file formats</b><span>SEG-Y, LAS, WITSML, shapefile, GeoPackage</span></div>
+    <div><b>Historian and SCADA exports</b><span>CSV and database dumps from plant systems</span></div>
+    <div><b>Documents</b><span>Daily drilling reports, permits, inspection records</span></div>
+    <div><b>Models</b><span>Large models in the cloud, small models on your hardware</span></div>
+  </div>
+</section>
 
-<section class="princ" id="princ"><div><div class="eyebrow">How we build</div><h2>Useful because it is <em>honest</em></h2></div>
-  <ol id="plist"><li><div><b>The numbers come from tools, not the model</b><span>Datasets and validated engines produce every figure; the agent orchestrates and explains.</span></div></li>
-    <li><div><b>Every figure is labelled</b><span>Measured, modelled or assumed, with its source and the date it was retrieved, the same labels Scorcher Sky and Tree use.</span></div></li>
-    <li><div><b>Assumptions are yours to change</b><span>Losses, prices and design choices are listed and editable; the report reruns.</span></div></li>
-    <li><div><b>Validated before it ships</b><span>Each engine is tested against published reference cases; each agent against engineers on the same tasks.</span></div></li>
-    <li><div><b>Pre-feasibility, not sign-off</b><span>Reports support decisions; they never replace a qualified engineer’s design or certification.</span></div></li></ol></section>
+<section class="price" id="price">
+  <h2 class="h2">Pay to find out. Subscribe if it works.</h2>
+  <div class="plans">
+    <div class="plan"><h3>Trial</h3><p class="meta">One workflow · fixed fee</p><ul><li>Your agent, ours, or both</li><li>40 to 100 tasks from your work</li><li>Full report and every trace</li><li>You keep the task suite</li></ul><a class="btn line" href="#top">Start a trial</a></div>
+    <div class="plan key"><h3>Subscribe</h3><p class="meta">Per agent · monthly</p><ul><li>Scorcher’s agents in production</li><li>Monthly re-test on fresh tasks</li><li>Audit trail of every action</li><li>Support from engineers</li></ul><a class="btn" href="#top">Talk to us</a></div>
+    <div class="plan"><h3>On premises</h3><p class="meta">Annual · by deployment</p><ul><li>Small models on your hardware</li><li>Your data never leaves</li><li>Connectors for your legacy systems</li><li>Validation for regulated work</li></ul><a class="btn line" href="#top">Contact us</a></div>
+  </div>
+  <p class="meta" style="margin-top:16px">Prices are set with the first pilots.</p>
+</section>
 
-<section class="tiers" id="tiers"><div class="eyebrow">Pricing</div><h2>Paid tiers, priced with the pilot</h2>
-  <div class="tgrid">
-    <div class="tier"><div class="k">For teams</div><h3>Studio</h3><div class="price">Monthly · price to be set</div><ul><li>Solar pre-feasibility reports</li><li>Cited, labelled, editable assumptions</li><li>PDF and data export</li><li>Fair-use report allowance</li></ul><a class="btn ghost" href="#">Join the waitlist</a></div>
-    <div class="tier feat"><div class="k">For energy companies</div><h3>Pilot</h3><div class="price">Fixed fee · scoped together</div><ul><li>One workflow, one agent, built with you</li><li>Measured against your current process</li><li>Results and failure modes written up</li><li>Option to roll into Enterprise</li></ul><a class="btn" href="#">Talk to us <span class="ar">→</span></a></div>
-    <div class="tier"><div class="k">At scale</div><h3>Enterprise</h3><div class="price">Annual · by volume</div><ul><li>Agents on your data, in your cloud</li><li>API access and integrations</li><li>Audit trail of every tool call</li><li>Support and validation reports</li></ul><a class="btn ghost" href="#">Contact sales</a></div></div></section>
-
-<footer class="foot"><div><div class="brand" style="margin-bottom:10px"><span style="padding:0;border:0;font:600 18px var(--sans);text-transform:none;letter-spacing:-.01em;color:var(--ink)">Scorch<i style="font-size:20px">er</i></span></div>Explore the universe and life, play every day, and build the energy transition: with every number traced to its source.</div>
-  <div><h4>Photographs (Wikimedia Commons)</h4><ul id="credits"></ul></div></footer>
+<section class="close"><p>Know whether an agent earns its place.</p><a class="btn" href="#top">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>
+<div class="fine">Photographs from Wikimedia Commons: Reykjanes power station, Michal Klajban, CC BY-SA 4.0 · Hellisheiði geothermal power station, Kevstan, CC BY-SA 4.0 · Solar farm, Krishnapuram, Saiphani02, CC BY-SA 4.0 · Wind turbines at Akhisar, Pragdon, CC0. The seismic section and contour map are generated in the page. Mona Sans (GitHub) and Geist Mono (Vercel), SIL Open Font License.</div>
+</main>
 
 <script>
-const CRED = { 'wind-sunset': ['Wind turbines at sunset, California', 'Carol M. Highsmith, Library of Congress', 'Public domain'], 'solar-aerial': ['Solar farm, Krishnapuram, India', 'Saiphani02', 'CC BY-SA 4.0'], 'wind-akhisar': ['Wind turbines at Akhisar, Turkey', 'Pragdon', 'CC0'], 'reykjanes': ['Reykjanes power station, Iceland', 'Michal Klajban', 'CC BY-SA 4.0'], 'geothermal': ['Hellisheiði geothermal power station, Iceland', 'Kevstan', 'CC BY-SA 4.0'], 'solar-detail': ['Photovoltaic power station, Vila Nova de Famalicão, Portugal', 'Joseolgon', 'CC BY-SA 4.0'] };
-document.getElementById('credits').innerHTML = Object.values(CRED).map(([t, a, l]) => `<li>${t} · ${a} · ${l}</li>`).join('');
-// the agent's run, revealed line by line as the section scrolls past (illustrative values)
-const LINES = [['user', 'Pre-feasibility for a 420 kWp rooftop system at the Midlands depot (52.48 N, 1.89 W). Flat roof, 3,100 m². Tariff £0.19/kWh.'],
-  ['who', 'agent  plan: site data → irradiance → PV model → losses → yield range → finance → report'],
-  ['tool', '→ pvgis.hourly(lat=52.48, lon=-1.89, years=2005–2023)'], ['ok', '  ✓ 166,560 hourly records · source PVGIS-SARAH3 · retrieved 2026-11-04'],
-  ['tool', '→ pvlib.irradiance.get_total_irradiance(tilt=10°, azimuth=180°)'], ['ok', '  ✓ plane-of-array 1,051 kWh/m²·yr (measured series, modelled transposition)'],
-  ['tool', '→ pvlib.modelchain.run(modules=420 kWp mono-PERC, inverters=3 × 125 kW)'], ['ok', '  ✓ yield 392 MWh/yr P50 · 933 kWh/kWp'],
-  ['warn', '  ! assumption: system losses 14 % (default) · flagged editable'],
-  ['tool', '→ check.plausibility(specific_yield, region=UK)'], ['ok', '  ✓ within the 850–1,000 kWh/kWp range of reference UK rooftop systems'],
-  ['tool', '→ finance.payback(capex=£0.86/Wp, tariff=£0.19/kWh, degradation=0.5 %/yr)'], ['ok', '  ✓ payback 4.8–5.6 years across P50–P90'],
-  ['who', 'agent  writing report: every figure labelled measured, modelled or assumed'], ['ok', '  ✓ report ready · 5 sources · 3 editable assumptions']];
-const cons = document.getElementById('cons'); cons.innerHTML = LINES.map(([k, t]) => `<div class="ln"><span class="${k}">${t.replace(/(\d[\d,.]*\s?(?:MWh|kWh\/m²·yr|kWh\/kWp|kWp|kW|%|years|records)?)/g, '<span class="num">$1</span>')}</span></div>`).join('');
-const MON = [.035, .055, .085, .11, .13, .13, .13, .115, .09, .065, .04, .03]; document.getElementById('bars').innerHTML = MON.map(v => `<i style="--h:${v / .13 * 64}px"></i>`).join('');
-// scroll choreography
-const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)], clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const prog = el => { const r = el.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); };
-const words = $$('.state span'), slides = $$('.chapters .slide'), cards = $$('.chapters .card'), rail = $$('.chapters .rail div'), lns = $$('.ln'), rrows = $$('.rrow'), plis = $$('.princ li');
-function frame() {
-  const h = $('#hero'); h.style.setProperty('--p', prog(h)); $('#nav').classList.toggle('solid', scrollY > innerHeight * .6);
-  { const r = $('#state').getBoundingClientRect(), t = clamp((innerHeight * .85 - r.top) / (r.height + innerHeight * .2)); words.forEach((w, i) => w.style.setProperty('--w', clamp(t * words.length - i))); }
-  { const p = prog($('#chapters')) * slides.length; slides.forEach((s, i) => { const into = clamp(p - i + .5, 0, 1), first = i === 0; s.style.setProperty('--clip', (first ? 0 : (1 - clamp((p - i + .35) * 2.2)) * 100) + '%'); s.style.setProperty('--k', clamp(p - i + .6)); });   // each photo wipes up over the last and settles from a slow zoom
-    cards.forEach((c, i) => { const d = p - i - .5; c.style.setProperty('--k', clamp(1 - Math.abs(d) * 2.4)); }); rail.forEach((r, i) => { r.classList.toggle('on', p >= i && p < i + 1); r.style.setProperty('--f', clamp(p - i)); }); }
-  { const p = prog($('#run')); lns.forEach((l, i) => l.classList.toggle('on', p > .04 + i * .052)); const r = clamp((p - .55) / .35); rrows.forEach((x, i) => x.classList.toggle('on', r > i * .18)); $('#bars').style.setProperty('--g', clamp((p - .35) * 3)); $$('#bars i').forEach(b => b.style.setProperty('--g', clamp((p - .35) * 3)));
-    const k = clamp((p - .45) * 4); $('#k1').textContent = k ? Math.round(392 * k) : '—'; $('#k2').textContent = k ? Math.round(933 * k) : '—'; $('#k3').textContent = k ? (k < 1 ? '…' : '4.8–5.6') : '—'; }
-  { const s = $('#pilot'), p = prog(s), tr = $('#track'), max = tr.scrollWidth - innerWidth + innerWidth * .06; tr.style.setProperty('--x', clamp((p - .12) / .8) * Math.max(0, max)); }
-  plis.forEach(li => { const r = li.getBoundingClientRect(); li.classList.toggle('on', r.top < innerHeight * .82); });
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+// ---- a synthetic seismic section: reflectors with a fault, convolved with a Ricker wavelet, drawn as variable-area wiggles over a polarity wash
+function seismic(cv, opt = {}) {
+  const g = cv.getContext('2d'), d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; const W = cv.width, H = cv.height, NT = opt.traces || 84, NS = 420;
+  seed = opt.seed || 7; const hz = Array.from({ length: 34 }, (_, k) => ({ z: .04 + k * .028 + rnd() * .012, a: (rnd() - .45) * (k % 5 ? .55 : 1.25), dip: (rnd() - .5) * .1, w: rnd() * 6 }));   // many weak reflectors and a few strong ones, as a real section has
+  const ricker = t => { const f = .05, x = Math.PI * f * t; return (1 - 2 * x * x) * Math.exp(-x * x); };
+  const pickH = hz.filter(h => h.z > .32 && h.z < .62).sort((a, b) => b.a - a.a)[0], zAt = (h, i) => { const u = i / (NT - 1); return h.z + h.dip * u + .018 * Math.sin(u * 6 + h.w) + (h.z > .3 && u > .58 ? .045 : 0); };   // the horizon the agent picks: the strongest positive reflector mid-section
+  const traces = []; for (let i = 0; i < NT; i++) { const u = i / (NT - 1), fault = u > .58 ? .045 : 0, r = new Float32Array(NS);
+    hz.forEach(h => { const z = (h.z + h.dip * u + .018 * Math.sin(u * 6 + h.w) + (h.z > .3 ? fault : 0)) * NS; for (let s = Math.max(0, z - 30 | 0); s < Math.min(NS, z + 30); s++) r[s] += h.a * ricker(s - z); });
+    let nz = 0; for (let s = 0; s < NS; s++) { nz = .85 * nz + (rnd() - .5) * .06; r[s] += nz; } traces.push(r); }
+  // a variable-density image (red positive, blue negative, white zero), rendered once, then thin unfilled wiggles on every fourth trace
+  const vd = document.createElement('canvas'); vd.width = NT; vd.height = NS; { const im = vd.getContext('2d').createImageData(NT, NS); for (let i = 0; i < NT; i++) for (let s2 = 0; s2 < NS; s2++) { const v = Math.max(-1, Math.min(1, traces[i][s2] * 1.1)), o = (s2 * NT + i) * 4, a = Math.pow(Math.abs(v), .8);
+      const c = v > 0 ? [184, 20, 47] : [29, 58, 168]; im.data[o] = 255 + (c[0] - 255) * a; im.data[o + 1] = 255 + (c[1] - 255) * a; im.data[o + 2] = 255 + (c[2] - 255) * a; im.data[o + 3] = 255; } vd.getContext('2d').putImageData(im, 0, 0); }
+  return { draw(p = 1) { g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); const dx = W / NT, show = Math.round(NT * p), k = dx * 2.2;
+      g.save(); g.beginPath(); g.rect(0, 0, show * dx, H); g.clip(); g.imageSmoothingEnabled = true; g.drawImage(vd, 0, 0, W, H); g.restore();
+      g.strokeStyle = 'rgba(13,15,14,.5)'; g.lineWidth = Math.max(1, d * .7); for (let i = 0; i < show; i += 4) { const r = traces[i], x0 = (i + .5) * dx; g.beginPath(); for (let s2 = 0; s2 < NS; s2++) { const y = s2 / NS * H, x = x0 + r[s2] * k; s2 ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+      g.strokeStyle = '#0d0f0e'; g.lineWidth = 2.5 * d; g.setLineDash([6 * d, 4 * d]); g.beginPath(); for (let i = 0; i < show; i++) { const x = (i + .5) * dx, y = zAt(pickH, i) * H; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.setLineDash([]); this.pickY = zAt(pickH, NT - 1); } };
+}
+const S = seismic($('#seis')); let shown = 0; const t0 = performance.now();
+// ---- a generated contour map for the geospatial chapter
+function contours(cv) { const g = cv.getContext('2d'), d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; const W = cv.width, H = cv.height;
+  g.fillStyle = '#e9ecdf'; g.fillRect(0, 0, W, H); const f = (x, y) => Math.sin(x * 3.1 + 1) * Math.cos(y * 2.3) + .7 * Math.sin((x + y) * 4.7) + .5 * Math.cos(x * 7.3 - y * 5.1) + 1.4 * Math.exp(-((x - .62) ** 2 + (y - .42) ** 2) * 9);
+  const N = 220, img = g.createImageData(N, Math.round(N * H / W)), h = img.height; for (let j = 0; j < h; j++) for (let i = 0; i < N; i++) { const v = f(i / N * 1.6, j / h * 1.6 * H / W), band = Math.floor(v * 6), frac = v * 6 - band, line = frac < .06, k = (j * N + i) * 4, wet = v < -.9;
+    const c = wet ? [196, 214, 236] : line ? [120, 92, 60] : band % 2 ? [226, 230, 210] : [214, 222, 196]; img.data.set([...c, 255], k); }
+  const tmp = document.createElement('canvas'); tmp.width = N; tmp.height = h; tmp.getContext('2d').putImageData(img, 0, 0); g.imageSmoothingEnabled = true; g.drawImage(tmp, 0, 0, W, H);
+  g.strokeStyle = '#b8142f'; g.lineWidth = 3 * d; g.beginPath(); g.moveTo(W * .2, H * .8); g.lineTo(W * .45, H * .55); g.lineTo(W * .7, H * .62); g.lineTo(W * .88, H * .3); g.stroke();
+  g.fillStyle = 'rgba(29,58,168,.25)'; g.strokeStyle = '#1d3aa8'; g.lineWidth = 1.5 * d; g.beginPath(); g.arc(W * .62, H * .42, H * .16, 0, 7); g.fill(); g.stroke(); }
+// ---- domain plates: each photograph is cut into vertical traces that slide into place out of step, like a seismic gather lining up
+const plates = $$('.plate'), dtexts = $$('.dtext'), dlinks = $$('#dindex a'), NSTRIP = 28, CREDIT = ['Reykjanes power station, Iceland · Michal Klajban · CC BY-SA 4.0', 'Generated contour map', 'Hellisheiði geothermal power station · Kevstan · CC BY-SA 4.0', 'Solar farm, Krishnapuram · Saiphani02 · CC BY-SA 4.0', 'Wind turbines at Akhisar · Pragdon · CC0'];
+function buildPlates() { const st = $('#dstage'), W = st.clientWidth; plates.forEach((p, k) => { p.innerHTML = ''; p.style.setProperty('--W', W + 'px');
+  if (p.dataset.gen) { const c = document.createElement('canvas'); p.appendChild(c); requestAnimationFrame(() => contours(c)); p._strips = [c]; return; }
+  p._strips = Array.from({ length: NSTRIP }, (_, i) => { const s = document.createElement('div'); s.className = 's'; const w = W / NSTRIP; s.style.cssText = `left:${i * w}px;width:${w + 1}px;background-image:url(${p.dataset.img});background-position:${-i * w}px 0;background-size:${W}px auto`; p.appendChild(s); return s; });
+  const im = new Image(); im.onload = () => { const H = st.clientHeight, sc = Math.max(W / im.width, H / im.height), bw = im.width * sc, bh = im.height * sc, ox = (W - bw) / 2, oy = (H - bh) / 2; p._strips.forEach((s, i) => { s.style.backgroundSize = `${bw}px ${bh}px`; s.style.backgroundPosition = `${ox - i * W / NSTRIP}px ${oy}px`; }); }; im.src = p.dataset.img; }); }
+buildPlates(); addEventListener('resize', () => { buildPlates(); });
+// ---- the depth rail: section depths, and the bit following the scroll
+const DEPTHS = [['#top', '0 m'], ['#how', '400 m'], ['#domains', '900 m'], ['#report', '1,400 m'], ['#legacy', '1,800 m'], ['#price', '2,200 m']];
+function rail() { const r = $('#rail'), H = document.body.scrollHeight, rh = r.clientHeight; r.querySelectorAll('.tick,.d').forEach(x => x.remove()); for (let k = 0; k <= 60; k++) { const t = document.createElement('div'); t.className = 'tick' + (k % 10 ? '' : ' l'); t.style.top = (k / 60 * rh) + 'px'; r.appendChild(t); }
+  DEPTHS.forEach(([sel, lab], i) => { const d = document.createElement('div'); d.className = 'd'; d.textContent = lab; d.style.top = (i / (DEPTHS.length - 1) * (rh - 70) + 8) + 'px'; r.appendChild(d); }); }
+addEventListener('load', rail); addEventListener('resize', rail);
+// ---- the confidence curve of the log
+function curve(p) { const pts = []; for (let i = 0; i <= 80; i++) { const y = i / 80, base = .08 + [.18, .42, .68, .9].reduce((a, c, j) => a + .21 / (1 + Math.exp(-(y - c) * 40)), 0), wob = .012 * Math.sin(y * 47); pts.push([clamp(base + wob, .02, .98) * 400, y * 800]); }
+  const n = Math.max(2, Math.round(pts.length * p)), d = pts.slice(0, n).map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' '); $('#cv').setAttribute('d', d); $('#cvf').setAttribute('d', d + ` L0 ${pts[n - 1][1]} L0 0 Z`); }
+function prog(el) { const r = el.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); }
+function frame(now) {
+  const p = Math.min(1, (now - t0) / 1600); if (p > shown) { shown = p; S.draw(1 - Math.pow(1 - p, 3)); }   // the section draws itself in, trace by trace, once
+  if (S.pickY != null) $('#pick').style.top = (S.pickY * 100) + '%';
+  { const tops = DEPTHS.map(([s]) => $(s).offsetTop), y = scrollY + 64; let i = 0; while (i < tops.length - 2 && y >= tops[i + 1]) i++; const f = clamp((y - tops[i]) / (tops[i + 1] - tops[i])), rh = $('#rail').clientHeight - 70; $('#bit').style.top = ((i + f) / (DEPTHS.length - 1) * rh + 8) + 'px'; }
+  { const lg = $('#how'), r = lg.getBoundingClientRect(), q = clamp((innerHeight * .6 - r.top) / r.height); curve(q); $$('#steps li').forEach(li => li.classList.toggle('on', q >= +li.dataset.y - .2 && q < +li.dataset.y + .08)); }
+  { const q = prog($('#domains')) * plates.length; plates.forEach((pl, k) => { const loc = q - k; const n = (pl._strips || []).length; (pl._strips || []).forEach((s, i) => { const u = i / Math.max(1, n - 1), lag = .32 * u + .05 * Math.sin(u * Math.PI * 3), t = k === 0 ? 1 : clamp((loc + .62 - lag) * 2.2), e = 1 - Math.pow(1 - t, 3); s.style.transform = `translateY(${(1 - e) * 101}%)`; }); pl.style.zIndex = k; });
+    const on = clamp(Math.floor(q + .25), 0, plates.length - 1); dtexts.forEach((d, k) => d.classList.toggle('on', k === on)); dlinks.forEach((a, k) => a.classList.toggle('on', k === on)); $('#credit').textContent = CREDIT[on]; }
   requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 </script>
