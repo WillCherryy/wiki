@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 // Builds stars/points.json for Scorcher Sky: catalogued objects that are not ordinary stars, each at its published position and distance, with the method.
-//   node tools/build-points.js
+//   NODE_USE_ENV_PROXY=1 node tools/build-points.js     (then node tools/merge-hot-stars.js for the O and Wolf–Rayet stars)
 // Sources (all public; credits in stars/CREDITS.md):
 //   galaxies within ~11 Mpc   Updated Nearby Galaxy Catalog (Karachentsev, Makarov & Kaisina 2013, AJ 145, 101), via NASA HEASARC (table neargalcat)
 //   farther galaxies          IRAS PSCz redshift survey (Saunders et al. 2000, MNRAS 317, 55), via HEASARC (iraspscz); distance from the redshift
 //   pulsars                   ATNF Pulsar Catalogue (Manchester et al. 2005, AJ 129, 1993), web query; distances by parallax, association or the YMW16 electron-density model
-//   O stars                   Galactic O-Star Catalog (Maíz Apellániz et al. 2004, ApJS 151, 103), via HEASARC (ostars)
-//   Wolf–Rayet stars          VIIth Catalogue of Galactic Wolf–Rayet Stars (van der Hucht 2001, New Astron. Rev. 45, 135), via HEASARC (wrcat)
 //   ultracool dwarfs          UltracoolSheet v2.0 (Best et al. 2025, doi:10.5281/zenodo.15802304, CC BY 4.0)
 // Objects already drawn by the map (its featured objects) are left out, matched by position.
 const fs = require('fs'), path = require('path'), { tap } = require('./votable.js');
@@ -49,10 +47,7 @@ const comoving = z => { const Om = .3111, OL = 1 - Om, E = x => Math.sqrt(Om * M
       const how = px !== '*' && +px > 0 && Math.abs(1 / +px - D) / D < .05 ? 'px' : da !== '*' ? 'assoc' : ddm !== '*' && Math.abs(+ddm - D) / D < .01 ? 'dm' : 'other';   // which distance the catalogue adopted
       add('pulsar', 'PSR ' + nm, hms(raj), dms(decj), D * 1000 * LYPC, { p: p0 === '*' ? null : +p0, m: how, ty: type === '*' ? '' : type.replace(/\[[^\]]*\]/g, '') }); }
     console.log('  ATNF catalogue version', ver || '?'); }
-  console.log('O stars (GOSC)…'); { const t = await tap(HEASARC, 'SELECT name, alt_name, ra, dec, distance, spect_type, vmag FROM ostars'); const k = n => t.fields.indexOf(n);
-    for (const r of t.rows) { const D = r[k('distance')]; if (!(D > 0)) { skip('ostar', 'no distance'); continue; } add('ostar', r[k('name')], r[k('ra')], r[k('dec')], D * 1000 * LYPC, { sp: (r[k('spect_type')] || '').replace(/\.\s/g, ' ').replace(/\s+/g, ' ').trim(), V: r[k('vmag')] || null }); } }
-  console.log('Wolf–Rayet stars…'); { const t = await tap(HEASARC, 'SELECT name, alt_name_1, ra, dec, distance, spect_type FROM wrcat'); const k = n => t.fields.indexOf(n);
-    for (const r of t.rows) { const D = r[k('distance')]; if (!(D > 0)) { skip('wr', 'no distance'); continue; } add('wr', r[k('name')], r[k('ra')], r[k('dec')], D * 1000 * LYPC, { sp: r[k('spect_type')] || '', alt: r[k('alt_name_1')] || '' }); } }
+  // O and Wolf–Rayet stars are not points: tools/merge-hot-stars.js puts them into the star catalogue itself, once each (most are Gaia stars already)
   console.log('ultracool dwarfs (UltracoolSheet)…'); { const T = csvRows(await fetchText(UCS)), h = T[0], k = n => h.indexOf(n);
     for (const r of T.slice(1)) { if (r.length < h.length / 2) continue; const D = +r[k('dist_formula')], e = +r[k('disterr_formula')], has = c => r[k(c)] && !/^(null|nan)$/i.test(r[k(c)]), num = +r[k('sptnum_formula')], sp = (num >= 20 ? (has('spt_ir') ? r[k('spt_ir')] : has('spt_opt') ? r[k('spt_opt')] : '') : (has('spt_opt') ? r[k('spt_opt')] : has('spt_ir') ? r[k('spt_ir')] : '')).replace(/:\s*/, ' ');   // optical types for M and L dwarfs, infrared for T and Y, as is usual
       if (!(D > 0)) { skip('ucd', 'no distance'); continue; } if (!/^[MLTY]/.test(sp)) { skip('ucd', 'no spectral type'); continue; }
@@ -61,8 +56,6 @@ const comoving = z => { const Om = .3111, OL = 1 - Om, E = x => Math.sqrt(Om * M
     galaxy: { title: 'Nearby galaxy', cite: 'Karachentsev, Makarov & Kaisina 2013 (Updated Nearby Galaxy Catalog), AJ 145, 101' },
     'galaxy-z': { title: 'Galaxy', cite: 'Saunders et al. 2000 (IRAS PSCz redshift survey), MNRAS 317, 55' },
     pulsar: { title: 'Pulsar', cite: 'ATNF Pulsar Catalogue (Manchester et al. 2005), AJ 129, 1993; distances as adopted there (Yao, Manchester & Wang 2017 model for dispersion measures)' },
-    ostar: { title: 'O-type star', cite: 'Galactic O-Star Catalog (Maíz Apellániz et al. 2004), ApJS 151, 103' },
-    wr: { title: 'Wolf–Rayet star', cite: 'VIIth Catalogue of Galactic Wolf–Rayet Stars (van der Hucht 2001), New Astron. Rev. 45, 135' },
     ucd: { title: 'Ultracool dwarf', cite: 'UltracoolSheet v2.0 (Best et al. 2025), doi:10.5281/zenodo.15802304, CC BY 4.0' } };
   const out = { v: 1, built: new Date().toISOString().slice(0, 10), sets, rows };
   fs.writeFileSync(OUT, JSON.stringify(out));

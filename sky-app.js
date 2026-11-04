@@ -117,19 +117,21 @@ function factsLand(gb) {
   else if (gb.far) { eyebrow = 'Distant galaxy'; }
   return { name: n, eyebrow, c: '#cfc9e2', blurb, rows, place, pic: L || LO ? 'Illustrative rendering of a cloud, cluster or galaxy of this kind and size' : '', links: [['Wikipedia', wikiQ(n)], ST ? null : ['SIMBAD', simbadId(n)]].filter(Boolean), acts: ['go'] };
 }
-const GAL_PLACE = 'At its true direction and distance from the Sun (for distant galaxies, its comoving distance now). Seen from above the Milky Way’s disc, so its height above or below the disc is not shown.';
+const GAL_PLACE = 'At its true distance from the Sun (for distant galaxies, its comoving distance now) and its true direction around the sky in galactic longitude. The map is flat, seen from above the Milky Way’s disc, so a galaxy above or below the disc is folded down into it: its distance from us is kept, but the distances between two galaxies are only approximate.';
 const UNGC_M = { TRGB: 'tip of the red giant branch', Cep: 'Cepheid variables', SN: 'a supernova', CMD: 'its colour–magnitude diagram', RR: 'RR Lyrae variables', geom: 'geometry', mem: 'membership of a group with a measured distance', TF: 'the Tully–Fisher relation', BS: 'its brightest stars', txt: 'surface-brightness fluctuations', SBF: 'surface-brightness fluctuations', FP: 'the fundamental plane', GCLF: 'its globular clusters', PNLF: 'its planetary nebulae', h: 'its velocity (the Hubble flow)' };
 const morphText = T => T == null ? '' : T <= -4 ? 'Elliptical' : T === -3 ? 'Dwarf spheroidal' : T < 0 ? 'Lenticular' : T <= 8 ? 'Spiral' : T === 9 ? 'Magellanic spiral' : 'Irregular';   // de Vaucouleurs T type, as the UNGC uses it
 function factsPoint(q) {   // an object of the points catalogue: its published values, the method behind its distance, and the catalogue it comes from
   const set = q.set, cite = set.cite, rows = [...posRows(q.ra, q.de, cite)], ly = q.d, gal = /^galaxy/.test(q.s); let eyebrow = set.title, blurb = '', place = 'At its catalogued direction and distance.';
   const dRow = (tag, how) => ({ ...distRow(ly, cite), tag, src: cite + ' · ' + how });
   if (q.s === 'galaxy') { const h = q.m === 'h'; rows.push(dRow(h ? 'der' : 'pub', 'distance from ' + (UNGC_M[q.m] || q.m) + (h ? '; approximate, since a nearby galaxy’s own motion is comparable with the expansion' : '') + '. Given to 0.01 Mpc (33,000 ly)'));
-    if (q.t != null) rows.push({ k: 'Type', v: morphText(q.t), s: 'T = ' + q.t, tag: 'pub', src: cite });
+    if (q.t != null && q.t > -10) rows.push({ k: 'Type', v: morphText(q.t), s: 'T = ' + q.t, tag: 'pub', src: cite });
+    if (q.q) rows.push({ k: 'Axial ratio', v: nf(q.q, 2), s: q.q < .35 ? 'seen nearly edge-on' : q.q > .8 ? 'seen nearly face-on' : 'seen at a slant', tag: 'pub', src: cite + ' (minor to major axis)', full: true });
+    rows.push({ k: 'Picture', v: 'Painted from its type', s: 'drawn at its published diameter and tilt; its orientation on the sky is not catalogued', tag: 'ill', src: 'Illustrative: a painting of a galaxy of this type, not an image of this galaxy' });
     if (q.dk) rows.push({ k: 'Diameter', v: '≈ ' + fmtLen(q.dk * 3261.56), tag: 'pub', src: cite + ' (major linear diameter)', g: 'size' });
     if (q.lk) rows.push({ k: 'Infrared luminosity', v: s3(Math.pow(10, q.lk)) + ' L☉', s: 'K band, a proxy for its mass in stars', tag: 'pub', src: cite });
     eyebrow = 'Nearby galaxy' + (q.t != null ? ' · ' + morphText(q.t).toLowerCase() : ''); place = GAL_PLACE; }
   else if (q.s === 'galaxy-z') { rows.push({ k: 'Velocity away from us', v: nf(q.v) + ' km/s', s: 'z = ' + (q.v / 299792.458).toFixed(4), tag: 'pub', src: cite, g: 'z' }, dRow('der', 'distance now (comoving) from the redshift, Planck 2018 cosmology; its own motion through space adds an error of several million light-years'));
-    blurb = 'One of the infrared-bright galaxies of the IRAS PSCz all-sky redshift survey. Its size is not in the catalogue, so it is drawn as a point.'; place = GAL_PLACE; }
+    blurb = 'One of the infrared-bright galaxies of the IRAS PSCz all-sky redshift survey. Its type and size are not in the catalogue, so it is drawn as a small plain mark.'; place = GAL_PLACE; }
   else if (q.s === 'pulsar') { const how = { px: ['pub', 'distance from its parallax'], assoc: ['pub', 'distance from an associated object (a supernova remnant, cluster or galaxy)'], dm: ['mod', 'distance modelled from its dispersion measure with the YMW16 model of free electrons in the Galaxy; often uncertain by 20–40%'], other: ['pub', 'distance adopted by the catalogue'] }[q.m] || ['pub', ''];
     rows.push(dRow(how[0], how[1])); if (q.p) rows.push({ k: 'Spin period', v: q.p < 1 ? nf(q.p * 1000, 3) + ' ms' : nf(q.p, 4) + ' s', s: nf(1 / q.p, q.p < 1 ? 1 : 3) + ' turns a second', tag: 'pub', src: cite });
     if (q.ty) rows.push({ k: 'Kind', v: q.ty.replace(/\bHE\b/, 'high-energy').replace(/\bNRAD\b/, 'not seen in radio').replace(/\bRRAT\b/, 'rotating radio transient').replace(/\bAXP\b/, 'magnetar (AXP)').replace(/\bBINARY\b/, 'binary'), tag: 'pub', src: cite });
@@ -141,6 +143,10 @@ function factsPoint(q) {   // an object of the points catalogue: its published v
   return { name: q.n, eyebrow, c: PSTY_C(q.s), blurb, rows, place, links: [['SIMBAD', simbadId(q.n)]].concat(gal ? [['NED', 'https://ned.ipac.caltech.edu/byname?objname=' + encodeURIComponent(q.n)]] : []), acts: ['go'], pid: q.i };
 }
 const PSTY_C = s => (SKY.PSTY[s] || ['#cfc9e2'])[0];
+const hotCite = h => h.sets.map(k => (SKY.hotSets() || {})[k]).filter(Boolean).join('; ');
+const hotRows = (st, d) => { const h = st.hot, other = h.src.filter(x => x.ly && h.gaia && Math.abs(x.ly - d) / d > .1);
+  return [{ k: 'Spectral type', v: h.sp, tag: 'pub', src: hotCite(h) },
+    ...other.map(x => ({ k: 'Distance in ' + (x.set === 'wr' ? 'the Wolf–Rayet' : 'the O-star') + ' catalogue', v: dist(x.ly)[0], s: 'Gaia’s parallax is used on the map', tag: 'pub', src: hotCite(h), full: true }))]; };
 function factsStar(st) {
   const [ra, de] = fromGalXYZ(st.gx, st.gy, st.gz), d = Math.hypot(st.gx, st.gy, st.gz), unc = Math.atan2((st.unit || .85) * .87, Math.max(d, .1)) * R2D, uTxt = unc >= 1 ? nf(unc, 0) + '°' : unc >= 1 / 60 ? nf(unc * 60, 0) + '′' : nf(unc * 3600, 0) + '″';
   const bright = st.M - 5 + 5 * Math.log10(d / LY_PC) < 4, src = bright ? 'HYG database v4.1 (Hipparcos, Yale, Gliese)' : 'Gaia DR3 parallax (better than 10%)';
@@ -151,7 +157,10 @@ function factsStar(st) {
     { k: 'Temperature', v: '≈ ' + nf(st.T) + ' K', s: 'from its colour', tag: 'der', src: 'Ballesteros (2012) colour–temperature relation, from B−V (approximated from Gaia BP−RP)', g: 'temp' },
     { k: 'Visual luminosity', v: s3(st.L) + ' L☉', tag: 'der', src: 'From the absolute magnitude; no bolometric correction', g: 'vlum' },
     ...(st.R == null ? [] : [{ k: 'Radius (rough estimate)', v: '≈ ' + sig(st.R) + ' R☉', tag: 'der', src: 'From the visual luminosity and colour temperature by the Stefan–Boltzmann law. With no bolometric correction it underestimates very hot and very cool stars; the disc drawn when you approach uses this size', g: 'size' }]),
-    { k: 'Spectral class (estimate)', v: st.kind, tag: 'der', src: 'Estimated from colour and absolute magnitude, not from a spectrum' }];
+    ...(st.hot ? hotRows(st, d) : [{ k: 'Spectral class (estimate)', v: st.kind, tag: 'der', src: 'Estimated from colour and absolute magnitude, not from a spectrum' }])];
+  if (st.hot) { const ti = rows.findIndex(r => r.k === 'Temperature'); if (ti >= 0) rows[ti] = { k: 'Temperature', v: 'Not estimated here', s: 'interstellar dust reddens these distant stars, so a temperature from their colour would be far too low; their spectral type marks them as among the hottest stars', tag: 'der', src: 'The colour–temperature relation used for other catalogue stars does not apply to heavily reddened hot stars', g: 'temp' }; for (let k = rows.length - 1; k >= 0; k--) if (/^Radius/.test(rows[k].k)) rows.splice(k, 1); }
+  if (st.hot && !st.hot.gaia) { rows[3] = distRow(d, hotCite(st.hot)); rows[5] = { ...rows[5], src: 'From its V magnitude and catalogued distance, as the catalogue computes it for every star (no correction for dust)' }; }
+  if (st.hot) { const wr = st.hot.sets.includes('wr'); return { name: st.name || st.hot.n, eyebrow: (wr ? 'Wolf–Rayet star · a massive star stripped to its core' : 'O-type star · among the hottest and most massive') + (st.hot.gaia ? ' · Gaia measurement' : ''), c: st.hex, blurb: (st.hot.n.split(' (')[0] !== st.name ? 'Catalogued as ' + st.hot.n + '. ' : '') + (st.hot.gaia ? 'Its position and distance are Gaia’s; its spectral type is from the ' + (wr ? 'Wolf–Rayet' : 'O-star') + ' catalogue.' : 'Too faint or too crowded for the Gaia sample here, so it is placed at the distance its catalogue gives.'), rows, place: 'At its measured position in three dimensions. Fly to it to approach it; close in, it is drawn as a disc at its estimated size.', links: [['SIMBAD', simbadId(st.hot.n.split(' (')[0])]], acts: ['go'], oi: st.src }; }
   return { name: st.name || 'A catalogue star', eyebrow: 'Catalogue star · real measurement', c: st.hex, blurb: st.name ? '' : 'One of the 992,000 stars in the catalogue behind this map, from the Gaia and Hipparcos missions. It has no common name.', rows, place: 'At its measured position in three dimensions. Fly to it to approach it; close in, it is drawn as a disc at its estimated size.', links: [['SIMBAD near here', simbadCone(ra, de, unc * 60 * 1.2)]], acts: ['go'], oi: st.src };
 }
 function facts(n) {
@@ -261,8 +270,6 @@ let btab = 'obj', openT = '';
 const PSET = { galaxy: { title: 'Nearby galaxy', short: 'Within 36 million light-years', note: 'From the Updated Nearby Galaxy Catalog (Karachentsev et al. 2013), with measured distances where they exist.' },
   'galaxy-z': { title: 'Galaxy', short: 'Farther, from their redshifts', note: 'Infrared-bright galaxies of the IRAS PSCz all-sky survey (Saunders et al. 2000), placed by their redshift: their own motions blur the distances by several million light-years.' },
   pulsar: { title: 'Pulsar', short: 'Pulsars', note: 'Spinning neutron stars of the ATNF Pulsar Catalogue. Most distances are modelled from how much the radio pulses are dispersed by electrons in the Galaxy.' },
-  ostar: { title: 'O-type star', short: 'O stars', note: 'From the Galactic O-Star Catalog (Maíz Apellániz et al. 2004), with spectral types and distances to 0.1 kpc.' },
-  wr: { title: 'Wolf–Rayet star', short: 'Wolf–Rayet stars', note: 'Massive stars stripped to their cores, from the VIIth Catalogue of Galactic Wolf–Rayet Stars (van der Hucht 2001).' },
   ucd: { title: 'Ultracool dwarf', short: 'Ultracool dwarfs', note: 'From the UltracoolSheet (Best et al. 2025), with spectral types: these are too faint for the star catalogue’s colours to classify.' } };
 function pointGroups() {   // the points catalogue sorted into the list's groups: ultracool M dwarfs with red dwarfs, L, T and Y dwarfs with brown dwarfs, pulsars with neutron stars, O and Wolf–Rayet stars with blue giants
   if (pointGroups.c) return pointGroups.c; const R = SKY.pointRows(); if (!R) { SKY.ptLoad(); clearTimeout(pointGroups.w); pointGroups.w = setTimeout(() => drawList($('#sxQ').value.trim()), 900); return null; }
@@ -354,7 +361,7 @@ const legendHTML = () => `<h2>How to read this map</h2>
   <li><b>Planets of the Solar System</b> sit at their real places for the date shown at the bottom right. Exoplanet orbits are true in size, but where each planet is along its orbit is not known here.</li></ul>
   <h3>What is modelled or illustrative</h3><ul>
   <li>The <b>shape of the Milky Way</b> (arms, bar, dust) is a model based on published maps; nobody has seen it from outside.</li>
-  <li><b>Other galaxies' shapes</b> follow their published type and orientation, painted, not photographed.</li>
+  <li><b>Other galaxies' shapes</b> are painted from their published type (spiral, lenticular, elliptical, dwarf spheroidal or irregular), drawn at their published diameter and tilted by their published axial ratio. Their orientation on the sky is not in the catalogue, so it is illustrative. Galaxies with no catalogued type or size (the more distant PSCz survey galaxies) are drawn as small plain marks.</li>
   <li><b>Surfaces</b> of stars and exoplanets are illustrative. The Solar System's planets and the Moon use spacecraft maps.</li>
   <li>Glows, halos and the brightness of objects are tuned so things stay visible. They are not photometry.</li></ul>`;
 const methodsHTML = () => `<h2>Data &amp; methods</h2>
@@ -381,7 +388,7 @@ const methodsHTML = () => `<h2>Data &amp; methods</h2>
   <tr><td>Named-object values</td><td>Rounded literature values; uncertainties not yet shown.</td></tr>
   <tr><td>Galaxy distances</td><td>Nearby: as measured (tip of the red giant branch, Cepheids and others), typically 5–10%; farther: from redshift, blurred by several million ly by each galaxy's own motion. Far ones are placed at their comoving distance now.</td></tr>
   <tr><td>Pulsar distances</td><td>Most are modelled from the dispersion measure and often uncertain by 20–40%; the panel says which method applies.</td></tr>
-  <tr><td>The map's third dimension</td><td>Everything is seen from above the Milky Way's disc: height above or below the disc is not shown, so objects far above it (many galaxies) appear nearer the centre than they are.</td></tr></tbody></table>
+  <tr><td>The map's third dimension</td><td>The map is flat, seen from above the Milky Way's disc. Stars keep their positions in the disc; their small heights above it are not shown. Galaxies are laid down at their true distance from the Sun and true galactic longitude, so the distance from us is right, but a galaxy far above or below the disc is folded into it, and the distances between galaxies are only approximate. Galactic latitude (b) in the inspector gives the true height.</td></tr></tbody></table>
   <p class="sx-note">Scorcher Sky is for learning and exploring. It is not an ephemeris or a research catalogue: for precise positions use <a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">JPL Horizons</a> for the Solar System and <a href="https://simbad.cds.unistra.fr/simbad/" target="_blank" rel="noopener">SIMBAD</a> or the <a href="https://gea.esac.esa.int/archive/" target="_blank" rel="noopener">Gaia Archive</a> for stars.</p>
   <h3>Coming next</h3><ul><li>Planet and Moon positions from a full ephemeris (astronomy-engine), with any date and time.</li><li>Citations and published uncertainties on every named-object value.</li></ul>`;
 const helpHTML = () => `<h2>Help</h2><table class="sx-acc"><tbody>
