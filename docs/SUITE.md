@@ -2,6 +2,13 @@
 
 Status: **scoping, nothing here is built** (November 2026). Read with `docs/PLATFORM.md`.
 
+**Owner decisions (November 2026):**
+- The daily race stays the first page (`/`). The suite landing page is a **mockup only** for now (`mockups/suite/landing.html`, would live at `/suite`), to be integrated later.
+- Build's first users: **energy companies** wanting to learn whether agentic AI can automate parts of their work. Offered as a paid **pilot** that measures an agent against their current process. Scorcher will also ship its own agents later.
+- **Engineering** is a research question, not yet a product: run trials to find where LLM agents genuinely help engineers, and publish what works and what does not.
+- **Paid tiers** (Studio, Pilot, Enterprise in the mockup; prices to be set with the first pilots).
+- Build's interface should be impeccable and hyper-modern: `mockups/suite/build.html` (scroll-driven photo transitions, an agent run revealed as you scroll, sliding pilot cards). Frames in `mockups/suite/frames/`, scroll recordings in `mockups/suite/video/`, photo credits in `mockups/suite/img/credits.json`.
+
 **Vision (owner):** Scorcher should simultaneously *inspire people* and *be a highly useful science and research tool*. The same honesty rules run through everything: every number has a source; measured, derived, modelled and illustrative are labelled; nothing is invented.
 
 ## 1. The suite
@@ -29,10 +36,7 @@ Status: **scoping, nothing here is built** (November 2026). Read with `docs/PLAT
 6. **For schools and researchers:** citations, data sources, the API, Demosthenes Academy (later).
 7. **Footer:** sources and credits, privacy, terms, contact.
 
-**Routing decision (open):** today `/` is the race. Options:
-- (a) Landing at `/`, race at `/race`, with returning players (local progress on their device) taken straight to the race. Shared `/p/<day>` and `/find/<name>` links keep working. Best for the suite; small risk to the daily habit.
-- (b) Keep `/` as the race, landing at `/about` or `/suite`. Safest for players; the suite is less visible.
-Recommendation: (a), with the returning-player redirect and an analytics check on next-day return before and after.
+**Routing (decided):** the race stays at `/`; the suite page would live at `/suite`, linked from the race's header and footer.
 
 **Design:** Scorcher's editorial identity (EB Garamond, Jost, IBM Plex Mono; paper for Tree and Build, night for Sky). Fast: previews load lazily, the hero works without them. Accessible: keyboard, contrast, reduced motion. Phone first for the race; desktop shown well for the tools.
 
@@ -97,8 +101,7 @@ Recommendation: (a), with the returning-player redirect and an analytics check o
 
 ## Decisions needed from the owner
 
-- Landing at `/` (race moves to `/race`) or at `/suite`?
 - Domain: keep `playscorcher.com` or move to a neutral name before launch of the suite?
-- Build: who is the first user for Solar (homeowners, community energy groups, students, consultants)? This decides the inputs, outputs and price.
-- Engineering: which discipline and question first?
-- Accounts and billing: free with limits, paid tiers, or institutional licences for schools and universities?
+- Build: which energy company first, and which of its workflows (the mockup lists five candidates)?
+- Engineering research: which two or three workflows to trial first, with which engineers?
+- Prices for the paid tiers, once a pilot has shown the value.

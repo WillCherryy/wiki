@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scorcher — concept mockup of the suite page</title>
+<!-- Concept mockup of a Scorcher suite page (would live at /suite; the daily race stays at /). Product images are screenshots of the live
+     Scorcher pages; photographs are from Wikimedia Commons, credited at the foot. -->
+<style>
+@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-500-normal.woff2) format('woff2'); font-weight: 500; }
+@font-face { font-family: 'Instrument Sans'; src: url(../../fonts/instrument-sans-latin-600-normal.woff2) format('woff2'); font-weight: 600; }
+@font-face { font-family: 'EB Garamond'; src: url(../../fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'EB Garamond'; src: url(../../fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); font-style: italic; }
+@font-face { font-family: 'IBM Plex Mono'; src: url(../../fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); }
+:root { --night: #05050a; --paper: #f3eee4; --ink: #f2f0ea; --ink2: #b8b4c8; --mute: #7f7a92; --line: rgba(255, 255, 255, .1); --accent: #ff5a2b; --sky: #9fb8ff; --tree: #8fc48a; --build: #ffb347; --play: #ff7a5c;
+  --sans: 'Instrument Sans', system-ui, sans-serif; --serif: 'EB Garamond', Georgia, serif; --mono: 'IBM Plex Mono', ui-monospace, monospace; }
+* { box-sizing: border-box; } html { scroll-behavior: smooth; } body { margin: 0; background: var(--night); color: var(--ink); font: 400 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+a { color: inherit; text-decoration: none; } img { display: block; max-width: 100%; }
+.concept { position: fixed; z-index: 90; right: 18px; bottom: 18px; padding: 6px 12px; border-radius: 99px; background: rgba(255, 255, 255, .08); backdrop-filter: blur(12px); border: 1px solid var(--line); font: 500 10.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+.nav { position: fixed; z-index: 80; inset: 0 0 auto; display: flex; align-items: center; gap: 26px; padding: 18px 34px; transition: background .4s; }
+.nav.solid { background: rgba(5, 5, 10, .66); backdrop-filter: blur(18px); border-bottom: 1px solid var(--line); }
+.word { font: 400 26px var(--serif); } .word b { font-weight: 400; font-style: italic; color: var(--accent); }
+.nav nav { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--ink2); } .nav nav a:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 99px; background: var(--ink); color: #0b0b0c; font: 600 14px var(--sans); transition: transform .2s; } .btn:hover { transform: translateY(-1px); } .btn.ghost { background: transparent; color: var(--ink); border: 1px solid rgba(255, 255, 255, .28); }
+
+/* hero: a real star field drifting, the vision line, two doors */
+.hero { position: relative; min-height: 100vh; display: grid; place-items: center; text-align: center; overflow: hidden; padding: 120px 6vw 80px; }
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero .glow { position: absolute; inset: auto -20% -40% -20%; height: 70%; background: radial-gradient(50% 60% at 50% 100%, rgba(255, 90, 43, .28), transparent 70%); }
+.hero .in { position: relative; max-width: 1100px; }
+.eyebrow { font: 500 12px var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--accent); }
+.hero h1 { margin: 18px 0 22px; font: 400 clamp(46px, 7.6vw, 118px)/.95 var(--serif); letter-spacing: -.02em; }
+.hero h1 em { color: var(--build); } .hero h1 span { font-style: italic; color: var(--sky); } .hero h1 i { color: var(--tree); }
+.hero p { margin: 0 auto 30px; max-width: 620px; font-size: 19px; color: var(--ink2); } .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* the four strands */
+.strands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border-block: 1px solid var(--line); }
+.strand { background: var(--night); padding: 30px 28px 34px; transition: background .3s; } .strand:hover { background: #0c0c14; }
+.strand .k { font: 400 12px var(--mono); color: var(--c); } .strand h3 { margin: 8px 0 6px; font: 600 24px var(--sans); letter-spacing: -.02em; } .strand p { margin: 0; color: var(--ink2); font-size: 14.5px; }
+.strand .st { display: inline-block; margin-top: 14px; font: 500 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
+
+/* product feature: screenshot rises and tilts flat as it scrolls into view */
+.feat { display: grid; grid-template-columns: .9fr 1.1fr; gap: 6vw; align-items: center; padding: 18vh 6vw; max-width: 1500px; margin: 0 auto; }
+.feat.flip { grid-template-columns: 1.1fr .9fr; } .feat.flip .txt { order: 2; }
+.feat h2 { margin: 10px 0 16px; font: 400 clamp(38px, 4.6vw, 70px)/1 var(--serif); letter-spacing: -.015em; } .feat h2 em { color: var(--c); }
+.feat p { color: var(--ink2); font-size: 17.5px; max-width: 520px; } .facts { display: flex; gap: 28px; margin: 24px 0 28px; flex-wrap: wrap; } .facts div b { display: block; font: 600 30px var(--sans); letter-spacing: -.02em; } .facts div span { font-size: 13px; color: var(--mute); }
+.shot { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 60px 140px rgba(0, 0, 0, .6), 0 0 0 1px rgba(0, 0, 0, .4);
+  transform: perspective(1400px) rotateX(calc((1 - var(--v, 0)) * 14deg)) translateY(calc((1 - var(--v, 0)) * 80px)) scale(calc(.94 + var(--v, 0) * .06)); opacity: calc(.3 + var(--v, 0) * .7); transition: transform .1s linear; }
+.shot img { width: 100%; } .shot .bar { position: absolute; inset: 0 0 auto; height: 0; }
+.shot2 { position: absolute; width: 46%; right: -6%; bottom: -14%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .18); box-shadow: 0 30px 80px rgba(0, 0, 0, .7); transform: translateY(calc((1 - var(--v, 0)) * 120px)); }
+
+/* evidence labels */
+.labels { padding: 16vh 6vw; text-align: center; background: radial-gradient(60% 50% at 50% 0%, rgba(159, 184, 255, .08), transparent); }
+.labels h2 { margin: 12px auto 40px; max-width: 900px; font: 400 clamp(34px, 4vw, 60px)/1.05 var(--serif); } .labels h2 em { color: var(--sky); }
+.lg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1200px; margin: 0 auto; text-align: left; }
+.lg div { border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: rgba(255, 255, 255, .02); } .lg b { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 99px; font: 600 11px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.lg b::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); } .lg p { margin: 14px 0 0; color: var(--ink2); font-size: 14.5px; } .lg small { display: block; margin-top: 10px; font: 400 12px var(--mono); color: var(--mute); }
+
+/* build teaser: three photos that part as you scroll */
+.build { position: relative; height: 220vh; }
+.build .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; place-items: center; }
+.build .ph { position: absolute; top: 0; bottom: 0; width: 34%; background-size: cover; background-position: center; filter: brightness(.55); transition: none; }
+.build .ph:nth-child(1) { left: 0; transform: translateX(calc(var(--b, 0) * -18%)); } .build .ph:nth-child(2) { left: 33%; transform: scale(calc(1 + var(--b, 0) * .15)); } .build .ph:nth-child(3) { right: 0; transform: translateX(calc(var(--b, 0) * 18%)); }
+.build .txt { position: relative; z-index: 2; text-align: center; padding: 0 6vw; opacity: calc(.2 + var(--b, 0) * 1.4); }
+.build h2 { margin: 10px 0 14px; font: 600 clamp(42px, 6vw, 96px)/.95 var(--sans); letter-spacing: -.045em; } .build h2 em { font: italic 400 1.05em var(--serif); color: var(--build); letter-spacing: -.01em; }
+.build p { margin: 0 auto 26px; max-width: 560px; color: #e0ddd5; font-size: 18px; }
+
+/* learn + api */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 14vh 6vw; max-width: 1400px; margin: 0 auto; }
+.duo > div { border-radius: 22px; padding: 34px; border: 1px solid var(--line); min-height: 320px; display: flex; flex-direction: column; }
+.duo .learn { background: var(--paper); color: #16130f; } .duo .learn .eyebrow { color: #b32b12; } .duo h3 { margin: 10px 0 12px; font: 400 40px/1 var(--serif); } .duo p { margin: 0 0 18px; font-size: 16px; } .duo .learn p { color: #4b453b; } .duo .api p { color: var(--ink2); }
+.duo pre { margin: auto 0 0; padding: 16px; border-radius: 12px; background: #0b0b12; border: 1px solid var(--line); font: 400 12.5px/1.6 var(--mono); color: #cfd6ff; overflow: auto; }
+.duo pre .c { color: var(--mute); } .duo pre .s { color: #8fd3a8; }
+.tagc { margin-top: auto; font: 500 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: #8a5a2b; }
+
+.foot { border-top: 1px solid var(--line); padding: 40px 6vw 70px; display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 40px; color: var(--mute); font-size: 13px; }
+.foot h4 { margin: 0 0 10px; font: 500 11px var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); } .foot ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+
+@media (max-width: 900px) { .nav nav { display: none; } .strands, .lg { grid-template-columns: 1fr 1fr; } .feat, .feat.flip { grid-template-columns: 1fr; } .feat.flip .txt { order: 0; } .duo, .foot { grid-template-columns: 1fr; } .shot2 { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="concept">Concept mockup · would live at /suite</div>
+<header class="nav" id="nav"><a class="word" href="#">Scorch<b>er</b></a><nav><a href="#play">Play</a><a href="#sky">Sky</a><a href="#tree">Tree</a><a href="#build">Build</a><a href="#learn">Learn</a><a href="#learn">API</a></nav><a class="btn" href="/">Play today’s race →</a></header>
+
+<section class="hero"><canvas id="stars"></canvas><div class="glow"></div>
+  <div class="in"><div class="eyebrow">Scorcher · a suite for curious minds</div>
+    <h1>Explore the <span>universe</span>, the tree of <i>life</i> and the <em>energy</em> that powers us</h1>
+    <p>A daily game that sends you racing through knowledge, and scientific tools you can trust: every number is traced to its source and labelled for what it is.</p>
+    <div class="cta"><a class="btn" href="/">Play today’s race →</a><a class="btn ghost" href="#sky">Start exploring</a></div></div></section>
+
+<section class="strands" id="play">
+  <a class="strand" style="--c:var(--play)" href="/"><div class="k">01 · Play</div><h3>The daily race</h3><p>Wikipedia, but it is a race. Earn real stars, galaxies and quasars for Your Sky.</p><span class="st">Live</span></a>
+  <a class="strand" style="--c:var(--sky)" href="#sky"><div class="k">02 · Explore</div><h3>Scorcher Sky</h3><p>Nearly a million real stars and 15,000 galaxies at true scale, every value labelled.</p><span class="st">Live</span></a>
+  <a class="strand" style="--c:var(--tree)" href="#tree"><div class="k">03 · Explore</div><h3>Scorcher Tree</h3><p>How every vertebrate is related, with the fossils and clocks behind each branch.</p><span class="st">Live</span></a>
+  <a class="strand" style="--c:var(--build)" href="#build"><div class="k">04 · Build</div><h3>Applied-science agents</h3><p>Solar, wind and geothermal groundwork done by agents that cite every number.</p><span class="st">Pilot 2027</span></a>
+</section>
+
+<section class="feat" id="sky" style="--c:var(--sky)"><div class="txt"><div class="eyebrow" style="color:var(--sky)">Scorcher Sky</div><h2>The universe, <em>to scale</em></h2>
+  <p>From a neutron star to the edge of the observable universe in one zoom. Tap any star for what is measured about it, and what is only a picture.</p>
+  <div class="facts"><div><b>992,000</b><span>Gaia and Hipparcos stars</span></div><div><b>15,272</b><span>galaxies with distances</span></div><div><b>4,418</b><span>pulsars</span></div></div><a class="btn ghost" href="/sky">Open Scorcher Sky ↗</a></div>
+  <div style="position:relative"><div class="shot rv"><img src="img/shot-sky.jpg" alt="Scorcher Sky"></div><div class="shot2 rv"><img src="img/shot-sky-star.jpg" alt="Betelgeuse in Scorcher Sky"></div></div></section>
+
+<section class="feat flip" id="tree" style="--c:var(--tree)"><div class="txt"><div class="eyebrow" style="color:var(--tree)">Scorcher Tree</div><h2>Where you meet <em>a chicken</em></h2>
+  <p>Pick any two animals and follow their lines back to the ancestor they share. Every date shows its fossils, its clocks and the papers behind them, and debates stay open.</p>
+  <div class="facts"><div><b>84 / 90</b><span>branch points dated</span></div><div><b>8</b><span>DOIs verified</span></div><div><b>91</b><span>species, photos credited</span></div></div><a class="btn ghost" href="/tree">Open Scorcher Tree ↗</a></div>
+  <div class="shot rv"><img src="img/shot-tree.jpg" alt="Scorcher Tree comparing human and chicken"></div></section>
+
+<section class="feat" style="--c:var(--play)"><div class="txt"><div class="eyebrow" style="color:var(--play)">Play</div><h2>Five minutes, <em>every day</em></h2>
+  <p>Race from one Wikipedia article to another using only links. Warmer, colder, scorching. Race friends, stream it, and grow a sky of real objects as you play.</p><a class="btn" href="/">Play today’s race →</a></div>
+  <div class="shot rv"><img src="img/shot-race.jpg" alt="The Scorcher daily race"></div></section>
+
+<section class="labels"><div class="eyebrow" style="color:var(--sky)">How we handle evidence</div><h2>Inspiring is easy. <em>Trustworthy</em> is the work.</h2>
+  <div class="lg"><div style="--c:#8fd3a8"><b>Published</b><p>From the literature or a survey catalogue, rounded for display.</p><small>Betelgeuse: 548 ly</small></div>
+    <div style="--c:#8fb8ff"><b>Derived</b><p>Calculated here from published values, by a stated method.</p><small>Galactic l, b from RA, Dec</small></div>
+    <div style="--c:#f2c46d"><b>Modelled</b><p>From a general relation for the type of object, not a measurement of it.</p><small>A radius from a mass–radius law</small></div>
+    <div style="--c:#c9a0ff"><b>Illustrative</b><p>A visual choice that makes something visible. Not data.</p><small>A galaxy’s painted arms</small></div></div></section>
+
+<section class="build" id="build"><div class="stage"><div class="ph" style="background-image:url(img/solar-aerial.jpg)"></div><div class="ph" style="background-image:url(img/wind-sunset.jpg)"></div><div class="ph" style="background-image:url(img/reykjanes.jpg)"></div>
+  <div class="txt"><div class="eyebrow" style="color:var(--build)">Scorcher Build</div><h2>Agents for the <em>energy transition</em></h2><p>Solar, wind and geothermal groundwork, done by agents that fetch the data, run proven models and cite every number. Piloting with energy companies.</p><a class="btn" href="build.html">See Scorcher Build →</a></div></div></section>
+
+<section class="duo" id="learn"><div class="learn"><div class="eyebrow">Learn · with Demosthenes Academy</div><h3>From wonder to <em>understanding</em></h3><p>Every object and branch point links to lessons and practice: what a parallax is, how a molecular clock is calibrated, why a fossil gives only a minimum.</p><span class="tagc">Coming later</span></div>
+  <div class="api"><div class="eyebrow">Data · the Scorcher API</div><h3 style="color:var(--ink)">The same data, <em style="color:var(--sky)">for your code</em></h3><p>Read-only JSON for stars, galaxies and tree nodes, each value with its source, label and licence.</p>
+    <pre><span class="c"># planned, not live</span>
+GET /api/v1/tree/node/amniota
+{ <span class="s">"name"</span>: <span class="s">"Amniota"</span>,
+  <span class="s">"age"</span>: { <span class="s">"fossilMin"</span>: { <span class="s">"ma"</span>: 318, <span class="s">"cite"</span>: <span class="s">"benton2015"</span> } },
+  <span class="s">"label"</span>: <span class="s">"published"</span>, <span class="s">"licence"</span>: <span class="s">"CC BY 4.0"</span> }</pre></div></section>
+
+<footer class="foot"><div><div class="word" style="margin-bottom:8px">Scorch<b>er</b></div>Inspire people. Be genuinely useful to science.</div>
+  <div><h4>Suite</h4><ul><li>Daily race · <span style="color:var(--ink2)">/</span></li><li>Scorcher Sky · /sky</li><li>Scorcher Tree · /tree</li><li>Scorcher Build · pilot</li></ul></div>
+  <div><h4>Photographs (Wikimedia Commons)</h4><ul><li>Solar farm, Krishnapuram · Saiphani02 · CC BY-SA 4.0</li><li>Wind turbines at sunset, California · Carol M. Highsmith, Library of Congress · public domain</li><li>Reykjanes power station · Michal Klajban · CC BY-SA 4.0</li></ul></div></footer>
+
+<script>
+// a slowly drifting field of stars for the hero (decorative: the real catalogue lives in Scorcher Sky)
+const cv = document.getElementById('stars'), g = cv.getContext('2d'); let S = [];
+const size = () => { const d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; S = Array.from({ length: Math.round(cv.width * cv.height / 2600) }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), t: Math.random() * 6 })); }; size(); addEventListener('resize', size);
+(function draw(now) { g.clearRect(0, 0, cv.width, cv.height); const sc = scrollY * .00025; for (const s of S) { const x = ((s.x + now * 2e-6 * (1 + s.z)) % 1) * cv.width, y = ((s.y - sc * (1 + s.z * 2) + 1) % 1) * cv.height, a = .25 + .6 * s.z * (.7 + .3 * Math.sin(now / 900 + s.t)), r = .4 + s.z * 1.3; g.fillStyle = s.z > .93 ? `rgba(255,214,170,${a})` : s.z > .86 ? `rgba(175,200,255,${a})` : `rgba(230,232,255,${a})`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } requestAnimationFrame(draw); })(0);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), rv = [...document.querySelectorAll('.rv')], nav = document.getElementById('nav'), bs = document.getElementById('build');
+(function frame() { nav.classList.toggle('solid', scrollY > 60); rv.forEach(el => { const r = el.getBoundingClientRect(); el.style.setProperty('--v', clamp((innerHeight - r.top) / (innerHeight * .75))); });
+  const r = bs.getBoundingClientRect(); bs.style.setProperty('--b', clamp(-r.top / (r.height - innerHeight))); requestAnimationFrame(frame); })();
+</script>
+</body>
+</html>

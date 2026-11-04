@@ -1,0 +1,44 @@
+{
+ "solar-aerial": {
+  "file": "File:Solar farm at Krishnapuram Tatipudi Water Works aerial view 01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File%3ASolar_farm_at_Krishnapuram_Tatipudi_Water_Works_aerial_view_01.jpg",
+  "artist": "Saiphani02",
+  "licence": "CC BY-SA 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+ },
+ "wind-sunset": {
+  "file": "File:Wind turbines at sunset, California LCCN2011630079.tif",
+  "page": "https://commons.wikimedia.org/wiki/File%3AWind_turbines_at_sunset%2C_California_LCCN2011630079.tif",
+  "artist": "Carol M. Highsmith (Library of Congress)",
+  "licence": "Public domain",
+  "licenceUrl": ""
+ },
+ "geothermal": {
+  "file": "File:Hellisheidi Geothermal Power Station.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File%3AHellisheidi_Geothermal_Power_Station.jpg",
+  "artist": "Kevstan",
+  "licence": "CC BY-SA 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+ },
+ "reykjanes": {
+  "file": "File:Reykjanes power station, taken from the hiking trail Reykjavegur, Iceland 19.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File%3AReykjanes_power_station%2C_taken_from_the_hiking_trail_Reykjavegur%2C_Iceland_19.jpg",
+  "artist": "Michal Klajban",
+  "licence": "CC BY-SA 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+ },
+ "solar-detail": {
+  "file": "File:Photovoltaic power station in Vila Nova de Famalicão (1).jpg",
+  "page": "https://commons.wikimedia.org/wiki/File%3APhotovoltaic_power_station_in_Vila_Nova_de_Famalic%C3%A3o_%281%29.jpg",
+  "artist": "Joseolgon",
+  "licence": "CC BY-SA 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+ },
+ "wind-akhisar": {
+  "file": "File:Sunset and wind turbines at Akhisar Train Station.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File%3ASunset_and_wind_turbines_at_Akhisar_Train_Station.jpg",
+  "artist": "Pragdon",
+  "licence": "CC0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ }
+}
