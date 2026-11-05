@@ -78,6 +78,7 @@ def main(argv=None):
     ap.add_argument("--model", required=True)
     ap.add_argument("--suite", default="main", choices=["main", "injection"])
     ap.add_argument("--prompt", default="baseline", choices=list(SYSTEMS))
+    ap.add_argument("--offset", type=int, default=0, help="skip the first N tasks (main suite: 12 per seed, so 60 skips seeds 0 to 4)")
     ap.add_argument("--limit", type=int, default=0, help="first N tasks only (0 = all)")
     ap.add_argument("--max-usd", type=float, default=5.0, help="stop the whole run beyond this estimated spend")
     ap.add_argument("--yes", action="store_true", help="confirm that this spends money")
@@ -92,6 +93,7 @@ def main(argv=None):
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr)
         return 2
     tl = T.main_suite() if a.suite == "main" else T.injection_suite()
+    tl = tl[a.offset:]
     tl = tl[: a.limit] if a.limit else tl
     if not a.yes:
         est = len(tl) * (30_000 * PRICES[a.model][0] + 4_000 * PRICES[a.model][1]) / 1e6
@@ -112,7 +114,7 @@ def main(argv=None):
         if spent > a.max_usd:
             print("spend cap reached; stopping", file=sys.stderr)
             break
-    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}.json")
+    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + (f"-from{a.offset}" if a.offset else "") + ".json")
     json.dump({"bench_version": T.BENCH_VERSION, "model": a.model, "prompt": a.prompt, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "n_run": len(rows), "n_suite": len(tl), "usd": spent, "rows": rows}, open(out, "w"), default=str)
     print("wrote", out)
