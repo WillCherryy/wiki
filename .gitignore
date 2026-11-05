@@ -20,3 +20,4 @@ harness/out/
 backend/.bundle/
 backend/.wrangler/
 backend/.dev.vars
+backend/.bundle-min/
