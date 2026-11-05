@@ -14,6 +14,9 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | Tool gateway (`gateway.js`): typed tools, per-trial trace, call budget, review gate | Built |
 | Tools: `resource_volumetric_mc`, `well_horner`, `seismic_compare_picks`, `units_convert` | Built, tested against closed forms |
 | Grading (`grade.js`) and synthetic resource tasks (`tasks.js`) | Built for the reference class |
+| File sandbox, tool policy, spend cap, egress filter and a hash-chained audit trail (`sandbox.js`, `gateway.js`); see `BUILD-SECURITY.md` | Built, tested |
+| Customer task spec (`taskspec.js`) and `run-spec.js`; file tools `files_list`, `files_read`, `table_query` | Built, tested |
+| Mining suite (grade and tonnage) and a prompt-injection suite (`packs.js`) | Built on synthetic data |
 | Fixture agents (`agents.js`) and `run-trial.js` | Built. They are scripted recipes, not language models and not Scorcher's agents |
 | Model runner (`llm-agent.js`, `run-llm-trial.js`): a Claude model works tasks over MCP route 1, with token and cost accounting (`pricing.js`) and a spend cap | Built and tested with a stand-in model. **Not yet run against a real model: no API key in the build environment** |
 | MCP over HTTP with one bearer token per trial (`mcp.js`) | Built; an agent working a task over it is in the tests |
@@ -21,7 +24,7 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | GIS adapters (QGIS), ArcGIS, SEG-Y reading, document extraction | Not built |
 | Persistence, accounts, billing, a real dashboard behind the console mockup | Not built |
 
-`mockups/suite/build-console.html` is the console mockup. It fills the window on a desktop (panels scroll inside themselves, never the page) and scales up on large screens. Its overview, agents and resource-estimate views display a real harness run (`node harness/export-sample.js` regenerates `build-sample.js`) on synthetic tasks; the GIS, seismic, well and document views compute on synthetic data in the page and are labelled so.
+The concept pages are also served at `/build/` and `/build/console` (dev server and site build; noindex; labelled as concepts with synthetic data). `mockups/suite/build-console.html` is the console mockup. It fills the window on a desktop (panels scroll inside themselves, never the page) and scales up on large screens. Its overview, agents and resource-estimate views display a real harness run (`node harness/export-sample.js` regenerates `build-sample.js`) on synthetic tasks; the GIS, seismic, well and document views compute on synthetic data in the page and are labelled so.
 
 ## Principles
 
@@ -110,7 +113,8 @@ The runner is built; what is missing is a credential. `llm-agent.js` is a route-
 
 To run it:
 1. Add `ANTHROPIC_API_KEY` as an environment variable (or network secret) in the cloud environment's settings, so a new session has it. Never paste it into a chat. On your own machine, set it in the shell.
-2. `cd harness && npm install`, then from the repo root `npm run agent -- --model claude-haiku-5-5` prints the estimate and stops; add `--yes` to spend. `--max-cost` caps the whole run (default $1).
+2. `cd harness && npm install`, then from the repo root `npm run agent -- --model claude-haiku-5-5` prints the estimate and stops; add `--yes` to spend. `--max-cost` caps the whole run (default $1). `--suite resource|mining|security` picks the task set and `--prompt baseline|hardened` the safety instruction.
+3. A useful first sequence on the cheapest tier (rough estimates at the placeholder token counts, a few cents each): the resource suite, the mining suite, then the security suite once with `--prompt baseline` and once with `--prompt hardened`. Each saves a scorecard to `harness/results/`; `node harness/export-sample.js` puts them in the console.
 
 Choices made on purpose, because this is a comparison platform:
 - **No refusal fallback.** A server-side fallback would silently swap in another model and the scorecard would credit the wrong one. A refusal is recorded as a refusal.
@@ -160,6 +164,32 @@ What a subscription needs, none of which exists yet:
 | Product | Accounts and roles, billing and metering, audit logging, security review, more adapters, support and operations | 6 to 12 months or more, and likely more than one person |
 
 **The sensible next step is not more code.** Find one geothermal firm, pick one task that costs them real time, have their engineer write down what a correct answer is, and run a trial on it, before building more adapters. The harness is ready for that.
+
+## Where people put their task
+
+Intake is a **task spec**: JSON next to the files it names (`taskspec.js`; a worked example is in `harness/examples/grade-tonnage/`). It holds:
+- **what is to be done** (`statement`) and the **team's own procedure** (`instructions`: pasted text, a checklist, notes, definitions). The agent reads both as part of the task. This is where script-style instructions go;
+- **files**, each marked normal or restricted. Attached scripts (PyQGIS, Python) are read as text; **the platform never executes them**. A restricted file cannot be read by the agent, and the secret-looking values in it are guarded against appearing in an answer;
+- **what a correct answer is**: named numeric fields with units and tolerances, and a reference value for each, kept hidden from the agent;
+- **the tools allowed** (nothing by default beyond reading the task and submitting) and **limits** (calls, spend);
+- the **agent**: Scorcher's, the customer's own over MCP, or both.
+
+`node harness/run-spec.js task.json --check` validates a spec and shows exactly what the agent will see, spending nothing; with `--model … --yes` it runs a Claude model on it within the spec's own policy and cap. The console's **New task** view is a form for the same spec: it validates as you type, reads attached files in the browser only (to show size, a fingerprint, the columns of a CSV and how many secret values a restricted file holds), and produces the JSON. Running from the browser needs the hosted service, which is not built.
+
+Today a custom task is graded as a numeric reference (each field within its tolerance). Rule checks (a script decides) and expert-spread grading for judgement tasks are planned for custom tasks. What cannot be written down as a number or a rule needs a human reviewer.
+
+## More domains: mining, solar, wind
+
+A domain is a pack: task generators or a customer's own tasks, typed read-only tools, graders and hidden reference data (`packs.js`). Geothermal and mining are built on synthetic data; solar and wind are planned. The mining suite (grade and tonnage above a cut-off from a block model CSV) needed one new tool (`table_query`) and a file sandbox, and reuses the gateway, trace, graders, statistics, security model and console unchanged. Solar and wind would follow the same way: for example a PV yield estimate or a wind capacity factor, with uncertainty, graded against a reference. Interfaces to specific commercial packages in any of these sectors have not been verified here; each is its own adapter and licence check. The console's **Suites** view lists every task family with its grading class and state.
+
+## Small models first
+
+The safest and cheapest place for a small model is a narrow step, on the customer's own hardware. The design:
+1. **Code first** for anything computable.
+2. **A small model** for narrow, high-volume steps (extraction, classification, formatting).
+3. **A large model** for planning and ambiguity.
+
+The platform does not assume a split; it measures it. Run the same tasks on each tier (Haiku 5.5 is the smallest and cheapest hosted Claude; truly local open-weight models connect as route 4 over MCP) and compare quality, safe rate and cost per correct answer. A router that sends each step to the cheapest tier that clears the quality bar is a later feature and needs per-step measurements the harness does not yet make.
 
 ## Dashboards, one per task
 

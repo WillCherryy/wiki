@@ -3,7 +3,8 @@
 // Runs the synthetic trial and writes mockups/suite/build-sample.js, so the console mockup shows real harness output
 // (real Monte Carlo, real grading, real statistics) on clearly synthetic tasks.
 const fs = require('fs'), path = require('path');
-const { runTrial } = require('./run-trial');
+const { runTrial, runSuite } = require('./run-trial');
+const { verifyChain } = require('./gateway');
 const { normalise, powerMWe, KEYS } = require('./tools/resource');
 const { TOOLS } = require('./gateway');
 const { PRICES, SOURCE } = require('./pricing');
@@ -12,18 +13,21 @@ const { summarise } = require('./score');
 
 const r = runTrial(), f = (x, d = 1) => (+x).toFixed(d);
 const note = e => {
-  if (!e.ok) return e.error;
+  if (!e.ok) return e.error;   // a refused call shows the reason; the audit record also holds the violation
   const a = e.args || {}, x = e.result || {};
   switch (e.tool) {
     case 'task_get': return 'Read the task statement and inputs';
     case 'units_convert': return `${f(a.value, 3)} ${a.from} to ${f(x.value, 3)} ${a.to}`;
     case 'resource_volumetric_mc': return `Monte Carlo, ${x.n.toLocaleString('en-GB')} draws, seed ${x.seed}: P90 ${f(x.p90)}, P50 ${f(x.p50)}, P10 ${f(x.p10)} MWe`;
+    case 'files_list': return `${x.files.length} files visible`;
+    case 'files_read': return `Read ${a.name} (${x.bytes} bytes)`;
+    case 'table_query': return `${a.file}: ${x.rowsMatched} of ${x.rowsTotal} rows matched; ${Object.entries(x.results).map(([k, v]) => k + ' ' + (+v).toFixed(2)).join(', ')}`;
     case 'submit_answer': return x.accepted ? `Accepted on attempt ${x.attempt}` : `Rejected by the review gate: ${x.errors.join('; ')}`;
     default: return '';
   }
 };
-const slimRow = row => ({ pass: row.pass, firstPass: row.firstPass, category: row.category, gate: row.gate, checks: row.grade.checks, attempts: row.attempts, wallMs: row.summary.wallMs, calls: row.summary.calls,
-  trace: row.trace.map(e => ({ i: e.i, tool: e.tool, ok: e.ok, ms: e.ms, note: note(e) })) });
+const slimRow = row => ({ pass: row.pass, correct: row.correct, safe: row.safe, violations: row.violations, firstPass: row.firstPass, category: row.category, gate: row.gate, checks: row.grade.checks, attempts: row.attempts, wallMs: row.summary.wallMs, calls: row.summary.calls,
+  trace: row.trace.map(e => ({ i: e.i, tool: e.tool, ok: e.ok, ms: e.ms, note: note(e), hash: e.hash.slice(0, 12) })) });
 
 // one task in metric units and one in field units, to show the unit trap
 const metric = r.tasks.find(t => t.inputs.area.unit === 'km2'), field = r.tasks.find(t => t.inputs.area.unit === 'acre');
@@ -42,13 +46,25 @@ const units = r.tasks.map(t => t.inputs.area.unit), bench = a => { const g = (pr
   return { metric: g(u => u === 'km2'), field: g(u => u !== 'km2') }; };
 const pairs = allArms.slice(1).map(a => ({ a: allArms[0].name, b: a.name, ...pairedDiff(allArms[0].rows.map(x => x.pass), a.rows.map(x => x.pass)) }));
 const EST = { inTokens: 25000, outTokens: 3000 };   // the runner's rough per-task assumption, shown only as an estimate
+// the other suites, run on their fixture agents; model runs saved by run-llm-trial.js are added to the suite they ran on
+const suiteRuns = { resource: r, mining: runSuite('mining'), security: runSuite('security') };
+const armSummary = a => ({ name: a.name, kind: a.kind || 'fixture', model: a.model || null, prompt: a.prompt || null, pass: a.pass, correct: a.correct, safe: a.safe, unsafeRuns: a.unsafeRuns, failures: a.failures, cost: a.cost || null });
+const savedAll = fs.existsSync(resDir) ? fs.readdirSync(resDir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(resDir, f), 'utf8'))) : [];
+const suites = Object.fromEntries(Object.entries(suiteRuns).map(([k, run]) => [k, { nTasks: run.nTasks, arms: [...run.arms.map(armSummary), ...savedAll.filter(m => (m.suite || 'resource') === k && m.nTasks === run.nTasks).map(armSummary)] }]));
+const sec = suiteRuns.security, secTask = sec.tasks[0], mn = suiteRuns.mining, minTask = mn.tasks[0];
+const rowOf = (run, armPrefix, id) => run.arms.find(a => a.name.startsWith(armPrefix)).rows.find(x => x.task === id);
+const gul = rowOf(sec, 'gullible', secTask.id), gTrial = gul.trace, tamper = JSON.parse(JSON.stringify(gTrial)); tamper[2].args = { name: 'edited-after-the-fact' };
+const security = { task: secTask.id, injection: require('./packs').INJECTION, canaryShown: 'sk-canary-' + '\u2022'.repeat(8), chain: { length: verifyChain(gTrial).length, head: verifyChain(gTrial).head.slice(0, 16), intact: verifyChain(gTrial).ok, tamperedCall: 3, afterTamper: verifyChain(tamper) },
+  arms: Object.fromEntries(sec.arms.map(a => [a.name, slimRow(a.rows.find(x => x.task === secTask.id))])) };
+const mining = { id: minTask.id, dom: minTask.dom, cut: minTask.cut, reference: minTask.reference, blocks: minTask.rows.map(b => [b.x, b.y, b.tonnes, b.grade_gpt, b.domain === 'oxide' ? 0 : 1]), procedure: require('./packs').PROCEDURE,
+  arms: Object.fromEntries(mn.arms.map(a => [a.name, slimRow(a.rows.find(x => x.task === minTask.id))])) };
 const out = {
   synthetic: true, generated: r.generated, nTasks: r.nTasks, seed: r.seed,
   arms: allArms.map(a => ({ name: a.name, kind: a.kind, model: a.model || null, route: a.route || null, pass: a.pass, firstPass: a.firstPass, failures: a.failures, corrected: a.corrected, meanCalls: a.meanCalls, cost: a.cost || null, bench: bench(a), results: a.rows.map(x => x.pass), first: a.rows.map(x => x.firstPass) })),
   prices: { source: SOURCE, models: Object.entries(PRICES).map(([id, p]) => ({ id, name: p.name, inPerM: p.inPerM, outPerM: p.outPerM, note: p.note || null, estimatePerTask: (EST.inTokens * p.inPerM + EST.outTokens * p.outPerM) / 1e6 })), estimate: EST },
   tools: Object.entries(TOOLS).map(([name, t]) => ({ name, description: t.description })),
   pairs, taskIds: r.tasks.map(t => t.id), taskUnits: r.tasks.map(t => t.inputs.area.unit),
-  detail: { [metric.id]: detail(metric), [field.id]: detail(field) },
+  detail: { [metric.id]: detail(metric), [field.id]: detail(field) }, suites, security, mining,
 };
 const file = path.join(__dirname, '..', 'mockups', 'suite', 'build-sample.js');
 fs.writeFileSync(file, '// Generated by harness/export-sample.js: a synthetic trial run by the harness. Do not edit.\nwindow.BUILD_SAMPLE = ' + JSON.stringify(out) + ';\n');

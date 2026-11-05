@@ -14,7 +14,7 @@ function generate(n = 24, seed = 20261105) {
     const modeKm2 = 2 + r() * 10, modeM = 300 + r() * 600, tmin = 150 + r() * 50, tmax = tmin + 30 + r() * 30;
     const a = AREA_FROM_KM2[u.area], t = x => u.temp === 'F' ? x * 9 / 5 + 32 : x, l = x => u.thickness === 'ft' ? x / 0.3048 : x;
     tasks.push({
-      id: 'res-' + String(i + 1).padStart(3, '0'), domain: 'resource', synthetic: true,
+      id: 'res-' + String(i + 1).padStart(3, '0'), pack: 'resource', domain: 'geothermal', title: 'Geothermal resource estimate', synthetic: true,
       statement: 'Estimate the electrical capacity of this prospect over its project life with the volumetric heat-in-place method. Report P90, P50 and P10 in MWe, using the exceedance convention (P90 is the value exceeded with 90 % probability, so P90 < P50 < P10).',
       inputs: {
         area: { kind: 'tri', min: +(0.5 * modeKm2 * a).toFixed(2), mode: +(modeKm2 * a).toFixed(2), max: +(1.8 * modeKm2 * a).toFixed(2), unit: u.area },

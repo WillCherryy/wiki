@@ -31,4 +31,22 @@ function gradeResource(task, answer) {
   const category = pass ? null : spread < 0.05 && refSpread > 0.2 ? 'no-uncertainty' : 'value';
   return { pass, class: 'reference', category, checks };
 }
-module.exports = { validate, gradeResource, TOL };
+
+// Tasks that declare their own answer fields (task.answer.fields: [{ name, unit?, tolerance }]) and a hidden reference ({ name: value }).
+// This is the path for tasks written by customers (see taskspec.js) and for the mining pack.
+function validateNumeric(task, answer) {
+  const e = []; if (!answer || typeof answer !== 'object') return ['answer must be an object'];
+  for (const f of task.answer.fields) { if (typeof answer[f.name] !== 'number' || !isFinite(answer[f.name])) e.push(`${f.name} must be a finite number`); }
+  if (typeof answer.method !== 'string' || answer.method.length < 10) e.push('method must say how the answer was reached');
+  return e;
+}
+function gradeNumeric(task, answer) {
+  const bad = validateNumeric(task, answer); if (bad.length) return { pass: false, class: 'reference', category: 'format', checks: bad.map(m => ({ name: 'valid', ok: false, detail: m })) };
+  const checks = task.answer.fields.map(f => { const ref = task.reference[f.name], tol = f.tolerance, err = ref === 0 ? Math.abs(answer[f.name]) : Math.abs(answer[f.name] - ref) / Math.abs(ref);
+    return { name: `${f.name} within ${(tol * 100).toFixed(2).replace(/\.?0+$/, '')} % of reference`, ok: err <= tol, detail: `${answer[f.name]} vs ${ref} (${(err * 100).toFixed(2)} %)` }; });
+  const pass = checks.every(c => c.ok); return { pass, class: 'reference', category: pass ? null : 'value', checks };
+}
+// Dispatch on the task's pack. Resource-estimate tasks keep their own rules (exceedance order, interval, units).
+const validateTask = (task, answer) => task.pack === 'resource' ? validate(answer) : validateNumeric(task, answer);
+const gradeTask = (task, answer) => task.pack === 'resource' ? gradeResource(task, answer) : gradeNumeric(task, answer);
+module.exports = { validate, gradeResource, validateNumeric, gradeNumeric, validateTask, gradeTask, TOL };

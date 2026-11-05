@@ -14,6 +14,9 @@ fs.cpSync(path.join(root, 'maps'), path.join(out, 'maps'), { recursive: true });
 fs.cpSync(path.join(root, 'treedata'), path.join(out, 'treedata'), { recursive: true });   // Scorcher Tree's built dataset (tools/build-tree.js)
 fs.cpSync(path.join(root, 'stars'), path.join(out, 'stars'), { recursive: true });   // the real star catalogue (tools/build-stars.js)   // planet surface maps (maps/CREDITS.md)
 if (fs.existsSync(path.join(root, 'og'))) fs.cpSync(path.join(root, 'og'), path.join(out, 'og'), { recursive: true });   // per-object link previews (tools/make-og.js)
+// Scorcher Build concept pages at /build/ and /build/console (tools/build-pages.js)
+{ const BP = require('./build-pages'), dir = path.join(out, 'build'); fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, 'index.html'), BP.indexHtml()); fs.writeFileSync(path.join(dir, 'console.html'), BP.consoleHtml());
+  for (const a of BP.ASSETS) { fs.mkdirSync(path.dirname(path.join(dir, a)), { recursive: true }); fs.copyFileSync(path.join(BP.SRC, a), path.join(dir, a)); } }
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 // a stamp so you can check what is live: open /build.txt on the site (also shown in Settings)
 let commit = 'unknown'; try { commit = require('child_process').execSync('git rev-parse --short HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch {}

@@ -7,7 +7,8 @@ const { generate, reference } = require('./tasks');
 const { Trial, call } = require('./gateway');
 const { pairedDiff } = require('./stats');
 const { scoreRow, summarise } = require('./score');
-const { AGENTS } = require('./agents');
+const { AGENTS, SUITE_AGENTS } = require('./agents');
+const { SUITES } = require('./packs');
 
 function runArm(name, agent, tasks) {
   const rows = tasks.map(task => {
@@ -24,10 +25,19 @@ function runTrial({ n = 24, seed = 20261105 } = {}) {
   return { synthetic: true, generated: new Date().toISOString().slice(0, 10), nTasks: tasks.length, seed, class: 'reference', tasks: tasks.map(t => ({ id: t.id, inputs: t.inputs, reference: reference(t) })), arms, pairs };
 }
 
+// the mining and security suites, with their own fixture agents
+function runSuite(name, { n, seed = 20261105 } = {}) {
+  if (name === 'resource') return runTrial({ n: n || 24, seed });
+  const make = SUITES[name]; if (!make) throw new Error('unknown suite: ' + name);
+  const tasks = make(n || (name === 'mining' ? 12 : 6), seed), arms = Object.entries(SUITE_AGENTS).map(([nm, fn]) => runArm(nm, fn, tasks)), base = arms[0];
+  const pairs = arms.slice(1).map(a => ({ a: base.name, b: a.name, ...pairedDiff(base.rows.map(r => r.pass), a.rows.map(r => r.pass)) }));
+  return { suite: name, synthetic: true, generated: new Date().toISOString().slice(0, 10), nTasks: tasks.length, seed, tasks: tasks.map(t => ({ id: t.id, title: t.title, reference: t.reference, rows: t.rows, dom: t.dom, cut: t.cut })), arms, pairs };
+}
+
 if (require.main === module) {
   const r = runTrial(), pc = x => (x * 100).toFixed(0) + ' %';
   console.log(`Synthetic trial: ${r.nTasks} resource-estimate tasks, reference-graded\n`);
   for (const a of r.arms) console.log(`${a.name.padEnd(26)} pass ${pc(a.pass.rate)} (${pc(a.pass.lo)} to ${pc(a.pass.hi)})   first attempt ${pc(a.firstPass.rate)}   corrected by gate ${a.corrected}   failures ${JSON.stringify(a.failures)}`);
   for (const p of r.pairs) console.log(`${p.a} minus ${p.b}: ${(p.diff * 100).toFixed(0)} points (${(p.lo * 100).toFixed(0)} to ${(p.hi * 100).toFixed(0)}), ${p.verdict}`);
 }
-module.exports = { runTrial };
+module.exports = { runTrial, runSuite };

@@ -9,6 +9,7 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { TOOLS, Trial, call } = require('./gateway');
 const { generate } = require('./tasks');
+const { miningTasks, securityTasks } = require('./packs');
 
 function buildServer(trial) {
   const server = new McpServer({ name: 'scorcher-build', version: '0.1.0' });
@@ -43,7 +44,7 @@ function createHttp() {
 }
 
 if (require.main === module) {
-  const id = process.argv[process.argv.indexOf('--task') + 1] || 'res-001', task = generate().find(t => t.id === id);
+  const id = process.argv[process.argv.indexOf('--task') + 1] || 'res-001', task = [...generate(), ...miningTasks(), ...securityTasks()].find(t => t.id === id);
   if (!task) { console.error('unknown task: ' + id); process.exit(1); }
   const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js'), trial = new Trial('stdio-' + id, task);
   buildServer(trial).connect(new StdioServerTransport()).then(() => {

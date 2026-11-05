@@ -1,0 +1,1 @@
+Block model export. Units: tonnes, g/t Au. This is a synthetic example.
