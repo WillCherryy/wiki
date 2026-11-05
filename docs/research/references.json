@@ -1,0 +1,679 @@
+{
+ "retrieved": "2026-11-05",
+ "method": "Crossref bibliographic query (best title match, accepted at similarity >= 0.6) and DataCite lookup by arXiv DOI",
+ "refs": [
+  {
+   "key": "A1",
+   "supplied": {
+    "title": "A systematic review of transformers and large language models in the energy sector: towards agentic digital twins",
+    "venue": "Applied Energy",
+    "year": 2025
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.apenergy.2025.126670",
+    "title": "A systematic review of transformers and large language models in the energy sector: towards agentic digital twins",
+    "authors": [
+     "Gabriel Antonesi",
+     "Tudor Cioara",
+     "Ionut Anghel",
+     "Vasilis Michalakopoulos",
+     "Elissaios Sarmas",
+     "Liana Toderean"
+    ],
+    "year": 2025,
+    "container": "Applied Energy",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "A2",
+   "supplied": {
+    "title": "From systematic evidence to agentic architectures: A systematic review and framework for large language model-driven smart grids",
+    "venue": "Energy and AI",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.egyai.2026.100853",
+    "title": "From systematic evidence to agentic architectures: A systematic review and framework for large language model–driven smart grids",
+    "authors": [
+     "Zahra Rezaei",
+     "Mohammad Amin Amini",
+     "Yaser Mike Banad"
+    ],
+    "year": 2026,
+    "container": "Energy and AI",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "A3",
+   "supplied": {
+    "title": "A trustworthy intent-driven LLM-agent workflow with state verification for power system simulation",
+    "venue": "Applied Energy",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.2139/ssrn.7074124",
+    "title": "A Trustworthy Intent-Driven LLM-Agent Workflow with State Verification for Power System Simulation",
+    "authors": [
+     "Shanxiang Mao",
+     "Muyang Liu",
+     "Junru Chen",
+     "Dongliang Nan",
+     "Jian Ma"
+    ],
+    "year": 2026,
+    "container": "Elsevier BV",
+    "type": "posted-content",
+    "abstract": "Modern power system simulation workflows, including model setup, parameter configuration, scenario construction, solver invocation, and result verification, remain heavily manual and procedurally intensive. Large language models (LLMs) offer a promising way to transform high-level engineering intents into structured and reviewable simulation workflows. Yet, as probabilistic models, LLMs may generate outputs that are incomplete, incorrectly ordered, or inconsistent with the active simulation state, posing risks to workflow reliability. This paper proposes a trustworthy intent-driven LLM-agent workflow with state verification for power system simulation. The proposed framework separates LLM-based workflow planning from solver-side execution. The LLM converts heterogeneous engineering instructions into structured and reviewable candidate workflows, while a state-verification mechanism checks workflow admissibility, state-dependency constraints, and execution evidence before solver-side results are accepted. Instead of evaluating only software executability, the proposed evaluation distinguishes planning validity from verified workflow completion, where a workflow is successful only when the executed workflow satisfies the required state conditions of the intended simulation task. A controlled benchmark on the New England 39-bus system evaluates robustness under different task-complexity levels and instruction-ambiguity variants, with ablation studies quantifying the roles of schema guidance, orchestration, and LLM backbone selection. A real-world 201-bus power system further assesses practical scalability in model preparation and N-1 contingency testing. Results show that the proposed workflow reduces low-level manual interaction, achieving approximately a 19-fold improvement in model-preparation workflow efficiency and a 4.5-fold speedup in N-1 contingency-test workflow execution.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "A4",
+   "supplied": {
+    "title": "Large Language Models Meet Energy Systems: Opportunities, Challenges, and Future Perspectives",
+    "venue": "Applied Energy",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.apenergy.2025.127076",
+    "title": "Large Language Models Meet Energy Systems: Opportunities, Challenges, and Future Perspectives",
+    "authors": [
+     "Chaobo Zhang",
+     "Jian Zhang",
+     "Jie Lu",
+     "Yang Zhao"
+    ],
+    "year": 2026,
+    "container": "Applied Energy",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "A5",
+   "supplied": {
+    "title": "Large language models in renewable energy systems: A comprehensive review of forecasting, control, policy, and fault diagnosis",
+    "venue": "Next Energy",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.nxener.2026.100586",
+    "title": "Large language models in renewable energy systems: A comprehensive review of forecasting, control, policy, and fault diagnosis",
+    "authors": [
+     "Napa Chandana",
+     "Selika Narasimha Rao",
+     "Madavena Kumaraswamy",
+     "Archana Pallakonda",
+     "Rayappa David Amar Raj"
+    ],
+    "year": 2026,
+    "container": "Next Energy",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "B6",
+   "supplied": {
+    "title": "GeoAnalystBench: A GeoAI Benchmark for Assessing Large Language Models for Spatial Analysis Workflow and Code Generation",
+    "venue": "Transactions in GIS",
+    "year": 2025
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1111/tgis.70135",
+    "title": "<scp>GeoAnalystBench</scp>\n                    : A\n                    <scp>GeoAI</scp>\n                    Benchmark for Assessing Large Language Models for Spatial Analysis Workflow and Code Generation",
+    "authors": [
+     "Qianheng Zhang",
+     "Song Gao",
+     "Chen Wei",
+     "Yibo Zhao",
+     "Ying Nie",
+     "Ziru Chen",
+     "Shijie Chen",
+     "Yu Su",
+     "Huan Sun"
+    ],
+    "year": 2025,
+    "container": "Transactions in GIS",
+    "type": "journal-article",
+    "abstract": "Recent advances in large language models (LLMs) have fueled growing interest in automating geospatial analysis and GIS workflows, yet their actual capabilities remain uncertain. In this work, we call for rigorous evaluation of LLMs on well‐defined geoprocessing tasks before making claims about full GIS automation. To this end, we present GeoAnalystBench, a benchmark of 50 Python‐based tasks derived from real‐world geospatial problems and validated by GIS experts. Each task is paired with a minimum deliverable product, and evaluation covers workflow validity, structural alignment, semantic similarity, and code quality (CodeBLEU). Using this benchmark, we assess both proprietary and open‐source models. Results reveal a clear gap: proprietary models such as ChatGPT‐4o‐mini achieve high validity (95%) and stronger code alignment (CodeBLEU 0.39), while smaller open‐source models like DeepSeek‐R1‐7B often generate incomplete or inconsistent workflows (48.5% validity, 0.272 CodeBLEU). Tasks requiring deeper spatial reasoning, such as spatial relationship detection or optimal site selection, remain the most challenging across all models. These findings demonstrate both the promise and limitations of current LLMs in GIS automation and provide a reproducible framework to advance GeoAI research with human‐in‐the‐loop support.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "B7",
+   "supplied": {
+    "title": "An autonomous GIS agent framework for geospatial data retrieval",
+    "venue": "International Journal of Digital Earth",
+    "year": 2025
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1080/17538947.2025.2458688",
+    "title": "An autonomous GIS agent framework for geospatial data retrieval",
+    "authors": [
+     "Huan Ning",
+     "Zhenlong Li",
+     "Temitope Akinboyewa",
+     "M. Naser Lessani"
+    ],
+    "year": 2025,
+    "container": "International Journal of Digital Earth",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1,
+    "abstractSource": "Semantic Scholar summary: prototype QGIS plugin/Python program; data retrieval from OSM, Census, ESRI imagery, OpenTopography DEM, weather provider, NYTimes COVID data; no sample size stated in the summary"
+   },
+   "note": null
+  },
+  {
+   "key": "B8",
+   "supplied": {
+    "title": "GeoAgentBench: A dynamic execution benchmark for tool-augmented agents in spatial analysis",
+    "venue": "(2026)",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1080/10095020.2026.2736957",
+    "title": "GeoAgentbench: a dynamic execution benchmark for tool-augmented agents in spatial analysis",
+    "authors": [
+     "Bo Yu",
+     "Cheng Yang",
+     "Dongyang Hou",
+     "Chengfu Liu",
+     "Jiayao Liu",
+     "Chi Wang",
+     "Zhiming Zhang",
+     "Haifeng Li",
+     "Wentao Yang"
+    ],
+    "year": 2026,
+    "container": "Geo-spatial Information Science",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "B9",
+   "supplied": {
+    "title": "GeoNatureAgent Benchmark: Benchmarking LLM Agents for Environmental Geospatial Analysis Across Frontier and Open-Weight Foundation Models",
+    "venue": "arXiv",
+    "year": 2026
+   },
+   "found": {
+    "source": "DataCite/arXiv",
+    "doi": "10.48550/arXiv.2610.09112",
+    "title": "GeoNatureAgent (GNA): A Framework and Benchmark for Pre-Production Evaluation of Tool-Using Agents on Geospatial and Environmental Tasks",
+    "authors": [
+     "Gabriel Diaz-Ireland",
+     "Diego Prieto-Herráez",
+     "Mario García Peces",
+     "Javier Velázquez",
+     "Benjamin Zaitchik",
+     "Devika Jain"
+    ],
+    "year": 2026,
+    "container": "arXiv; GeoIndustry 2026 (ACM SIGSPATIAL workshop), per the arXiv comments field",
+    "type": "preprint",
+    "similarity": 1,
+    "abstractSource": "arxiv.org/abs/2610.09112 (103-task benchmark: 93-task main suite in 18 categories plus 10-task expansion; 16-tool MCP server; nine LLMs, three seeds; Claude Sonnet 4 61.7% +/- 0.7%; DeepSeek V3.2 57.9%; 93% of capability at 11.3x lower cost; strict scoring 24-36 points below 85-97% on general GIS benchmarks; partial credit 86-90% for top four)"
+   },
+   "note": "closest Crossref title scored 0.28 (An Explainable AI (XAI) Benchmark for Geospatial Foundation Models): not accepted as a match"
+  },
+  {
+   "key": "C10",
+   "supplied": {
+    "title": "Large Language Model Agents in Dynamic Mine Planning: Challenges, Opportunities, and Future Directions",
+    "venue": "IEEE Access",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1109/access.2026.3714775",
+    "title": "Large Language Model Agents in Dynamic Mine Planning: Challenges, Opportunities, and Future Directions",
+    "authors": [
+     "Ricardo Nunes",
+     "Nathalie Risso",
+     "Moe Momayez"
+    ],
+    "year": 2026,
+    "container": "IEEE Access",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1,
+    "abstractSource": "Semantic Scholar summary: PRISMA synthesis of 33 peer-reviewed studies; states mining LLM-agent implementations are largely conceptual"
+   },
+   "note": null
+  },
+  {
+   "key": "C11",
+   "supplied": {
+    "title": "MINDS: A Modular Multi-Agent Decision-Support Framework for Dynamic Strategic Mine Planning",
+    "venue": "(2026)",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.3390/mining6020026",
+    "title": "MINDS: A Modular Multi-Agent Decision-Support Framework for Dynamic Strategic Mine Planning",
+    "authors": [
+     "Ricardo Nunes",
+     "Nathalie Risso",
+     "Moe Momayez"
+    ],
+    "year": 2026,
+    "container": "Mining",
+    "type": "journal-article",
+    "abstract": "Strategic Mine Planning (SMP) creates the long-term economic baseline for mining operations, yet economic variability necessitates Dynamic Mine Planning (DMP) to rapidly stress-test those financial assumptions. Currently, this capability is hindered by fragmented software ecosystems that require manual data handoffs, slowing iteration and breaking the audit trail between market data and valuation models. While Generative AI affords an opportunity to automate these workflows, its adoption in the mining industry is stalled by concerns over data quality and the risk of uncritical acceptance of automated outputs. Addressing these challenges, this paper describes the Mine Intelligence and Decision Support (MINDS) framework. We present MINDS as a modular reference architecture that uses Large Language Model (LLM) agents to orchestrate the economic evaluation process while maintaining strict engineering oversight. The system integrates a conversational interface with a multi-agent assessment layer that acts as an adversarial review, assessing price assumptions against market intelligence before generating economic valuation scenarios. A proof-of-concept using the Marvin copper benchmark evaluates the framework, demonstrating automated request-to-report orchestration, execution stability with an average debate latency of 10.69 s and a transparent decision audit trail. These findings show that MINDS can systematize economic scenario analysis without sacrificing the governance and verification required for definitive feasibility studies.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "D12",
+   "supplied": {
+    "title": "From Data to Decision-Making: A Review of Large Language Model Applications Across the Full Lifecycle of Geothermal Resource Development",
+    "venue": "Energies",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.3390/en19215052",
+    "title": "From Data to Decision-Making: A Review of Large Language Model Applications Across the Full Lifecycle of Geothermal Resource Development",
+    "authors": [
+     "Xiaoguang Li",
+     "Zewei Shang",
+     "Tianrun Zhao",
+     "Shiji Wang",
+     "Ziwang Yu"
+    ],
+    "year": 2026,
+    "container": "Energies",
+    "type": "journal-article",
+    "abstract": "Geothermal resource development involves heterogeneous geological and engineering records, uncertain reservoir parameters, and decisions constrained by physical processes and safety requirements. This narrative and critical review examines how large language models (LLMs), including retrieval-augmented and tool-assisted systems, could support knowledge-intensive tasks throughout geothermal exploration, development, and operation. It distinguishes direct geothermal evidence from empirical evaluations in adjacent fields and from conceptual proposals; results from petroleum engineering, mineral exploration, and broader energy systems are not treated as proof of geothermal performance. Peer-reviewed studies demonstrate useful capabilities in technical document extraction, domain question answering, knowledge-graph reasoning, and interactions with scientific software, but direct geothermal engineering validation remains limited. For reservoir inversion, drilling-risk warning, and design optimization, quantitative assessment must rely on measured data and validated physical or numerical models, with LLMs acting as auditable interfaces and information-integration tools. The review proposes a task-specific benchmark framework and examines cross-domain transfer, multimodal alignment, knowledge-graph and retrieval collaboration, uncertainty quantification, and LLM–physical-model coupling. These frameworks are literature-informed proposals rather than implemented geothermal systems. Key priorities include independent geothermal test sets, expert-annotated reference answers, calibrated uncertainty, physics-based verification, and transparent reporting of model failure. The resulting synthesis identifies credible current applications and the evidence requirements for reliable future deployment.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "E13",
+   "supplied": {
+    "title": "Large language models empowered agent-based modeling and simulation: a survey and perspectives",
+    "venue": "Humanities and Social Sciences Communications",
+    "year": 2024
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1057/s41599-024-03611-3",
+    "title": "Large language models empowered agent-based modeling and simulation: a survey and perspectives",
+    "authors": [
+     "Chen Gao",
+     "Xiaochong Lan",
+     "Nian Li",
+     "Yuan Yuan",
+     "Jingtao Ding",
+     "Zhilun Zhou",
+     "Fengli Xu",
+     "Yong Li"
+    ],
+    "year": 2024,
+    "container": "Humanities and Social Sciences Communications",
+    "type": "journal-article",
+    "abstract": "Agent-based modeling and simulation have evolved as a powerful tool for modeling complex systems, offering insights into emergent behaviors and interactions among diverse agents. Recently, integrating large language models into agent-based modeling and simulation presents a promising avenue for enhancing simulation capabilities. This paper surveys the landscape of utilizing large language models in agent-based modeling and simulation, discussing their challenges and promising future directions. In this survey, since this is an interdisciplinary field, we first introduce the background of agent-based modeling and simulation and large language model-empowered agents. We then discuss the motivation for applying large language models to agent-based simulation and systematically analyze the challenges in environment perception, human alignment, action generation, and evaluation. Most importantly, we provide a comprehensive overview of the recent works of large language model-empowered agent-based modeling and simulation in multiple scenarios, which can be divided into four domains: cyber, physical, social, and hybrid, covering simulation of both real-world and virtual environments, and how these works address the above challenges. Finally, since this area is new and quickly evolving, we discuss the open problems and promising future directions. We summarize the representative papers along with their code repositories in https://github.com/tsinghua-fib-lab/LLM-Agent-Based-Modeling-and-Simulation .",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F1",
+   "supplied": {
+    "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+    "venue": "ICLR",
+    "year": 2023
+   },
+   "found": {
+    "source": "DataCite",
+    "doi": "10.48550/arxiv.2210.03629",
+    "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+    "authors": [
+     "Yao, Shunyu",
+     "Zhao, Jeffrey",
+     "Yu, Dian",
+     "Du, Nan",
+     "Shafran, Izhak",
+     "Narasimhan, Karthik",
+     "Cao, Yuan"
+    ],
+    "year": 2022,
+    "container": "arXiv",
+    "type": "Preprint",
+    "abstract": "While large language models (LLMs) have demonstrated impressive capabilities across tasks in language understanding and interactive decision making, their abilities for reasoning (e.g. chain-of-thought prompting) and acting (e.g. action plan generation) have primarily been studied as separate topics. In this paper, we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two: reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with external sources, such as knowledge bases or environments, to gather additional information. We apply our approach, named ReAct, to a diverse set of language and decision making tasks and demonstrate its effectiveness over state-of-the-art baselines, as well as improved human interpretability and trustworthiness over methods without reasoning or acting components. Concretely, on question answering (HotpotQA) and fact verification (Fever), ReAct overcomes issues of hallucination and error propagation prevalent in chain-of-thought reasoning by interacting with a simple Wikipedia API, and generates human-like task-solving trajectories that are more interpretable than baselines without reasoning traces. On two interactive decision making benchmarks (ALFWorld and WebShop), ReAct outperforms imitation and reinforcement learning methods by an absolute success rate of 34% and 10% respectively, while being prompted with only one or two in-context examples. Project site with code: https://react-lm.github.io",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F2",
+   "supplied": {
+    "title": "AgentBench: Evaluating LLMs as Agents",
+    "venue": "ICLR",
+    "year": 2024
+   },
+   "found": {
+    "source": "DataCite",
+    "doi": "10.48550/arxiv.2308.03688",
+    "title": "AgentBench: Evaluating LLMs as Agents",
+    "authors": [
+     "Liu, Xiao",
+     "Yu, Hao",
+     "Zhang, Hanchen",
+     "Xu, Yifan",
+     "Lei, Xuanyu",
+     "Lai, Hanyu",
+     "Gu, Yu",
+     "Ding, Hangliang",
+     "Men, Kaiwen",
+     "Yang, Kejuan",
+     "Zhang, Shudan",
+     "Deng, Xiang",
+     "Zeng, Aohan",
+     "Du, Zhengxiao",
+     "Zhang, Chenhui",
+     "Shen, Sheng",
+     "Zhang, Tianjun",
+     "Su, Yu",
+     "Sun, Huan",
+     "Huang, Minlie",
+     "Dong, Yuxiao",
+     "Tang, Jie"
+    ],
+    "year": 2023,
+    "container": "arXiv",
+    "type": "Preprint",
+    "abstract": "The potential of Large Language Model (LLM) as agents has been widely acknowledged recently. Thus, there is an urgent need to quantitatively \\textit{evaluate LLMs as agents} on challenging tasks in interactive environments. We present AgentBench, a multi-dimensional benchmark that consists of 8 distinct environments to assess LLM-as-Agent's reasoning and decision-making abilities. Our extensive test over \\num API-based and open-sourced (OSS) LLMs shows that, while top commercial LLMs present a strong ability of acting as agents in complex environments, there is a significant disparity in performance between them and many OSS competitors that are no larger than 70B. We identify the typical reasons of failures in environments and LLMs, showing that poor long-term reasoning, decision-making, and instruction following abilities are the main obstacles for developing usable LLM agents. Improving instruction following and training on high quality multi-round alignment data could improve agent performance. And different from existing assumptions, training on code present ambivalent impacts on different agent tasks. Datasets, environments, and an integrated evaluation package for AgentBench are released at https://github.com/THUDM/AgentBench.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F3",
+   "supplied": {
+    "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+    "venue": "ICLR",
+    "year": 2024
+   },
+   "found": {
+    "source": "DataCite",
+    "doi": "10.48550/arxiv.2310.06770",
+    "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+    "authors": [
+     "Jimenez, Carlos E.",
+     "Yang, John",
+     "Wettig, Alexander",
+     "Yao, Shunyu",
+     "Pei, Kexin",
+     "Press, Ofir",
+     "Narasimhan, Karthik"
+    ],
+    "year": 2023,
+    "container": "arXiv",
+    "type": "Preprint",
+    "abstract": "Language models have outpaced our ability to evaluate them effectively, but for their future development it is essential to study the frontier of their capabilities. We find real-world software engineering to be a rich, sustainable, and challenging testbed for evaluating the next generation of language models. To this end, we introduce SWE-bench, an evaluation framework consisting of $2,294$ software engineering problems drawn from real GitHub issues and corresponding pull requests across $12$ popular Python repositories. Given a codebase along with a description of an issue to be resolved, a language model is tasked with editing the codebase to address the issue. Resolving issues in SWE-bench frequently requires understanding and coordinating changes across multiple functions, classes, and even files simultaneously, calling for models to interact with execution environments, process extremely long contexts and perform complex reasoning that goes far beyond traditional code generation tasks. Our evaluations show that both state-of-the-art proprietary models and our fine-tuned model SWE-Llama can resolve only the simplest issues. The best-performing model, Claude 2, is able to solve a mere $1.96$% of the issues. Advances on SWE-bench represent steps towards LMs that are more practical, intelligent, and autonomous.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F4",
+   "supplied": {
+    "title": "MLAgentBench: Evaluating Language Agents on Machine Learning Experimentation",
+    "venue": "ICML",
+    "year": 2024
+   },
+   "found": {
+    "source": "DataCite",
+    "doi": "10.48550/arxiv.2310.03302",
+    "title": "MLAgentBench: Evaluating Language Agents on Machine Learning Experimentation",
+    "authors": [
+     "Huang, Qian",
+     "Vora, Jian",
+     "Liang, Percy",
+     "Leskovec, Jure"
+    ],
+    "year": 2023,
+    "container": "arXiv",
+    "type": "Preprint",
+    "abstract": "A central aspect of machine learning research is experimentation, the process of designing and running experiments, analyzing the results, and iterating towards some positive outcome (e.g., improving accuracy). Could agents driven by powerful language models perform machine learning experimentation effectively? To answer this question, we introduce MLAgentBench, a suite of 13 tasks ranging from improving model performance on CIFAR-10 to recent research problems like BabyLM. For each task, an agent can perform actions like reading/writing files, executing code, and inspecting outputs. We then construct an agent that can perform ML experimentation based on ReAct framework. We benchmark agents based on Claude v1.0, Claude v2.1, Claude v3 Opus, GPT-4, GPT-4-turbo, Gemini-Pro, and Mixtral and find that a Claude v3 Opus agent is the best in terms of success rate. It can build compelling ML models over many tasks in MLAgentBench with 37.5% average success rate. Our agents also display highly interpretable plans and actions. However, the success rates vary considerably; they span from 100% on well-established older datasets to as low as 0% on recent Kaggle challenges created potentially after the underlying LM was trained. Finally, we identify several key challenges for LM-based agents such as long-term planning and reducing hallucination. Our code is released at https://github.com/snap-stanford/MLAgentBench.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F5",
+   "supplied": {
+    "title": "Short-term hydropower regulation through coupled hydrological and energy models: A systematic review",
+    "venue": "(2026)",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.rser.2026.116940",
+    "title": "Short-term hydropower regulation through coupled hydrological and energy models: A systematic review",
+    "authors": [
+     "Sajjad M. Vatanchi",
+     "Juha Kiviluoma",
+     "Björn Klöve",
+     "Epari Ritesh Patro"
+    ],
+    "year": 2026,
+    "container": "Renewable and Sustainable Energy Reviews",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "F6",
+   "supplied": {
+    "title": "Random environment simulation-based multi-stage reinforcement learning for short-term scheduling of cascade hydropower stations",
+    "venue": "(2026)",
+    "year": 2026
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1016/j.energy.2026.140208",
+    "title": "Random environment simulation-based multi-stage reinforcement learning for short-term scheduling of cascade hydropower stations",
+    "authors": [
+     "Xin Wan",
+     "Xiaohui Yuan",
+     "Zhiqiang Jiang"
+    ],
+    "year": 2026,
+    "container": "Energy",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "X1",
+   "supplied": {
+    "title": "pvlib python: a python package for modeling solar energy systems",
+    "venue": "JOSS",
+    "year": 2018
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.21105/joss.00884",
+    "title": "pvlib python: a python package for modeling solar energy systems",
+    "authors": [
+     "William F. Holmgren",
+     "Clifford W. Hansen",
+     "Mark A. Mikofski"
+    ],
+    "year": 2018,
+    "container": "Journal of Open Source Software",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "X2",
+   "supplied": {
+    "title": "pandapower: an open source python tool for convenient modeling, analysis and optimization of electric power systems",
+    "venue": "IEEE Trans. Power Systems",
+    "year": 2018
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.1109/tpwrs.2018.2829021",
+    "title": "Pandapower—An Open-Source Python Tool for Convenient Modeling, Analysis, and Optimization of Electric Power Systems",
+    "authors": [
+     "Leon Thurner",
+     "Alexander Scheidler",
+     "Florian Schafer",
+     "Jan-Hendrik Menke",
+     "Julian Dollichon",
+     "Friederike Meier",
+     "Steffen Meinecke",
+     "Martin Braun"
+    ],
+    "year": 2018,
+    "container": "IEEE Transactions on Power Systems",
+    "type": "journal-article",
+    "abstract": null,
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "X3",
+   "supplied": {
+    "title": "Not what you have signed up for: Compromising real-world LLM-integrated applications with indirect prompt injection",
+    "venue": "AISec",
+    "year": 2023
+   },
+   "found": {
+    "source": "DataCite",
+    "doi": "10.48550/arxiv.2302.12173",
+    "title": "Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection",
+    "authors": [
+     "Greshake, Kai",
+     "Abdelnabi, Sahar",
+     "Mishra, Shailesh",
+     "Endres, Christoph",
+     "Holz, Thorsten",
+     "Fritz, Mario"
+    ],
+    "year": 2023,
+    "container": "arXiv",
+    "type": "Preprint",
+    "abstract": "Large Language Models (LLMs) are increasingly being integrated into various applications. The functionalities of recent LLMs can be flexibly modulated via natural language prompts. This renders them susceptible to targeted adversarial prompting, e.g., Prompt Injection (PI) attacks enable attackers to override original instructions and employed controls. So far, it was assumed that the user is directly prompting the LLM. But, what if it is not the user prompting? We argue that LLM-Integrated Applications blur the line between data and instructions. We reveal new attack vectors, using Indirect Prompt Injection, that enable adversaries to remotely (without a direct interface) exploit LLM-integrated applications by strategically injecting prompts into data likely to be retrieved. We derive a comprehensive taxonomy from a computer security perspective to systematically investigate impacts and vulnerabilities, including data theft, worming, information ecosystem contamination, and other novel security risks. We demonstrate our attacks' practical viability against both real-world systems, such as Bing's GPT-4 powered Chat and code-completion engines, and synthetic applications built on GPT-4. We show how processing retrieved prompts can act as arbitrary code execution, manipulate the application's functionality, and control how and if other APIs are called. Despite the increasing integration and reliance on LLMs, effective mitigations of these emerging threats are currently lacking. By raising awareness of these vulnerabilities and providing key insights into their implications, we aim to promote the safe and responsible deployment of these powerful models and the development of robust defenses that protect users and systems from potential attacks.",
+    "similarity": 0.94
+   },
+   "note": null
+  },
+  {
+   "key": "X4",
+   "supplied": {
+    "title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+    "venue": "NIST",
+    "year": 2023
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.6028/nist.ai.100-1",
+    "title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+    "authors": [
+     "Elham Tabassi"
+    ],
+    "year": 2023,
+    "container": "National Institute of Standards and Technology (U.S.)",
+    "type": "report",
+    "abstract": "As directed by the National Artificial Intelligence Initiative Act of 2020 (P.L. 116-283), the goal of the AI RMF is to offer a resource to the organizations designing, developing, deploying, or using AI systems to help manage the many risks of AI and promote trustworthy and responsible development and use of AI systems. The Framework is intended to be voluntary, rights-preserving, non-sector specific, and use-case agnostic, providing flexibility to organizations of all sizes and in all sectors and throughout society to implement the approaches in the Framework. The AI RMF is intended to be practical, to adapt to the AI landscape as AI technologies continue to develop, and to be operationalized by organizations in varying degrees and capacities so society can benefit from AI while also being protected from its potential harms.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "X5",
+   "supplied": {
+    "title": "Guide to Operational Technology (OT) Security",
+    "venue": "NIST SP 800-82 Rev. 3",
+    "year": 2023
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.6028/nist.sp.800-82r3",
+    "title": "Guide to Operational Technology (OT) security",
+    "authors": [
+     "Keith Stouffer",
+     "Michael Pease",
+     "CheeYee Tang",
+     "Timothy Zimmerman",
+     "Victoria Pillitteri",
+     "Suzanne Lightman",
+     "Adam Hahn",
+     "Stephanie Saravia",
+     "Aslam Sherule",
+     "Michael Thompson"
+    ],
+    "year": 2023,
+    "container": "National Institute of Standards and Technology (U.S.)",
+    "type": "report",
+    "abstract": "This document provides guidance on how to secure operational technology (OT) while addressing their unique performance, reliability, and safety requirements. OT encompasses a broad range of programmable systems and devices that interact with the physical environment (or manage devices that interact with the physical environment). These systems and devices detect or cause a direct change through the monitoring and/or control of devices, processes, and events. Examples include industrial control systems, building automation systems, transportation systems, physical access control systems, physical environment monitoring systems, and physical environment measurement systems. The document provides an overview of OT and typical system topologies, identifies common threats and vulnerabilities to these systems, and provides recommended security countermeasures to mitigate the associated risks.",
+    "similarity": 1
+   },
+   "note": null
+  },
+  {
+   "key": "X6",
+   "supplied": {
+    "title": "Artificial Intelligence Risk Management Framework: Generative Artificial Intelligence Profile",
+    "venue": "NIST",
+    "year": 2024
+   },
+   "found": {
+    "source": "Crossref",
+    "doi": "10.6028/nist.ai.600-1",
+    "title": "Artificial intelligence risk management framework :",
+    "authors": [
+     "National Institute of Standards and Technology (US)"
+    ],
+    "year": 2024,
+    "container": "National Institute of Standards and Technology (U.S.)",
+    "type": "report",
+    "abstract": "This document is a cross-sectoral profile of and companion resource for the AI Risk Management Framework (AI RMF 1.0) for Generative AI, 1 pursuant to President Biden’s Executive Order (EO) 14110 on Safe, Secure, and Trustworthy Artificial Intelligence.2 The AI RMF was released in January 2023, and is intended for voluntary use and to improve the ability of organizations to incorporate trustworthiness considerations into the design, development, use, and evaluation of AI products, services, and systems.",
+    "similarity": 0.71
+   },
+   "note": null
+  }
+ ]
+}
