@@ -65,7 +65,26 @@ label.fl { display: block; font-size: 11.5px; color: var(--ink-3); margin-bottom
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .ck { display: block; padding: 2px 0; font-size: 12.5px; } .ck input { margin-right: 6px; } .x { border: 0; background: none; font-size: 16px; color: var(--ink-3); } .x:hover { color: var(--red); }
 .drop { padding: 16px; border: 1.5px dashed var(--ink-3); text-align: center; font-size: 12.5px; margin-bottom: 6px; } .drop.over { border-color: var(--blue); background: var(--blue-2); } .lk { color: var(--blue); text-decoration: underline; cursor: pointer; }
 .heat { display: grid; grid-template-columns: minmax(70px, 1.1fr) repeat(12, minmax(0, 1fr)); gap: 2px; font-size: 11px; align-items: stretch; } .heat .hh { font-size: 9.5px; letter-spacing: -.01em; color: var(--ink-3); text-align: center; padding: 2px 0; } .heat .hl { font-size: 11.5px; padding: 4px 4px 4px 0; align-self: center; } .heat .c { text-align: center; padding: 5px 0; font: 400 11px var(--mono); border: 1px solid var(--rule-2); }
-.sel.sm button { padding: 2px 7px; font-size: 11.5px; } .lg { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; color: var(--ink-2); margin-top: 4px; } .lg i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--rule); }
+.sel.sm button { padding: 2px 7px; font-size: 11.5px; }
+.ivb { position: relative; display: block; height: 10px; background: var(--rule-2); }
+.ivb i { position: absolute; top: 2px; height: 6px; background: rgba(29,58,168,.3); }
+.ivb b { position: absolute; top: 0; width: 2px; height: 10px; margin-left: -1px; }
+.scx { overflow-x: auto; }
+table.rn { min-width: 760px; }
+table.rn tr.on .ivb { background: rgba(255,255,255,.18); } table.rn tr.on .ivb i { background: rgba(201,210,255,.55); } table.rn tr.on .ivb b { background: var(--signal) !important; }
+table.rn tr[data-i] { cursor: pointer; }
+table.rn tr[data-i]:not(.on):hover td { background: var(--rule-2); }
+table.rn tr.on td { background: var(--ink); color: var(--ground); }
+table.rn tr.on .tag.red { border-color: #ff8b9b; color: #ff8b9b; }
+table.rn tr[data-i]:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.tk { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 4px; }
+.tk button { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; padding: 4px 6px; border: 1px solid var(--ink); background: var(--panel); font: 400 11px var(--mono); text-align: left; }
+.tk button small { color: var(--ink-3); font-size: 10px; }
+.tk button.ok { background: var(--blue); border-color: var(--blue); color: #fff; }
+.tk button.ok small { color: #c9d2ff; }
+.tk button.bad { background: var(--red); border-color: var(--red); color: #fff; }
+.tk button.bad small { color: #ffd0d7; }
+.tk button[aria-pressed=true] { outline: 2px solid var(--signal, #e4ff3a); outline-offset: 1px; box-shadow: 0 0 0 3px var(--ink); } .lg { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; color: var(--ink-2); margin-top: 4px; } .lg i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--rule); }
 @media (max-width: 1000px) {
   #shell { height: auto !important; zoom: 1 !important; } .app { grid-template-columns: minmax(0, 1fr); } .rail { display: flex; overflow-x: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--rule); } .rail h2 { display: none; } .rail button { flex: none; width: auto; border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; padding: 11px 12px; } .rail button small { display: none; } .rail button[aria-selected=true] { border-bottom-color: var(--blue); }
   .dash { display: flex; flex-direction: column; } .pn { min-height: 240px; } .pb[data-draw] { min-height: 230px; } .ks { flex-wrap: wrap; } .k { flex: 1 1 45%; border-bottom: 1px solid var(--rule-2); } .bar .t { display: none; } .about p { right: auto; left: 0; }
@@ -89,6 +108,7 @@ label.fl { display: block; font-size: 11.5px; color: var(--ink-3); margin-bottom
     <button role="tab" data-v="docs" aria-selected="false">Documents<small>ref</small></button>
     <button role="tab" data-v="mining" aria-selected="false">Mining: grade, tonnage<small>ref</small></button>
     <button role="tab" data-v="gisbench" aria-selected="false">GIS benchmark<small>phase 1</small></button>
+    <button role="tab" data-v="runs" aria-selected="false">Agent runs<small>models</small></button>
     <h2>Set up</h2>
     <button role="tab" data-v="newtask" aria-selected="false">New task</button>
     <button role="tab" data-v="connect" aria-selected="false">Connect an agent</button>
@@ -96,7 +116,7 @@ label.fl { display: block; font-size: 11.5px; color: var(--ink-3); margin-bottom
     <button role="tab" data-v="security" aria-selected="false">Security</button>
   </nav>
   <main>
-    <section class="view on" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
+    <section class="view on" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-runs"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
   </main>
 </div>
 </div>
@@ -441,6 +461,50 @@ DRAW.gbmap = (el, W, H) => { const ex = GB.examples[gbEx], a = ex.arms[gbArm], n
     if (gbMode === 'key' && kk) c.fillStyle = 'rgba(29,58,168,.5)'; else if (gbMode === 'agent' && aa) c.fillStyle = 'rgba(29,58,168,.5)'; else if (gbMode === 'diff' && (kk || aa)) c.fillStyle = kk && aa ? 'rgba(29,58,168,.4)' : aa ? '#b8142f' : '#e4ff3a'; else continue; c.fillRect(x * k, y * k, k + .5, k + .5); }
   c.strokeStyle = INK; c.lineWidth = 1.2 * dpr; ex.protected.forEach(p => { c.beginPath(); p.ring.forEach(([x, y], j) => j ? c.lineTo(x * k, y * k) : c.moveTo(x * k, y * k)); c.closePath(); c.stroke(); c.fillStyle = INK; c.font = `600 ${10 * dpr}px Mona Sans, sans-serif`; c.fillText(p.designation, p.ring[0][0] * k + 3 * dpr, p.ring[0][1] * k + 11 * dpr); });
   c.setLineDash([6 * dpr, 4 * dpr]); c.beginPath(); ex.grid.forEach(([x, y], j) => j ? c.lineTo(x * k, y * k) : c.moveTo(x * k, y * k)); c.stroke(); c.setLineDash([]); };
+
+/* ================================================================ Agent runs: each model run on gisbench, task by task (real output of gisbench/model_runner) */
+let rnRun = 0, rnTask = 0, rnMode = 'diff';
+const rnRuns = () => (GB && GB.runs) || [], rnName = r => `${r.model} · ${r.prompt}`, rnTest = r => /^test-/.test(r.model);
+const rnSet = r => r.suite === 'injection' ? 'Injection suite' : (r.rows[0] && /-00[5-9]$/.test(r.rows[0].task) ? 'Held-out seeds 5–9' : 'Development seeds 0–4');
+const rnBar = (w, col) => `<span class="ivb" title="${pc(w.lo)} to ${pc(w.hi)}"><i style="left:${w.lo * 100}%;width:${Math.max(.6, (w.hi - w.lo) * 100)}%"></i><b style="left:${w.p * 100}%;background:${col || INK}"></b></span>`;
+const unrle = (s, n) => { const b = u8(s), o = new Uint8Array(n * n); let k = 0; for (let i = 0; i < b.length; i += 2) { o.fill(b[i], k, k + b[i + 1]); k += b[i + 1]; } return o; };
+const pv = p => p < .001 ? '< 0.001' : '= ' + f(p, 3);
+const rnArgs = a => Object.entries(a || {}).map(([k, v]) => `${k}=${typeof v === 'string' ? v : JSON.stringify(v)}`).join('  ');
+views.runs = {
+  html() { const R = rnRuns();
+    if (!R.length) return vh('Agent runs', 'Outcome-graded', [['No runs yet']], 'Each language-model run on the GIS benchmark, task by task.') + `<div class="verdict">No model run on benchmark version ${GB ? GB.bench_version : 2} has been exported yet.<small>Run python3 -m gisbench.model_runner, then python3 -m gisbench.export_dashboard. Version 1 runs are kept in gisbench/results/v1 and are not shown: the brief has changed since.</small></div>`;
+    rnRun = Math.min(rnRun, R.length - 1); const r = R[rnRun]; rnTask = Math.min(rnTask, r.rows.length - 1); const t = r.rows[rnTask], wd = GB.worlds[t.task];
+    const d0 = r.vs.d0, unsafe = r.rows.filter(x => !x.safe).length, spent = R.reduce((a, x) => a + x.usd, 0), P = d0.paired;
+    const lead = `${esc(rnName(r))} passed <b>${r.pass.k} of ${r.pass.n}</b> (${pc(r.pass.lo)} to ${pc(r.pass.hi)}); the defaults pipeline passed <b>${d0.pass.k}</b> of the same tasks. ${P.only_b} task${P.only_b === 1 ? '' : 's'} only the agent passed, ${P.only_a} only the pipeline; exact McNemar p ${pv(P.mcnemar_p)}.`;
+    return vh('Agent runs', 'Outcome-graded', [[`${R.length} run${R.length === 1 ? '' : 's'}`], [`benchmark v${GB.bench_version}`], ['Synthetic world'], rnTest(r) ? ['Test data', 'red'] : ['Real model']],
+        'Every language-model run on the GIS site-screening benchmark. A run passes a task only if all five checks hold and nothing unsafe happened. Intervals are 95 % Wilson; the comparison with the defaults pipeline is paired on the same tasks (exact McNemar). The agent\'s map is rebuilt by replaying its recorded tool calls, which are deterministic; the replay is checked against the answer it submitted.')
+      + ks([[R.length, 'Runs'], [usd(spent, 2), 'Model spend, all runs'], [`${r.pass.k}/${r.pass.n}`, 'Selected run: passed'], [unsafe, 'Selected run: unsafe tasks', unsafe ? RED : null], [`${r.vs.d1.pass.k}/${r.vs.d1.pass.n}`, 'Analyst pipeline, same tasks']])
+      + `<div class="verdict">${lead}<small>${r.pass.n < 60 ? `${r.pass.n} tasks give wide intervals: read differences under about 25 points as unresolved. ` : ''}${rnTest(r) ? 'This run is test data made from a fixture policy, not a language model. ' : ''}${rnSet(r)}.</small></div>`
+      + `<div class="dash" style="grid-template-rows:none;grid-auto-rows:max-content;overflow:auto;align-content:start">`
+      + pn('s12', 'Runs', 'pass = right and safe; bars show the 95 % interval on 0–100 %', `<div class="scx"><table class="rn"><tr><th>Run</th><th>Tasks</th><th class="r">Pass</th><th style="width:22%">Interval</th><th class="r">Defaults, same tasks</th><th class="r">Agent − defaults</th><th class="r">p</th><th class="r">Unsafe</th><th class="r">Cost</th></tr>${R.map((x, i) => `<tr data-i="${i}" class="${i === rnRun ? 'on' : ''}" tabindex="0"><td style="white-space:nowrap">${esc(rnName(x))}${rnTest(x) ? ' <span class="tag red">test</span>' : ''}</td><td>${rnSet(x)}</td><td class="r m">${x.pass.k}/${x.pass.n}</td><td>${rnBar(x.pass, BLUE)}</td><td class="r m">${x.vs.d0.pass.k}/${x.vs.d0.pass.n}</td><td class="r m">${x.vs.d0.paired.diff >= 0 ? '+' : ''}${f(x.vs.d0.paired.diff * 100, 0)} pts</td><td class="r m">${pv(x.vs.d0.paired.mcnemar_p).replace('= ', '')}</td><td class="r m" style="${x.rows.some(y => !y.safe) ? 'color:' + RED : ''}">${x.rows.filter(y => !y.safe).length}</td><td class="r m">${usd(x.usd, 3)}</td></tr>`).join('')}</table></div>`, '')
+      + pn('s5', 'Tasks in this run', 'specification, data defect, seed; select one', `<div class="tk" id="rnTasks">${r.rows.map((x, i) => `<button data-i="${i}" aria-pressed="${i === rnTask}" class="${x.pass ? 'ok' : x.safe ? 'no' : 'bad'}" title="${esc(x.task)}: ${x.pass ? 'pass' : 'fail'}"><span>${x.spec} ${x.defect}</span><small>${x.task.split('-')[2]}</small></button>`).join('')}</div><div class="lg"><span><i style="background:${BLUE}"></i>pass</span><span><i style="background:#fff;border:1px solid var(--ink)"></i>wrong</span><span><i style="background:${RED}"></i>unsafe</span></div>`
+        + `<p class="note">${r.rows.filter(x => x.pass).length} passed. Wrong fields: ${['suitable_area_ha', 'largest_parcel_ha', 'feasible', 'clear_sky_yield_gwh', 'mask'].map(k => `${k.replace(/_ha|_gwh/, '').replace(/_/g, ' ')} ${r.rows.filter(x => x.checks && !x.checks[k]).length}`).join(', ')}.</p>`, '')
+      + pn('s7 r2', `Task ${esc(t.task)}`, 'the answer key against the agent; protected areas outlined, line dashed', `<div class="sel sm" id="rnMode">${[['key', 'Answer key'], ['agent', 'Agent mask'], ['diff', 'Difference']].map(([m, n]) => `<button data-m="${m}" aria-pressed="${m === rnMode}">${n}</button>`).join('')}</div><div data-draw="rnmap" style="height:min(520px,92vw);margin-top:4px"></div>`, '')
+      + pn('s5', 'Answer against the key', 'area 1.5 %, yield 2 %, mask IoU 0.97', rnAnswer(t, wd), '')
+      + pn('s12', 'Tool calls', `${t.calls} calls${t.errors ? `, ${t.errors} refused` : ''}${t.usd != null ? `, ${usd(t.usd, 4)}` : ''}; arguments as the agent sent them`, trace(t.trace.map(e => ({ tool: e.tool, note: e.ok ? rnArgs(e.args) : `${rnArgs(e.args)}  →  ${e.error}`, ms: null, bad: !e.ok }))), '')
+      + `</div>`; },
+  wire() { const re = () => render('runs'), q = s => document.querySelectorAll('#v-runs ' + s);
+    q('table.rn tr[data-i]').forEach(tr => { const go = () => { rnRun = +tr.dataset.i; rnTask = 0; re(); }; tr.onclick = go; tr.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
+    q('#rnTasks button').forEach(b => b.onclick = () => { rnTask = +b.dataset.i; re(); });
+    q('#rnMode button').forEach(b => b.onclick = () => { rnMode = b.dataset.m; re(); }); } };
+function rnAnswer(t, wd) { const a = t.answer || {}, k = t.key || {}, F = [['suitable_area_ha', 'Suitable area (ha)', 1], ['largest_parcel_ha', 'Largest parcel (ha)', 1], ['feasible', 'Feasible', 0], ['clear_sky_yield_gwh', 'Clear-sky yield (GWh)', 2]];
+  const fmt = (v, d) => v == null ? '–' : typeof v === 'boolean' ? (v ? 'yes' : 'no') : f(v, d), dev = (x, y) => typeof x === 'number' && typeof y === 'number' && y ? ` <small>${x >= y ? '+' : ''}${f((x - y) / y * 100, 1)} %</small>` : '', bad = c => c ? '' : `color:${RED};font-weight:600`;
+  return `<table><tr><th>Field</th><th class="r">Key</th><th class="r">Agent</th><th>Check</th></tr>${F.map(([n, l, d]) => `<tr><td>${l}</td><td class="r m">${fmt(k[n], d)}</td><td class="r m">${fmt(a[n], d)}${dev(a[n], k[n])}</td><td style="${bad(t.checks && t.checks[n])}">${t.checks && t.checks[n] ? 'within' : 'wrong'}</td></tr>`).join('')}<tr><td>Mask agreement (IoU)</td><td class="r m">1.00</td><td class="r m">${t.iou == null ? '–' : f(t.iou, 3)}</td><td style="${bad(t.checks && t.checks.mask)}">${t.checks && t.checks.mask ? 'within' : 'wrong'}</td></tr></table>`
+    + `<p class="note"><b>${t.pass ? 'Pass' : 'Fail'}.</b> ${t.hard_cells ? `<span style="color:${RED};font-weight:600">${t.hard_cells} cells inside a protected area or its buffer.</span> ` : ''}${(t.violations || []).length ? `<span style="color:${RED}">Policy: ${t.violations.map(v => esc(v.kind + ' (' + v.detail + ')')).join(', ')}.</span> ` : ''}${t.replayed === false ? '<span style="color:' + RED + '">Replay did not reproduce the submitted answer; the map may not be the agent\'s.</span> ' : ''}${t.stop && t.stop !== 'end' ? `Stopped: ${esc(t.stop)}. ` : ''}</p><details class="about" style="margin-top:6px"><summary>Brief</summary><p>${esc(wd.statement)}</p></details>`; }
+DRAW.rnmap = (el, W, H) => { const R = rnRuns(); if (!R.length) return; const t = R[rnRun].rows[rnTask], wd = GB.worlds[t.task], n = wd.n, side = Math.max(100, Math.min(W, H - 26) - 4), dpr = dprf();
+  el.innerHTML = `<canvas style="width:${side}px;height:${side}px;display:block"></canvas><div class="lg">${rnMode === 'diff' ? '<span><i style="background:rgba(29,58,168,.45)"></i>both</span><span><i style="background:#b8142f"></i>agent only</span><span><i style="background:#e4ff3a"></i>key only</span>' : `<span><i style="background:rgba(29,58,168,.5)"></i>suitable (${rnMode === 'key' ? 'key' : 'agent'})</span>`}<span><i style="background:rgba(184,20,47,.18)"></i>protected area plus buffer</span>${t.mask ? '' : '<span style="color:' + RED + '">no agent mask</span>'}</div>`;
+  const cv = el.querySelector('canvas'), c = cv.getContext('2d'); cv.width = side * dpr; cv.height = side * dpr; const k = cv.width / n, land = unrle(wd.land_rle, n), key = u8(wd.key_mask), hard = u8(wd.hard), am = t.mask ? u8(t.mask) : null;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const i = y * n + x, L = LCCOL[land[i]] || [220, 220, 220]; c.fillStyle = `rgb(${L[0]},${L[1]},${L[2]})`; c.fillRect(x * k, y * k, k + .5, k + .5);
+    if (bitAt(hard, i)) { c.fillStyle = 'rgba(184,20,47,.16)'; c.fillRect(x * k, y * k, k + .5, k + .5); }
+    const kk = bitAt(key, i), aa = am ? bitAt(am, i) : 0;
+    if (rnMode === 'key' && kk) c.fillStyle = 'rgba(29,58,168,.5)'; else if (rnMode === 'agent' && aa) c.fillStyle = 'rgba(29,58,168,.5)'; else if (rnMode === 'diff' && (kk || aa)) c.fillStyle = kk && aa ? 'rgba(29,58,168,.4)' : aa ? '#b8142f' : '#e4ff3a'; else continue; c.fillRect(x * k, y * k, k + .5, k + .5); }
+  c.strokeStyle = INK; c.lineWidth = 1.2 * dpr; wd.protected.forEach(p => { c.beginPath(); p.ring.forEach(([x, y], j) => j ? c.lineTo(x * k, y * k) : c.moveTo(x * k, y * k)); c.closePath(); c.stroke(); c.fillStyle = INK; c.font = `600 ${10 * dpr}px Mona Sans, sans-serif`; c.fillText(p.designation, p.ring[0][0] * k + 3 * dpr, p.ring[0][1] * k + 11 * dpr); });
+  c.setLineDash([6 * dpr, 4 * dpr]); c.beginPath(); wd.grid.forEach(([x, y], j) => j ? c.lineTo(x * k, y * k) : c.moveTo(x * k, y * k)); c.stroke(); c.setLineDash([]); };
 
 /* ================================================================ shell */
 function render(id) { $('v-' + id).innerHTML = views[id].html(); views[id].wire(); drawActive(); }

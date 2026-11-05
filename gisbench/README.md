@@ -45,6 +45,8 @@ First runs, claude-haiku-5-5, 5 November 2026, benchmark version 1 (files in `re
 
 What the failures showed. Most were not the model's error. On every task without missing elevation, Haiku's suitable area equals the key computed with every cell a buffer touches excluded (`all_touched`), a conservative and defensible choice; the key used cell centres and the brief never said which. That cost 1 to 3% of area and failed the 1.5% tolerance. Version 2 of the brief states the cell-centre convention, so version 1 model results are kept but not shown on the dashboard. The genuine model error was on missing elevation: answers above the key, meaning the cells touching missing data were kept. The hardened prompt prevented the one restricted read and otherwise changed nothing measurable (19 of 20 tasks identical).
 
+The Build console's **Agent runs** view (`/build/console#runs`) shows each version 2 run: pass rate with interval, a paired comparison with `d0` and `d1` on the same tasks, and per task the map against the key (rebuilt by replaying the recorded tool calls, checked against the submitted answer), the answers and the full tool trace with arguments. `python3 -m gisbench.export_dashboard` fills it; `GISBENCH_RESULTS=<dir>` reads results from another folder.
+
 Next: rerun on version 2, then the `method` prompt (an ordered procedure and a check before submitting), developed on seeds 0 to 4 and reported on seeds 5 to 9.
 
 ## Honest limits
