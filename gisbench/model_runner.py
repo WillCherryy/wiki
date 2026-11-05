@@ -90,7 +90,9 @@ def main(argv=None):
         print(f"{len(tl)} tasks on {a.model}: rough estimate ${est:.2f} (assumes 30k input and 4k output tokens per task; not measured). Re-run with --yes.")
         return 0
     import anthropic
-    client = anthropic.Anthropic(api_key=key or "placeholder-key-added-by-proxy")
+    # In proxy mode, call the public API directly: the session may set ANTHROPIC_BASE_URL to its own endpoint.
+    client = (anthropic.Anthropic(api_key=key) if key else
+              anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com"))
     rows, spent, usage = [], 0.0, []
     for t in tl:
         s, u = run_model(client, a.model, t, SYSTEMS[a.prompt])
