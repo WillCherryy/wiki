@@ -30,13 +30,16 @@ def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_desi
         has_nodata = di["min"] <= W.NODATA
     else:
         has_nodata = False
-    s.call("raster_slope", {"dem": "dem", "out": "slope", "unit": "degrees"})
+    dem = "dem"
+    if has_nodata and mask_nodata:
+        s.call("raster_set_nodata", {"raster": "dem", "value": W.NODATA, "out": "dem_clean"}); dem = "dem_clean"
+    s.call("raster_slope", {"dem": dem, "out": "slope", "unit": "degrees"})
     s.call("raster_threshold", {"raster": "slope", "out": "slope_ok", "op": "le", "value": p.slope_deg})
     s.call("raster_class_in", {"raster": "landcover", "out": "cover_ok", "classes": list(W.BUILDABLE)})
     s.call("raster_logic", {"a": "slope_ok", "b": "cover_ok", "out": "base", "op": "and"})
     if has_nodata and mask_nodata:
-        s.call("raster_threshold", {"raster": "dem", "out": "dem_valid", "op": "gt", "value": -9998})
-        s.call("raster_logic", {"a": "base", "b": "dem_valid", "out": "base", "op": "and"})
+        s.call("raster_nodata_mask", {"raster": "dem_clean", "out": "gap", "grow_cells": 1})
+        s.call("raster_logic", {"a": "base", "b": "gap", "out": "base", "op": "andnot"})
     cur = "base"
     if buffer_zone:
         zones = []

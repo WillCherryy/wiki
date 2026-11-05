@@ -52,19 +52,38 @@ class Vector:
 
 
 def slope(dem: Raster, unit: str = "degrees", honor_nodata: bool = True) -> Raster:
-    """Horn (1981) slope. With honor_nodata, any cell whose 3x3 window touches nodata is nodata.
-    Without it (an undeclared nodata value) the raw numbers are used, as GIS software does."""
+    """Horn (1981) slope, with GDAL and QGIS conventions for missing data.
+
+    honor_nodata: a nodata cell stays nodata; a nodata neighbour is replaced by the centre value (what gdaldem and QGIS native:slope do),
+    so cells beside a gap still get a slope. Without it (an undeclared nodata value) the raw numbers are used, as GIS software does.
+    Cells beyond the raster edge repeat the edge value.
+    """
     z = dem.a.astype("float64")
-    bad = (z == NODATA) if honor_nodata else np.zeros(z.shape, bool)
-    zz = np.where(bad, np.nan, z)
+    zz = np.where(z == NODATA, np.nan, z) if honor_nodata else z
     p = np.pad(zz, 1, mode="edge")
     c = dem.cell
-    dzdx = ((p[:-2, 2:] + 2 * p[1:-1, 2:] + p[2:, 2:]) - (p[:-2, :-2] + 2 * p[1:-1, :-2] + p[2:, :-2])) / (8 * c)
-    dzdy = ((p[2:, :-2] + 2 * p[2:, 1:-1] + p[2:, 2:]) - (p[:-2, :-2] + 2 * p[:-2, 1:-1] + p[:-2, 2:])) / (8 * c)
+
+    def nb(dr, dc):
+        n = p[1 + dr:p.shape[0] - 1 + dr, 1 + dc:p.shape[1] - 1 + dc]
+        return np.where(np.isnan(n), zz, n) if honor_nodata else n
+
+    a, b, cc = nb(-1, -1), nb(-1, 0), nb(-1, 1)
+    d, f = nb(0, -1), nb(0, 1)
+    g, h, i = nb(1, -1), nb(1, 0), nb(1, 1)
+    dzdx = ((cc + 2 * f + i) - (a + 2 * d + g)) / (8 * c)
+    dzdy = ((g + 2 * h + i) - (a + 2 * b + cc)) / (8 * c)
     rise = np.hypot(dzdx, dzdy)
     out = np.degrees(np.arctan(rise)) if unit == "degrees" else 100.0 * rise
     out = np.where(np.isnan(out), NODATA, out)
     return Raster(out.astype("float32"), dem.transform, dem.crs, "float")
+
+
+def nodata_mask(r: Raster, grow: int = 0) -> Raster:
+    """Mask of nodata cells, grown by `grow` cells in every direction (8-neighbourhood)."""
+    m = r.a == NODATA
+    if grow:
+        m = ndi.binary_dilation(m, structure=np.ones((3, 3)), iterations=int(grow))
+    return Raster(m.astype("uint8"), r.transform, r.crs, "mask")
 
 
 def rasterize(v: Vector, tmpl: Raster, all_touched: bool = False) -> Raster:

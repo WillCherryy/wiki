@@ -218,6 +218,25 @@ class Session:
         s = ops.slope(r, unit, honor_nodata=r.nodata_declared)
         return {"layer": self._put(out, s), "unit": unit, "nodata_cells": int((s.a == NODATA).sum())}
 
+    def t_raster_set_nodata(self, raster, value, out):
+        r = self._get(raster, "raster")
+        if r.kind != "float":
+            raise ToolError("set_nodata needs a numeric raster")
+        a = np.where(r.a == float(value), np.float32(NODATA), r.a)
+        n = int((r.a == float(value)).sum())
+        if n == 0:
+            raise ToolError(f"no cells equal {value}")
+        return {"layer": self._put(out, Raster(a, r.transform, r.crs, "float", True)), "cells_marked": n}
+
+    def t_raster_nodata_mask(self, raster, out, grow_cells=0):
+        r = self._get(raster, "raster")
+        if r.kind != "float" or not r.nodata_declared:
+            raise ToolError("the raster has no declared no-data value; use raster_set_nodata first")
+        if not isinstance(grow_cells, int) or not 0 <= grow_cells <= 10:
+            raise ToolError("grow_cells must be an integer from 0 to 10")
+        m = ops.nodata_mask(r, grow_cells)
+        return {"layer": self._put(out, m), "cells_true": int(m.a.sum())}
+
     def t_raster_threshold(self, raster, out, op, value):
         r = self._get(raster, "raster")
         if op not in ("lt", "le", "gt", "ge", "eq"):
@@ -297,6 +316,8 @@ TOOL_SPECS = {
     "rasterize_vector": _s({"layer": _L, "template": _L, "out": _O, "all_touched": {"type": "boolean"}}, ["layer", "template", "out"], "Burn a vector layer into a mask on a template raster grid."),
     "distance_to_vector": _s({"layer": _L, "template": _L, "out": _O}, ["layer", "template", "out"], "Euclidean distance in metres to the nearest feature, on the template grid."),
     "raster_slope": _s({"dem": _L, "out": _O, "unit": {"type": "string", "enum": ["degrees", "percent"]}}, ["dem", "out"], "Slope from a DEM (Horn). Cells touching no-data are no-data."),
+    "raster_set_nodata": _s({"raster": _L, "value": {"type": "number"}, "out": _O}, ["raster", "value", "out"], "Declare a value (such as -9999) as no-data, so later tools skip it."),
+    "raster_nodata_mask": _s({"raster": _L, "out": _O, "grow_cells": {"type": "integer", "description": "grow the mask by this many cells in every direction"}}, ["raster", "out"], "Mask of no-data cells, optionally grown by whole cells. The raster must have a declared no-data value."),
     "raster_threshold": _s({"raster": _L, "out": _O, "op": {"type": "string", "enum": ["lt", "le", "gt", "ge", "eq"]}, "value": {"type": "number"}}, ["raster", "out", "op", "value"], "Mask of cells meeting a comparison; no-data cells are false."),
     "raster_class_in": _s({"raster": _L, "out": _O, "classes": {"type": "array", "items": {"type": "integer"}}, "invert": {"type": "boolean"}}, ["raster", "out", "classes"], "Mask of cells whose class is (or, inverted, is not) in the list."),
     "raster_logic": _s({"a": _L, "b": _L, "out": _O, "op": {"type": "string", "enum": ["and", "or", "andnot"]}}, ["a", "b", "out", "op"], "Combine two masks."),

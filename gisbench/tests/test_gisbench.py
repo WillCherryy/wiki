@@ -28,10 +28,18 @@ class Ops(unittest.TestCase):
         d = plane(3)
         d.a[10:14, 10:14] = W.NODATA
         aware = ops.slope(d, honor_nodata=True).a
-        self.assertTrue((aware[10:14, 10:14] == W.NODATA).all() and (aware[9, 9] == W.NODATA))
+        self.assertTrue((aware[10:14, 10:14] == W.NODATA).all())     # the gap stays a gap
+        self.assertAlmostEqual(float(aware[9, 9]), 3.0, delta=1.5)   # a neighbour of the gap still gets a slope (GDAL and QGIS convention)
+        self.assertGreater(float(aware[9, 9]), 0.0)
         raw = ops.slope(d, honor_nodata=False).a
         self.assertEqual(float(raw[11, 11]), 0.0)          # the trap: flat, because every neighbour is -9999
         self.assertGreater(float(raw[9, 11]), 80.0)
+
+    def test_nodata_mask_grows_by_cells(self):
+        d = plane(3)
+        d.a[10:12, 10:12] = W.NODATA
+        self.assertEqual(int(ops.nodata_mask(d).a.sum()), 4)
+        self.assertEqual(int(ops.nodata_mask(d, 1).a.sum()), 16)
 
     def test_patch_matches_breadth_first_search(self):
         rng = np.random.default_rng(3)
@@ -170,6 +178,11 @@ class Defects(unittest.TestCase):
     def test_undeclared_nodata_is_visible_only_as_a_minimum(self):
         info = Session(T.make_task(1, "S1", "nodata")).call("layer_info", {"layer": "dem"})[1]
         self.assertIsNone(info["nodata_value"]); self.assertEqual(info["min"], W.NODATA)
+
+    def test_declaring_nodata_fixes_the_slope(self):
+        s = Session(T.make_task(1, "S1", "nodata"))
+        self.assertTrue(s.call("raster_set_nodata", {"raster": "dem", "value": W.NODATA, "out": "dem_clean"})[0])
+        self.assertGreater(s.call("raster_slope", {"dem": "dem_clean", "out": "sl"})[1]["nodata_cells"], 0)
 
     def test_crs_mismatch_in_rasterize(self):
         s = Session(T.make_task(1, "S1", "crs"))

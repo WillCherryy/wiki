@@ -9,7 +9,7 @@ FIELDS = ("suitable_area_ha", "largest_parcel_ha", "feasible", "clear_sky_yield_
 REPORT = ("Report suitable_area_ha, largest_parcel_ha (8-connected cells), feasible (largest parcel at least the required land), "
           "clear_sky_yield_gwh (annual, clear sky, for the stated capacity; 0 if not feasible) and the name of your final "
           "suitability mask layer in `mask`. Areas in hectares, energy in GWh. List any assumptions you made in `assumptions`.")
-COMMON = "Only cropland and scrub can be built on. Cells without elevation data are not suitable. Parcels count as contiguous with diagonal contact."
+COMMON = "Only cropland and scrub can be built on. Cells without elevation data, and cells touching them, are not suitable. Parcels count as contiguous with diagonal contact."
 
 
 @dataclass

@@ -148,6 +148,7 @@ def solve(world: World, p: Params, defect: str = "clean") -> dict:
     hard = ops.logic(zone[0], zone[1], "or")                       # inside a protected area plus its buffer
     near = ops.threshold(ops.distance_to(grid, world.dem), "le", p.grid_m)
     m = ops.logic(ops.logic(slope_ok, cover_ok, "and"), hard, "andnot")
+    m = ops.logic(m, ops.nodata_mask(dem, 1), "andnot")             # no elevation, or touching a cell with none
     m = ops.logic(m, near, "and")
     patch_ha, n_patches, patch = ops.largest_patch(m, 8)
     feasible = patch_ha >= p.required_ha
