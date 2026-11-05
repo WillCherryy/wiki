@@ -29,7 +29,7 @@
     <span class="word" data-brand>Scorch<b>er</b></span>
     <span class="tagline">the daily Wikipedia link race</span>
   </button>
-  <nav class="topnav" id="topnav" aria-label="Main"><button data-go="play" class="on">Play</button><button data-go="modes" id="modesBtn" aria-haspopup="true">Modes <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg></button><button data-go="sky">Sky</button><button data-go="ranks">Ranks</button><button data-go="studio">Studio</button></nav>
+  <nav class="topnav" id="topnav" aria-label="Main"><button data-go="play" class="on">Play</button><button data-go="modes" id="modesBtn" aria-haspopup="true">Modes <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg></button><button data-go="sky">Sky</button><a class="tnl" href="/evolve">Evolve</a><button data-go="ranks">Ranks</button><button data-go="studio">Studio</button></nav>
   <div class="modesmenu" id="modesMenu" hidden></div>
   <div class="spacer"></div>
   <span class="nextpill hide-s" id="nextPill"><i></i><span id="nextPillT"></span></span>
@@ -378,6 +378,7 @@ const MODES = [
   ['packs', 'grid', '#2a4f8a', 'Packs', 'Themed sets of puzzles: space, food, history and more', 'Packs', () => openPacks()],
   ['practice', 'target', '#2f7d46', 'Practice', 'Random puzzles: no streak, no sky objects', 'Unlimited', () => startGame('practice')],
   ['archive', 'target', '#4a6a8a', 'Daily archive', 'Catch up on puzzles you missed', 'Past days', () => openArchive()],
+  ['evolve', 'target', '#b0805a', 'Evolve', 'Find the hidden animal through the ancestors it shares', 'New · daily', () => { location.href = '/evolve'; }],
   ['studio', 'grid', '#8a6a2a', 'Make a puzzle', 'Pick any two articles and share your own puzzle', 'Create', () => openMaker()],
   ['league', 'bolt', '#0f8b7e', 'Leagues', 'A private board with friends across daily puzzles', 'Social', () => leagueModal()]];
 function toggleModes(force) {
@@ -389,7 +390,7 @@ function toggleModes(force) {
 document.addEventListener('click', e => { const m = $('#modesMenu'); if (m && !m.hidden && !e.target.closest('#modesMenu') && !e.target.closest('#modesBtn')) toggleModes(false); });
 function renderQuiet() {
   const solved = PACKS.reduce((n, p) => n + packStats(p.id).solved, 0), pt = PACKS.reduce((n, p) => n + packStats(p.id).total, 0);
-  const ital = t => { const w = esc(t).split(' '); return w.length > 1 ? w.slice(0, -1).join(' ') + ' <i>' + w[w.length - 1] + '</i>' : '<i>' + w[0] + '</i>'; };
+  const ital = t => esc(t); // headings are upright: italics are kept for the wordmark and the target
   $('#quiet').innerHTML = MODES.filter(x => x[0] !== 'league').map(([id, ic, col, t, p, tag], k) => `<button class="mode" data-m="${id}" style="--c:${col}"><span class="mnum">${String(k + 1).padStart(2, '0')}</span><b>${ital(t)}</b><small>${id === 'packs' ? solved + ' of ' + pt + ' solved' : p}</small><em>${id === 'packs' ? pt + ' puzzles' : tag} →</em></button>`).join('');
   $('#quiet').querySelectorAll('.mode').forEach(b => b.onclick = () => MODES.find(x => x[0] === b.dataset.m)[6]());
 }
@@ -620,19 +621,19 @@ async function discoveryCanvas(k) {   // the discovery card as a 1080x1350 image
   const fd = g.createLinearGradient(0, 690, 0, 740); fd.addColorStop(0, 'rgba(11,10,24,0)'); fd.addColorStop(1, 'rgba(11,10,24,.0)');
   // header
   g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = `700 30px ${sans}`; try { g.letterSpacing = '7px'; } catch {} g.shadowColor = o.c; g.shadowBlur = 18;
-  g.fillText((k.first ? 'NEW DISCOVERY' : k.count > 1 ? 'A MOON FOR ' + k.name.toUpperCase() : 'YOU FOUND'), 108, 138); g.shadowBlur = 0; try { g.letterSpacing = '0px'; } catch {}
-  const pill = rar.toUpperCase(); g.font = `800 26px ${sans}`; try { g.letterSpacing = '4px'; } catch {} const pw = g.measureText(pill).width + 52, px = W - 108 - pw, rg = g.createLinearGradient(px, 0, px + pw, 0);
+  g.fillText((k.first ? 'New discovery' : k.count > 1 ? 'A moon for ' + k.name : 'You found'), 108, 138); g.shadowBlur = 0; try { g.letterSpacing = '0px'; } catch {}
+  const pill = rar; g.font = `800 26px ${sans}`; try { g.letterSpacing = '0px'; } catch {} const pw = g.measureText(pill).width + 52, px = W - 108 - pw, rg = g.createLinearGradient(px, 0, px + pw, 0);
   if (k.idx >= 8) { rg.addColorStop(0, '#ffd86a'); rg.addColorStop(1, '#ff9a4a'); } else if (k.idx >= 6) { rg.addColorStop(0, '#c79bff'); rg.addColorStop(1, '#ff8ad8'); } else if (k.idx >= 4) { rg.addColorStop(0, '#7cc0ff'); rg.addColorStop(1, '#7cc0ff'); } else if (k.idx >= 2) { rg.addColorStop(0, '#6fe0a8'); rg.addColorStop(1, '#6fe0a8'); } else { rg.addColorStop(0, '#cfc8e6'); rg.addColorStop(1, '#cfc8e6'); }
   g.fillStyle = rg; rr(px, 98, pw, 54, 27); g.fill(); g.fillStyle = '#14112a'; g.textAlign = 'center'; g.fillText(pill, px + pw / 2 + 2, 134); g.textAlign = 'left'; try { g.letterSpacing = '0px'; } catch {}
   // type chip
-  const chip = `${o.name.toUpperCase()}  ·  TIER ${k.idx + 1} OF 9`; g.font = `700 28px ${sans}`; try { g.letterSpacing = '4px'; } catch {} const cw = g.measureText(chip).width + 76, cx = (W - cw) / 2;
+  const chip = `${o.name}  ·  tier ${k.idx + 1} of 9`; g.font = `700 28px ${sans}`; try { g.letterSpacing = '0px'; } catch {} const cw = g.measureText(chip).width + 76, cx = (W - cw) / 2;
   g.fillStyle = o.c + '33'; rr(cx, 742, cw, 60, 30); g.fill(); g.strokeStyle = o.c + 'aa'; g.lineWidth = 2; g.stroke(); g.fillStyle = o.c; g.beginPath(); g.arc(cx + 34, 772, 8, 0, 7); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(chip, cx + 56, 782); try { g.letterSpacing = '0px'; } catch {}
   // name
   let fs = 128; g.textAlign = 'center'; do { g.font = `italic 400 ${fs}px ${serif}`; fs -= 4; } while (g.measureText(k.name).width > 880 && fs > 56);
   g.save(); g.shadowColor = o.c; g.shadowBlur = 44; g.fillStyle = o.c; g.fillText(k.name, W / 2, 920); g.restore(); g.fillStyle = o.c; g.fillText(k.name, W / 2, 920);
-  g.fillStyle = '#a9a2c8'; g.font = `600 30px ${sans}`; try { g.letterSpacing = '5px'; } catch {} g.fillText(k.kind.toUpperCase(), W / 2, 978); try { g.letterSpacing = '0px'; } catch {}
+  g.fillStyle = '#a9a2c8'; g.font = `600 30px ${sans}`; try { g.letterSpacing = '0px'; } catch {} g.fillText(k.kind, W / 2, 978); try { g.letterSpacing = '0px'; } catch {}
   // stats
-  [[SKY.massText(k.m), 'MASS'], [k.temp, 'TEMPERATURE'], [`${have} / ${total}`, 'COLLECTED']].forEach(([v, l], i) => { const w = 276, x = 108 + i * (w + 22); g.fillStyle = 'rgba(255,255,255,.07)'; rr(x, 1018, w, 112, 22); g.fill(); g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; let f = 34; do { g.font = `600 ${f}px ${sans}`; f -= 2; } while (g.measureText(v).width > w - 24 && f > 18); g.fillText(v, x + w / 2, 1070); g.fillStyle = '#8d86b0'; g.font = `700 20px ${sans}`; try { g.letterSpacing = '4px'; } catch {} g.fillText(l, x + w / 2, 1108); try { g.letterSpacing = '0px'; } catch {} });
+  [[SKY.massText(k.m), 'Mass'], [k.temp, 'Temperature'], [`${have} / ${total}`, 'Collected']].forEach(([v, l], i) => { const w = 276, x = 108 + i * (w + 22); g.fillStyle = 'rgba(255,255,255,.07)'; rr(x, 1018, w, 112, 22); g.fill(); g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; let f = 34; do { g.font = `600 ${f}px ${sans}`; f -= 2; } while (g.measureText(v).width > w - 24 && f > 18); g.fillText(v, x + w / 2, 1070); g.fillStyle = '#8d86b0'; g.font = `700 20px ${sans}`; try { g.letterSpacing = '0px'; } catch {} g.fillText(l, x + w / 2, 1108); try { g.letterSpacing = '0px'; } catch {} });
   // heat ladder
   SKY.OBJ.forEach((t, i) => { const x = W / 2 + (i - 4) * 62; g.fillStyle = i <= k.idx ? o.c : 'rgba(255,255,255,.18)'; g.beginPath(); g.arc(x, 1168, i === k.idx ? 17 : 10, 0, 7); g.fill(); });
   // footer: the call to action and the address
@@ -937,8 +938,8 @@ function heatChart(r, Wpx) {
   for (let i = 0; i < n - 1; i++) { const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c, t = .18; d += ` C${(b[0] + (c[0] - a[0]) * t).toFixed(1)} ${(b[1] + (c[1] - a[1]) * t).toFixed(1)},${(c[0] - (e[0] - b[0]) * t).toFixed(1)} ${(c[1] - (e[1] - b[1]) * t).toFixed(1)},${c[0].toFixed(1)} ${c[1].toFixed(1)}`; }
   const base = Y(0), area = `${d} L${pts[n - 1][0].toFixed(1)} ${base} L${pts[0][0].toFixed(1)} ${base} Z`, stops = path.map((_, i) => `<stop offset="${(i / (n - 1) * 100).toFixed(1)}%" stop-color="${col(i)}"/>`).join('');
   const dots = pts.map(([x, y], i) => i === n - 1 ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${col(i)}" opacity=".18"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${col(i)}" stroke="var(--paper)" stroke-width="2.5"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${col(i)}" stroke="var(--paper)" stroke-width="2"/>`).join('');
-  const every = n > 10 ? 2 : 1, ticks = pts.map(([x], i) => i % every === 0 || i === n - 1 ? `<text x="${x.toFixed(1)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}" font-size="${i === 0 || (i === n - 1 && r.won) ? 9.5 : 11}" letter-spacing="${i === 0 || (i === n - 1 && r.won) ? '.22em' : '0'}" fill="var(--mute)" font-family="${i === 0 || (i === n - 1 && r.won) ? 'Jost, sans-serif' : 'IBM Plex Mono, monospace'}" font-weight="400">${i === 0 ? 'START' : i === n - 1 && r.won ? 'GOAL' : i}</text>` : '').join('');
-  const grid = [0, .5, 1].map(v => `<path d="M${L} ${Y(v).toFixed(1)}H${W - R}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="${v === 0 ? '0' : '2 5'}" opacity="${v === 0 ? .9 : .7}"/>`).join('') + `<text x="${L}" y="${(Y(1) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">HOT</text><text x="${L}" y="${(Y(0) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">COLD</text>`;
+  const every = n > 10 ? 2 : 1, ticks = pts.map(([x], i) => i % every === 0 || i === n - 1 ? `<text x="${x.toFixed(1)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}" font-size="${i === 0 || (i === n - 1 && r.won) ? 9.5 : 11}" letter-spacing="${i === 0 || (i === n - 1 && r.won) ? '.22em' : '0'}" fill="var(--mute)" font-family="${i === 0 || (i === n - 1 && r.won) ? 'Jost, sans-serif' : 'IBM Plex Mono, monospace'}" font-weight="400">${i === 0 ? 'Start' : i === n - 1 && r.won ? 'Goal' : i}</text>` : '').join('');
+  const grid = [0, .5, 1].map(v => `<path d="M${L} ${Y(v).toFixed(1)}H${W - R}" stroke="var(--rule)" stroke-width="1" stroke-dasharray="${v === 0 ? '0' : '2 5'}" opacity="${v === 0 ? .9 : .7}"/>`).join('') + `<text x="${L}" y="${(Y(1) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">Hot</text><text x="${L}" y="${(Y(0) - 7).toFixed(1)}" text-anchor="start" font-size="9" font-weight="400" letter-spacing=".24em" fill="var(--mute)" font-family="Jost, sans-serif">Cold</text>`;
   const rid = 'hc' + Math.random().toString(36).slice(2, 6);
   return `<div class="hchart"><svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="${rid}l" x1="0" x2="1">${stops}</linearGradient><linearGradient id="${rid}a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".1"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#${rid}a)"/><path d="${d}" fill="none" stroke="url(#${rid}l)" stroke-width="${Wpx ? 2.5 : 3.5}" stroke-linecap="round" stroke-linejoin="round"/>${dots}${ticks}</svg>
     <div class="hstrip" style="background:linear-gradient(90deg,${path.map((_, i) => col(i)).join(',')})"></div></div>`;
@@ -1684,7 +1685,7 @@ async function shareCardCanvas(r) {
   const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"EB Garamond", Georgia, serif';
   try { await Promise.all([document.fonts.load(`400 80px ${DISP}`), document.fonts.load(`italic 400 80px ${DISP}`), document.fonts.load(`600 24px ${SANS}`), document.fonts.load(`italic 400 30px ${SERIF}`)]); } catch {}
   const M = 84, stops = trailStops(), INK = '#16130f', INK2 = '#4b453b', PAPER = '#f3eee4', MUTE = '#7a7265', RULE = '#d8cfbf', ACC = '#d63a1f';
-  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = sp + 'px'; } catch {} x.fillText(t.toUpperCase(), px, y); try { x.letterSpacing = '0px'; } catch {} };
+  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = '0px'; } catch {} x.fillText(t, px, y); try { x.letterSpacing = '0px'; } catch {} };
   x.fillStyle = PAPER; x.fillRect(0, 0, W, H);
   x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(36, 36, W - 72, H - 72); x.strokeStyle = RULE; x.lineWidth = 1.5; x.strokeRect(50, 50, W - 100, H - 100);
   // masthead: route mark + wordmark
@@ -1764,7 +1765,7 @@ async function posterCanvas(d, tease) {
   const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif';
   try { await Promise.all([document.fonts.load(`400 80px ${DISP}`), document.fonts.load(`italic 400 80px ${DISP}`), document.fonts.load(`600 24px ${SANS}`), document.fonts.load(`500 36px ${SANS}`)]); } catch {}
   const INK = '#16130f', INK2 = '#4b453b', PAPER = '#f3eee4', MUTE = '#7a7265', RULE = '#cfc6b3', ACC = '#d63a1f', M = 96, day = dayKey();
-  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = sp + 'px'; } catch {} x.fillText(t.toUpperCase(), px, y); try { x.letterSpacing = '0px'; } catch {} };
+  const caps = (t, px, y, size, color, align, sp) => { x.font = `600 ${size}px ${SANS}`; x.fillStyle = color; x.textAlign = align; try { x.letterSpacing = '0px'; } catch {} x.fillText(t, px, y); try { x.letterSpacing = '0px'; } catch {} };
   x.fillStyle = PAPER; x.fillRect(0, 0, W, H); x.strokeStyle = INK; x.lineWidth = 3; x.strokeRect(34, 34, W - 68, H - 68); x.strokeStyle = RULE; x.lineWidth = 1.5; x.strokeRect(48, 48, W - 96, H - 96);
   [[9, 47, 3.2, '#2a4f8a'], [21, 42, 4.2, '#5c8cbe'], [33, 34, 5.4, '#d6be8c'], [44, 24, 6.8, '#f08c50'], [54, 12, 8.4, '#d63a1f']].forEach(([dx, dy, dr, col]) => { x.fillStyle = col; x.beginPath(); x.arc(M - 8 + dx * 1.7, 100 + dy * 1.7, dr * 1.7, 0, 7); x.fill(); });
   x.textAlign = 'left'; x.font = `400 62px ${DISP}`; x.fillStyle = INK; x.fillText(BRAND.a, M + 118, 172); const bw = x.measureText(BRAND.a).width; x.font = `italic 400 62px ${DISP}`; x.fillStyle = ACC; x.fillText(BRAND.b, M + 118 + bw, 172);
@@ -1779,7 +1780,7 @@ async function posterCanvas(d, tease) {
   y += 84; caps('Reach', W / 2, y, 22, MUTE, 'center', 5.2); y += 38; x.fillStyle = ACC; x.font = `italic 400 ${to.sz}px ${DISP}`; to.ls.forEach(l => { y += to.sz * .86; x.fillText(l, W / 2, y); y += to.sz * .12; });
   const chips = [d.par ? `Par ${d.par}` : 'Click only links', d.par ? diffOf(d.par) : '', 'Solvable in 4 or fewer'].filter(Boolean); x.font = `600 19px ${SANS}`; try { x.letterSpacing = '1.9px'; } catch {}
   const ws = chips.map(t => x.measureText(t.toUpperCase()).width + 36), tot = ws.reduce((a, b) => a + b, 0) + 12 * (chips.length - 1); let cx = (W - tot) / 2, cy = H - 104 - 218;
-  chips.forEach((t, i) => { x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(cx, cy, ws[i], 44); x.fillStyle = INK2; x.textAlign = 'left'; x.fillText(t.toUpperCase(), cx + 18, cy + 29); cx += ws[i] + 12; }); try { x.letterSpacing = '0px'; } catch {}
+  chips.forEach((t, i) => { x.strokeStyle = INK; x.lineWidth = 2.5; x.strokeRect(cx, cy, ws[i], 44); x.fillStyle = INK2; x.textAlign = 'left'; x.fillText(t, cx + 18, cy + 29); cx += ws[i] + 12; }); try { x.letterSpacing = '0px'; } catch {}
   x.textAlign = 'center'; x.fillStyle = INK; x.font = `italic 400 66px ${DISP}`; x.fillText('Can you beat it?', W / 2, H - 104 - 90); x.font = `500 36px ${SANS}`; x.fillText(BRAND.domain, W / 2, H - 104 - 38); caps('Free · No account · New puzzle every day', W / 2, H - 104 + 4, 18, MUTE, 'center', 3.6);
   return c;
 }
@@ -2370,7 +2371,7 @@ function drawTitle(ctx, text, cx, cy, maxW, size, color, alpha, tpl, boxH) {
 function drawFrame(ctx, W, d, st) {
   const DISP = '"EB Garamond", Georgia, serif', SANS = '"Instrument Sans", system-ui, sans-serif', SERIF = '"EB Garamond", Georgia, serif', PAPER = '#f3eee4', tc = tempCss(st.sig);
   const al = (rgb, a) => rgb.replace('rgb(', 'rgba(').replace(')', `,${a})`);
-  const cap = (t, x, y, size, color, align, sp) => { ctx.font = `600 ${size}px ${SANS}`; ctx.fillStyle = color; ctx.textAlign = align; try { ctx.letterSpacing = sp + 'px'; } catch {} ctx.fillText(t.toUpperCase(), x, y); try { ctx.letterSpacing = '0px'; } catch {} };
+  const cap = (t, x, y, size, color, align, sp) => { ctx.font = `600 ${size}px ${SANS}`; ctx.fillStyle = color; ctx.textAlign = align; try { ctx.letterSpacing = '0px'; } catch {} ctx.fillText(t, x, y); try { ctx.letterSpacing = '0px'; } catch {} };
   ctx.fillStyle = '#14110d'; ctx.fillRect(0, 0, W, W);
   const rg = ctx.createRadialGradient(W / 2, W * .46, 10, W / 2, W * .46, W * .66); rg.addColorStop(0, al(tc, .34)); rg.addColorStop(1, al(tc, 0)); ctx.fillStyle = rg; ctx.fillRect(0, 0, W, W);
   ctx.fillStyle = tc; ctx.fillRect(0, 0, W, 8);

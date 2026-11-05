@@ -11,8 +11,9 @@ Preferences that apply to all work here: keep explanations scientifically accura
 | `/` (and `/p/...`, `/find/...`) | **Wiki race**: the daily Wikipedia link race, with par, replays, friends rooms, streamer lobbies, packs, leagues | General public | Collect astronomy objects into **Your Sky** |
 | `/sky` | **Scorcher Sky**: the whole universe, nothing to unlock | Students and researchers (also schools) | None |
 | `/tree` | **Scorcher Tree**: the evolutionary tree explorer, vertebrates first | Students and researchers | None on the explorer itself |
-| later | **Evolution game**: a distinctive deduction game, inspired by Metazooa in principle (clue currency is evolutionary distance); original mechanic, not a copy | General public | Awards organisms to **Your Tree** |
-| later | **Your Tree** | Players | Reward-based overlay highlighting collected organisms inside their true evolutionary relationships |
+| `/tools` | **Scorcher Tools**: calculators (sky coordinates, distance from redshift, star luminosity, distance units, common ancestor from the Tree data) and a worked A level example | Students, teachers, researchers | None |
+| `/evolve` | **Scorcher Evolve**: the evolution game (first version, November 2026; see Status) | General public | Daily finds join **Your Tree** |
+| `/evolve#yours` | **Your Tree**: the species a player has found, drawn as their induced subtree of the synthesis, each linking to Scorcher Tree | Players | Reward-based |
 
 - **Your Sky** (personal collection, earned through play) and **Scorcher Sky** (the full explorer) are two views of one engine. A change to the renderer, data or viewers must show up in both. Same intention for **Your Tree** and **Scorcher Tree**.
 - Reward-based means Your Sky and Your Tree; the base explorers stay reward-free.
@@ -52,7 +53,7 @@ Known limits (stated on the page): named-object values are rounded literature va
 - `node tools/check-tree.js --strict` still fails only on 8 uncited competing hypotheses (Placentalia, Archelosauria, Toxicofera).
 - Mockups for reference: `mockups/tree/`.
 
-**Evolution game:** not built. `phylo.html` and `phylo-data.js` are an old unlisted prototype (guess when two animals diverged); its dates are unverified and must not be shown to players. `docs/divergence-game.md` has its notes. The intended design is a deduction game integrated with the Tree; it needs an original mechanic and paper playtests before any build.
+**Evolution game (Scorcher Evolve, `/evolve`, `evolve.js`), first version November 2026, built at the owner's request without the planned paper playtests, so treat it as the playtest.** The mechanic: a hidden vertebrate each day, chosen from the Tree's 91 by a fixed shuffle. Naming any species reveals the last common ancestor it shares with the hidden one (name, scientific name, age and blurb from `treedata/vertebrates.json`) and costs that ancestor's age, as Scorcher Tree shows it, from a budget of 2,000 million years: closer guesses are cheaper, so the currency is evolutionary distance, and the race's cold-to-hot scale colours each ancestor by age. A field guide lists every species by group, with an optional aid that dims the ruled-out ones. Finding the daily animal adds it to Your Tree (local storage, `scorcher:evolve`); practice rounds award nothing. Ages used: a clock interval's published central value, a calibration's fossil minimum, or the bound for a bounded node (said so in the game). Things to watch in playtests: the budget (a good player spends about 400 Myr, a strong mammal bias since 40 of 91 species are mammals), whether the dimming aid makes it too easy, and whether unnamed nodes ("ancestor of the X and the Y") read well. `phylo.html` and `phylo-data.js` remain an old unlisted prototype whose dates are unverified; do not show them to players.
 
 ## Next steps, in order
 
@@ -62,8 +63,8 @@ Known limits (stated on the page): named-object values are rounded literature va
    - Draft evidence reviews for the 15 to 50 major nodes; each needs a human check before `review: "reviewed"`.
    - Network notes: Open Tree, Crossref, TimeTree, Palaeontologia Electronica, PLOS and Europe PMC are reachable; Wikimedia rate-limits bursts (the build retries); zenodo.org and some publishers return 403.
 2. Sky: astronomy-engine positions, then per-value citations.
-3. Evolution game: design spike with paper playtests, using the Tree data, before any build.
-4. Your Tree overlay, then Wiki race deep links into Sky and Tree.
+3. Evolve: playtest and tune (budget, the dimming aid, more species as the Tree grows); share cards.
+4. Wiki race deep links into Sky and Tree; a Your Tree link from the race's profile.
 5. Demosthenes Academy connection.
 
 ## Principles to keep

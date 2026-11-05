@@ -185,6 +185,7 @@ app.innerHTML = `<div class="sx-map" id="sxMap"><canvas id="sxCv" aria-label="Ma
   <nav class="sx-nav">
     <div class="sx-seg" role="group" aria-label="Level of detail"><button data-detail="simple">Essentials</button><button data-detail="full">Full data</button></div>
     <div class="sx-seg" role="group" aria-label="Distance unit"><button data-unit="ly">ly</button><button data-unit="pc">pc</button></div>
+    <a class="sx-lnk sx-sci" href="/tree">Tree</a><a class="sx-lnk sx-sci" href="/tools">Tools</a>
     <button class="sx-lnk" id="sxLabels" aria-pressed="true">Labels</button>
     <button class="sx-lnk" id="sxMethods">Data &amp; methods</button>
     <button class="sx-lnk" id="sxHelp">Help</button>
@@ -195,7 +196,7 @@ app.innerHTML = `<div class="sx-map" id="sxMap"><canvas id="sxCv" aria-label="Ma
   <div class="sx-tabs" role="tablist"><button data-b="obj" class="on">Objects</button><button data-b="pl">Planets</button><button data-b="land">Landmarks</button></div>
   <div class="sx-sort"><label>Sort <select id="sxSort"><option value="dist">Distance</option><option value="name">Name</option><option value="size">Size</option></select></label><button class="sx-ib sx-close-b" id="sxBrowseX" aria-label="Close">${ICON.x}</button></div>
   <div class="sx-list" id="sxList"></div>
-  <div class="sx-bfoot"><div class="sx-seg" role="group" aria-label="Distance unit"><button data-unit="ly">ly</button><button data-unit="pc">pc</button></div><button class="sx-lnk" data-open="sxMethods">Data &amp; methods</button><button class="sx-lnk" data-open="sxHelp">Help</button><a class="sx-lnk" href="/">Play</a></div>
+  <div class="sx-bfoot"><div class="sx-seg" role="group" aria-label="Distance unit"><button data-unit="ly">ly</button><button data-unit="pc">pc</button></div><button class="sx-lnk" data-open="sxMethods">Data &amp; methods</button><button class="sx-lnk" data-open="sxHelp">Help</button><a class="sx-lnk" href="/tree">Tree</a><a class="sx-lnk" href="/tools">Tools</a><a class="sx-lnk" href="/">Play</a></div>
 </aside>
 <section class="sx-insp" id="sxInsp" aria-live="polite"></section>
 <div class="sx-res" id="sxRes" hidden></div>

@@ -1617,3 +1617,20 @@ body.finding .finder-x { display: block; }
 .crowdheat a.chme { outline: 2px solid var(--ink); outline-offset: 1px; }
 .strange { padding: 12px 0; border-bottom: 1px solid var(--rule); } .sth { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; } .sth em { font: 400 12.5px var(--sans); color: var(--mute); font-style: normal; margin-left: auto; }
 .strange p { margin: 6px 0 0 34px; font: italic 400 16px/1.5 var(--display); color: var(--ink-2); } .strange p i { color: var(--mute); font-style: normal; margin: 0 4px; }
+
+/* ===== Refine (November 2026): keep the plate, the wordmark and the serif; drop spaced capitals and decorative italics.
+   Labels are sentence case in one sans (Jost), italics stay for the wordmark, the target and scientific names,
+   and corners are square. The :not(#_) adds ID weight so this layer wins over the earlier !important rules. */
+:root:not(#_) body * { text-transform: none !important; letter-spacing: normal !important; font-style: normal !important; }
+:root:not(#_) body :is(.logo .word b, .plate-to, .target strong, .sci, .sci *, i.sci) { font-style: italic !important; }
+:root:not(#_) body :is(.plate-from, .plate-to, .hero h1, h1) { letter-spacing: -.02em !important; }
+:root:not(#_) body:not(.sx) :is(.eyebrow, .plate-lab, .plate-meta, .plate-facts, .kp-head, .hxc h5, .small.mute, .mode em, .topnav button, .status, .qlink, .tabs button, .rcard h4, .rhd2 b, .rh-k, .rhero dt, .disc-eye, .disc-rar, .disc-type, .disc-stats span, .disc-why span, .disc-near span, .disc-btn, .disc-link, .field, .sl, .grid3 span, .done-stats span, .stand span, .streak .sn span, .mk, .pill, .badge, .target small, .metric span, .signal .lab, .routecard h4, .win-top p, .stars small, .lobby-n span, .hoststat, .rth, .stu-g h5, .skyp-tier, .skymini-h, .finv-eye, .resulthead, .parnote, .in-eye, .stage-eye, .stage-chip, .stage-sub, .in-sub, .sflist h6, .sfsort small, .chl span, .ob-res span, .cat-row header span, .ob-insp dt, .cmp-info dt, .tile.pk .badge, .disc-sub, .skyc .small, .skyr .small, .skyd .small, .skyw, .sysnote, .nl span, .purist, .live-pill b, .burn span) {
+  font-family: 'Jost', var(--sans) !important; font-size: 13px !important; font-weight: 500 !important; }
+:root:not(#_) body :is(.plate-meta, .plate-facts) { font-size: 15px !important; color: var(--ink-2); }
+:root:not(#_) body :is(.eyebrow, .plate-lab, .target small, .kp-head, .hxc h5, .rcard h4, .sl, .stu-g h5) { font-size: 14px !important; color: var(--ink-2) !important; }
+:root:not(#_) body .topnav button { font-size: 15px !important; font-weight: 400 !important; }
+:root:not(#_) body .mode em { font-size: 14px !important; }
+:root:not(#_) body :is(.btn, .chip, .card, .rcard, .modal, .pill, .badge, .status, .tool, .kcard, .pkcard, .pkhead, .tile, .itile, .catr, .sysrow, .disc-stats div, .disc-why, .disc-near, .disc-boost, .stage-boost, .stage-near, .stage-chip, .sfdock button, .sfsort button, .sftypes button, input, select, textarea, .toast, .lede .eyebrow, .disc-rar, .skyp-rar, .disc-type, .tabs.sk, .tabs.sk button, .tabs button, .dock button, .topnav button, .modesmenu, .modesmenu button) { border-radius: 0 !important; }
+:root:not(#_) body .tonight span { font: 500 13px 'Jost', var(--sans) !important; color: var(--mute); }
+:root:not(#_) body #plateCheck { display: block; } :root:not(#_) body #plateCheck b { white-space: nowrap; }
+:root:not(#_) body .topnav a.tnl { display: inline-flex; align-items: center; margin: 0 10px; padding: 10px 2px; font: 500 13px 'Jost', var(--sans); color: var(--ink-2); text-decoration: none; border-bottom: 1px solid transparent; } :root:not(#_) body .topnav a.tnl:hover { color: var(--ink); }

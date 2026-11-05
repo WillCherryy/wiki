@@ -1,0 +1,54 @@
+/* Scorcher Science (the Tools page): Atkinson Hyperlegible Next and Mono, light ground, square, sentence case.
+   Scorcher Sky (sky.css) and Scorcher Tree (tree.css) use the same type and evidence colours. */
+@font-face { font-family: 'Atkinson Next'; src: url(/fonts/atkinson-next-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Atkinson Next'; src: url(/fonts/atkinson-next-latin-italic.woff2) format('woff2'); font-weight: 200 800; font-style: italic; font-display: swap; }
+@font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Atkinson Mono'; src: url(/fonts/atkinson-mono-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+:root {
+  --ground: #fbfbf9; --panel: #ffffff; --sunk: #f1f2ef; --ink: #121417; --ink-2: #4a4f57; --ink-3: #737a83; --rule: #dcdfe2; --rule-2: #c3c8cd;
+  /* evidence labels: the same everywhere in the suite */
+  --pub: #1f7a48; --der: #2457d6; --mod: #9a6a08; --ill: #7a4bb8;
+  /* the temperature scale: Play's signature, from cold to scorching */
+  --t0: #2456c7; --t1: #3f8fd0; --t2: #9fbf6a; --t3: #f2b233; --t4: #f07a1f; --t5: #e2361b;
+  --heat: linear-gradient(90deg, var(--t0), var(--t1) 22%, var(--t2) 42%, var(--t3) 62%, var(--t4) 80%, var(--t5));
+  --sans: 'Atkinson Next', system-ui, sans-serif; --mono: 'Atkinson Mono', ui-monospace, monospace; --pad: clamp(16px, 3.4vw, 48px);
+}
+* { box-sizing: border-box; margin: 0; }
+html { overflow-x: clip; }
+body { background: var(--ground); color: var(--ink); font: 400 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+::selection { background: var(--ink); color: #fff; }
+:focus-visible { outline: 2px solid var(--der); outline-offset: 2px; }
+a { color: inherit; text-underline-offset: .18em; }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: var(--rule-2); } ::-webkit-scrollbar-track { background: var(--sunk); }
+.num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* type roles */
+.t-display { font-weight: 780; letter-spacing: -.03em; line-height: .98; text-wrap: balance; }
+.t-h2 { font-size: clamp(28px, 3vw, 44px); font-weight: 760; letter-spacing: -.025em; line-height: 1.04; text-wrap: balance; }
+.t-h3 { font-size: 20px; font-weight: 720; letter-spacing: -.01em; line-height: 1.2; }
+.t-lede { font-size: clamp(18px, 1.35vw, 20px); color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
+.t-small { font-size: 14px; color: var(--ink-3); }
+
+/* controls: square, flat */
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 18px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; font: 700 15px var(--sans); text-decoration: none; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.btn:hover { background: #2a2f36; } .btn.line { background: transparent; color: var(--ink); } .btn.line:hover { background: var(--ink); color: #fff; }
+.btn.sm { height: 36px; padding: 0 12px; font-size: 14px; }
+.btn svg, .ico { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.field { display: grid; gap: 4px; } .field span { font-size: 13px; color: var(--ink-3); }
+.field input, .field select { height: 42px; padding: 0 10px; border: 1.5px solid var(--rule-2); background: #fff; font: 400 16px var(--mono); color: var(--ink); border-radius: 0; }
+.field input:focus, .field select:focus { border-color: var(--ink); outline: none; }
+
+/* evidence label */
+.ev { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--c); white-space: nowrap; }
+.ev::before { content: ''; width: 9px; height: 9px; background: var(--c); }
+.ev.pub { --c: var(--pub); } .ev.der { --c: var(--der); } .ev.mod { --c: var(--mod); } .ev.ill { --c: var(--ill); }
+
+/* shared bar */
+.bar { position: sticky; top: 0; z-index: 50; height: 60px; display: flex; align-items: center; gap: 28px; padding: 0 var(--pad); background: var(--ground); border-bottom: 1px solid var(--rule); }
+.mark { display: flex; align-items: baseline; gap: 9px; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.mark .w { font: 400 24px 'EB Garamond', Georgia, serif; } .mark .w b { font-weight: 400; font-style: italic; color: #c8401f; }
+.mark .s { font: 600 15px var(--sans); padding-left: 9px; border-left: 1px solid var(--rule-2); }
+.bar nav { display: flex; gap: 22px; font-size: 15px; } .bar nav a { text-decoration: none; color: var(--ink-2); padding: 19px 0; border-bottom: 2px solid transparent; } .bar nav a:hover, .bar nav a.on { color: var(--ink); border-bottom-color: var(--ink); }
+@media (max-width: 900px) { .bar nav { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

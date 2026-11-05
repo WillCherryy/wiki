@@ -15,10 +15,10 @@ const cam = { rowH: 18, y: 0, tRowH: 18, tY: 0 };
 const app = $('#txApp');
 app.innerHTML = `<header class="tx-top"><a class="tx-brand" href="/tree"><span class="w">Scorch<b>er</b></span><span class="s">Tree</span></a>
   <div class="tx-search"><label>${ICON.search}<input id="txQ" type="search" placeholder="Search a species or group" autocomplete="off" spellcheck="false" aria-label="Search the tree"><kbd>/</kbd></label><div class="tx-res" id="txRes" hidden></div></div>
-  <nav class="tx-nav"><button data-v="explore" class="on">Explorer</button><button data-v="compare" id="txCmpBtn" aria-pressed="false">Compare</button><button data-v="about" id="txAbout">About the data</button><a href="/sky">Sky</a></nav>
+  <nav class="tx-nav"><button data-v="explore" class="on">Explorer</button><button data-v="compare" id="txCmpBtn" aria-pressed="false">Compare</button><button data-v="about" id="txAbout">About the data</button><a href="/sky">Sky</a><a href="/tools">Tools</a></nav>
   <div class="tx-sel" id="txSel"></div></header>
 <main class="tx-main" id="txMain"><canvas id="txCv" aria-label="Evolutionary tree. Scroll or pinch to zoom, drag to move, tap a species or branch point to inspect it."></canvas><div class="tx-crumbs" id="txCrumbs"></div><div class="tx-banner" id="txBanner" hidden></div><div class="tx-cmp" id="txCmp" hidden></div>
-  <div class="tx-legend"><span><svg><circle cx="9" cy="6" r="4.5" fill="#fbf8f1" stroke="#c8401f" stroke-width="2"/></svg>Reviewed</span><span><svg><circle cx="9" cy="6" r="3.2" fill="#fbf8f1" stroke="#857c6e" stroke-width="1.5"/></svg>Not yet reviewed</span><span><svg><rect x="5" y="2" width="8" height="8" transform="rotate(45 9 6)" fill="#fbf8f1" stroke="#a86d12" stroke-width="1.8"/></svg>Debated</span><span><svg><path d="M3 6 L15 2 L15 10 Z" fill="#e7dfcf" stroke="#857c6e"/></svg>Group: tap to open</span></div>
+  <div class="tx-legend"><span><svg><circle cx="9" cy="6" r="4.5" fill="#fbf8f1" stroke="#c8401f" stroke-width="2"/></svg>Reviewed</span><span><svg><circle cx="9" cy="6" r="3.2" fill="#fbf8f1" stroke="#737a83" stroke-width="1.5"/></svg>Not yet reviewed</span><span><svg><rect x="5" y="2" width="8" height="8" transform="rotate(45 9 6)" fill="#fbf8f1" stroke="#a86d12" stroke-width="1.8"/></svg>Debated</span><span><svg><path d="M3 6 L15 2 L15 10 Z" fill="#e7dfcf" stroke="#737a83"/></svg>Group: tap to open</span></div>
   <div class="tx-zoom"><button id="txIn" aria-label="Zoom in">+</button><button id="txOut" aria-label="Zoom out">−</button><button id="txFit" aria-label="Fit the whole tree" style="font-size:13px">⤢</button></div><div class="tx-tip" id="txTip" hidden></div></main>
 <aside class="tx-side" id="txSide" aria-live="polite"></aside>
 <dialog class="tx-dlg" id="txDlg"><button class="x" aria-label="Close" onclick="this.closest('dialog').close()">×</button><div id="txDlgBody"></div></dialog>`;
@@ -73,13 +73,13 @@ function hot() {   // ids on highlighted paths: the selected species' lineage, o
 function draw() {
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, Hh);
   const { s: HOT, m: M } = hot(), anyHot = HOT.size > 0, rh = cam.rowH, x1 = px(1);
-  const header = () => { g.fillStyle = '#f4efe4'; g.fillRect(0, 0, W, TOP - 22); g.fillStyle = '#ddd3c1'; g.fillRect(0, TOP - 23, X1() + labelW() + 18, 1);
+  const header = () => { g.fillStyle = '#fbfbf9'; g.fillRect(0, 0, W, TOP - 22); g.fillStyle = '#dcdfe2'; g.fillRect(0, TOP - 23, X1() + labelW() + 18, 1);
   if (timeMode) { const tx = ma => px(1 - ma / maxAge); PER.forEach(([n, a, b]) => { const xa = Math.max(X0(), tx(a)), xb = tx(b); if (xb < X0()) return;
-      g.font = '500 10px Jost, sans-serif'; const full = n.toUpperCase(), ab = n.slice(0, n === 'Paleogene' ? 5 : n === 'Quaternary' ? 1 : 3).toUpperCase() + '.', t = xb - xa > g.measureText(full).width + 10 ? full : xb - xa > g.measureText(ab).width + 6 ? ab : ''; if (t) { g.fillStyle = '#4b453b'; g.textAlign = 'center'; g.fillText(t, (xa + xb) / 2, TOP - 38); } });
-    g.font = '400 10px "IBM Plex Mono", monospace'; g.fillStyle = '#857c6e'; g.textAlign = 'center'; const lw = g.measureText('500 Ma').width + 14, step = [50, 100, 200, 250, 500].find(st => Math.abs(tx(0) - tx(st)) >= lw) || 500;   // ticks never run together on a narrow screen
+      g.font = '500 10px "Atkinson Next", sans-serif'; const full = n, ab = n.slice(0, n === 'Paleogene' ? 5 : n === 'Quaternary' ? 1 : 3) + '.', t = xb - xa > g.measureText(full).width + 10 ? full : xb - xa > g.measureText(ab).width + 6 ? ab : ''; if (t) { g.fillStyle = '#4a4f57'; g.textAlign = 'center'; g.fillText(t, (xa + xb) / 2, TOP - 38); } });
+    g.font = '400 10px "Atkinson Mono", monospace'; g.fillStyle = '#737a83'; g.textAlign = 'center'; const lw = g.measureText('500 Ma').width + 14, step = [50, 100, 200, 250, 500].find(st => Math.abs(tx(0) - tx(st)) >= lw) || 500;   // ticks never run together on a narrow screen
     for (let m = 0; m < maxAge; m += step) g.fillText(m ? m + ' Ma' : 'Today', tx(m), TOP - 26); }
-  else { g.fillStyle = '#857c6e'; g.font = '500 10px Jost, sans-serif'; g.textAlign = 'left'; g.fillText('BRANCHING ORDER', X0(), TOP - 30); g.font = '400 11px Jost, sans-serif'; g.fillStyle = '#a39a8b'; if (!phone()) g.fillText('Earlier splits to the left · branch lengths carry no time; published ages are written on the branch points', X0() + 112, TOP - 30);
-    g.textAlign = 'right'; g.fillStyle = '#857c6e'; g.font = '500 10px Jost, sans-serif'; g.fillText('LIVING SPECIES', x1 + labelW() - 4, TOP - 30); } };
+  else { g.fillStyle = '#737a83'; g.font = '500 10px "Atkinson Next", sans-serif'; g.textAlign = 'left'; g.fillText('Branching order', X0(), TOP - 30); g.font = '400 11px "Atkinson Next", sans-serif'; g.fillStyle = '#8b9199'; if (!phone()) g.fillText('Earlier splits to the left · branch lengths carry no time; published ages are written on the branch points', X0() + 112, TOP - 30);
+    g.textAlign = 'right'; g.fillStyle = '#737a83'; g.font = '500 10px "Atkinson Next", sans-serif'; g.fillText('Living species', x1 + labelW() - 4, TOP - 30); } };
   if (timeMode) { const tx = ma => px(1 - ma / maxAge); PER.forEach(([, a, b, c], i) => { const xa = Math.max(X0(), tx(a)), xb = tx(b); if (xb < X0()) return; g.fillStyle = c; g.globalAlpha = i % 2 ? .28 : .42; g.fillRect(xa, TOP - 22, xb - xa, Hh - TOP - BOT + 42); g.globalAlpha = 1; }); }   // geological periods behind the tree
   const y0 = -rh * 2, y1 = Hh + rh * 2, inView = y => y > y0 && y < y1;
   // branches
@@ -97,19 +97,19 @@ function draw() {
       const d = (r.age || {}).display; if (timeMode && d && d.source !== 'bounded') { g.strokeStyle = r.review === 'reviewed' ? 'rgba(200,64,31,.5)' : 'rgba(133,124,110,.45)'; g.lineWidth = 5; g.beginPath(); g.moveTo(px(1 - d.hi / maxAge), y); g.lineTo(px(1 - d.lo / maxAge), y); g.stroke(); }
       g.globalAlpha = dim ? .35 : 1; g.fillStyle = '#fbf8f1';
       if (st === 'debated') { g.save(); g.translate(x, y); g.rotate(Math.PI / 4); g.strokeStyle = '#a86d12'; g.lineWidth = 1.8; g.fillRect(-4, -4, 8, 8); g.strokeRect(-4, -4, 8, 8); g.restore(); }
-      else { g.strokeStyle = r.review === 'reviewed' ? '#c8401f' : '#857c6e'; g.lineWidth = r.review === 'reviewed' ? 2 : 1.5; g.beginPath(); g.arc(x, y, r.review === 'reviewed' ? 4.5 : 3.3, 0, 7); g.fill(); g.stroke(); }
+      else { g.strokeStyle = r.review === 'reviewed' ? '#c8401f' : '#737a83'; g.lineWidth = r.review === 'reviewed' ? 2 : 1.5; g.beginPath(); g.arc(x, y, r.review === 'reviewed' ? 4.5 : 3.3, 0, 7); g.fill(); g.stroke(); }
       if (isSel) { g.strokeStyle = 'rgba(200,64,31,.3)'; g.lineWidth = 6; g.beginPath(); g.arc(x, y, 11, 0, 7); g.stroke(); }
-      if (hover === n.id) { g.strokeStyle = '#1a1712'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, 8, 0, 7); g.stroke(); }
+      if (hover === n.id) { g.strokeStyle = '#121417'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, 8, 0, 7); g.stroke(); }
       g.globalAlpha = 1; markers.push({ n, x, y }); }
     if (!collapsed.has(n.id)) n.children.forEach(mk); })(root);
   // clade names where there is room (named groups only, no overlaps)
   const plate = (bx, by, w, fs) => { g.fillStyle = 'rgba(244,239,228,.88)'; g.beginPath(); if (g.roundRect) g.roundRect(bx - 3, by - fs * .82, w + 6, fs * 1.18, 3); else g.rect(bx - 3, by - fs * .82, w + 6, fs * 1.18); g.fill(); };   // a soft backing so branch lines never strike through a label
-  const taken = []; g.font = '500 9.5px Jost, sans-serif'; g.textAlign = 'left';
+  const taken = []; g.font = '600 11px "Atkinson Next", sans-serif'; g.textAlign = 'left';
   markers.forEach(({ n, x, y }) => { const r = rec(n.id); if (!r.name || collapsed.has(n.id)) return; const span = (n.children[n.children.length - 1].row - n.children[0].row) * rh; if (span < 46) return;
-    const t = r.name.toUpperCase().split('').join(String.fromCharCode(8202)), w = g.measureText(t).width, bx = x + 8, by = y - 7; if (bx + w > x1 - 6) return; if (taken.some(b => bx < b[0] + b[2] && bx + w > b[0] && Math.abs(by - b[1]) < 12)) return;
-    taken.push([bx, by, w]); plate(bx, by, w, 9.5); g.fillStyle = anyHot && !HOT.has(n.id) ? 'rgba(75,69,59,.35)' : '#4b453b'; g.fillText(t, bx, by); });
+    const t = r.name, w = g.measureText(t).width, bx = x + 8, by = y - 7; if (bx + w > x1 - 6) return; if (taken.some(b => bx < b[0] + b[2] && bx + w > b[0] && Math.abs(by - b[1]) < 12)) return;
+    taken.push([bx, by, w]); plate(bx, by, w, 9.5); g.fillStyle = anyHot && !HOT.has(n.id) ? 'rgba(75,69,59,.35)' : '#4a4f57'; g.fillText(t, bx, by); });
   // ages on branch points that have published evidence: a fossil bracket, or a fossil minimum alone
-  g.font = '400 10px "IBM Plex Mono", monospace';
+  g.font = '400 10px "Atkinson Mono", monospace';
   markers.forEach(({ n, x, y }) => { if (collapsed.has(n.id) || rh < 9) return; const a = rec(n.id).age || {}, d = a.display; let t = '';
     if (d && d.source !== 'bounded') t = d.lo != null && d.hi != null && d.lo !== d.hi ? `${+d.lo.toFixed(1)}–${+d.hi.toFixed(1)} Ma` : `${+(d.mid != null ? d.mid : d.lo).toFixed(1)} Ma`; else if (a.fossilMin) t = `≥ ${+a.fossilMin.ma.toFixed(1)} Ma`; if (!t) return;
     const w = g.measureText(t).width, bx = x + 8, by = y + 13; if (bx + w > x1 - 6 || taken.some(b => bx < b[0] + b[2] && bx + w > b[0] && Math.abs(by - b[1]) < 11)) return; taken.push([bx, by, w]);
@@ -120,14 +120,14 @@ function draw() {
     g.globalAlpha = dim ? .38 : 1;
     if (isTip(n)) { const t = taxon(n.id), im = img(t), cx = x1 + 6 + tr; g.fillStyle = c; g.beginPath(); g.arc(cx, y, tr, 0, 7); g.fill(); if (im && tr > 6) { g.save(); g.beginPath(); g.arc(cx, y, tr, 0, 7); g.clip(); const s = tr * 2, k = Math.max(s / im.naturalWidth, s / im.naturalHeight); g.drawImage(im, cx - im.naturalWidth * k / 2, y - im.naturalHeight * k / 2, im.naturalWidth * k, im.naturalHeight * k); g.restore(); }
       if (sel === n.id || cmp.includes(n.id)) { g.strokeStyle = '#c8401f'; g.lineWidth = 2; g.beginPath(); g.arc(cx, y, tr + 3, 0, 7); g.stroke(); }
-      if (showLbl) { g.textAlign = 'left'; g.fillStyle = on && (sel === n.id || cmp.includes(n.id)) ? '#c8401f' : '#1a1712'; g.font = `400 ${fs}px "EB Garamond", Georgia, serif`; const lx = cx + tr + 7, room = W - lx - 14; g.fillText(fitText(t.common, room), lx, showSci ? y - 1 : y + fs * .33);
-        if (showSci) { g.fillStyle = '#857c6e'; g.font = `italic 400 ${Math.max(11, fs * .78)}px "EB Garamond", Georgia, serif`; g.fillText(fitText(t.sci, room), lx, y + fs * .82); } } }
-    else if (showLbl) { const r = rec(n.id); g.textAlign = 'left'; g.fillStyle = '#1a1712'; g.font = `500 ${Math.max(11, Math.min(14, rh * .6))}px Jost, sans-serif`; const lx = x1 + 8; g.fillText(r.common || r.name || 'Group', lx, y + 4);
-      const w = g.measureText(r.common || r.name || 'Group').width; g.fillStyle = '#857c6e'; g.font = `400 ${Math.max(10, Math.min(12, rh * .5))}px Jost, sans-serif`; g.fillText(`${n.tips.length} species`, lx + w + 8, y + 4); }
+      if (showLbl) { g.textAlign = 'left'; g.fillStyle = on && (sel === n.id || cmp.includes(n.id)) ? '#c8401f' : '#121417'; g.font = `400 ${fs}px "Atkinson Next", system-ui, sans-serif`; const lx = cx + tr + 7, room = W - lx - 14; g.fillText(fitText(t.common, room), lx, showSci ? y - 1 : y + fs * .33);
+        if (showSci) { g.fillStyle = '#737a83'; g.font = `italic 400 ${Math.max(11, fs * .78)}px "Atkinson Next", system-ui, sans-serif`; g.fillText(fitText(t.sci, room), lx, y + fs * .82); } } }
+    else if (showLbl) { const r = rec(n.id); g.textAlign = 'left'; g.fillStyle = '#121417'; g.font = `500 ${Math.max(11, Math.min(14, rh * .6))}px "Atkinson Next", sans-serif`; const lx = x1 + 8; g.fillText(r.common || r.name || 'Group', lx, y + 4);
+      const w = g.measureText(r.common || r.name || 'Group').width; g.fillStyle = '#737a83'; g.font = `400 ${Math.max(10, Math.min(12, rh * .5))}px "Atkinson Next", sans-serif`; g.fillText(`${n.tips.length} species`, lx + w + 8, y + 4); }
     g.globalAlpha = 1; });
   // a strip of colour per major group at the far right, named when the labels are too small to read
   let run = null; const strip = W - 8, flush = () => { if (!run) return; const ya = py(run.a) - rh / 2 + 1, yb = py(run.b) + rh / 2 - 1; g.fillStyle = GROUP[run.k][1]; g.fillRect(strip, ya, 4, yb - ya);
-    if (!showLbl && yb - ya > 24) { g.font = '500 11px Jost, sans-serif'; g.textAlign = 'right'; g.fillStyle = GROUP[run.k][1]; g.fillText(GROUP[run.k][0], strip - 8, (ya + yb) / 2 + 4); } };
+    if (!showLbl && yb - ya > 24) { g.font = '500 11px "Atkinson Next", sans-serif'; g.textAlign = 'right'; g.fillStyle = GROUP[run.k][1]; g.fillText(GROUP[run.k][0], strip - 8, (ya + yb) / 2 + 4); } };
   rows.forEach(n => { const k = taxon(isTip(n) ? n.id : n.tips[0]).group; if (run && run.k === k) run.b = n.row; else { flush(); run = { k, a: n.row, b: n.row }; } }); flush();
   header(); draw.markers = markers;
 }
@@ -167,12 +167,12 @@ function periodAt(ma) { const p = PER.find(([, a, b]) => ma <= a && ma > b) || P
 function ageChart(a, d) {   // a small timeline: geological periods behind, the fossil minimum, the soft maximum, the bracket and any clock estimates
   const vals = [a.fossilMin && a.fossilMin.ma, a.softMax && a.softMax.ma, d && d.lo, d && d.hi, ...(a.clock || []).flatMap(c => [c.lo, c.hi])].filter(v => v != null); if (!vals.length) return '';
   const span = Math.max(...vals) - Math.min(...vals), hi = Math.max(...vals) + Math.max(4, span * .35), lo = Math.max(0, Math.min(...vals) - Math.max(4, span * .35)), W = 360, x = m => 10 + (hi - m) / (hi - lo) * (W - 20);
-  let s = '', y = 30; PER.forEach(([nm, pa, pb, c]) => { const xa = x(Math.min(pa, hi)), xb = x(Math.max(pb, lo)); if (pb >= hi || pa <= lo) return; s += `<rect x="${xa}" y="14" width="${xb - xa}" height="200" fill="${c}" opacity=".55"/>`; if (xb - xa > nm.length * 6) s += `<text x="${(xa + xb) / 2}" y="10" font-family="Jost" font-size="9" letter-spacing="1" fill="#857c6e" text-anchor="middle">${nm.toUpperCase()}</text>`; });
-  if (d && d.lo != null && d.hi != null) { s += `<line x1="${x(d.hi)}" x2="${x(d.lo)}" y1="${y}" y2="${y}" stroke="#1a1712" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"${d.source === 'bounded' ? ' stroke-dasharray="1 6"' : ''}/>`; y += 18; }
+  let s = '', y = 30; PER.forEach(([nm, pa, pb, c]) => { const xa = x(Math.min(pa, hi)), xb = x(Math.max(pb, lo)); if (pb >= hi || pa <= lo) return; s += `<rect x="${xa}" y="14" width="${xb - xa}" height="200" fill="${c}" opacity=".55"/>`; if (xb - xa > nm.length * 6) s += `<text x="${(xa + xb) / 2}" y="10" font-family="Atkinson Next" font-size="10" fill="#737a83" text-anchor="middle">${nm}</text>`; });
+  if (d && d.lo != null && d.hi != null) { s += `<line x1="${x(d.hi)}" x2="${x(d.lo)}" y1="${y}" y2="${y}" stroke="#121417" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"${d.source === 'bounded' ? ' stroke-dasharray="1 6"' : ''}/>`; y += 18; }
   if (a.fossilMin) { s += `<line x1="${x(a.fossilMin.ma)}" x2="${x(lo)}" y1="${y}" y2="${y}" stroke="#8a5a2b" stroke-dasharray="2 3" stroke-width="1.5"/><rect x="${x(a.fossilMin.ma) - 5}" y="${y - 5}" width="10" height="10" transform="rotate(45 ${x(a.fossilMin.ma)} ${y})" fill="#8a5a2b"/>`; y += 18; }
   if (a.softMax) { s += `<line x1="${x(a.softMax.ma)}" x2="${x(a.softMax.ma)}" y1="${y - 7}" y2="${y + 7}" stroke="#5d7a3a" stroke-width="2"/><line x1="${x(a.softMax.ma)}" x2="${x(a.softMax.ma) + 22}" y1="${y}" y2="${y}" stroke="#5d7a3a" stroke-dasharray="2 3" stroke-width="1.5"/>`; y += 18; }
   (a.clock || []).forEach(c => { s += `<line x1="${x(c.hi)}" x2="${x(c.lo)}" y1="${y}" y2="${y}" stroke="#2f5f8f" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>${c.mid != null ? `<circle cx="${x(c.mid)}" cy="${y}" r="3.5" fill="#2f5f8f"/>` : ''}`; y += 18; });
-  const ticks = [hi, (hi + lo) / 2, lo].map(m => `<text x="${x(m)}" y="${y + 6}" font-family="IBM Plex Mono" font-size="9.5" fill="#857c6e" text-anchor="${m === hi ? 'start' : m === lo ? 'end' : 'middle'}">${m < 1 ? 'Today' : (m >= 100 ? Math.round(m) : +m.toFixed(1)) + ' Ma'}</text>`).join('');
+  const ticks = [hi, (hi + lo) / 2, lo].map(m => `<text x="${x(m)}" y="${y + 6}" font-family="Atkinson Mono" font-size="9.5" fill="#737a83" text-anchor="${m === hi ? 'start' : m === lo ? 'end' : 'middle'}">${m < 1 ? 'Today' : (m >= 100 ? Math.round(m) : +m.toFixed(1)) + ' Ma'}</text>`).join('');
   return `<svg class="tx-chart" viewBox="0 0 ${W} ${y + 10}" role="img" aria-label="Age evidence on a geological timeline">${s.replace(/height="200"/g, `height="${y - 22}"`)}${ticks}</svg>`;
 }
 function agesHTML(n) {
@@ -191,7 +191,7 @@ function agesHTML(n) {
 const ageCount = () => Object.values(D.nodes).filter(r => r.age && (r.age.fossilMin || r.age.softMax || (r.age.clock || []).length)).length;
 function showWelcome() {
   side.classList.remove('open');
-  side.innerHTML = `<div class="tx-grab"></div><div class="tx-eye">The evolutionary tree</div><h1>How every vertebrate <i>is related</i></h1>
+  side.innerHTML = `<div class="tx-grab"></div><div class="tx-eye">The evolutionary tree</div><h1>How every vertebrate is related</h1>
     <p class="tx-lede">${Object.keys(D.taxa).length} species chosen to span every major lineage, from hagfish to humans, placed by the published synthesis of evolutionary relationships. Every branch point will carry the evidence behind it.</p>
     <ol class="tx-how"><li><span><b>Tap a species</b> to see where it sits and who its closest relatives are.</span></li><li><span><b>Tap a branch point</b> for the group it founds and the evidence for it. <b>Tap a triangle</b> to open a group.</span></li><li><span><b>Compare</b> any two species to find their last common ancestor.</span></li><li><span><b>Scroll or pinch</b> to zoom; drag to move; <kbd>/</kbd> to search.</span></li></ol>
     <div class="tx-acts"><button class="p" data-ex="homo-sapiens,gallus-gallus">Human and chicken</button><button data-ex="balaenoptera-musculus,hippopotamus-amphibius">Whale and hippo</button><button data-ex="latimeria-chalumnae,homo-sapiens">Coelacanth and human</button></div>
@@ -226,7 +226,7 @@ function showNode(n) {
 }
 function showCompare() {
   const a = byId.get(cmp[0]), b = byId.get(cmp[1]), m = mrcaOf(a, b), r = rec(m.id), ta = taxon(a.id), tb = taxon(b.id), nm = r.common || r.name || 'an unnamed ancestor';
-  side.innerHTML = `<div class="tx-grab"></div><div class="tx-eye">Last common ancestor</div><h1>${esc(ta.common)} <i>&amp;</i> ${esc(tb.common)}</h1>
+  side.innerHTML = `<div class="tx-grab"></div><div class="tx-eye">Last common ancestor</div><h1>${esc(ta.common)} and ${esc(tb.common)}</h1>
     <p class="tx-lede">Follow both highlighted lines back until they meet. They last shared an ancestor at <b>${esc(nm)}</b>${r.name && r.common ? ` (${esc(r.name)})` : ''}, the founder of a group of ${m.tips.length} species in this tree.</p>
     ${r.blurb ? `<p style="font-size:13.5px;color:var(--ink2);margin:0 0 6px">${esc(r.blurb)}</p>` : ''}
     <h3>When <em>${badge((r.relationship || {}).status)}</em></h3>${agesHTML(m)}
@@ -253,7 +253,7 @@ $('#txCmpBtn').onclick = () => { setCompareMode(!cmpMode); if (!cmpMode && cmp.l
 /* ---------------- search */
 let found = [], fi = 0;
 function search(q) { const res = $('#txRes'), f = q.trim().toLowerCase(); if (!f) { res.hidden = true; return; }
-  found = [...Object.entries(D.taxa).map(([id, t]) => ({ id, a: t.common, b: t.sci, k: GROUP[t.group][0], c: GROUP[t.group][1], im: t.image && t.image.thumb })), ...Object.entries(D.nodes).filter(([, r]) => r.name).map(([id, r]) => ({ id, a: r.common || r.name, b: r.common ? r.name : '', k: 'Group', c: '#ddd3c1' }))]
+  found = [...Object.entries(D.taxa).map(([id, t]) => ({ id, a: t.common, b: t.sci, k: GROUP[t.group][0], c: GROUP[t.group][1], im: t.image && t.image.thumb })), ...Object.entries(D.nodes).filter(([, r]) => r.name).map(([id, r]) => ({ id, a: r.common || r.name, b: r.common ? r.name : '', k: 'Group', c: '#dcdfe2' }))]
     .filter(x => x.a.toLowerCase().includes(f) || x.b.toLowerCase().includes(f)).sort((x, y) => (x.a.toLowerCase().indexOf(f) < 0) - (y.a.toLowerCase().indexOf(f) < 0) || x.a.localeCompare(y.a)).slice(0, 10); fi = 0;
   res.innerHTML = found.length ? found.map((x, i) => `<button data-i="${i}" class="${i ? '' : 'on'}"><i style="--c:${x.c}${x.im ? `;background-image:url('${esc(x.im)}')` : ''}"></i><span><b>${esc(x.a)}</b><small><i style="display:inline;background:none;width:auto;height:auto">${esc(x.b)}</i></small></span><em>${esc(x.k)}</em></button>`).join('') : '<p>Nothing by that name in this selection.</p>';
   res.hidden = false; $$('button', res).forEach(b => b.onclick = () => pick(+b.dataset.i)); }

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scorcher Evolve — find the hidden animal through its ancestors</title>
+<meta name="description" content="A daily deduction game on the tree of life. Name any animal and learn the ancestor it shares with the hidden one. Each guess costs that ancestor's age from your two billion years of deep time.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#f3eee4">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Scorcher">
+<meta property="og:title" content="Scorcher Evolve — find the hidden animal through its ancestors">
+<meta property="og:url" content="https://playscorcher.com/evolve">
+<meta property="og:image" content="https://playscorcher.com/og.png">
+<link rel="preload" href="/fonts/eb-garamond-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jost-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Play style: the race's plate. EB Garamond for display, Jost for the interface in sentence case, warm paper, square corners.
+   Italics only for the wordmark, the answer and scientific names. */
+@font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Jost'; src: url(/fonts/jost-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Jost'; src: url(/fonts/jost-latin-500-normal.woff2) format('woff2'); font-weight: 500 700; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+:root { --paper: #f3eee4; --sheet: #fbf8f1; --ink: #16130f; --ink-2: #4b453b; --mute: #7a7265; --rule: #d8cfbf; --rule-2: #e9e2d3; --accent: #d63a1f; --accent-ink: #b32b12;
+  --disp: 'EB Garamond', Georgia, serif; --ui: 'Jost', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace; --pad: clamp(16px, 4vw, 48px); }
+:root[data-theme="dark"] { --paper: #12100d; --sheet: #1a1713; --ink: #f3eee3; --ink-2: #cbc3b3; --mute: #8f8777; --rule: #322d26; --rule-2: #26221c; --accent: #ff6a45; --accent-ink: #ff8a68; }
+* { box-sizing: border-box; } [hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.5 var(--ui); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; } button { cursor: pointer; }
+a { color: inherit; text-underline-offset: .18em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sci { font-style: italic; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 26px; height: 68px; padding: 0 var(--pad); background: var(--sheet); border-bottom: 1px solid var(--rule); }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.logo svg { width: 30px; height: 26px; display: block; } .logo .word { font: 400 30px/1 var(--disp); letter-spacing: -.01em; } .logo .word b { font-weight: 400; font-style: italic; color: var(--accent); }
+.top nav { display: flex; gap: 22px; font-size: 15px; } .top nav a { text-decoration: none; color: var(--ink-2); padding: 23px 0 21px; border-bottom: 2px solid transparent; } .top nav a:hover { color: var(--ink); } .top nav a.on { color: var(--ink); border-bottom-color: var(--accent); }
+.top .bud { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font-size: 14px; color: var(--ink-2); } .top .bud b { font: 400 15px var(--mono); color: var(--ink); }
+
+main { max-width: 1180px; margin: 0 auto; padding: 0 var(--pad) 80px; }
+.plate { margin-top: clamp(20px, 3vw, 36px); background: var(--sheet); padding: clamp(22px, 3.4vw, 44px); box-shadow: 0 1px 2px rgba(60, 40, 10, .05), 0 14px 34px -18px rgba(60, 40, 10, .24); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 15px; color: var(--ink-2); }
+.meta b { color: var(--ink); font-weight: 500; }
+h1 { margin: 18px 0 0; font: 400 clamp(46px, 7vw, 92px)/.95 var(--disp); letter-spacing: -.02em; }
+.rules { margin: 16px 0 0; max-width: 60ch; font: 400 20px/1.45 var(--disp); color: var(--ink-2); }
+.rules b { color: var(--ink); font-weight: 500; }
+
+.gauge { margin-top: 28px; }
+.gauge .lab { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; } .gauge .lab b { font: 400 15px var(--mono); color: var(--ink); }
+.gauge .bar { position: relative; height: 10px; background: var(--rule-2); overflow: hidden; }
+.gauge .bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--left, 1) * 100%); background: linear-gradient(90deg, #2a4f8a, #5c8cbe 30%, #d6be8c 55%, #f08c50 78%, #d63a1f); background-size: calc(100% / max(var(--left, 1), .001)) 100%; transition: width .6s cubic-bezier(.2, .9, .1, 1); }
+
+.ask { position: relative; margin-top: 26px; max-width: 640px; }
+.ask label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; }
+.ask .box { display: flex; height: 56px; border: 1.5px solid var(--ink); background: #fff; }
+:root[data-theme="dark"] .ask .box { background: var(--paper); }
+.ask input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 16px; font: 400 22px var(--disp); background: transparent; }
+.ask .box button { border: 0; border-left: 1.5px solid var(--ink); padding: 0 20px; background: var(--ink); color: var(--sheet); font-weight: 500; }
+.sug { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin: 0; padding: 0; list-style: none; background: var(--sheet); border: 1.5px solid var(--ink); border-top: 0; max-height: 320px; overflow: auto; }
+.sug li { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-top: 1px solid var(--rule-2); cursor: pointer; } .sug li:first-child { border-top: 0; }
+.sug li.on, .sug li:hover { background: var(--paper); } .sug li.used { opacity: .45; }
+.sug img, .thumb { width: 34px; height: 34px; object-fit: cover; border-radius: 50%; background: var(--rule-2); flex: none; }
+.sug b { font: 400 19px var(--disp); } .sug small { margin-left: auto; color: var(--mute); }
+
+.closest { margin-top: 28px; padding: 18px 20px; border-left: 4px solid var(--c, var(--rule)); background: var(--paper); }
+.closest .k { font-size: 14px; color: var(--ink-2); } .closest h2 { margin: 4px 0 4px; font: 400 32px/1.1 var(--disp); }
+.closest p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+
+.log { margin-top: 26px; border-top: 1.5px solid var(--ink); }
+.log .row { display: grid; grid-template-columns: 34px minmax(0, 1.2fr) minmax(0, 1.6fr) auto; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.log .row .g b { display: block; font: 400 20px/1.15 var(--disp); } .log .row .g small { color: var(--mute); }
+.log .row .a { display: flex; align-items: center; gap: 10px; min-width: 0; } .log .row .a i { flex: none; width: 34px; height: 8px; background: var(--c); }
+.log .row .a span { min-width: 0; } .log .row .a b { font-weight: 500; } .log .row .a small { display: block; color: var(--mute); font-size: 13px; }
+.log .row .c { font: 400 15px var(--mono); text-align: right; white-space: nowrap; } .log .row .c small { display: block; font: 400 12px var(--ui); color: var(--mute); }
+.log .row.win .g b { color: var(--accent); }
+.log .empty { padding: 14px 0; color: var(--mute); }
+
+.guide { margin-top: 36px; }
+.guide .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1.5px solid var(--ink); }
+.guide h3 { margin: 0; font: 400 26px var(--disp); }
+.guide label.tog { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; } .guide label.tog input { accent-color: var(--accent); width: 16px; height: 16px; }
+.grp { margin-top: 18px; } .grp h4 { margin: 0 0 8px; font-weight: 500; font-size: 14px; color: var(--ink-2); }
+.spp { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 4px; border: 1px solid var(--rule); background: var(--sheet); font-size: 14.5px; transition: opacity .2s, border-color .2s; }
+.sp:hover { border-color: var(--ink); } .sp img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--rule-2); }
+.sp.out { opacity: .32; } .sp.used { opacity: .32; text-decoration: line-through; } .sp.used:hover { border-color: var(--rule); cursor: default; }
+
+.done { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 28px; padding: 22px; border: 1.5px solid var(--ink); background: #fff; }
+:root[data-theme="dark"] .done { background: var(--paper); }
+.done figure { margin: 0; } .done img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--rule-2); } .done figcaption { margin-top: 6px; font-size: 12px; color: var(--mute); }
+.done .res { font-size: 15px; color: var(--accent-ink); font-weight: 500; } .done h2 { margin: 6px 0 0; font: italic 400 clamp(40px, 5vw, 60px)/1 var(--disp); color: var(--accent); } .done .sn { margin: 4px 0 12px; font: italic 400 19px var(--disp); color: var(--ink-2); }
+.done .stats { display: flex; gap: 28px; flex-wrap: wrap; margin: 14px 0; } .done .stats b { display: block; font: 400 36px/1 var(--disp); } .done .stats span { font-size: 13px; color: var(--mute); }
+.done p { color: var(--ink-2); margin: 0 0 12px; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; height: 44px; padding: 0 16px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--sheet); text-decoration: none; font-weight: 500; font-size: 15px; }
+.btn.line { background: transparent; color: var(--ink); } .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.yours { margin-top: 56px; }
+.yours .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1.5px solid var(--ink); }
+.yours h2 { margin: 0; font: 400 40px var(--disp); } .yours .hd span { color: var(--ink-2); font-size: 15px; }
+.yours .lede { margin: 14px 0 0; color: var(--ink-2); max-width: 64ch; }
+.ytree { margin-top: 16px; background: var(--sheet); padding: 18px; overflow-x: auto; }
+.ytree svg { display: block; min-width: 560px; width: 100%; height: auto; }
+.ytree .none { padding: 24px 6px; color: var(--mute); font: 400 19px var(--disp); }
+.fine { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--mute); max-width: 90ch; }
+.fine p { margin: 0 0 8px; }
+
+@media (max-width: 760px) {
+  .top { gap: 14px; height: 60px; } .top nav { display: none; } .logo .word { font-size: 26px; }
+  .log .row { grid-template-columns: 34px minmax(0, 1fr) auto; } .log .row .a { grid-column: 2 / -1; grid-row: 2; }
+  .done { grid-template-columns: 1fr; } .rules { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .gauge .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="/" aria-label="Scorcher home"><svg viewBox="4 2 60 50" aria-hidden="true"><circle cx="9" cy="47" r="3.2" fill="#2a4f8a"/><circle cx="21" cy="42" r="4.2" fill="#5c8cbe"/><circle cx="33" cy="34" r="5.4" fill="#d6be8c"/><circle cx="44" cy="24" r="6.8" fill="#f08c50"/><circle cx="54" cy="12" r="8.4" fill="#d63a1f"/></svg><span class="word">Scorch<b>er</b></span></a>
+  <nav><a href="/">Race</a><a href="/evolve" class="on">Evolve</a><a href="#yours">Your Tree</a><a href="/tree">Scorcher Tree</a></nav>
+  <div class="bud">Deep time left <b id="budTop">2,000 Myr</b></div>
+</header>
+<main>
+<section class="plate" id="plate">
+  <div class="meta" id="meta"></div>
+  <h1>Find the hidden animal.</h1>
+  <p class="rules">Name any animal from the field guide. You learn <b>the ancestor it shares with the hidden one</b>, and pay that ancestor’s age from your <b>2,000 million years</b> of deep time. The closer your guess, the cheaper it is.</p>
+  <div class="gauge"><div class="lab"><span>Deep time left</span><b id="budLab">2,000 Myr</b></div><div class="bar"><i id="budBar"></i></div></div>
+  <div id="play">
+    <div class="ask"><label for="q">Guess an animal</label>
+      <div class="box"><input id="q" autocomplete="off" spellcheck="false" placeholder="Type a name, such as koala"><button id="go">Guess</button></div>
+      <ul class="sug" id="sug" hidden></ul></div>
+  </div>
+  <div id="closest"></div>
+  <div class="log" id="log"></div>
+  <div id="done"></div>
+  <div class="guide" id="guide"><div class="hd"><h3>Field guide</h3><label class="tog"><input type="checkbox" id="dim"> Dim the animals already ruled out</label></div><div id="spp"></div></div>
+</section>
+
+<section class="yours" id="yours">
+  <div class="hd"><h2>Your Tree</h2><span id="ycount"></span></div>
+  <p class="lede">Every daily animal you find joins your own branch of the tree of life, placed where the published synthesis puts it. Tap a name to open it in Scorcher Tree.</p>
+  <div class="ytree" id="ytree"></div>
+  <div class="acts"><button class="btn line" id="practice">Play a practice round</button></div>
+</section>
+
+<div class="fine">
+  <p><b>Where the ages come from.</b> Each ancestor’s age is the one Scorcher Tree shows: the central estimate of a published molecular-clock interval, or the minimum of a published fossil calibration. Where only a bound is known, the bound is used. The relationships are the Open Tree of Life synthesis. Ages are rounded to the nearest million years.</p>
+  <p>Photographs from Wikimedia Commons; the photographer and licence are shown with each answer. Practice rounds do not add to Your Tree.</p>
+</div>
+</main>
+<script src="/evolve.js"></script>
+</body>
+</html>

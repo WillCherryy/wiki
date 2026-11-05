@@ -8,7 +8,7 @@ Status: **scoping, nothing here is built** (November 2026). Read with `docs/PLAT
 - **Engineering** is a research question, not yet a product: run trials to find where LLM agents genuinely help engineers, and publish what works and what does not.
 - **Paid tiers:** Trial (one workflow, fixed fee), Subscribe (per agent, monthly), On premises (annual); prices set with the first pilots.
 - **Build's offer (refined):** companies buy a trial in which they test **their own agents**, **Scorcher's agents** (if they have none), or both side by side, on 40–100 tasks drawn from their own work, measured against their current process (tasks completed, time, cost per task, failures a person had to fix). If it is worth their time, they **subscribe** to run Scorcher's agents in production. Start with **smaller companies**, using LLMs and small language models (SLMs, which can run on their own hardware) to connect to **legacy technology** (desktop applications without APIs, industry file formats, historian and SCADA exports, documents) and automate tasks. Domains: **QGIS and geospatial processing, seismic data and imaging, data analysis, drilling engineering software, solar and wind**. Agents connect over an API or the Model Context Protocol.
-- **Three styles** (see `docs/DESIGN.md`): Play (race, evolution game; `mockups/suite/play.html`) and Science (Sky, Tree and tools; `mockups/suite/science.html`, with working coordinate, redshift, luminosity and unit calculators) share one family; Build is branded separately. The suite page `landing.html` uses the family style with Build as its own band.
+- **Three styles** (see `docs/DESIGN.md`), now live: Play keeps the race's plate and logo (the race, `/evolve`, Your Sky, Your Tree); Science uses Atkinson Hyperlegible (`/sky`, `/tree`, `/tools`, the last grown from `mockups/suite/science.html`); Build is branded separately (mockup). The suite page mockup `landing.html` still needs its Play band moved to the plate style.
 - Build's interface: `mockups/suite/build.html`, rebuilt to the system in `docs/DESIGN.md` (a live synthetic seismic section with the agent's pick, the page as a borehole with a depth rail, photographs revealed as shifting seismic traces, a labelled example comparison report). Frames in `mockups/suite/frames/`, scroll recordings in `mockups/suite/video/`, photo credits in `mockups/suite/img/credits.json`.
 
 **Vision (owner):** Scorcher should simultaneously *inspire people* and *be a highly useful science and research tool*. The same honesty rules run through everything: every number has a source; measured, derived, modelled and illustrative are labelled; nothing is invented.
@@ -17,7 +17,7 @@ Status: **scoping, nothing here is built** (November 2026). Read with `docs/PLAT
 
 | Strand | Products | For | State |
 |---|---|---|---|
-| **Play** | Wiki race (daily), Your Sky (collection), evolution game, Your Tree | General public | Race and Your Sky live; game and Your Tree not built |
+| **Play** | Wiki race (daily), Your Sky (collection), Evolve (`/evolve`), Your Tree | General public | All live; Evolve is a first version for playtesting |
 | **Explore** | Scorcher Sky (`/sky`), Scorcher Tree (`/tree`) | Students, researchers, schools | Both live |
 | **Build** (new) | Agentic platforms: Solar, Wind, Geothermal, Engineering | Engineers, developers, students, councils, community energy groups | Scoping (section 3) |
 | **Learn** | Demosthenes Academy links | Students | Later |

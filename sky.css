@@ -1,7 +1,9 @@
+@font-face { font-family: 'Atkinson Next'; src: url(/fonts/atkinson-next-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Atkinson Mono'; src: url(/fonts/atkinson-mono-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
 /* Scorcher Sky: the scientific explorer's interface. The map, globe, close-up and size comparison are styled in styles.css, shared with Your Sky. */
 body.sx { --bg: #05040c; --panel: rgba(9, 8, 20, .82); --line: rgba(255, 255, 255, .09); --line2: rgba(255, 255, 255, .16); --ink: #ece9f7; --ink2: #b9b3d3; --mute: #8a84a8; --accent: #ff9a6b;
   --t-pub: #8fd3a8; --t-der: #8fb8ff; --t-mod: #f2c46d; --t-ill: #c9a0ff;
-  --ui: 'Jost', 'Instrument Sans', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; --disp: 'EB Garamond', Georgia, serif;
+  --ui: 'Atkinson Next', system-ui, sans-serif; --mono: 'Atkinson Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; --disp: 'Atkinson Next', system-ui, sans-serif; --brand: 'EB Garamond', Georgia, serif; --sans: var(--ui); --display: var(--ui); --serif: var(--ui);
   margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--ink); font: 400 14px/1.45 var(--ui); }
 body.sx::before, body.sx::after { display: none; }
 .sx button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
@@ -18,7 +20,7 @@ body.sx::before, body.sx::after { display: none; }
 .sx-top { position: fixed; z-index: 20; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 14px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
   background: linear-gradient(rgba(5, 4, 12, .92), rgba(5, 4, 12, .55) 70%, transparent); }
 .sx-brand { display: flex; align-items: baseline; gap: 8px; text-decoration: none; color: var(--ink); white-space: nowrap; }
-.sx-brand .w { font: 400 22px var(--disp); letter-spacing: .01em; } .sx-brand .w b { font-weight: 400; font-style: italic; color: var(--accent); }
+.sx-brand .w { font: 400 22px var(--brand); letter-spacing: .01em; } .sx-brand .w b { font-weight: 400; font-style: italic; color: var(--accent); }
 .sx-brand .s { font: 500 11px var(--ui); letter-spacing: .28em; text-transform: uppercase; color: var(--ink2); padding-left: 8px; border-left: 1px solid var(--line2); }
 .sx-browse-btn { display: none; }
 .sx-search { flex: 1; max-width: 460px; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 10px 0 12px; border: 1px solid var(--line2); border-radius: 10px; background: rgba(12, 11, 26, .7); color: var(--mute); }
@@ -176,3 +178,17 @@ body.sx #inspect, body.sx #cmp { z-index: 400; }
 }
 @media (max-width: 420px) { .sx-brand .s { letter-spacing: .2em; } .sx-nav .sx-seg button { padding: 5px 8px; } .sx-line u:nth-of-type(odd) { display: none; } }
 @media (prefers-reduced-motion: reduce) { .sx-browse, .sx-insp, .sx-line b { transition: none; } }
+
+/* ===== Science style (November 2026): Atkinson Hyperlegible for reading and data, sentence case, square corners.
+   The wordmark keeps its serif; the evidence tags keep their colours. */
+:root:not(#_) body.sx * { text-transform: none !important; letter-spacing: normal !important; border-radius: 0 !important; }
+:root:not(#_) body.sx .sx-brand .w b { font-style: italic !important; }
+:root:not(#_) body.sx :is(.sx-insp h1, .sx-insp h1 span, .sx-dlg h2) { font-style: normal; font-weight: 700; letter-spacing: -.015em !important; }
+:root:not(#_) body.sx .sx-blurb { font: 400 16px/1.5 var(--ui); }
+:root:not(#_) body.sx :is(.sx-brand .s, .sx-res-h, .sx-gh.static, .sx-sub, .sx-eye, .sx-fov em, .sx-dlg h3, .sx-acc th) { font-size: 13px; font-weight: 600; }
+:root:not(#_) body.sx .sx-brand .s { font-size: 15px; font-weight: 600; color: var(--ink); }
+:root:not(#_) body.sx .sx-tag { font-size: 11.5px; font-weight: 700; }
+:root:not(#_) body.sx .sx-data td small.sx-src { font-style: normal; }
+:root:not(#_) body.sx :is(.sx-search, .sx-seg, .sx-seg button, .sx-lnk, .sx-ib, .sx-panel, .sx-insp, .sx-dlg) { border-radius: 0 !important; }
+:root:not(#_) body.sx kbd { background: none; color: var(--ink2); }
+:root:not(#_) body.sx .sx-sci { color: var(--ink); } @media (max-width: 1180px) { :root:not(#_) body.sx .sx-sci { display: none; } }

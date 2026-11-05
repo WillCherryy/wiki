@@ -76,8 +76,21 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
         const q = document.getElementById('txQ'); q.value = 'coelac'; q.dispatchEvent(new Event('input')); out.search = /coelacanth/i.test(document.getElementById('txRes').innerText);
         out.over = document.documentElement.scrollWidth - innerWidth; return out; });
       if (errs.length) bad(`${tag} /tree: script error: ${errs[0]}`); if (!r.load) bad(`${tag} /tree: dataset did not load`); else { if (!r.taxon) bad(`${tag} /tree: species inspector incomplete`); if (!r.node) bad(`${tag} /tree: branch-point inspector incomplete`); if (!r.cmp) bad(`${tag} /tree: comparison did not find the common ancestor`); if (!r.open) bad(`${tag} /tree: group did not open`); if (!r.search) bad(`${tag} /tree: search failed`); if (r.over > 2) bad(`${tag} /tree: page scrolls sideways`); } }
+    // Scorcher Tools: the calculators give known answers (Betelgeuse's galactic coordinates; Planck 2018 comoving distance at z = 1) and the common-ancestor tool reads the tree
+    errs.length = 0; await page.goto(`http://localhost:${PORT}/tools`); await page.waitForTimeout(1200);
+    { const r = await page.evaluate(() => { const t = id => document.getElementById(id).textContent; return { l: t('o-l'), b: t('o-b'), dc: t('o-dc'), L: t('o-L'), mrca: t('o-mrca'), over: document.documentElement.scrollWidth - innerWidth }; });
+      if (errs.length) bad(`${tag} /tools: script error: ${errs[0]}`); if (!/^199\.787/.test(r.l) || !/8\.959/.test(r.b)) bad(`${tag} /tools: galactic coordinates wrong (${r.l}, ${r.b})`);
+      if (!/^3,39[56]/.test(r.dc)) bad(`${tag} /tools: comoving distance wrong (${r.dc})`); if (!/^88,300/.test(r.L)) bad(`${tag} /tools: luminosity wrong (${r.L})`);
+      if (!/Amniotes/.test(r.mrca) || !/318/.test(r.mrca)) bad(`${tag} /tools: common ancestor of human and chicken wrong`); if (r.over > 2) bad(`${tag} /tools: page scrolls sideways`); }
+    // Scorcher Evolve: a daily animal is chosen, a guess reports the shared ancestor and costs its age, finding it adds it to Your Tree
+    errs.length = 0; await page.goto(`http://localhost:${PORT}/evolve`); await page.waitForTimeout(1200);
+    { const r = await page.evaluate(() => { const E = window.EVOLVE; if (!E || !E.ctx) return { load: false }; const h = E.ctx.hidden, other = h === 'homo-sapiens' ? 'gallus-gallus' : 'homo-sapiens', m = E.mrca(other, h), cost = E.ageOf(m).ma;
+        E.guess(other); const left = parseInt(document.getElementById('budLab').textContent.replace(/,/g, ''), 10), logged = document.getElementById('log').innerText.includes(E.nameOf(m));
+        E.guess(h); const won = /added to Your Tree/.test(document.getElementById('done').innerText), tree = document.querySelectorAll('#ytree svg a').length;
+        return { load: true, cost: Math.abs(2000 - cost - left) <= 1, logged, won, tree, over: document.documentElement.scrollWidth - innerWidth }; });
+      if (errs.length) bad(`${tag} /evolve: script error: ${errs[0]}`); if (!r.load) bad(`${tag} /evolve: game did not start`); else { if (!r.cost) bad(`${tag} /evolve: a guess did not cost its ancestor's age`); if (!r.logged) bad(`${tag} /evolve: shared ancestor not shown`); if (!r.won) bad(`${tag} /evolve: finding the animal did not add it to Your Tree`); if (r.tree < 1) bad(`${tag} /evolve: Your Tree empty after a win`); if (r.over > 2) bad(`${tag} /evolve: page scrolls sideways`); } }
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round)');
 })().catch(e => { console.error(e); process.exit(1); });

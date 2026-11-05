@@ -1,13 +1,17 @@
-/* Scorcher Tree: an editorial "natural-history plate" look, shared type with the rest of Scorcher (EB Garamond, Jost, IBM Plex Mono). */
+/* Scorcher Tree: the Science style (Atkinson Hyperlegible Next and Mono, light ground, square, sentence case). The wordmark keeps EB Garamond. */
+@font-face { font-family: 'Atkinson Next'; src: url(/fonts/atkinson-next-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Atkinson Next'; src: url(/fonts/atkinson-next-latin-italic.woff2) format('woff2'); font-weight: 200 800; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Atkinson Mono'; src: url(/fonts/atkinson-mono-latin.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+
 @font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'EB Garamond'; src: url(/fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: 'Jost'; src: url(/fonts/jost-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Jost'; src: url(/fonts/jost-latin-500-normal.woff2) format('woff2'); font-weight: 500 700; font-display: swap; }
 @font-face { font-family: 'IBM Plex Mono'; src: url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
-:root { --paper: #f4efe4; --sheet: #fbf8f1; --ink: #1a1712; --ink2: #4b453b; --mute: #857c6e; --rule: #ddd3c1; --rule2: #ebe4d5; --accent: #c8401f; --accent-soft: rgba(200, 64, 31, .08);
+:root { --paper: #f1f2ef; --sheet: #fbfbf9; --ink: #121417; --ink2: #4a4f57; --mute: #737a83; --rule: #dcdfe2; --rule2: #eceef0; --accent: #c8401f; --accent-soft: rgba(200, 64, 31, .08);
   --fossil: #8a5a2b; --clock: #2f5f8f; --geo: #5d7a3a; --contest: #a86d12;
-  --disp: 'EB Garamond', Georgia, serif; --ui: 'Jost', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace; }
+  --disp: 'Atkinson Next', system-ui, sans-serif; --ui: 'Atkinson Next', system-ui, sans-serif; --mono: 'Atkinson Mono', ui-monospace, monospace; --brand: 'EB Garamond', Georgia, serif; }
 * { box-sizing: border-box; } [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--paper); color: var(--ink); font: 400 14px/1.45 var(--ui); -webkit-font-smoothing: antialiased; overflow: hidden; }
@@ -18,7 +22,7 @@ kbd { font: 400 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule
 /* top bar */
 .tx-top { position: fixed; z-index: 20; left: 0; right: 0; top: 0; height: 62px; display: flex; align-items: center; gap: 20px; padding: 0 22px; border-bottom: 1px solid var(--rule); background: var(--sheet); }
 .tx-brand { display: flex; align-items: baseline; gap: 9px; text-decoration: none; color: var(--ink); white-space: nowrap; }
-.tx-brand .w { font: 400 24px var(--disp); } .tx-brand .w b { font-weight: 400; font-style: italic; color: var(--accent); }
+.tx-brand .w { font: 400 24px var(--brand); } .tx-brand .w b { font-weight: 400; font-style: italic; color: var(--accent); }
 .tx-brand .s { font: 500 11px var(--ui); letter-spacing: .3em; text-transform: uppercase; color: var(--ink2); padding-left: 9px; border-left: 1px solid var(--rule); }
 .tx-search { position: relative; flex: 0 1 380px; }
 .tx-search label { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; color: var(--mute); }
@@ -119,3 +123,14 @@ kbd { font: 400 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule
 }
 @media (max-width: 520px) { .tx-nav a { display: none; } .tx-brand .s { letter-spacing: .2em; } }
 @media (prefers-reduced-motion: reduce) { .tx-side { transition: none; } }
+
+/* ===== Science style overrides */
+:root:not(#_) body * { text-transform: none !important; letter-spacing: normal !important; border-radius: 0 !important; }
+:root:not(#_) body :is(.tx-res i, .tx-chip i, .tx-dot, .tx-photo-dot) { border-radius: 50% !important; }
+:root:not(#_) body .tx-brand .s { font: 600 15px var(--ui); color: var(--ink); }
+:root:not(#_) body :is(.tx-eye, .tx-side h3, .tx-badge, .tx-ev em.uv) { font-size: 13px; font-weight: 600; }
+:root:not(#_) body .tx-side h1 { font: 700 34px/1.08 var(--ui); letter-spacing: -.015em !important; }
+:root:not(#_) body :is(.tx-lede) { font: 400 16px/1.55 var(--ui); }
+:root:not(#_) body :is(.tx-res b, .tx-tip b) { font-weight: 600; }
+:root:not(#_) body .tx-sci { font: italic 400 16px var(--ui); }
+:root:not(#_) body .tx-photo .ph { font-style: normal; }
