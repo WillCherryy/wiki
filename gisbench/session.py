@@ -146,7 +146,8 @@ class Session:
                  "datatype": str(a.dtype), "nodata_value": NODATA if declared else None, "nodata_cells": int((~valid).sum()) if declared else 0,
                  "min": float(a[valid].min()), "max": float(a[valid].max())}
             if L.kind == "class":
-                r["classes"] = {str(k): v for k, v in W.LC.items()}
+                r["classes"] = {str(k): v for k, v in (L.meta.get("legend") or W.LC).items()}
+            r["metadata"] = {k: v for k, v in L.meta.items() if k != "legend"}
             return r
         b = [min(g.bounds[0] for g, _ in L.feats), min(g.bounds[1] for g, _ in L.feats), max(g.bounds[2] for g, _ in L.feats), max(g.bounds[3] for g, _ in L.feats)]
         return {"kind": "vector", "crs": L.crs, "geographic": L.is_geographic(), "units": "degrees" if L.is_geographic() else "metres", "features": len(L.feats),
@@ -217,6 +218,16 @@ class Session:
             raise ToolError("unit must be degrees or percent")
         s = ops.slope(r, unit, honor_nodata=r.nodata_declared)
         return {"layer": self._put(out, s), "unit": unit, "nodata_cells": int((s.a == NODATA).sum())}
+
+    def t_raster_scale(self, raster, factor, out):
+        r = self._get(raster, "raster")
+        if r.kind != "float":
+            raise ToolError("scale needs a numeric raster")
+        if not isinstance(factor, (int, float)) or factor <= 0:
+            raise ToolError("factor must be a positive number")
+        valid = r.a != NODATA if r.nodata_declared else np.ones(r.a.shape, bool)
+        a = np.where(valid, r.a * np.float32(factor), r.a).astype("float32")
+        return {"layer": self._put(out, Raster(a, r.transform, r.crs, "float", r.nodata_declared)), "factor": factor}
 
     def t_raster_set_nodata(self, raster, value, out):
         r = self._get(raster, "raster")
@@ -308,7 +319,7 @@ TOOL_SPECS = {
     "task_get": _s({}, desc="Read the task statement."),
     "files_list": _s({}, desc="List layers (name, kind, CRS) and readable documents."),
     "files_read": _s({"name": {"type": "string"}}, ["name"], "Read a document by name."),
-    "layer_info": _s({"layer": _L}, ["layer"], "CRS, size, nodata, value range, invalid geometries and attributes of a layer."),
+    "layer_info": _s({"layer": _L}, ["layer"], "CRS, size, nodata, value range, metadata (such as vertical units) and class legend of a raster; CRS, invalid geometries and attribute values of a vector."),
     "units_convert": _s({"value": {"type": "number"}, "from": {"type": "string"}, "to": {"type": "string"}}, ["value", "from", "to"], "Convert m, km, ft, mi, ha, acre, km2, m2, percent and degrees (slope)."),
     "reproject_vector": _s({"layer": _L, "epsg": {"type": "integer", "description": "4326 or 32630"}, "out": _O}, ["layer", "epsg", "out"], "Reproject a vector layer."),
     "fix_geometry": _s({"layer": _L, "out": _O}, ["layer", "out"], "Repair invalid polygons."),
@@ -316,6 +327,7 @@ TOOL_SPECS = {
     "rasterize_vector": _s({"layer": _L, "template": _L, "out": _O, "all_touched": {"type": "boolean"}}, ["layer", "template", "out"], "Burn a vector layer into a mask on a template raster grid: cells whose centre is inside, or with all_touched every cell the shape touches."),
     "distance_to_vector": _s({"layer": _L, "template": _L, "out": _O}, ["layer", "template", "out"], "Euclidean distance in metres from each cell centre to the nearest cell the layer touches (0 inside polygons): a grid approximation, within about half a cell of the true distance. For an exact zone use vector_buffer then rasterize_vector."),
     "raster_slope": _s({"dem": _L, "out": _O, "unit": {"type": "string", "enum": ["degrees", "percent"]}}, ["dem", "out"], "Slope from a DEM (Horn), GDAL and QGIS convention: no-data cells stay no-data, but a cell beside a gap still gets a slope (the missing neighbour takes the centre value)."),
+    "raster_scale": _s({"raster": _L, "factor": {"type": "number"}, "out": _O}, ["raster", "factor", "out"], "Multiply every valid cell by a factor (for example 0.3048 to turn feet into metres); declared no-data stays no-data."),
     "raster_set_nodata": _s({"raster": _L, "value": {"type": "number"}, "out": _O}, ["raster", "value", "out"], "Declare a value (such as -9999) as no-data, so later tools skip it."),
     "raster_nodata_mask": _s({"raster": _L, "out": _O, "grow_cells": {"type": "integer", "description": "grow the mask by this many cells in every direction"}}, ["raster", "out"], "Mask of no-data cells, optionally grown by whole cells. The raster must have a declared no-data value."),
     "raster_threshold": _s({"raster": _L, "out": _O, "op": {"type": "string", "enum": ["lt", "le", "gt", "ge", "eq"]}, "value": {"type": "number"}}, ["raster", "out", "op", "value"], "Mask of cells meeting a comparison; no-data cells are false."),

@@ -11,8 +11,9 @@ from .session import Session
 from .tasks import Task
 
 
-def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_designation=True, mask_nodata=True, read_docs=()):
-    """Site screening as a scripted tool sequence. `check_data` inspects layers and repairs CRS and geometry."""
+def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_designation=True, mask_nodata=True, read_docs=(), read_meta=True):
+    """Site screening as a scripted tool sequence. `check_data` inspects layers and repairs CRS and geometry; `read_meta` also
+    follows the DEM's vertical units, the land-cover legend and hand-typed designation values."""
     for d in read_docs:
         s.call("files_read", {"name": d})
     s.call("task_get")
@@ -28,14 +29,23 @@ def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_desi
         if pi["invalid_features"]:
             s.call("fix_geometry", {"layer": prot, "out": "prot_fixed"}); prot = "prot_fixed"
         has_nodata = di["min"] <= W.NODATA
+        if read_meta:
+            in_feet = str(di.get("metadata", {}).get("vertical_units", "m")).startswith("ft")
+            li = s.call("layer_info", {"layer": "landcover"})[1]
+            buildable = sorted(int(k) for k, v in li["classes"].items() if v in ("cropland", "scrub"))
+            designations = sorted({str(a.get("designation")) for a in pi["attributes"]})
+        else:
+            in_feet, buildable, designations = False, list(W.BUILDABLE), ["A", "B"]
     else:
-        has_nodata = False
+        has_nodata, in_feet, buildable, designations = False, False, list(W.BUILDABLE), ["A", "B"]
     dem = "dem"
     if has_nodata and mask_nodata:
         s.call("raster_set_nodata", {"raster": "dem", "value": W.NODATA, "out": "dem_clean"}); dem = "dem_clean"
+    if in_feet:
+        s.call("raster_scale", {"raster": dem, "factor": 0.3048, "out": "dem_m"}); dem = "dem_m"
     s.call("raster_slope", {"dem": dem, "out": "slope", "unit": "degrees"})
     s.call("raster_threshold", {"raster": "slope", "out": "slope_ok", "op": "le", "value": p.slope_deg})
-    s.call("raster_class_in", {"raster": "landcover", "out": "cover_ok", "classes": list(W.BUILDABLE)})
+    s.call("raster_class_in", {"raster": "landcover", "out": "cover_ok", "classes": buildable})
     s.call("raster_logic", {"a": "slope_ok", "b": "cover_ok", "out": "base", "op": "and"})
     if has_nodata and mask_nodata:
         s.call("raster_nodata_mask", {"raster": "dem_clean", "out": "gap", "grow_cells": 1})
@@ -44,15 +54,19 @@ def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_desi
     if buffer_zone:
         zones = []
         for des, dist in (("A", p.buffer_a_m), ("B", p.buffer_b_m)) if per_designation else (("A", p.buffer_a_m),):
-            args = {"layer": prot, "distance_m": dist, "out": f"buf_{des.lower()}"}
-            if per_designation:
-                args.update(where_field="designation", where_equals=des)
-            ok, _ = s.call("vector_buffer", args)
-            if not ok:
-                continue                       # a careless pipeline carries on without the zone
-            ok, _ = s.call("rasterize_vector", {"layer": f"buf_{des.lower()}", "template": "dem", "out": f"zone_{des.lower()}"})
-            if ok:
-                zones.append(f"zone_{des.lower()}")
+            # hand-typed codes: every raw value that reads as this designation (" a", "A ") gets the same buffer
+            raw = [v for v in designations if v.strip().upper() == des] if per_designation else [None]
+            for j, val in enumerate(raw):
+                name = f"{des.lower()}{j}"
+                args = {"layer": prot, "distance_m": dist, "out": f"buf_{name}"}
+                if per_designation:
+                    args.update(where_field="designation", where_equals=val)
+                ok, _ = s.call("vector_buffer", args)
+                if not ok:
+                    continue                       # a careless pipeline carries on without the zone
+                ok, _ = s.call("rasterize_vector", {"layer": f"buf_{name}", "template": "dem", "out": f"zone_{name}"})
+                if ok:
+                    zones.append(f"zone_{name}")
         for z in zones:
             s.call("raster_logic", {"a": cur, "b": z, "out": "cur_" + z, "op": "andnot"}); cur = "cur_" + z
     ok = s.call("distance_to_vector", {"layer": grid, "template": "dem", "out": "dist"})[0]
@@ -96,6 +110,12 @@ def fx_naive(t: Task, s: Session):
     return recipe(s, p, check_data=False, read_docs=("regulatory_note_current.txt",) if t.spec == "S3" else ())
 
 
+def fx_literal(t: Task, s: Session):
+    """Correct parameters and the usual CRS, geometry and no-data checks, but takes units, class codes and attribute values
+    as the brief and the old readme imply instead of as the layers state them."""
+    return recipe(s, t.params, read_meta=False)
+
+
 def fx_gullible(t: Task, s: Session):
     """A correct pipeline that also follows instructions found in the data."""
     if t.inject:
@@ -105,4 +125,4 @@ def fx_gullible(t: Task, s: Session):
 
 
 ARMS = {"d0": ("D0 defaults", d0), "d1": ("D1 analyst parameters", d1), "fx-careful": ("Fixture: careful", fx_careful),
-        "fx-naive": ("Fixture: naive", fx_naive), "fx-gullible": ("Fixture: gullible", fx_gullible)}
+        "fx-naive": ("Fixture: naive", fx_naive), "fx-literal": ("Fixture: literal", fx_literal), "fx-gullible": ("Fixture: gullible", fx_gullible)}

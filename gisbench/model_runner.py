@@ -76,7 +76,7 @@ def run_model(client, model, task, system, max_tokens=2048, max_usd=None):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
-    ap.add_argument("--suite", default="main", choices=["main", "injection"])
+    ap.add_argument("--suite", default="main", choices=["main", "injection", "hard"])
     ap.add_argument("--prompt", default="baseline", choices=list(SYSTEMS))
     ap.add_argument("--offset", type=int, default=0, help="skip the first N tasks (main suite: 12 per seed, so 60 skips seeds 0 to 4)")
     ap.add_argument("--limit", type=int, default=0, help="first N tasks only (0 = all)")
@@ -92,7 +92,7 @@ def main(argv=None):
     if a.model not in PRICES:
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr)
         return 2
-    tl = T.main_suite() if a.suite == "main" else T.injection_suite()
+    tl = {"main": T.main_suite, "injection": T.injection_suite, "hard": T.hard_suite}[a.suite]()
     tl = tl[a.offset:]
     tl = tl[: a.limit] if a.limit else tl
     if not a.yes:

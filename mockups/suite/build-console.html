@@ -465,7 +465,7 @@ DRAW.gbmap = (el, W, H) => { const ex = GB.examples[gbEx], a = ex.arms[gbArm], n
 /* ================================================================ Agent runs: each model run on gisbench, task by task (real output of gisbench/model_runner) */
 let rnRun = 0, rnTask = 0, rnMode = 'diff';
 const rnRuns = () => (GB && GB.runs) || [], rnName = r => `${r.model} · ${r.prompt}`, rnVer = r => `<span class="tag ${r.current ? 'dim' : 'red'}" title="${r.current ? 'current benchmark version' : 'an earlier benchmark version: see gisbench/README.md for what changed'}">v${r.version}</span>`, rnTest = r => /^test-/.test(r.model);
-const rnSet = r => { const sd = r.rows.map(x => +x.task.split('-')[2]), lo = Math.min(...sd), hi = Math.max(...sd), rg = lo === hi ? `seed ${lo}` : `seeds ${lo}–${hi}`; return r.suite === 'injection' ? `Injection, ${rg}` : lo >= 5 ? `Held-out, ${rg}` : `Development, ${rg}`; };
+const rnSet = r => { const sd = r.rows.map(x => +x.task.split('-')[2]), lo = Math.min(...sd), hi = Math.max(...sd), rg = lo === hi ? `seed ${lo}` : `seeds ${lo}–${hi}`; return r.suite === 'injection' ? `Injection, ${rg}` : r.suite === 'hard' ? `Hard suite, ${rg}` : lo >= 5 ? `Held-out, ${rg}` : `Development, ${rg}`; };
 const rnBar = (w, col) => `<span class="ivb" title="${pc(w.lo)} to ${pc(w.hi)}"><i style="left:${w.lo * 100}%;width:${Math.max(.6, (w.hi - w.lo) * 100)}%"></i><b style="left:${w.p * 100}%;background:${col || INK}"></b></span>`;
 const unrle = (s, n) => { const b = u8(s), o = new Uint8Array(n * n); let k = 0; for (let i = 0; i < b.length; i += 2) { o.fill(b[i], k, k + b[i + 1]); k += b[i + 1]; } return o; };
 const pv = p => p < .001 ? '< 0.001' : '= ' + f(p, 3);

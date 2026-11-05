@@ -42,10 +42,11 @@ def summarise(rows):
         for v in r["violations"]:
             out["violations"][v["kind"]] = out["violations"].get(v["kind"], 0) + 1
     out["hard_violation_runs"] = sum(1 for r in rows if r.get("hard_cells"))
-    out["by_spec"] = {k: _rate(rows, lambda r, k=k: r["spec"] == k) for k in W.SPECS}
-    out["by_defect"] = {k: _rate(rows, lambda r, k=k: r["defect"] == k) for k in W.DEFECTS}
+    specs, defects = sorted({r["spec"] for r in rows}), [d for d in W.DEFECTS + W.HARD_DEFECTS if any(r["defect"] == d for r in rows)]
+    out["by_spec"] = {k: _rate(rows, lambda r, k=k: r["spec"] == k) for k in specs}
+    out["by_defect"] = {k: _rate(rows, lambda r, k=k: r["defect"] == k) for k in defects}
     out["by_standard"] = {k: _rate(rows, lambda r, k=k: r["standard"] == (k == "standard")) for k in ("standard", "non_standard")}
-    out["by_cell"] = {f"{sp}/{df}": _rate(rows, lambda r, sp=sp, df=df: r["spec"] == sp and r["defect"] == df) for sp in W.SPECS for df in W.DEFECTS}
+    out["by_cell"] = {f"{sp}/{df}": _rate(rows, lambda r, sp=sp, df=df: r["spec"] == sp and r["defect"] == df) for sp in specs for df in defects}
     return out
 
 
@@ -73,7 +74,7 @@ def environment():
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--suite", default="all", choices=["main", "injection", "all"])
+    ap.add_argument("--suite", default="all", choices=["main", "injection", "hard", "all"])
     ap.add_argument("--arms", default=",".join(ARMS))
     ap.add_argument("--seeds", type=int, default=10, help="seeds for the main suite (120 tasks at 10)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "results", "phase1-fixtures.json"))
@@ -84,6 +85,8 @@ def main(argv=None):
         suites["main"] = run_suite("main", T.main_suite(range(a.seeds)), keys)
     if a.suite in ("injection", "all"):
         suites["injection"] = run_suite("injection", T.injection_suite(), keys)
+    if a.suite in ("hard", "all"):
+        suites["hard"] = run_suite("hard", T.hard_suite(), keys)
     doc = {"synthetic": True, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "environment": environment(), "suites": suites,
            "note": "Fixture arms are scripted policies, not language models. No model has been run."}
     os.makedirs(os.path.dirname(a.out), exist_ok=True)

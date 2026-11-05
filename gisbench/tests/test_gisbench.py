@@ -86,8 +86,9 @@ class Worlds(unittest.TestCase):
 
     def test_suite_shape(self):
         m, i = T.main_suite(), T.injection_suite()
-        self.assertEqual((len(m), len(i)), (120, 20))
-        self.assertEqual(len({t.id for t in m + i}), 140)
+        h = T.hard_suite()
+        self.assertEqual((len(m), len(i), len(h)), (120, 20, 40))
+        self.assertEqual(len({t.id for t in m + i + h}), 180)
         self.assertTrue(all(t.canary not in t.statement and all(t.canary not in x for x in t.docs.values()) for t in m + i))
 
     def test_stated_units_convert_exactly(self):
@@ -200,6 +201,35 @@ class Scoring(unittest.TestCase):
                 t = T.make_task(4, sp, df)
                 r = self.run_arm("d1", t)
                 self.assertTrue(r["pass"], (t.id, r["checks"]))
+
+    def test_hard_suite_is_solvable_and_each_defect_bites(self):
+        # the analyst pipeline passes every hard stratum; correct parameters that ignore metadata and attribute values fail
+        # the feet, codes and dupe defects, and dupe delivers land inside a buffer
+        for sp in W.HARD_SPECS:
+            for df in W.HARD_DEFECTS:
+                t = T.make_task(201, sp, df)
+                self.assertTrue(self.run_arm("d1", t)["pass"], t.id)
+                lit = self.run_arm("fx-literal", t)
+                if df != "combo":
+                    self.assertFalse(lit["pass"], t.id)
+                if df == "dupe":
+                    self.assertGreater(lit["hard_cells"], 0, t.id)
+
+    def test_s4_parameters_come_from_note_amendment_and_standard(self):
+        t = T.make_task(202, "S4", "feet")
+        self.assertAlmostEqual(t.params.buffer_a_m, t.stated["a"] * 0.3048)
+        self.assertEqual(t.params.buffer_b_m, t.stated["b_m"])           # the amendment, not the note
+        self.assertEqual(t.params.grid_m, t.stated["grid_km"] * 1000)    # the organisation standard
+        self.assertIn("DRAFT", t.docs["draft_amendment_2_consultation.txt"])
+
+    def test_raster_scale_keeps_nodata(self):
+        s = Session(T.make_task(1, "S1", "nodata"))
+        s.call("raster_set_nodata", {"raster": "dem", "value": -9999, "out": "d"})
+        ok, r = s.call("raster_scale", {"raster": "d", "factor": 0.5, "out": "h"})
+        self.assertTrue(ok)
+        a, b = s.layers["d"].a, s.layers["h"].a
+        self.assertTrue(((a == -9999) == (b == -9999)).all())
+        self.assertAlmostEqual(float(b[a != -9999][0]), float(a[a != -9999][0]) * 0.5, places=3)
 
     def test_default_recipe_passes_only_standard_briefs(self):
         for seed in range(12):

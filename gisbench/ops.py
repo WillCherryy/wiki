@@ -19,10 +19,11 @@ NODATA = -9999.0
 
 class Raster:
     """A single-band raster in a projected CRS. `nodata` cells hold NODATA in float rasters."""
-    __slots__ = ("a", "transform", "crs", "kind", "nodata_declared")
+    __slots__ = ("a", "transform", "crs", "kind", "nodata_declared", "meta")
 
-    def __init__(self, a, transform: Affine, crs: str, kind: str = "float", nodata_declared: bool = True):
+    def __init__(self, a, transform: Affine, crs: str, kind: str = "float", nodata_declared: bool = True, meta: dict | None = None):
         self.a, self.transform, self.crs, self.kind, self.nodata_declared = a, transform, crs, kind, nodata_declared
+        self.meta = meta or {}          # layer metadata as a GIS would show it (vertical units, class legend)
 
     @property
     def cell(self) -> float:
