@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "scorcher-build" generated at 2026-11-05T11:29:26.548Z.

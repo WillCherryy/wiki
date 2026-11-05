@@ -17,3 +17,6 @@ tools/video/.cosmos-bake/
 harness/out/
 .dev.vars
 .env
+backend/.bundle/
+backend/.wrangler/
+backend/.dev.vars

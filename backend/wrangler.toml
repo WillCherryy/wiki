@@ -1,0 +1,43 @@
+# Scorcher Build backend: a Worker separate from the race's (../wrangler.toml), so customer data and its secrets never share a blast radius.
+name = "scorcher-build"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+minify = true   # 896 KiB (203 KiB gzipped) minified against 2.1 MiB unminified: faster cold starts
+
+# Own subdomain (decide the name, then uncomment): keeps the game and the platform on separate origins.
+# routes = [{ pattern = "build.playscorcher.com", custom_domain = true }]
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "development"
+MAX_FILE_BYTES = "26214400"   # 25 MB per uploaded file
+
+# One Durable Object per trial; SQLite-backed (free plan needs this kind).
+[[durable_objects.bindings]]
+name = "TRIAL"
+class_name = "Trial"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Trial"]
+
+# Create once:  npx wrangler d1 create scorcher-build   then put the printed id below, then
+#               npx wrangler d1 migrations apply scorcher-build --remote
+[[d1_databases]]
+binding = "DB"
+database_name = "scorcher-build"
+database_id = "REPLACE_WITH_THE_ID_FROM_wrangler_d1_create"
+migrations_dir = "migrations"
+
+# Create once:  npx wrangler r2 bucket create scorcher-build-files
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "scorcher-build-files"
+
+# Secrets (never commit; set once, they survive deploys):
+#   npx wrangler secret put ANTHROPIC_API_KEY      model calls (route 2); not needed for the other endpoints
+#   npx wrangler secret put BUILD_ADMIN_KEY        a long random string; the admin endpoints need it until real accounts exist
+# Local development reads the same names from a git-ignored backend/.dev.vars file.

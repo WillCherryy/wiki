@@ -14,6 +14,7 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | Tool gateway (`gateway.js`): typed tools, per-trial trace, call budget, review gate | Built |
 | Tools: `resource_volumetric_mc`, `well_horner`, `seismic_compare_picks`, `units_convert` | Built, tested against closed forms |
 | Grading (`grade.js`) and synthetic resource tasks (`tasks.js`) | Built for the reference class |
+| **TypeScript backend** (`backend/`): a separate Worker with a Durable Object per trial, D1, R2 and a model proxy; ports the file, table and unit tools, sandbox, policy, audit chain, grading and model loop; strict type-check, 22 tests, a smoke test on the real Workers runtime. Bundle 896 KiB minified (203 KiB gzipped); a tool call is about 0.3 ms of compute plus hashing, 17 ms end to end locally. Not deployed | Built, tested locally |
 | File sandbox, tool policy, spend cap, egress filter and a hash-chained audit trail (`sandbox.js`, `gateway.js`); see `BUILD-SECURITY.md` | Built, tested |
 | Customer task spec (`taskspec.js`) and `run-spec.js`; file tools `files_list`, `files_read`, `table_query` | Built, tested |
 | Mining suite (grade and tonnage) and a prompt-injection suite (`packs.js`) | Built on synthetic data |
