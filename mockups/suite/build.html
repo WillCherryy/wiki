@@ -261,7 +261,7 @@ function seismic(cv, opt = {}) {
 }
 const S = seismic($('#seis')); let shown = 0; const t0 = performance.now();
 // ---- a generated contour map for the geospatial chapter
-function contours(cv) { const g = cv.getContext('2d'), d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; const W = cv.width, H = cv.height;
+function contours(cv) { const g = cv.getContext('2d'), d = Math.min(2, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; const W = cv.width, H = cv.height; if (!W || !H) return; // hidden (zero-size) canvas, e.g. on a phone layout
   g.fillStyle = '#e9ecdf'; g.fillRect(0, 0, W, H); const f = (x, y) => Math.sin(x * 3.1 + 1) * Math.cos(y * 2.3) + .7 * Math.sin((x + y) * 4.7) + .5 * Math.cos(x * 7.3 - y * 5.1) + 1.4 * Math.exp(-((x - .62) ** 2 + (y - .42) ** 2) * 9);
   const N = 220, img = g.createImageData(N, Math.round(N * H / W)), h = img.height; for (let j = 0; j < h; j++) for (let i = 0; i < N; i++) { const v = f(i / N * 1.6, j / h * 1.6 * H / W), band = Math.floor(v * 6), frac = v * 6 - band, line = frac < .06, k = (j * N + i) * 4, wet = v < -.9;
     const c = wet ? [196, 214, 236] : line ? [120, 92, 60] : band % 2 ? [226, 230, 210] : [214, 222, 196]; img.data.set([...c, 255], k); }

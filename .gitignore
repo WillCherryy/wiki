@@ -24,7 +24,6 @@ backend/.bundle-min/
 
 # Scorcher Build phase 1 benchmark: generated run output (regenerate with python3 -m gisbench.run) and copyrighted papers
 gisbench/results/phase1-fixtures.json
-gisbench/results/model-*.json
 docs/research/papers/
 __pycache__/
 *.pyc

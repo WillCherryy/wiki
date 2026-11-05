@@ -72,6 +72,8 @@ def main():
     models = []
     for f in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "results", "model-*.json"))):
         m = json.load(open(f))
+        if m.get("bench_version", 1) != __import__("gisbench.tasks", fromlist=["BENCH_VERSION"]).BENCH_VERSION:
+            continue  # scored against an earlier brief; kept in results/v1 for the record
         models.append({"model": m["model"], "prompt": m["prompt"], "suite": m["suite"], "n_run": m["n_run"], "n_suite": m["n_suite"], "usd": m["usd"]})
     xc = os.path.join(os.path.dirname(__file__), "results", "qgis-crosscheck.json")
     ec = os.path.join(os.path.dirname(__file__), "results", "qgis-engine-check.json")

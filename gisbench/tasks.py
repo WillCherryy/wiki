@@ -9,7 +9,10 @@ FIELDS = ("suitable_area_ha", "largest_parcel_ha", "feasible", "clear_sky_yield_
 REPORT = ("Report suitable_area_ha, largest_parcel_ha (8-connected cells), feasible (largest parcel at least the required land), "
           "clear_sky_yield_gwh (annual, clear sky, for the stated capacity; 0 if not feasible) and the name of your final "
           "suitability mask layer in `mask`. Areas in hectares, energy in GWh. List any assumptions you made in `assumptions`.")
-COMMON = "Only cropland and scrub can be built on. Cells without elevation data, and cells touching them, are not suitable. Parcels count as contiguous with diagonal contact."
+# Version 2 (November 2026): the brief now states the cell-centre convention for zones and distances. Version 1 left it
+# unstated, and a model that burned every touched cell (a defensible, conservative choice) missed the key by 1 to 3 % of area.
+BENCH_VERSION = 2
+COMMON = "Only cropland and scrub can be built on. Cells without elevation data, and cells touching them, are not suitable. Zones and distances are judged at cell centres: a cell is inside a protected area or its buffer, or within the line distance, when its centre is. Parcels count as contiguous with diagonal contact."
 
 
 @dataclass

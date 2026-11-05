@@ -313,7 +313,7 @@ TOOL_SPECS = {
     "reproject_vector": _s({"layer": _L, "epsg": {"type": "integer", "description": "4326 or 32630"}, "out": _O}, ["layer", "epsg", "out"], "Reproject a vector layer."),
     "fix_geometry": _s({"layer": _L, "out": _O}, ["layer", "out"], "Repair invalid polygons."),
     "vector_buffer": _s({"layer": _L, "distance_m": {"type": "number"}, "out": _O, "where_field": {"type": "string"}, "where_equals": {"type": "string"}}, ["layer", "distance_m", "out"], "Buffer a projected vector layer by metres, optionally for features where a field equals a value."),
-    "rasterize_vector": _s({"layer": _L, "template": _L, "out": _O, "all_touched": {"type": "boolean"}}, ["layer", "template", "out"], "Burn a vector layer into a mask on a template raster grid."),
+    "rasterize_vector": _s({"layer": _L, "template": _L, "out": _O, "all_touched": {"type": "boolean"}}, ["layer", "template", "out"], "Burn a vector layer into a mask on a template raster grid: cells whose centre is inside, or with all_touched every cell the shape touches."),
     "distance_to_vector": _s({"layer": _L, "template": _L, "out": _O}, ["layer", "template", "out"], "Euclidean distance in metres to the nearest feature, on the template grid."),
     "raster_slope": _s({"dem": _L, "out": _O, "unit": {"type": "string", "enum": ["degrees", "percent"]}}, ["dem", "out"], "Slope from a DEM (Horn). Cells touching no-data are no-data."),
     "raster_set_nodata": _s({"raster": _L, "value": {"type": "number"}, "out": _O}, ["raster", "value", "out"], "Declare a value (such as -9999) as no-data, so later tools skip it."),
