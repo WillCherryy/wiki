@@ -6,6 +6,9 @@ const fs = require('fs'), path = require('path');
 const { runTrial } = require('./run-trial');
 const { normalise, powerMWe, KEYS } = require('./tools/resource');
 const { TOOLS } = require('./gateway');
+const { PRICES, SOURCE } = require('./pricing');
+const { wilson, pairedDiff } = require('./stats');
+const { summarise } = require('./score');
 
 const r = runTrial(), f = (x, d = 1) => (+x).toFixed(d);
 const note = e => {
@@ -31,11 +34,20 @@ function tornado(task) { const n = normalise(task), base = Object.fromEntries(KE
   return { base: b, rows: KEYS.filter(k => n[k].kind !== 'fixed').map(k => ({ key: k, label: LABEL[k], lo: powerMWe({ ...base, [k]: n[k].min }), hi: powerMWe({ ...base, [k]: n[k].max }), min: n[k].min, max: n[k].max })).sort((x, y) => Math.abs(y.hi - y.lo) - Math.abs(x.hi - x.lo)) }; }
 const detail = t => ({ id: t.id, inputs: t.inputs, normalised: normalise(t), tornado: tornado(t), reference: t.reference, arms: Object.fromEntries(r.arms.map(a => [a.name, slimRow(a.rows.find(x => x.task === t.id))])) });
 
+// real model runs, if any were saved by run-llm-trial.js: only those on the same tasks (same seed and count) can be compared with the fixtures
+const resDir = path.join(__dirname, 'results');
+const models = fs.existsSync(resDir) ? fs.readdirSync(resDir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(resDir, f), 'utf8'))).filter(m => m.seed === r.seed && m.nTasks === r.nTasks) : [];
+const allArms = [...r.arms, ...models.map(m => ({ ...m }))];
+const units = r.tasks.map(t => t.inputs.area.unit), bench = a => { const g = (pred) => { const idx = units.map((u, i) => pred(u) ? i : -1).filter(i => i >= 0), k = idx.reduce((s, i) => s + a.rows[i].pass, 0); return { ...wilson(k, idx.length) }; };
+  return { metric: g(u => u === 'km2'), field: g(u => u !== 'km2') }; };
+const pairs = allArms.slice(1).map(a => ({ a: allArms[0].name, b: a.name, ...pairedDiff(allArms[0].rows.map(x => x.pass), a.rows.map(x => x.pass)) }));
+const EST = { inTokens: 25000, outTokens: 3000 };   // the runner's rough per-task assumption, shown only as an estimate
 const out = {
   synthetic: true, generated: r.generated, nTasks: r.nTasks, seed: r.seed,
-  arms: r.arms.map(a => ({ name: a.name, pass: a.pass, firstPass: a.firstPass, failures: a.failures, corrected: a.corrected, meanCalls: a.meanCalls, results: a.rows.map(x => x.pass), first: a.rows.map(x => x.firstPass) })),
+  arms: allArms.map(a => ({ name: a.name, kind: a.kind, model: a.model || null, route: a.route || null, pass: a.pass, firstPass: a.firstPass, failures: a.failures, corrected: a.corrected, meanCalls: a.meanCalls, cost: a.cost || null, bench: bench(a), results: a.rows.map(x => x.pass), first: a.rows.map(x => x.firstPass) })),
+  prices: { source: SOURCE, models: Object.entries(PRICES).map(([id, p]) => ({ id, name: p.name, inPerM: p.inPerM, outPerM: p.outPerM, note: p.note || null, estimatePerTask: (EST.inTokens * p.inPerM + EST.outTokens * p.outPerM) / 1e6 })), estimate: EST },
   tools: Object.entries(TOOLS).map(([name, t]) => ({ name, description: t.description })),
-  pairs: r.pairs, taskIds: r.tasks.map(t => t.id), taskUnits: r.tasks.map(t => t.inputs.area.unit),
+  pairs, taskIds: r.tasks.map(t => t.id), taskUnits: r.tasks.map(t => t.inputs.area.unit),
   detail: { [metric.id]: detail(metric), [field.id]: detail(field) },
 };
 const file = path.join(__dirname, '..', 'mockups', 'suite', 'build-sample.js');

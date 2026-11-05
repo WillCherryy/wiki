@@ -13,7 +13,8 @@
     "stats": "node tools/stats.js",
     "deploy": "node tools/deploy.js",
     "tree": "node tools/build-tree.js",
-    "harness": "node harness/run-trial.js"
+    "harness": "node harness/run-trial.js",
+    "agent": "node harness/run-llm-trial.js"
   },
   "dependencies": {},
   "devDependencies": {

@@ -5,22 +5,17 @@
 const fs = require('fs'), path = require('path');
 const { generate, reference } = require('./tasks');
 const { Trial, call } = require('./gateway');
-const { gradeResource, validate } = require('./grade');
-const { wilson, pairedDiff } = require('./stats');
+const { pairedDiff } = require('./stats');
+const { scoreRow, summarise } = require('./score');
 const { AGENTS } = require('./agents');
 
 function runArm(name, agent, tasks) {
   const rows = tasks.map(task => {
-    const trial = new Trial(`${name}:${task.id}`, task), t0 = Date.now(); let error = null;
+    const trial = new Trial(`${name}:${task.id}`, task); let error = null;
     try { agent(trial); } catch (e) { error = e.message; }
-    trial.ended = trial.ended || Date.now();
-    const final = trial.accepted ? gradeResource(task, trial.accepted) : { pass: false, class: 'reference', category: 'no-answer', checks: [] };
-    const first = trial.attempts[0] ? (validate(trial.attempts[0].answer).length ? { pass: false } : gradeResource(task, trial.attempts[0].answer)) : { pass: false };
-    return { task: task.id, pass: final.pass ? 1 : 0, firstPass: first.pass ? 1 : 0, category: final.category, gate: trial.attempts.length > 1 ? 'corrected after review gate' : null, grade: final, summary: trial.summary(), trace: trial.trace, attempts: trial.attempts.map(a => a.answer), error };
+    return scoreRow(task, trial, error);
   });
-  const k = rows.reduce((s, r) => s + r.pass, 0), k1 = rows.reduce((s, r) => s + r.firstPass, 0), cats = {};
-  rows.forEach(r => { if (r.category) cats[r.category] = (cats[r.category] || 0) + 1; });
-  return { name, rows, pass: wilson(k, rows.length), firstPass: wilson(k1, rows.length), failures: cats, corrected: rows.filter(r => r.gate).length, meanCalls: rows.reduce((s, r) => s + r.summary.calls, 0) / rows.length };
+  return summarise(name, rows, { kind: 'fixture' });
 }
 
 function runTrial({ n = 24, seed = 20261105 } = {}) {

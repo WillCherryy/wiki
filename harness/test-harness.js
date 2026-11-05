@@ -84,6 +84,32 @@ const { runTrial } = require('./run-trial');
     const got = JSON.parse((await client.callTool({ name: 'task_get', arguments: {} })).content[0].text); ok(got.id === 'res-001', 'stdio serves the requested task');
     await client.close(); await new Promise(r => setTimeout(r, 500));
     const rec = fs.existsSync(out) ? JSON.parse(fs.readFileSync(out, 'utf8')) : null; ok(rec && rec.trace.length === 1 && rec.trace[0].tool === 'task_get', 'stdio writes the trace when the agent disconnects'); }
+  // the model runner (route 1 for a model): a STAND-IN for the model, speaking the real message format, tests the wiring only. Its output is never reported as a result.
+  { const { runModelAgent } = require('./llm-agent'), { createHttp } = require('./mcp'), { callCost, trialCost } = require('./pricing'), { scoreRow } = require('./score');
+    const mk = (id, name, input) => ({ type: 'tool_use', id, name, input });
+    const standIn = (script = {}) => { let turn = 0; return async ({ messages, tools }) => { turn++; const last = messages[messages.length - 1].content, usage = { input_tokens: 1000 * turn, output_tokens: 200 }; script.sawTools = tools.map(t => t.name);
+      if (script.refuse) return { content: [], stop_reason: 'refusal', usage };
+      if (turn === 1) return { content: [mk('t1', script.badFirst ? 'units_convert' : 'task_get', script.badFirst ? { value: 'x' } : {})], stop_reason: 'tool_use', usage };
+      if (script.badFirst && turn === 2) { script.sawError = last[0].is_error === true; return { content: [mk('t2', 'task_get', {})], stop_reason: 'tool_use', usage }; }
+      const t = turn - (script.badFirst ? 1 : 0);
+      if (t === 2) return { content: [mk('t2', 'resource_volumetric_mc', { inputs: normalise(JSON.parse(last[0].content)), n: 20000, seed: 4 })], stop_reason: 'tool_use', usage };
+      if (t === 3) { const m = JSON.parse(last[0].content); return { content: [mk('t3', 'submit_answer', { answer: { p90: m.p90, p50: m.p50, p10: m.p10, unit: 'MWe', method: 'stand-in: Monte Carlo of the volumetric method' } })], stop_reason: 'tool_use', usage }; }
+      return { content: [{ type: 'text', text: 'done' }], stop_reason: 'end_turn', usage }; }; };
+    const h = createHttp(), port = await h.listen(), url = `http://127.0.0.1:${port}/mcp`, task = generate(3)[0], model = 'claude-haiku-5-5';
+    { const { trial, token } = h.open(task), script = {}, run = await runModelAgent({ model, url, token, trial, complete: standIn(script) });
+      ok(run.stopReason === 'submitted' && trial.accepted && gradeResource(task, trial.accepted).pass, 'a model-shaped agent works a task over MCP and is graded');
+      ok(!script.sawTools.includes('report_usage') && script.sawTools.includes('submit_answer'), 'the model is shown the task tools but not the accounting tool');
+      ok(trial.usage.length === 3 && trial.usage.reduce((s, u) => s + u.input_tokens, 0) === 6000 && trial.usage.reduce((s, u) => s + u.output_tokens, 0) === 600, 'token usage is recorded on the trial, per call');
+      near(trialCost(model, run.calls).total, 0.0009, 1e-9, 'cost from tokens at the published rates (Haiku 5.5: 6,000 in, 600 out)'); near(run.cost, 0.0009, 1e-9, 'running cost matches'); }
+    { const { trial, token } = h.open(task), run = await runModelAgent({ model, url, token, trial, complete: standIn(), maxCostUsd: 0.0001 }); const row = scoreRow(task, trial, null, { stopReason: run.stopReason });
+      ok(run.stopReason === 'cost-cap' && !trial.accepted && row.category === 'cost-cap' && row.pass === 0, 'the spend cap stops a run and is recorded as its own failure category'); }
+    { const { trial, token } = h.open(task), run = await runModelAgent({ model, url, token, trial, complete: standIn({ refuse: true }) }); ok(run.stopReason === 'refusal' && scoreRow(task, trial, null, { stopReason: run.stopReason }).category === 'refusal', 'a refusal is recorded as a refusal, with no silent fallback to another model'); }
+    { const { trial, token } = h.open(task), script = { badFirst: true }, run = await runModelAgent({ model, url, token, trial, complete: standIn(script) }); ok(script.sawError === true && run.stopReason === 'submitted', 'a malformed tool call comes back to the model as an error result, and it recovers'); }
+    await h.close();
+    near(callCost('claude-haiku-5-5', { input_tokens: 150000, output_tokens: 1000 }).input, 0.075, 1e-9, 'Haiku 5.5 long-prompt rate applies above 100K tokens'); let threw = false; try { callCost('no-such-model', { input_tokens: 1, output_tokens: 1 }); } catch { threw = true; } ok(threw, 'a model without a price is refused, never guessed');
+    const run = args => require('child_process').spawnSync(process.execPath, [path.join(__dirname, 'run-llm-trial.js'), ...args], { encoding: 'utf8', env: { PATH: process.env.PATH } });
+    const dry = run(['--model', 'claude-haiku-5-5', '--n', '2']); ok(dry.status === 0 && /Not running/.test(dry.stdout) && /estimate/.test(dry.stdout), 'the trial command prints an estimate and does not spend without --yes');
+    const nokey = run(['--model', 'claude-haiku-5-5', '--n', '2', '--yes']); ok(nokey.status === 2 && /No credentials/.test(nokey.stderr), 'with --yes but no credentials it refuses and says how to supply them'); }
   if (fails) { console.error(`build harness: ${fails} of ${checks} checks failed`); process.exit(1); }
-  console.log(`ok: build harness (${checks} checks: statistics, tools against closed forms, gateway trace and review gate, grading, fixture trial, an agent over MCP, HTTP and stdio)`);
+  console.log(`ok: build harness (${checks} checks: statistics, tools against closed forms, gateway trace and review gate, grading, fixture trial, an agent over MCP, HTTP and stdio, the model runner with cost and spend cap)`);
 })().catch(e => { console.error(e); process.exit(1); });

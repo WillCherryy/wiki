@@ -22,14 +22,17 @@ const TOOLS = {
   well_horner: { description: 'Formation temperature from bottom-hole temperature readings by the Horner method, with a 95 % interval from the regression.', shape: { readings: z.array(z.object({ dtHours: z.number(), tempC: z.number() })).min(2), tcHours: z.number() }, run: a => hornerExtrapolate(a.readings, a.tcHours) },
   seismic_compare_picks: { description: 'Compare an agent horizon pick set with two interpreters: difference statistics and the fraction of picks within the human spread.', shape: { agent: picks, interpreterA: picks, interpreterB: picks, tolMs: z.number().optional() },
     run: a => ({ agentVsA: pickDifference(a.agent, a.interpreterA), agentVsB: pickDifference(a.agent, a.interpreterB), humans: pickDifference(a.interpreterA, a.interpreterB), withinHumanSpread: withinHumanSpread(a.agent, a.interpreterA, a.interpreterB, a.tolMs || 0) }) },
+  report_usage: { description: 'Report the model and token usage of one model call your agent made (input_tokens, output_tokens). Self-reported: the scorecard labels it so. Optional, call once per model call or once with totals.',
+    shape: { model: z.string(), input_tokens: z.number().int().min(0), output_tokens: z.number().int().min(0) },
+    run: (a, trial) => { (trial.usage = trial.usage || []).push({ model: a.model, input_tokens: a.input_tokens, output_tokens: a.output_tokens }); return { recorded: true, calls: trial.usage.length }; } },
   submit_answer: { description: 'Submit the final answer. Deterministic checks run first and report what is wrong, so you may correct and resubmit; the number of attempts is recorded. Fields: p90, p50, p10 (numbers), unit ("MWe"), method (text), steps (optional list of text).',
     shape: { answer: z.record(z.string(), z.unknown()) },
     run: (a, trial) => { trial.attempts.push({ at: Date.now(), answer: a.answer }); const errors = validate(a.answer); if (!errors.length) { trial.accepted = a.answer; trial.done = true; return { accepted: true, attempt: trial.attempts.length }; } return { accepted: false, errors, attempt: trial.attempts.length }; } },
 };
 
 class Trial {
-  constructor(id, task, { maxCalls = 60 } = {}) { Object.assign(this, { id, task, maxCalls, trace: [], attempts: [], accepted: null, done: false, tokens: null, started: Date.now(), ended: null }); }
-  summary() { return { id: this.id, task: this.task.id, calls: this.trace.length, attempts: this.attempts.length, accepted: !!this.accepted, wallMs: (this.ended || Date.now()) - this.started, tokens: this.tokens }; }
+  constructor(id, task, { maxCalls = 60 } = {}) { Object.assign(this, { id, task, maxCalls, trace: [], attempts: [], accepted: null, done: false, tokens: null, usage: null, started: Date.now(), ended: null }); }
+  summary() { return { id: this.id, task: this.task.id, calls: this.trace.length, attempts: this.attempts.length, accepted: !!this.accepted, wallMs: (this.ended || Date.now()) - this.started, tokens: this.tokens, usage: this.usage }; }
 }
 
 // Call a tool for a trial. Throws on a bad call but always writes the trace entry first.

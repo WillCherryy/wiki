@@ -15,12 +15,13 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | Tools: `resource_volumetric_mc`, `well_horner`, `seismic_compare_picks`, `units_convert` | Built, tested against closed forms |
 | Grading (`grade.js`) and synthetic resource tasks (`tasks.js`) | Built for the reference class |
 | Fixture agents (`agents.js`) and `run-trial.js` | Built. They are scripted recipes, not language models and not Scorcher's agents |
+| Model runner (`llm-agent.js`, `run-llm-trial.js`): a Claude model works tasks over MCP route 1, with token and cost accounting (`pricing.js`) and a spend cap | Built and tested with a stand-in model. **Not yet run against a real model: no API key in the build environment** |
 | MCP over HTTP with one bearer token per trial (`mcp.js`) | Built; an agent working a task over it is in the tests |
 | MCP over stdio (`node harness/mcp.js --task res-001`) | Built; tested with an SDK client (the trace is written when the agent disconnects) |
 | GIS adapters (QGIS), ArcGIS, SEG-Y reading, document extraction | Not built |
 | Persistence, accounts, billing, a real dashboard behind the console mockup | Not built |
 
-`mockups/suite/build-console.html` is the console mockup. Its overview and resource-estimate views display a real harness run (`node harness/export-sample.js` regenerates `build-sample.js`) on synthetic tasks; the GIS, seismic, well and document views compute on synthetic data in the page and are labelled so.
+`mockups/suite/build-console.html` is the console mockup. It fills the window on a desktop (panels scroll inside themselves, never the page) and scales up on large screens. Its overview, agents and resource-estimate views display a real harness run (`node harness/export-sample.js` regenerates `build-sample.js`) on synthetic tasks; the GIS, seismic, well and document views compute on synthetic data in the page and are labelled so.
 
 ## Principles
 
@@ -103,6 +104,63 @@ MCP is a protocol that exposes tools to an agent uniformly; the software still n
 - Sensitive data: on-premises route (4), or private deployment. Retention is the client's decision.
 - Known gap: a malformed call rejected by the MCP protocol layer before it reaches the gateway is not in the trace.
 
+## Getting a real model in
+
+The runner is built; what is missing is a credential. `llm-agent.js` is a route-1 client: it connects to the harness over MCP with a trial token, shows the model the gateway's tools (not the accounting tool), runs the tool loop, and records tokens as it goes. `run-llm-trial.js` runs it over the synthetic tasks and saves a scorecard to `harness/results/`; the console picks that up the next time `node harness/export-sample.js` runs.
+
+To run it:
+1. Add `ANTHROPIC_API_KEY` as an environment variable (or network secret) in the cloud environment's settings, so a new session has it. Never paste it into a chat. On your own machine, set it in the shell.
+2. `cd harness && npm install`, then from the repo root `npm run agent -- --model claude-haiku-5-5` prints the estimate and stops; add `--yes` to spend. `--max-cost` caps the whole run (default $1).
+
+Choices made on purpose, because this is a comparison platform:
+- **No refusal fallback.** A server-side fallback would silently swap in another model and the scorecard would credit the wrong one. A refusal is recorded as a refusal.
+- **No prompt caching, no thinking settings.** Each call is billed at the plain published rates, and every model runs at its own defaults.
+- **A generic prompt.** It does not say which tools to use, in what order, or to convert units: finding that out is what is being tested.
+- **A spend cap and an estimate first.** Nothing spends money without `--yes`.
+- **The model is a setting.** `--model` takes any model with a price in `pricing.js`.
+
+What a first run will tell us: whether a current model, left to itself, handles the unit trap, produces a proper P90 to P10, and uses the review gate. With 24 tasks the interval on its pass rate is about ±10 points, so the honest first result is a rough one.
+
+## Price, quality and benchmarks per agent
+
+The console's **Agents and plans** view lists each agent with: quality (pass rate with a 95 % interval and a first-attempt rate), tokens in and out, cost per task split into input and output, and **cost per correct answer** (total spend divided by passes: a cheap agent that is often wrong can cost more per right answer than a dearer one). Below that, benchmarks: pass rates on fixed task sets with their intervals. Today there are two (metric-unit and field-unit resource estimates); each new task family adds more, each graded in its own class.
+
+- **Model cost** is tokens at the published per-million-token rates in `pricing.js` (source and date stated; prices change, so check the live page before quoting a customer). Route-1 token counts are self-reported by the agent's client and labelled so; routes 2 and 3 can measure them through a proxy.
+- **Fixtures have no cost** (they are not models). **Models not yet run show only the price list and an estimate** that assumes 25,000 input and 3,000 output tokens per task, a placeholder until a run measures it. The console never shows made-up results for a model that has not run.
+- **Scorcher's own prices are not set** and nothing in the code or the console has a number for them (`docs/SUITE.md`: agreed with the first pilots).
+
+## Using Scorcher's agent, and subscribing
+
+The offer is: run your agent, Scorcher's, or both on the same tasks, then subscribe to Scorcher's if it earns its place. Scorcher's agent is the same kind of thing as a customer's: a loop with a prompt, a model and the gateway's tools, run on our side (route 2 with our own prompt and key). It gets no special access, and its runs are scored by the same graders, so the comparison is fair.
+
+What a subscription needs, none of which exists yet:
+- **Accounts for organisations**, with roles. The Worker today knows only anonymous player IDs.
+- **Entitlements**: a record that organisation X may run agent Y. The Worker already verifies signed payment webhooks (Stripe and Lemon Squeezy) and records purchases as entitlements for the race's supporter packs, so the signing, storage and checking pattern can be reused; the keys, plans and usage metering are new.
+- **Metering**: tokens per run, measured at our model proxy, so usage is billed from our own record and not from a customer's claim.
+- **A decision on pricing**: model use bundled into a fee, or passed through at cost plus a margin. Open.
+- **For paying customers on their own data**: an audit trail, retention rules and an on-premises option. This is the heaviest part.
+
+## Is it possible, will it work, and how complex is it?
+
+**Possible: yes.** Every piece exists in the world and the core is built here: a typed tool gateway, a trace, a review gate, graders, statistics, MCP over HTTP and stdio, and a model runner. Nothing in the design needs research to be feasible.
+
+**Will it work: as an evaluation platform, yes; whether agents are good at these jobs is the open question, and it is empirical.** The platform's value is that it finds out honestly, for a given firm, on its own tasks. Reasons for caution, in order of how likely they are to bite:
+1. **Ground truth costs expert time.** Reference answers, tolerances, and (for seismic) a second interpreter must come from the client's engineers. Without them the scores are not trustworthy, and no software fixes that.
+2. **Proprietary and legacy software.** Open tools (QGIS, SEG-Y libraries, our own Monte Carlo) are easy to wrap. ArcGIS needs a licence and its own scripting; some seismic packages are GUI-only; screen control is slow and brittle. Each package is its own project and has licence terms to check.
+3. **Models may be good at some tasks and poor at others.** Unit handling and calculation-through-tools are likely strong; interpretation under uncertainty and long messy documents are less certain. Synthetic results do not transfer to a client's real data.
+4. **Security and data.** Energy firms may not send data to a third party; the on-premises route and small local models then become the product, and cost more to build and support.
+5. **Selling to small firms** who may not have a person to run a trial. This is a business risk, not a technical one.
+
+**How complex?** Rough estimates by one developer working with an AI assistant, to be treated as ranges and not commitments. The largest uncertainty is in client tasks and software access, not code.
+
+| Stage | What | Rough effort |
+|---|---|---|
+| Prove it | A real model on the resource task and its honest scorecard (needs the key); QGIS adapter and one GIS task | days to 2 weeks |
+| Pilot-ready | Persistence for trials; a trace and scorecard viewer wired to real data; hosted loop (route 2); two or three domains on a first client's real, frozen tasks; on-premises packaging | 1 to 3 months |
+| Product | Accounts and roles, billing and metering, audit logging, security review, more adapters, support and operations | 6 to 12 months or more, and likely more than one person |
+
+**The sensible next step is not more code.** Find one geothermal firm, pick one task that costs them real time, have their engineer write down what a correct answer is, and run a trial on it, before building more adapters. The harness is ready for that.
+
 ## Dashboards, one per task
 
 All share a frame: task, arms, verdict, grading class, the workflow trace, and review controls. The main panel is specific to the task (mockup: `mockups/suite/build-console.html`):
@@ -117,7 +175,7 @@ All share a frame: task, arms, verdict, grading class, the workflow trace, and r
 
 ## Build order
 
-1. Resource estimate end to end (done in the harness on synthetic tasks, with fixture agents). Next: connect a real model agent over MCP and record the first honest result; write the resulting scorecard up with its intervals whatever it shows.
+1. Resource estimate end to end (done in the harness on synthetic tasks, with fixture agents; the model runner is built). Next: supply an API key, run a real model over MCP, and record the first honest scorecard with its intervals whatever it shows.
 2. Persistence for trials, a read-only viewer for traces and scorecards, and the console fed from it.
 3. QGIS adapter and the GIS task; a first real client task set, drawn and frozen before running.
 4. Seismic data preparation (SEG-Y checks), then pick comparison on real sections with two interpreters.
