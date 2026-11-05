@@ -105,6 +105,6 @@ Build never uses the temperature scale. It uses the evidence colours only in its
 - `science.html`: the origin of `/tools`
 - `play.html`: superseded
 - `build.html`
-- `build-console.html`: the Build trial console, one dashboard per task plus agents and plans; a full-window app shell with intake (New task), suites, mining and security views; and published at /build/console as a noindex concept; (13 px type, panels that scroll inside themselves, the whole console scaled up on large screens); its overview, agents and resource views display real harness output (`node harness/export-sample.js`)
+- `build-console.html`: the Build trial console, one dashboard per task plus agents and plans; a full-window app shell with intake (New task), suites, mining and security views; and published at /build/console as a noindex concept; (13 px type, panels that scroll inside themselves, the whole console scaled up on large screens); its overview, agents and resource views display real harness output (`node harness/export-sample.js`); its GIS benchmark view shows real output of the phase 1 benchmark (`python3 -m gisbench.export_dashboard`, data in `gisbench-sample.js`)
 
 The suite page still shows the Atkinson family for Play. Before it goes live, it should switch to the race's plate style described above.

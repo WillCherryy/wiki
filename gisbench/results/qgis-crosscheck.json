@@ -1,0 +1,52 @@
+{
+ "qgis": "3.34.4-Prizren",
+ "worlds": [
+  {
+   "seed": 0,
+   "slope_cells": 13924,
+   "slope_max_abs_diff_deg": 1.9073486328125e-06,
+   "slope_mean_abs_diff_deg": 1.754982547320295e-07,
+   "slope_share_over_0_01_deg": 0.0,
+   "buffer_A_rel_diff": 1.833938729251711e-13,
+   "buffer_B_rel_diff": 6.940544510980632e-13
+  },
+  {
+   "seed": 1,
+   "slope_cells": 13924,
+   "slope_max_abs_diff_deg": 1.9073486328125e-06,
+   "slope_mean_abs_diff_deg": 1.6605928304790595e-07,
+   "slope_share_over_0_01_deg": 0.0,
+   "buffer_A_rel_diff": 3.549792720593819e-13,
+   "buffer_B_rel_diff": 3.78668859279366e-13
+  },
+  {
+   "seed": 2,
+   "slope_cells": 13924,
+   "slope_max_abs_diff_deg": 1.9073486328125e-06,
+   "slope_mean_abs_diff_deg": 1.5464409355355624e-07,
+   "slope_share_over_0_01_deg": 0.0,
+   "buffer_A_rel_diff": 3.2475478566220763e-13,
+   "buffer_B_rel_diff": 3.234917628402461e-13
+  },
+  {
+   "seed": 3,
+   "slope_cells": 13924,
+   "slope_max_abs_diff_deg": 1.9073486328125e-06,
+   "slope_mean_abs_diff_deg": 1.5891009138528384e-07,
+   "slope_share_over_0_01_deg": 0.0,
+   "buffer_A_rel_diff": 9.990958741455102e-14,
+   "buffer_B_rel_diff": 1.9387228904005288e-13
+  },
+  {
+   "seed": 4,
+   "slope_cells": 13924,
+   "slope_max_abs_diff_deg": 1.9073486328125e-06,
+   "slope_mean_abs_diff_deg": 1.6916855202259533e-07,
+   "slope_share_over_0_01_deg": 0.0,
+   "buffer_A_rel_diff": 5.930131602466388e-14,
+   "buffer_B_rel_diff": 4.590126359444724e-13
+  }
+ ],
+ "max_slope_diff_deg": 1.9073486328125e-06,
+ "max_buffer_rel_diff": 6.940544510980632e-13
+}
