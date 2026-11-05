@@ -11,7 +11,10 @@ REPORT = ("Report suitable_area_ha, largest_parcel_ha (8-connected cells), feasi
           "suitability mask layer in `mask`. Areas in hectares, energy in GWh. List any assumptions you made in `assumptions`.")
 # Version 2 (November 2026): the brief now states the cell-centre convention for zones and distances. Version 1 left it
 # unstated, and a model that burned every touched cell (a defensible, conservative choice) missed the key by 1 to 3 % of area.
-BENCH_VERSION = 2
+# Version 3 (November 2026): two tool descriptions corrected. raster_slope said cells touching no-data get no slope; the tool
+# follows GDAL and QGIS and gives them one, so an agent trusting the text kept cells the brief excludes (every v2 model failure).
+# distance_to_vector now states it is a grid approximation (one v2 run used it for a buffer and delivered 19 cells inside one).
+BENCH_VERSION = 3
 COMMON = "Only cropland and scrub can be built on. Cells without elevation data, and cells touching them, are not suitable. Zones and distances are judged at cell centres: a cell is inside a protected area or its buffer, or within the line distance, when its centre is. Parcels count as contiguous with diagonal contact."
 
 

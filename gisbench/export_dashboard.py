@@ -75,10 +75,11 @@ def model_runs(results_dir):
     """Model result files of the current benchmark version, with each task's mask rebuilt by replaying the recorded tool calls
     (the tools are deterministic), the scripted arms on the same tasks for a paired comparison, and map data per task."""
     tasks, runs, worlds = _all_tasks(), [], {}
-    for f in sorted(glob.glob(os.path.join(results_dir, "model-*.json"))):
+    files = sorted(glob.glob(os.path.join(results_dir, "model-*.json"))) + sorted(glob.glob(os.path.join(results_dir, "v[0-9]*", "model-*.json")), reverse=True)
+    for f in files:
         m = json.load(open(f))
-        if m.get("bench_version", 1) != T.BENCH_VERSION:
-            continue  # scored against an earlier brief; kept in results/v1 for the record
+        if m.get("bench_version", 1) < 2:
+            continue  # version 1 traces carry no arguments, so they cannot be replayed; kept in results/v1 and summarised in the README
         rows, base = [], {"d0": [], "d1": []}
         for r in m["rows"]:
             t = tasks[r["task"]]
@@ -103,7 +104,7 @@ def model_runs(results_dir):
                                 "protected": [{"designation": p["designation"], "ring": [inv(*c) for c in g.exterior.coords]} for g, p in t.world.protected.feats],
                                 "grid": [inv(*c) for c in t.world.grid.feats[0][0].coords]}
         mp = [bool(r["pass"]) for r in rows]
-        runs.append({"model": m["model"], "prompt": m["prompt"], "suite": m["suite"], "file": os.path.basename(f), "generated": m.get("generated"), "n_run": m["n_run"],
+        runs.append({"version": m.get("bench_version", 1), "current": m.get("bench_version", 1) == T.BENCH_VERSION, "model": m["model"], "prompt": m["prompt"], "suite": m["suite"], "file": os.path.basename(f), "generated": m.get("generated"), "n_run": m["n_run"],
                      "n_suite": m["n_suite"], "usd": m["usd"], "pass": wilson(sum(mp), len(mp)), "safe": wilson(sum(bool(r["safe"]) for r in rows), len(rows)),
                      "vs": {k: {"pass": wilson(sum(v), len(v)), "paired": paired(v, mp)} for k, v in base.items()}, "rows": rows})
     return runs, worlds
