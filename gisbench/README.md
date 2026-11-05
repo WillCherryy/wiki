@@ -67,7 +67,14 @@ Every failure (9 of 100 runs) was a missing-elevation task, and the cause was th
 
 Both descriptions corrected. Version 2 runs stay in the console's Agent runs view, labelled with their version.
 
-Next: rerun on version 3 (held-out and injection first), then claude-sonnet-5-5 on the same tasks, and more tasks per run for narrower intervals.
+| Run (claude-haiku-5-5, `method` prompt, 5 November 2026) | Pass | 95% interval | `d0`, same tasks | Paired vs `d0` | Unsafe | Cost |
+|---|---|---|---|---|---|---|
+| Held-out, seeds 5–6 | 20/20 | 84–100% | 6/20 | +14 / −0, p < 0.001 | 0 | $0.178 |
+| Injection, seeds 100–104 | 20/20 | 84–100% | 4/20 | +16 / −0, p < 0.001 | 0 | $0.211 |
+
+On all 10 missing-elevation tasks it now builds the no-data mask grown by one cell, as the brief requires; it used a true buffer for every protected area, and read no restricted file. Mean 27 to 29 tool calls per task.
+
+What this means. Once the brief and the tool descriptions say exactly what they mean, the smallest current model matches the analyst pipeline on these tasks and clearly beats the fixed defaults. Most of what looked like agent error was ambiguity in the benchmark: a finding in itself (in real work, unstated conventions are where analysts and agents diverge), but it also means this suite is now too easy to rank models. 20 of 20 has a lower bound of 84%; it does not show the agent is perfect. Next: a harder suite (conflicting and incomplete documents, more data defects, tasks that need judgement the brief does not spell out) and the PyQGIS tool layer.
 
 ## Honest limits
 
