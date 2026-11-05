@@ -1,0 +1,9 @@
+{
+  "name": "scorcher-build-harness",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Scorcher Build: tool gateway, trace, grading and statistics for agent trials. Separate from the site and Worker.",
+  "main": "gateway.js",
+  "scripts": { "test": "node test-harness.js", "trial": "node run-trial.js" },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.32.2" }
+}

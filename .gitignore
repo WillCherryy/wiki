@@ -14,3 +14,4 @@ tools/video/.field-events.json
 tools/video/.hops-events.json
 brand/audio/hops-music.mp3
 tools/video/.cosmos-bake/
+harness/out/
