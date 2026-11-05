@@ -1,6 +1,7 @@
 """Run a real model as the agent against the same tool layer and scorer.
 
     export ANTHROPIC_API_KEY=...        (set it in the environment, never in chat or in a file in the repository)
+    or store it as a network secret for api.anthropic.com (header x-api-key) and set GISBENCH_KEY_VIA_PROXY=1
     python3 -m gisbench.model_runner --model claude-haiku-5-5 --suite main --limit 20 --prompt baseline --yes --max-usd 2
 
 Writes gisbench/results/model-<model>-<prompt>-<suite>.json, which run.py merges into the dashboard data. The loop never lets the
@@ -73,8 +74,11 @@ def main(argv=None):
     ap.add_argument("--max-usd", type=float, default=5.0, help="stop the whole run beyond this estimated spend")
     ap.add_argument("--yes", action="store_true", help="confirm that this spends money")
     a = ap.parse_args(argv)
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set in this environment. Set it in the environment settings (never paste it into chat).", file=sys.stderr)
+    key, via_proxy = os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("GISBENCH_KEY_VIA_PROXY") == "1"
+    if not key and not via_proxy:
+        print("No key. Either set ANTHROPIC_API_KEY in the environment, or store the key as a network secret for api.anthropic.com "
+              "(header x-api-key) and set GISBENCH_KEY_VIA_PROXY=1 so the client sends a placeholder and the proxy adds the real key. "
+              "Never paste a key into chat.", file=sys.stderr)
         return 2
     if a.model not in PRICES:
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr)
@@ -86,7 +90,7 @@ def main(argv=None):
         print(f"{len(tl)} tasks on {a.model}: rough estimate ${est:.2f} (assumes 30k input and 4k output tokens per task; not measured). Re-run with --yes.")
         return 0
     import anthropic
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=key or "placeholder-key-added-by-proxy")
     rows, spent, usage = [], 0.0, []
     for t in tl:
         s, u = run_model(client, a.model, t, SYSTEMS[a.prompt])
