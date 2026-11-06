@@ -10,6 +10,8 @@ import type { Env } from './env.ts';
 import { handleAuth, currentUser, type AuthConfig, type AuthDeps } from './auth-routes.ts';
 import { D1AuthStore } from './core/auth.ts';
 import { D1LoginTokens, ResendMailer } from './core/email-login.ts';
+import { catalogue, findTask } from './catalogue.ts';
+import { handleMcp } from './mcp.ts';
 export { Trial } from './trial.ts';
 
 const ADMIN_TENANT = 'dev';   // the admin key's tenant; signed-in people work in their organisation's tenant
@@ -26,6 +28,18 @@ const bearer = (r: Request) => /^Bearer (\S+)$/.exec(r.headers.get('authorizatio
 // compare digests, not the secrets, and without an early exit
 async function safeEqual(a: string, b: string): Promise<boolean> { const [x, y] = await Promise.all([sha256(a), sha256(b)]); let d = 0; for (let i = 0; i < x.length; i++) d |= x.charCodeAt(i) ^ y.charCodeAt(i); return d === 0; }
 const isAdmin = async (r: Request, env: Env) => !!env.BUILD_ADMIN_KEY && await safeEqual(bearer(r), env.BUILD_ADMIN_KEY);
+const RUNS_PER_DAY = 25;   // Scorcher's agent, per organisation: a spend guard while the service is young
+type TrialStub = DurableObjectStub<import('./trial.ts').Trial>;
+// one way to start a trial, whatever the task's source: files must already be in R2 under prefix
+async function startTrial(env: Env, tenant: string, s: TaskSpec, prefix: string, agent: string | null) {
+  const store = new R2Store(env.FILES), canaries: string[] = [];
+  for (const f of s.files) if (f.sensitivity === 'restricted') { const o = await store.get(prefix + f.path, MAX_TABLE); if (o) canaries.push(...canariesOf(o.text)); }
+  const task: TaskPublic = { id: s.id, title: s.title, statement: s.statement, instructions: s.instructions ?? null, answer: s.answer, files: s.files.map(f => ({ name: f.path, sensitivity: f.sensitivity })), policy: s.policy ?? null, limits: { maxCalls: s.limits?.maxCalls ?? 60, maxCostUsd: s.limits?.maxCostUsd ?? 1 } };
+  const priv: TaskPrivate = { reference: s.reference, canaries }, id = hex(8), token = hex(24), init: TrialInit = { id, prefix, task, priv };
+  await env.TRIAL.get(env.TRIAL.idFromName(id)).init(init, token);
+  await env.DB.prepare('INSERT INTO trials (id, tenant, task_id, created_at, title, agent) VALUES (?, ?, ?, ?, ?, ?)').bind(id, tenant, s.id, Date.now(), s.title, agent).run();
+  return { id, token };
+}
 const hex = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, '0')).join('');
 
 export default {
@@ -38,6 +52,13 @@ export default {
         if (!env.SESSION_SECRET) return json({ error: 'sign-in is not configured: set SESSION_SECRET' }, 503);
         const r = await handleAuth(req, authConfig(env), authDeps(env)); if (r) { for (const [k, v] of Object.entries(corsFor(req, env))) r.headers.set(k, v); return r; }
       }
+      const mcp = /^\/mcp\/([a-f0-9]{16})(?:\/([a-f0-9]{48}))?$/.exec(p);
+      if (mcp) {   // an agent connected over MCP: the trial's token, in the path or as a bearer header
+        const stub = env.TRIAL.get(env.TRIAL.idFromName(mcp[1]!)), token = mcp[2] ?? bearer(req);
+        if (!(await stub.checkToken(token).catch(() => false))) return json({ error: 'a valid trial token is required' }, 401);
+        const row = await env.DB.prepare('SELECT title FROM trials WHERE id = ?').bind(mcp[1]).first<{ title: string | null }>();
+        return handleMcp(req, stub, `Scorcher Build trial: ${row?.title ?? mcp[1]}. Call task_get for the task.`);
+      }
       if (!p.startsWith('/api/')) return json({ error: 'not found' }, 404);
       const call = /^\/api\/trials\/([a-f0-9]{16,64})\/(call|trace|score|run)$/.exec(p);
 
@@ -49,7 +70,8 @@ export default {
       }
       // who is asking: the admin key (tenant "dev"), or a signed-in person (their first organisation's tenant)
       let TENANT = ADMIN_TENANT;
-      if (!(await isAdmin(req, env))) {
+      const admin = await isAdmin(req, env);
+      if (!admin) {
         const user = env.SESSION_SECRET ? await currentUser(req, authDeps(env)) : null; if (!user) return json({ error: 'unauthorised' }, 401);
         if (m !== 'GET' && !corsFor(req, env)['access-control-allow-origin']) return json({ error: 'requests that change data must come from the app' }, 403);   // cookies ride along cross-site; the origin cannot be forged by a browser
         const orgs = await new D1AuthStore(env.DB).orgsOf(user.id); if (!orgs.length) return json({ error: 'no organisation' }, 403);
@@ -69,22 +91,55 @@ export default {
         const max = +env.MAX_FILE_BYTES, len = +(req.headers.get('content-length') ?? NaN); if (!Number.isFinite(len) || len > max) return json({ error: `content-length is required and must be at most ${max} bytes` }, 413);
         await env.FILES.put(`${TENANT}/${up[1]}/${name}`, req.body, { httpMetadata: { contentType: 'application/octet-stream' } }); return json({ stored: name, bytes: len });
       }
+      if (p === '/api/catalogue' && m === 'GET') {
+        return json({ tasks: catalogue().map(c => ({ id: c.spec.id, title: c.spec.title, domain: c.spec.domain, summary: c.summary, skills: c.skills, minutes: c.minutes, statement: c.spec.statement,
+          fields: c.spec.answer.fields.map(f => ({ name: f.name, unit: f.unit ?? null })), files: c.spec.files.map(f => ({ name: f.path, sensitivity: f.sensitivity })) })) });
+      }
       if (p === '/api/trials' && m === 'POST') {
-        const b = await req.json().catch(() => null) as { taskId?: unknown } | null; if (!b || typeof b.taskId !== 'string') return json({ error: 'body must be { taskId }' }, 400);
+        const b = await req.json().catch(() => null) as { taskId?: unknown; catalogueId?: unknown; agent?: unknown } | null;
+        const agent = b?.agent === 'scorcher' || b?.agent === 'mcp' ? b.agent : null;
+        if (b && typeof b.catalogueId === 'string') {
+          const c = findTask(b.catalogueId); if (!c) return json({ error: 'no such catalogue task' }, 404);
+          const prefix = `${TENANT}/catalogue/${c.spec.id}/`;
+          for (const [name, text] of Object.entries(c.files)) await env.FILES.put(prefix + name, text, { httpMetadata: { contentType: 'text/plain' } });
+          const t = await startTrial(env, TENANT, c.spec, prefix, agent);
+          const base = env.PUBLIC_URL ?? new URL(req.url).origin;
+          return json({ trialId: t.id, token: t.token, mcpUrl: `${base}/mcp/${t.id}/${t.token}`, note: 'the token is shown once: it is the agent\'s key to this trial only' }, 201);
+        }
+        if (!b || typeof b.taskId !== 'string') return json({ error: 'body must be { catalogueId } or { taskId }' }, 400);
         const row = await env.DB.prepare('SELECT spec FROM tasks WHERE tenant = ? AND id = ?').bind(TENANT, b.taskId).first<{ spec: string }>(); if (!row) return json({ error: 'no such task' }, 404);
-        const s = JSON.parse(row.spec) as TaskSpec, prefix = `${TENANT}/${s.id}/`, store = new R2Store(env.FILES), canaries: string[] = [];
-        for (const f of s.files) if (f.sensitivity === 'restricted') { const o = await store.get(prefix + f.path, MAX_TABLE); if (o) canaries.push(...canariesOf(o.text)); }
-        const task: TaskPublic = { id: s.id, title: s.title, statement: s.statement, instructions: s.instructions ?? null, answer: s.answer, files: s.files.map(f => ({ name: f.path, sensitivity: f.sensitivity })), policy: s.policy ?? null, limits: { maxCalls: s.limits?.maxCalls ?? 60, maxCostUsd: s.limits?.maxCostUsd ?? 1 } };
-        const priv: TaskPrivate = { reference: s.reference, canaries }, id = hex(8), token = hex(24), init: TrialInit = { id, prefix, task, priv };
-        await env.TRIAL.get(env.TRIAL.idFromName(id)).init(init, token); await env.DB.prepare('INSERT INTO trials (id, tenant, task_id, created_at) VALUES (?, ?, ?, ?)').bind(id, TENANT, s.id, Date.now()).run();
-        return json({ trialId: id, token, note: 'the token is shown once' }, 201);
+        const s = JSON.parse(row.spec) as TaskSpec, t = await startTrial(env, TENANT, s, `${TENANT}/${s.id}/`, agent);
+        const base = env.PUBLIC_URL ?? new URL(req.url).origin;
+        return json({ trialId: t.id, token: t.token, mcpUrl: `${base}/mcp/${t.id}/${t.token}`, note: 'the token is shown once' }, 201);
+      }
+      if (p === '/api/trials' && m === 'GET') {
+        const rows = (await env.DB.prepare('SELECT id, task_id, title, agent, created_at FROM trials WHERE tenant = ? ORDER BY created_at DESC LIMIT 50').bind(TENANT).all<{ id: string; task_id: string; title: string | null; agent: string | null; created_at: number }>()).results;
+        const out = await Promise.all(rows.map(async r => { const stub = env.TRIAL.get(env.TRIAL.idFromName(r.id)) as TrialStub;
+          const [st, sc] = await Promise.all([stub.status().catch(() => null), stub.score().catch(() => null)]);
+          return { ...r, status: st, score: sc ? { pass: sc.pass, correct: sc.correct, safe: sc.safe, category: sc.category } : null }; }));
+        return json({ trials: out });
+      }
+      const one = /^\/api\/trials\/([a-f0-9]{16,64})$/.exec(p);
+      if ((one || call) && !admin) {   // a person sees only their organisation's trials
+        const own = await env.DB.prepare('SELECT 1 AS ok FROM trials WHERE id = ? AND tenant = ?').bind((one ?? call)![1], TENANT).first();
+        if (!own) return json({ error: 'no such trial' }, 404);
+      }
+      if (one && m === 'GET') {
+        const stub = env.TRIAL.get(env.TRIAL.idFromName(one[1]!)) as TrialStub;
+        const [st, sc, tr, row] = await Promise.all([stub.status(), stub.score(), stub.trace(), env.DB.prepare('SELECT task_id, title, agent, created_at FROM trials WHERE id = ?').bind(one[1]).first()]);
+        const cat = row ? findTask(String((row as { task_id: string }).task_id)) : null;
+        return json({ trial: row, status: st, score: sc, ...JSON.parse(tr), reference: st.done && cat ? cat.spec.reference : null });
       }
       if (call) {
-        const stub = env.TRIAL.get(env.TRIAL.idFromName(call[1]!));
+        const stub = env.TRIAL.get(env.TRIAL.idFromName(call[1]!)) as TrialStub;
         if (call[2] === 'trace' && m === 'GET') return new Response(await stub.trace(), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
         if (call[2] === 'score' && m === 'GET') return json(await stub.score());
         if (call[2] === 'run' && m === 'POST') {   // a model works the trial with Scorcher's key (route 2); long runs belong on a queue (next step)
-          if (!env.ANTHROPIC_API_KEY) return json({ error: 'ANTHROPIC_API_KEY is not set: run `wrangler secret put ANTHROPIC_API_KEY`' }, 503);
+          if (!env.ANTHROPIC_API_KEY) return json({ error: "Scorcher's agent is not switched on yet: the owner sets ANTHROPIC_API_KEY on the scorcher-build Worker" }, 503);
+          const since = Date.now() - 864e5, used = await env.DB.prepare('SELECT COUNT(*) AS n FROM trials WHERE tenant = ? AND ran_at > ?').bind(TENANT, since).first<{ n: number }>();
+          if (!admin && (used?.n ?? 0) >= RUNS_PER_DAY) return json({ error: `the daily limit of ${RUNS_PER_DAY} agent runs is reached; try again tomorrow` }, 429);
+          if ((await stub.status()).done) return json({ error: 'this trial is finished; start a new one' }, 409);
+          await env.DB.prepare('UPDATE trials SET ran_at = ?, agent = ? WHERE id = ?').bind(Date.now(), 'scorcher', call[1]).run();
           const b = await req.json().catch(() => ({})) as { model?: string; prompt?: 'baseline' | 'hardened' }, model = b.model ?? 'claude-haiku-5-5'; if (!PRICES[model]) return json({ error: `no price for ${model}` }, 400);
           let done = false;
           const run = await runModelLoop({ complete: await anthropicComplete(env.ANTHROPIC_API_KEY), model, system: systemPrompt(b.prompt === 'hardened' ? 'hardened' : 'baseline'), maxCostUsd: 1, isDone: () => done,
