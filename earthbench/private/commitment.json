@@ -1,0 +1,44 @@
+{
+ "schema": "scorcher.private-commitment/1",
+ "written": "2026-11-06T13:41:41Z",
+ "secret_sha256": "2cb26aa1868f5d63fa076d0621ffd2a7e086715d9a297974a6c4b069c765c1b7",
+ "packs": {
+  "mining": {
+   "tasks": 48,
+   "sha256": "5fe353f1bf8efc62c8cc5d5f20a136225c13f968f0c7b6f12692b4f696823d95"
+  },
+  "geothermal": {
+   "tasks": 48,
+   "sha256": "b35aae214d9f4a41e34625505b52e989869208dd53dca60b85c3669ccfbb4f3d"
+  },
+  "welltest": {
+   "tasks": 24,
+   "sha256": "aaffa7384e2b4b98488f186afadac74ccdcc4fe728101ffdd8e495aa29f4d7b9"
+  },
+  "hazard": {
+   "tasks": 24,
+   "sha256": "98ae8e2462042fc4b5169130ba6ddf6e21965b219fad5790935a9164576f472c"
+  },
+  "solar": {
+   "tasks": 24,
+   "sha256": "0a80148f363908e3e7e21e29014b0beb1a1f521073a900f53a8d1e50829a7dce"
+  },
+  "wind": {
+   "tasks": 24,
+   "sha256": "a2e2e944bb81127b26d758cf3c41b3424176abf7102a298eb003e00a7235ed33"
+  },
+  "seismic": {
+   "tasks": 48,
+   "sha256": "6a06692ed9a28e7bd2cadd140602f53cd0f44a99368192db52e783a937ec99cd"
+  },
+  "scheduling": {
+   "tasks": 24,
+   "sha256": "677e11b567ada68f0f34a3bfb1911638da0571c6368ce3e454b2c6a94f97569d"
+  },
+  "documents": {
+   "tasks": 48,
+   "sha256": "c63258b367b350debef5599d55e7eb1b9ed2199d3251d193a97910be479146fe"
+  }
+ },
+ "how_to_check": "Reveal the secret; rebuild with python -m earthbench.private verify; both hashes must match."
+}
