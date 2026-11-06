@@ -85,12 +85,23 @@ td.m { font-family: var(--mono); font-size: 12px; }
 .sub { font-size: 13px; color: var(--ink-3); margin-top: 18px; } .card.mine { border-style: dashed; }
 @media (max-width: 760px) { .frow, .fhead { grid-template-columns: 1fr 1fr; } }
 [hidden] { display: none !important; }
+.navlink { padding: 6px 10px; font-size: 14px; color: var(--ink-2); text-decoration: none; } .navlink:hover { color: var(--ink); }
+.filters { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { border: 1px solid var(--rule); background: var(--panel); padding: 5px 11px; font-size: 13px; cursor: pointer; }
+.filters button[aria-pressed=true] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.filters button small { font: 400 11px var(--mono); opacity: .7; margin-left: 4px; }
+.tag.phys { border-color: var(--blue); color: var(--blue); }
+.brief { margin-top: 12px; background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 8px; font-size: 14px; }
+.brief .st { font-size: 15px; } .brief dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 12px; font-size: 13px; } .brief dt { font: 400 12px var(--mono); color: var(--ink-3); } .brief dd { margin: 0; }
+.brief code { font: 400 12px var(--mono); background: var(--ground); padding: 1px 5px; margin-right: 4px; display: inline-block; margin-bottom: 3px; }
+.sect { margin-top: 14px; font: 600 13px var(--sans); }
+.sect small { font-weight: 400; color: var(--ink-3); }
 @media (max-width: 760px) { .agents, .live { grid-template-columns: 1fr; } .top nav { display: none; } }
 </style>
 </head>
 <body>
 <header class="top"><a class="mark" href="/"><i></i>Scorcher Build</a>
-  <nav id="nav"><button data-v="run" aria-current="page">Run a test</button><button data-v="new">New task</button><button data-v="trials">Your trials</button><button data-v="guide">Guide</button><a href="/console" style="padding:6px 10px;font-size:14px;color:var(--ink-2);text-decoration:none">Benchmark results</a></nav>
+  <nav id="nav"><button data-v="run" aria-current="page">Run a test</button><button data-v="new">New task</button><button data-v="trials">Your trials</button><button data-v="guide">Guide</button><a class="navlink" href="/console">Results</a><a class="navlink" href="/paper">Paper</a></nav>
   <div class="who" id="who"></div></header>
 <main>
   <section id="gate" class="gate" hidden><h1>Sign in to run tests</h1><p class="lede">Scorcher Build runs AI agents on real-shaped tasks and grades them with exact answers, safety checks and a tamper-evident record. Sign in with a link sent to your email.</p><a class="btn" href="/auth/signin">Sign in</a></section>
@@ -98,8 +109,8 @@ td.m { font-family: var(--mono); font-size: 12px; }
   <section id="v-run" hidden>
     <h1>Run a test</h1>
     <p class="lede">Pick a task, choose who does it, and watch every step. A run passes only if the answer is right <b>and</b> nothing unsafe happened.</p>
-    <div class="step"><h2><span>1</span>Choose a task</h2><p>Built-in tasks each have an exact answer and a trap taken from real data. Your own tasks appear after them; make one under New task.</p><div class="cards" id="tasks"></div><p class="sub" id="mineHead" hidden>Your tasks</p><div class="cards" id="mine"></div></div>
-    <div class="step" id="step2" hidden><h2><span>2</span>Choose who does it</h2>
+    <div class="step"><h2><span>1</span>Choose a task</h2><p>Each task has an exact answer and a trap taken from real data handling. Tasks marked <span class="tag phys">physics checks</span> come from Scorcher's benchmark packs and are also checked without the answer key. Your own tasks appear after them; make one under New task.</p><div class="filters" id="filters"></div><div class="cards" id="tasks"></div><p class="sub" id="mineHead" hidden>Your tasks</p><div class="cards" id="mine"></div></div>
+    <div class="step" id="step2" hidden><h2><span>2</span>Choose who does it</h2><div class="brief" id="brief"></div>
       <div class="agents">
         <div class="agent"><h3>Scorcher's agent</h3><p>Claude Haiku works the task on our servers, with the same tools your agent would get. Takes about a minute.</p><button class="btn" id="runScorcher">Run it</button></div>
         <div class="agent"><h3>Your own agent</h3><p>Connect any agent that speaks the Model Context Protocol: Claude Code, Claude Desktop, Cursor, or your own framework. You get a private address for this trial.</p><button class="btn line" id="runMine">Connect my agent</button></div>
@@ -151,8 +162,14 @@ async function boot() {
   $('#who').innerHTML = `<span>${esc(me.user.email)}</span><button id="out">Sign out</button>`;
   $('#out').onclick = async () => { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); location.href = '/'; };
   tasks = (await api('/api/catalogue')).tasks;
-  $('#tasks').innerHTML = tasks.map((t, i) => `<button class="card" data-i="${i}" aria-pressed="false"><b>${esc(t.title)}</b><p>${esc(t.summary)}</p><div class="tags"><span class="tag dom">${esc(t.domain)}</span>${t.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}<span class="tag">${esc(t.minutes)} min</span></div></button>`).join('');
-  document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => pick(tasks[+c.dataset.i], c));
+  const DOM = { geothermal: 'Geothermal', documents: 'Documents', mining: 'Mining', wind: 'Wind' }, doms = [...new Set(tasks.map(t => t.domain))];
+  let filt = 'all';
+  const drawCards = () => {
+    $('#filters').innerHTML = [['all', 'All', tasks.length], ...doms.map(d => [d, DOM[d] || d, tasks.filter(t => t.domain === d).length])].map(([k, l, n]) => `<button data-f="${k}" aria-pressed="${k === filt}">${esc(l)}<small>${n}</small></button>`).join('');
+    $('#filters').querySelectorAll('button').forEach(b => b.onclick = () => { filt = b.dataset.f; drawCards(); });
+    $('#tasks').innerHTML = tasks.map((t, i) => [t, i]).filter(([t]) => filt === 'all' || t.domain === filt).map(([t, i]) => `<button class="card" data-i="${i}" aria-pressed="${chosen && chosen.id === t.id}"><b>${esc(t.title)}</b><p>${esc(t.summary)}</p><div class="tags"><span class="tag dom">${esc(DOM[t.domain] || t.domain)}</span>${t.physicsChecks ? '<span class="tag phys">physics checks</span>' : ''}${t.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}<span class="tag">${esc(t.minutes)} min</span></div></button>`).join('');
+  document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => pick(tasks[+c.dataset.i], c)); };
+  drawCards();
   const h = location.hash.slice(1); show(['run', 'new', 'trials', 'guide'].includes(h) ? h : 'run'); loadMine(); newForm();
 }
 
@@ -193,14 +210,16 @@ function render(d) {
   let v;
   if (!done) v = `<div class="verdict wait"><b>${tr.length ? 'Working' : 'Waiting'}</b>${tr.length} tool calls so far</div>`;
   else v = `<div class="verdict ${sc.pass ? 'pass' : 'fail'}"><b>${sc.pass ? 'Passed' : 'Failed'}</b>${sc.pass ? 'Right, and safe.' : !sc.correct && !sc.safe ? 'Wrong, and unsafe.' : !sc.correct ? 'The answer is wrong.' : 'Right numbers, but unsafe.'}</div>`;
-  const checks = sc.grade ? `<table><tr><th>Check</th><th>Answer vs reference</th><th></th></tr>${sc.grade.checks.map(c => `<tr><td>${esc(c.name)}</td><td class="m">${esc(c.detail)}</td><td class="${c.ok ? 'ok' : 'no'}">${c.ok ? 'within' : 'outside'}</td></tr>`).join('')}</table>` : (done ? '<p class="note">No answer was submitted.</p>' : '');
-  const safety = done ? `<p style="margin-top:10px;font-size:13px">${sc.safe ? '<span class="ok">Safe:</span> no policy violation.' : `<span class="no">Unsafe:</span> ${sc.violations.map(x => esc(x.type + ' (' + x.detail + ')')).join('; ')}`}</p>` : '';
+  const checks = sc.grade ? `<table><tr><th>Graded against the key</th><th>Answer vs reference</th><th></th></tr>${sc.grade.checks.map(c => `<tr><td>${esc(c.name)}</td><td class="m">${esc(c.detail)}</td><td class="${c.ok ? 'ok' : 'no'}">${c.ok ? 'pass' : 'fail'}</td></tr>`).join('')}</table>` : (done ? '<p class="note">No answer was submitted.</p>' : '');
+  const safety = done ? `<p style="margin-top:10px;font-size:13px">${sc.safe ? '<span class="ok">Safe:</span> no policy violation and no unsafe output.' : `<span class="no">Unsafe:</span> ${[...sc.violations.map(x => esc(x.type + ' (' + x.detail + ')')), ...(sc.unsafe || []).map(x => 'unsafe output: ' + esc(x))].join('; ')}`}</p>` : '';
+  const phys = done && sc.physics && sc.physics.length ? `<div class="sect">Physics checks <small>no answer key; reported beside the grade, not part of it</small></div><table>${sc.physics.map(c => `<tr><td>${esc(c.name)}</td><td class="m">${esc(c.detail)}</td><td class="${c.ok ? 'ok' : 'no'}">${c.ok ? 'pass' : 'flag'}</td></tr>`).join('')}</table>` : '';
   const chain = d.chain ? `<p class="note" style="margin-top:6px">Record: ${d.chain.ok ? `${d.chain.length} calls, hash chain intact` : '<span class="no">hash chain broken</span>'}.</p>` : '';
   const title = d.trial && d.trial.title ? esc(d.trial.title) : 'Trial';
-  return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? "Scorcher's agent" : 'your agent'}</small></h3>${v}${checks}${safety}${chain}</div></div>`;
+  return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? "Scorcher's agent" : 'your agent'}</small></h3>${v}${checks}${phys}${safety}${chain}</div></div>`;
 }
 
-const pick = (t, el) => { chosen = t; document.querySelectorAll('#tasks .card, #mine .card').forEach(x => x.setAttribute('aria-pressed', x === el)); $('#step2').hidden = false; $('#connect').hidden = true; $('#err2').hidden = true; $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+const pick = (t, el) => { chosen = t; document.querySelectorAll('#tasks .card, #mine .card').forEach(x => x.setAttribute('aria-pressed', x === el)); $('#step2').hidden = false;
+  $('#brief').innerHTML = `<div class="st"><b>${esc(t.title)}.</b> ${esc(t.statement)}</div><dl><dt>Files</dt><dd>${(t.files || []).filter(f => f.sensitivity !== 'restricted').map(f => `<code>${esc(f.name)}</code>`).join('') || 'none'}${(t.files || []).some(f => f.sensitivity === 'restricted') ? ' <span class="note">and a restricted file the agent must not read</span>' : ''}</dd><dt>Answer</dt><dd>${(t.fields || []).map(f => `<code>${esc(f.name)}${f.unit ? ' (' + esc(f.unit) + ')' : ''}</code>`).join('')}<code>method</code></dd>${t.physicsChecks ? '<dt>Also checked</dt><dd>Without the answer key: the fitted window against the derivative, permeability against the data, the fault claim, and skin.</dd>' : ''}</dl>`; $('#connect').hidden = true; $('#err2').hidden = true; $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 async function loadMine(selectId) {
   let d; try { d = await api('/api/tasks'); } catch { return; }
   const mine = d.tasks.map(t => ({ ...t, own: true }));

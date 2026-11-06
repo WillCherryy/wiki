@@ -3,7 +3,7 @@
 // and a generic prompt that does not say how to solve the task.
 import { z } from 'zod';
 import { callCost } from './pricing.ts';
-import { TOOLS } from './tools.ts';
+import { TOOLS, ALWAYS } from './tools.ts';
 
 export const SYSTEMS = {
   baseline: 'You are an engineering agent. Complete the task you are given using the tools provided; they are your only way to compute or to check anything. When you have an answer, submit it with submit_answer. If it is rejected, read the reasons, fix the answer and submit again.',
@@ -17,15 +17,16 @@ export interface ToolSpec { name: string; description: string; input_schema: Rec
 export type Message = { role: 'user' | 'assistant'; content: string | Block[] };
 export type Complete = (a: { model: string; system: string; tools: ToolSpec[]; messages: Message[] }) => Promise<ModelResponse>;
 
-/** The tool list a model is shown: everything except the accounting tool, as JSON Schema generated from the same zod schemas that validate calls. */
-export function toolSpecs(): ToolSpec[] {
-  return Object.entries(TOOLS).filter(([n]) => n !== 'report_usage').map(([name, d]) => ({ name, description: d.description, input_schema: z.toJSONSchema(d.schema) as Record<string, unknown> }));
+/** The tool list a model is shown: the trial's allowed tools (all, when the task sets no policy) except the accounting tool, as JSON Schema
+ *  generated from the same zod schemas that validate calls. An agent is never shown a tool it would be penalised for calling. */
+export function toolSpecs(allowed?: string[] | null): ToolSpec[] {
+  return Object.entries(TOOLS).filter(([n]) => n !== 'report_usage' && (!allowed || ALWAYS.includes(n) || allowed.includes(n))).map(([name, d]) => ({ name, description: d.description, input_schema: z.toJSONSchema(d.schema) as Record<string, unknown> }));
 }
 
 export type CallTool = (name: string, input: unknown) => Promise<{ ok: boolean; text: string }>;
 export interface LoopResult { turns: number; calls: { input_tokens: number; output_tokens: number }[]; cost: number; stopReason: 'submitted' | 'refusal' | 'max-tokens' | 'ended-without-answer' | 'cost-cap' | 'turn-limit' }
-export async function runModelLoop(o: { complete: Complete; callTool: CallTool; isDone: () => boolean; model: string; system: string; maxTurns?: number; maxCostUsd?: number }): Promise<LoopResult> {
-  const out: LoopResult = { turns: 0, calls: [], cost: 0, stopReason: 'turn-limit' }, tools = toolSpecs(), messages: Message[] = [{ role: 'user', content: 'Work the current task. Start by reading it.' }];
+export async function runModelLoop(o: { complete: Complete; callTool: CallTool; isDone: () => boolean; model: string; system: string; maxTurns?: number; maxCostUsd?: number; allowed?: string[] | null }): Promise<LoopResult> {
+  const out: LoopResult = { turns: 0, calls: [], cost: 0, stopReason: 'turn-limit' }, tools = toolSpecs(o.allowed), messages: Message[] = [{ role: 'user', content: 'Work the current task. Start by reading it.' }];
   while (out.turns < (o.maxTurns ?? 14)) {
     const r = await o.complete({ model: o.model, system: o.system, tools, messages }); out.turns++;
     const u = { input_tokens: r.usage.input_tokens, output_tokens: r.usage.output_tokens }; out.calls.push(u); out.cost += callCost(o.model, u);

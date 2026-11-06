@@ -31,14 +31,21 @@ const isAdmin = async (r: Request, env: Env) => !!env.BUILD_ADMIN_KEY && await s
 const RUNS_PER_DAY = 25;   // Scorcher's agent, per organisation: a spend guard while the service is young
 type TrialStub = DurableObjectStub<import('./trial.ts').Trial>;
 // one way to start a trial, whatever the task's source: files must already be in R2 under prefix
-async function startTrial(env: Env, tenant: string, s: TaskSpec, prefix: string, agent: string | null) {
+async function startTrial(env: Env, tenant: string, s: TaskSpec, prefix: string, agent: string | null, physics?: TaskPrivate['physics']) {
   const store = new R2Store(env.FILES), canaries: string[] = [];
   for (const f of s.files) if (f.sensitivity === 'restricted') { const o = await store.get(prefix + f.path, MAX_TABLE); if (o) canaries.push(...canariesOf(o.text)); }
   const task: TaskPublic = { id: s.id, title: s.title, statement: s.statement, instructions: s.instructions ?? null, answer: s.answer, files: s.files.map(f => ({ name: f.path, sensitivity: f.sensitivity })), policy: s.policy ?? null, limits: { maxCalls: s.limits?.maxCalls ?? 60, maxCostUsd: s.limits?.maxCostUsd ?? 1 } };
-  const priv: TaskPrivate = { reference: s.reference, canaries }, id = hex(8), token = hex(24), init: TrialInit = { id, prefix, task, priv };
+  const priv: TaskPrivate = { reference: s.reference, canaries, ...(physics ? { physics } : {}) }, id = hex(8), token = hex(24), init: TrialInit = { id, prefix, task, priv };
   await env.TRIAL.get(env.TRIAL.idFromName(id)).init(init, token);
   await env.DB.prepare('INSERT INTO trials (id, tenant, task_id, created_at, title, agent) VALUES (?, ?, ?, ?, ?, ?)').bind(id, tenant, s.id, Date.now(), s.title, agent).run();
   return { id, token };
+}
+/** The tools a trial's task allows (null: no policy, all tools). Read from the catalogue or the organisation's own task. */
+async function policyOf(env: Env, trialId: string): Promise<string[] | null> {
+  const row = await env.DB.prepare('SELECT task_id, tenant FROM trials WHERE id = ?').bind(trialId).first<{ task_id: string; tenant: string }>(); if (!row) return null;
+  const c = findTask(row.task_id); if (c) return c.spec.policy?.tools ?? null;
+  const t = await env.DB.prepare('SELECT spec FROM tasks WHERE tenant = ? AND id = ?').bind(row.tenant, row.task_id).first<{ spec: string }>();
+  return t ? (JSON.parse(t.spec) as TaskSpec).policy?.tools ?? null : null;
 }
 const hex = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, '0')).join('');
 
@@ -57,7 +64,7 @@ export default {
         const stub = env.TRIAL.get(env.TRIAL.idFromName(mcp[1]!)), token = mcp[2] ?? bearer(req);
         if (!(await stub.checkToken(token).catch(() => false))) return json({ error: 'a valid trial token is required' }, 401);
         const row = await env.DB.prepare('SELECT title FROM trials WHERE id = ?').bind(mcp[1]).first<{ title: string | null }>();
-        return handleMcp(req, stub, `Scorcher Build trial: ${row?.title ?? mcp[1]}. Call task_get for the task.`);
+        return handleMcp(req, stub, `Scorcher Build trial: ${row?.title ?? mcp[1]}. Call task_get for the task.`, await policyOf(env, mcp[1]!));
       }
       if (!p.startsWith('/api/')) return json({ error: 'not found' }, 404);
       const call = /^\/api\/trials\/([a-f0-9]{16,64})\/(call|trace|score|run)$/.exec(p);
@@ -99,7 +106,7 @@ export default {
         await env.FILES.put(`${TENANT}/${up[1]}/${name}`, req.body, { httpMetadata: { contentType: 'application/octet-stream' } }); return json({ stored: name, bytes: len });
       }
       if (p === '/api/catalogue' && m === 'GET') {
-        return json({ tasks: catalogue().map(c => ({ id: c.spec.id, title: c.spec.title, domain: c.spec.domain, summary: c.summary, skills: c.skills, minutes: c.minutes, statement: c.spec.statement,
+        return json({ tasks: catalogue().map(c => ({ id: c.spec.id, title: c.spec.title, domain: c.spec.domain, pack: c.pack ?? null, physicsChecks: !!c.physics, summary: c.summary, skills: c.skills, minutes: c.minutes, statement: c.spec.statement,
           fields: c.spec.answer.fields.map(f => ({ name: f.name, unit: f.unit ?? null })), files: c.spec.files.map(f => ({ name: f.path, sensitivity: f.sensitivity })) })) });
       }
       if (p === '/api/trials' && m === 'POST') {
@@ -109,7 +116,7 @@ export default {
           const c = findTask(b.catalogueId); if (!c) return json({ error: 'no such catalogue task' }, 404);
           const prefix = `${TENANT}/catalogue/${c.spec.id}/`;
           for (const [name, text] of Object.entries(c.files)) await env.FILES.put(prefix + name, text, { httpMetadata: { contentType: 'text/plain' } });
-          const t = await startTrial(env, TENANT, c.spec, prefix, agent);
+          const t = await startTrial(env, TENANT, c.spec, prefix, agent, c.physics);
           const base = env.PUBLIC_URL ?? new URL(req.url).origin;
           return json({ trialId: t.id, token: t.token, mcpUrl: `${base}/mcp/${t.id}/${t.token}`, note: 'the token is shown once: it is the agent\'s key to this trial only' }, 201);
         }
@@ -152,7 +159,7 @@ export default {
           await env.DB.prepare('UPDATE trials SET ran_at = ?, agent = ? WHERE id = ?').bind(Date.now(), 'scorcher', call[1]).run();
           const b = await req.json().catch(() => ({})) as { model?: string; prompt?: 'baseline' | 'hardened' }, model = b.model ?? 'claude-haiku-5-5'; if (!PRICES[model]) return json({ error: `no price for ${model}` }, 400);
           let done = false;
-          const run = await runModelLoop({ complete: await anthropicComplete(env.ANTHROPIC_API_KEY), model, system: systemPrompt(b.prompt === 'hardened' ? 'hardened' : 'baseline'), maxCostUsd: 1, isDone: () => done,
+          const run = await runModelLoop({ complete: await anthropicComplete(env.ANTHROPIC_API_KEY), model, system: systemPrompt(b.prompt === 'hardened' ? 'hardened' : 'baseline'), maxCostUsd: 1, maxTurns: 24, allowed: await policyOf(env, call[1]!), isDone: () => done,
             callTool: async (name, input) => { const o = await stub.call(name, input); if (name === 'submit_answer' && o.ok && o.text.includes('"accepted":true')) done = true; return o; } });
           return json({ status: await stub.status(), run, score: await stub.score() });
         }

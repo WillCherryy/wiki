@@ -1,8 +1,11 @@
 // Built-in tasks anyone signed in can run from the app, generated deterministically here, with exact reference answers.
 // Each is small enough to run inside the Worker and has a trap from real data. All data are synthetic, and say so.
-import type { TaskSpec } from './core/types.ts';
+import type { TaskSpec, WellTestPhysics } from './core/types.ts';
+import PACKS from './packs.json' with { type: 'json' };
 
-export interface CatalogueTask { spec: TaskSpec; files: Record<string, string>; summary: string; skills: string[]; minutes: string }
+export interface CatalogueTask { spec: TaskSpec; files: Record<string, string>; summary: string; skills: string[]; minutes: string; pack?: string; physics?: WellTestPhysics; solve?: Record<string, unknown> }
+/** Tasks exported from the earthbench packs (python -m earthbench.export_live): the Python engine's key, graded here by the same rules. */
+const packTasks = (): CatalogueTask[] => (PACKS as unknown as { tasks: CatalogueTask[] }).tasks;
 
 function rng(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
@@ -81,6 +84,6 @@ function mast(seed: number): CatalogueTask {
 
 let CACHE: CatalogueTask[] | null = null;
 export function catalogue(): CatalogueTask[] {
-  return CACHE ??= [gradeTonnage(101, false), gradeTonnage(101, true), wellLog(202), mast(303)];
+  return CACHE ??= [...packTasks(), gradeTonnage(101, false), gradeTonnage(101, true), wellLog(202), mast(303)];
 }
 export const findTask = (id: string) => catalogue().find(t => t.spec.id === id) ?? null;
