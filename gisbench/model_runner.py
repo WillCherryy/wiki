@@ -70,6 +70,7 @@ def run_model(client, model, task, system, max_tokens=2048, max_usd=None, engine
         if max_usd is not None and c is not None and c > max_usd:
             stop = "task_cost_cap"
             break
+    s.messages = [{"role": "system", "content": system}] + msgs      # the raw exchange, for the run record
     return s, {"input_tokens": tin, "output_tokens": tout, "usd": cost_usd(model, tin, tout), "stop": stop}
 
 
@@ -106,6 +107,9 @@ def main(argv=None):
     client = (anthropic.Anthropic(api_key=key) if key else
               anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com"))
     rows, spent, usage = [], 0.0, []
+    from . import runrecord
+    base = f"model-{a.model}-{a.prompt}-{a.suite}" + ("-qgis" if a.engine == "qgis" else "") + (f"-from{a.offset}" if a.offset else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
+    rw = runrecord.Writer(os.path.join(os.path.dirname(__file__), "results", "records", base + ".jsonl.gz"))
     stop = False
     for t in tl:
       for rep in range(max(1, a.repeats)):
@@ -114,6 +118,8 @@ def main(argv=None):
         r["repeat"] = rep
         r["trace"] = [{"i": e["i"], "tool": e["tool"], "args": e["args"], "ok": e["ok"], "error": e["error"], "hash": e["hash"][:12]} for e in s.trace]
         r["usage"] = u
+        rw.write(runrecord.build(t, s, r, agent={"kind": "model", "model": a.model, "prompt": a.prompt, "system": SYSTEMS[a.prompt], "repeat": rep},
+                                 messages=getattr(s, "messages", None), usage=u))
         rows.append(r); usage.append(u); spent += u["usd"] or 0
         print(f"{t.id}{f' #{rep + 1}' if a.repeats > 1 else ''}: pass={r['pass']} partial={r['partial']:.2f} calls={r['calls']} ${spent:.3f}")
         if spent > a.max_usd:
@@ -122,7 +128,8 @@ def main(argv=None):
             break
       if stop:
         break
-    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + ("-qgis" if a.engine == "qgis" else "") + (f"-from{a.offset}" if a.offset else "") + (f"-x{a.repeats}" if a.repeats > 1 else "") + ".json")
+    rw.close()
+    out = os.path.join(os.path.dirname(__file__), "results", base + ".json")
     json.dump({"bench_version": T.BENCH_VERSION, "engine": a.engine, "model": a.model, "prompt": a.prompt, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "n_run": len(rows), "n_suite": len(tl), "repeats": a.repeats, "usd": spent, "rows": rows}, open(out, "w"), default=str)
     print("wrote", out)

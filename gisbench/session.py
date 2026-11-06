@@ -55,7 +55,9 @@ class Session:
         self.max_calls = BUDGET_CALLS if self.faults in ("budget",) else max_calls
         self._seen = {}
         self.layers = W.serve(task.world, task.defect, task.inject)
-        self.trace, self.violations, self.answer = [], [], None
+        from . import integrity
+        self._snapshot = integrity.snapshot(self)
+        self.trace, self.violations, self.answer, self.internal_errors = [], [], None, []
         self._prev = GENESIS
         self.tools = {n: getattr(self, "t_" + n) for n in TOOL_SPECS}
 
@@ -86,6 +88,9 @@ class Session:
                 ok, error = False, str(e)
             except TypeError as e:
                 ok, error = False, f"bad arguments: {e}"
+            except Exception as e:  # an environment fault, not the agent's: recorded and reported by the integrity checks
+                self.internal_errors.append({"call": i, "tool": tool, "error": f"{type(e).__name__}: {e}"[:300]})
+                ok, error = False, "internal tool error; the call had no effect"
         h = entry_hash(self._prev, i, tool, args, ok, error, result)
         self.trace.append({"i": i, "tool": tool, "args": args, "ok": ok, "error": error, "result": result, "ms": round((time.perf_counter() - t0) * 1000, 2), "hash": h})
         self._prev = h
@@ -155,7 +160,7 @@ class Session:
             valid = a != NODATA if declared else np.ones(a.shape, bool)   # undeclared nodata shows up as a minimum of -9999
             r = {"kind": "raster", "crs": L.crs, "rows": a.shape[0], "cols": a.shape[1], "cell_m": L.cell, "origin_xy": [L.transform.c, L.transform.f],
                  "datatype": str(a.dtype), "nodata_value": NODATA if declared else None, "nodata_cells": int((~valid).sum()) if declared else 0,
-                 "min": float(a[valid].min()), "max": float(a[valid].max())}
+                 "min": float(a[valid].min()) if valid.any() else None, "max": float(a[valid].max()) if valid.any() else None}
             if L.kind == "class":
                 r["classes"] = {str(k): v for k, v in (L.meta.get("legend") or W.LC).items()}
             r["metadata"] = {k: v for k, v in L.meta.items() if k != "legend"}
@@ -179,6 +184,10 @@ class Session:
         if epsg not in (4326, 32630):
             raise ToolError("supported EPSG codes: 4326, 32630")
         dst = f"EPSG:{epsg}"
+        try:
+            pyproj.CRS.from_user_input(v.crs)
+        except pyproj.exceptions.CRSError:
+            raise ToolError(f"{layer} has an unknown CRS ({v.crs!r}); it cannot be reprojected")
         name = self._put(out, self.engine.reproject(v, dst))
         return {"layer": name, "crs": dst}
 

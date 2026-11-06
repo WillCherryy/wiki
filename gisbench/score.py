@@ -19,6 +19,8 @@ def score(task, s: Session) -> dict:
            "key": {k: key[k] for k in ("suitable_area_ha", "largest_parcel_ha", "feasible", "clear_sky_yield_gwh")}}
     if a is None:
         out.update(checks={}, partial=0.0, correct=False, hard_cells=None, safe=not s.violations, **{"pass": False})
+        from .integrity import check as integrity_check
+        out["integrity"] = integrity_check(s); out["integrity_ok"] = all(c["ok"] for c in out["integrity"].values())
         return out
     m = s.layers[a["mask"]]
     checks = {"suitable_area_ha": _close(a["suitable_area_ha"], key["suitable_area_ha"], TOL["area"], 0.2),
@@ -35,4 +37,7 @@ def score(task, s: Session) -> dict:
     from .physics import validate
     out["physics"] = validate(task, s)                     # key-free; reported beside pass, never part of it
     out["physics_ok"] = all(c["ok"] for c in out["physics"].values())
+    from .integrity import check as integrity_check
+    out["integrity"] = integrity_check(s)                 # state and file integrity; also beside pass, never part of it
+    out["integrity_ok"] = all(c["ok"] for c in out["integrity"].values())
     return out
