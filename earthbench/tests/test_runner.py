@@ -57,6 +57,9 @@ class Runner(unittest.TestCase):
             self.assertEqual(rc, 0)
             out = json.load(open(os.path.join(d, "model-mining-claude-haiku-5-5-main-first2.json")))
             self.assertEqual(out["summary"]["pass"]["k"], 2)
+            from earthbench import ledger
+            L = ledger.read(os.path.join(d, "ledger.jsonl"))                 # the run is in the ledger of its own results folder, not the real one
+            self.assertEqual((len(L), L[0]["passed"], L[0]["tasks"]), (1, 2, 2)); self.assertEqual(ledger.verify(os.path.join(d, "ledger.jsonl")), [])
             recs = [json.loads(x) for x in gzip.open(os.path.join(d, "records", "model-mining-claude-haiku-5-5-main-first2.jsonl.gz"), "rt")]
             self.assertEqual(len(recs), 2)
             for rec in recs:

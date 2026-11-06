@@ -112,6 +112,8 @@ pre.cmd { margin: 6px 0; padding: 8px 10px; background: var(--ink); color: var(-
     <button role="tab" data-v="overview" aria-selected="true">Overview</button>
     <button role="tab" data-v="agents" aria-selected="false">Agents and plans</button>
     <button role="tab" data-v="suites" aria-selected="false">Suites<small>4 domains</small></button>
+    <h2>Sectors</h2>
+    <button role="tab" data-v="geo" aria-selected="false">Geothermal<small>sector</small></button>
     <h2>Task dashboards</h2>
     <button role="tab" data-v="resource" aria-selected="false">Resource estimate<small>ref</small></button>
     <button role="tab" data-v="gis" aria-selected="false">GIS screening<small>ref</small></button>
@@ -121,7 +123,7 @@ pre.cmd { margin: 6px 0; padding: 8px 10px; background: var(--ink); color: var(-
     <button role="tab" data-v="mining" aria-selected="false">Mining: grade, tonnage<small>ref</small></button>
     <button role="tab" data-v="gisbench" aria-selected="false">GIS benchmark<small>phase 1</small></button>
     <button role="tab" data-v="runs" aria-selected="false">Agent runs<small>models</small></button>
-    <button role="tab" data-v="domains" aria-selected="false">Domain benchmarks<small>8 packs</small></button>
+    <button role="tab" data-v="domains" aria-selected="false">Domain benchmarks<small>9 packs</small></button>
     <h2>Set up</h2>
     <button role="tab" data-v="newtask" aria-selected="false">New task</button>
     <button role="tab" data-v="connect" aria-selected="false">Connect an agent</button>
@@ -130,7 +132,7 @@ pre.cmd { margin: 6px 0; padding: 8px 10px; background: var(--ink); color: var(-
     <button role="tab" data-v="security" aria-selected="false">Security</button>
   </nav>
   <main>
-    <section class="view on" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-runs"></section><section class="view" id="v-domains"></section><section class="view" id="v-guide"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
+    <section class="view on" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-runs"></section><section class="view" id="v-domains"></section><section class="view" id="v-geo"></section><section class="view" id="v-guide"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
   </main>
 </div>
 </div>
@@ -557,6 +559,49 @@ views.domains = {
         + `<details class="fold"><summary>The ${P.tools.length} tools the agent gets</summary><ul class="chk">${P.tools.map(t => `<li><i></i><span><code>${esc(t.name)}</code><span class="d">${esc(t.description)}</span></span></li>`).join('')}</ul></details>`, '')
       + `</div>`; },
   wire() { document.querySelectorAll('#ebPack button').forEach(b => b.onclick = () => { if (b.dataset.v) return show(b.dataset.v); ebPack = b.dataset.k; render('domains'); }); } };
+
+/* ================================================================ Sector: geothermal (real output of earthbench/: scripted arms, model runs, ledger, reviews) */
+const ckRow = (ok, title, detail) => `<li class="${ok ? '' : 'no'}"><i></i><span>${title}<span class="d">${detail}</span></span></li>`;
+const latestRun = (pack, kind) => ((EB.packs[pack] || {}).models || []).filter(m => m.by_kind && m.by_kind[kind]).sort((a, b) => b.generated.localeCompare(a.generated) || (b.subset ? 1 : 0) - (a.subset ? 1 : 0))[0];
+views.geo = {
+  html() { if (!EB || !EB.sectors) return '<p>Run python3 -m earthbench.export to generate earthbench-sample.js.</p>';
+    const S = EB.sectors.geothermal, packs = S.packs.map(k => [k, EB.packs[k]]).filter(x => x[1]);
+    const tasks = packs.reduce((a, [, P]) => a + Object.values(P.suites).reduce((b, s) => b + s.tasks, 0), 0);
+    const arm = (P, a, kind) => { const m = P.suites.main.arms[a]; return m && m.by_kind && m.by_kind[kind] ? m.by_kind[kind] : null; };
+    const fam = S.families.map(f => ({ ...f, P: EB.packs[f.pack], run: latestRun(f.pack, f.kind) })).filter(f => f.P);
+    const runs = fam.filter(f => f.run).map(f => f.run.by_kind[f.kind]);
+    const corr = runs.reduce((a, r) => a + r.correct, 0), n = runs.reduce((a, r) => a + r.n, 0), restr = runs.reduce((a, r) => a + r.restricted, 0), passed = runs.reduce((a, r) => a + r.k, 0);
+    const reviewed = packs.filter(([, P]) => P.review && P.review.reviewed).length;
+    const fa = packs.reduce((a, [, P]) => a + Object.values(P.suites).reduce((b, s) => b + Object.values(s.arms).reduce((c, x) => c + x.physics_false_alarms, 0), 0), 0);
+    const L = EB.ledger || { entries: 0, rows: [] }, Lg = L.rows.filter(e => S.packs.includes(e.pack));
+    const kk = x => x ? `${x.k}/${x.n}` : '–';
+    const famRows = fam.map(f => { const r = f.run && f.run.by_kind[f.kind];
+      return `<tr><td><b>${esc(f.title)}</b><br><span style="color:var(--ink-3);font-size:11px">${esc(f.what)}</span></td><td class="r m">${kk(arm(f.P, 'd1', f.kind))}</td><td class="r m">${kk(arm(f.P, 'd0', f.kind))}</td><td class="r m">${kk(arm(f.P, 'fx-naive', f.kind))}</td>`
+        + (r ? `<td class="r m">${r.correct}/${r.n}</td><td class="r m">${r.k}/${r.n}</td><td class="r m" style="${r.restricted ? 'color:' + RED : ''}">${r.restricted}</td>` : `<td class="r" colspan="3" style="color:var(--ink-3)">not run yet</td>`) + `</tr>`; }).join('');
+    const why = {}; fam.forEach(f => (f.run ? f.run.fails : []).filter(x => x.task.includes(f.kind === 'buildup' ? 'WT-' : '-' + f.kind + '-')).forEach(x => x.why.forEach(w => { const c = w.includes('restricted') ? 'Read a file it did not need' : w.includes('cut off') ? 'Cut off by the runner (fixed)' : w.includes('without an answer') ? 'Ended without an answer' : 'Wrong value: ' + w.split(':')[0]; why[c] = (why[c] || 0) + 1; })));
+    const whyRows = Object.entries(why).sort((a, b) => b[1] - a[1]);
+    return vh('Geothermal', 'Sector', [[`${tasks} tasks`], [`${fam.length} task families`], ['Synthetic worlds'], [reviewed ? `${reviewed} of ${packs.length} packs reviewed` : 'Not yet reviewed by an outside expert', reviewed ? '' : 'red']],
+        'Everything Scorcher tests on geothermal work, in one place: the task families an agent meets on a project, how scripted pipelines and Claude do on each, why runs fail, and what stands behind the numbers. Model results are real runs (earthbench/results); every run is in the hash-chained ledger. The worlds are synthetic until real data packs are added.')
+      + ks([[tasks, 'Tasks across the sector'], [n ? `${corr}/${n}` : '–', 'Claude: answer correct, latest runs'], [n ? `${passed}/${n}` : '–', 'Claude: correct and safe'], [restr, 'Runs that read a file they did not need', restr ? RED : ''], [`${reviewed}/${packs.length}`, 'Packs reviewed by an outside expert', reviewed ? '' : RED]])
+      + `<div class="verdict">${n ? `Claude gets the answer right on <b>${corr} of ${n}</b> geothermal tasks, but <b>${restr}</b> of those runs fail on safety: it opened a file the task did not need.` : 'No model has been run on this sector yet.'}<small>Correct counts the answer alone; a run passes only if it is also safe. The full well-test pack, with storage and faults, has no model run yet.</small></div>`
+      + `<div class="dash" style="grid-template-rows:none;grid-auto-rows:max-content;overflow:auto;align-content:start">`
+      + pn('s12', 'Task families', 'main suite; scripted pipelines on the left, Claude Haiku on the right', `<div class="scx"><table class="eb"><tr><th>Family</th><th class="r">Analyst</th><th class="r">Fixed recipe</th><th class="r">Naive</th><th class="r">Claude correct</th><th class="r">Claude pass</th><th class="r">Restricted reads</th></tr>${famRows}</table></div><p class="note">Analyst: correct method and data handling, which shows every task is solvable and its key right. Fixed recipe: one set of organisation defaults. Naive: reads units and codes as written. Claude: the latest run covering the family.</p>`, '')
+      + pn('s7', 'What stands behind the numbers', 'the parts that cannot be copied quickly', `<ul class="chk">`
+        + ckRow(true, 'Engines validated against independent results', packs.map(([, P]) => esc(P.title)).join(', ') + ': see each pack under Domain benchmarks')
+        + ckRow(fa === 0, `Physical checks: ${fa} false alarms`, 'across every scripted arm and suite in the sector; they work with no answer key')
+        + ckRow(!!EB.private, 'Private held-out set', EB.private ? `committed ${esc(EB.private.committed)}: only its hash is public` : 'not committed yet: run python -m earthbench.private init, then commit, on the owner\'s machine')
+        + ckRow(reviewed > 0, `Outside expert review: ${reviewed} of ${packs.length} packs`, 'review kits are in earthbench/reviews/kits; a verdict is recorded only from a real reviewer')
+        + ckRow(false, 'Human baseline', 'not measured: an engineer working the same tasks through the same tools, timed')
+        + ckRow(L.intact && L.entries > 0, `Results ledger: ${L.entries} entries, ${L.intact ? 'chain intact' : 'CHAIN BROKEN'}`, L.head ? 'head ' + esc(L.head.slice(0, 16)) + '…; every model run is appended, hash-chained, with the hash of its results and records' : 'no entries')
+        + `</ul>`, '')
+      + pn('s5', 'Why Claude fails here', 'reasons across the latest runs, most common first', whyRows.length ? `<ul class="chk">${whyRows.map(([k, v]) => `<li class="no"><i></i><span>${esc(k)}<span class="d">${v} run${v === 1 ? '' : 's'}</span></span></li>`).join('')}</ul><p class="note">Each failure's trace is under Domain benchmarks, per pack.</p>` : '<p class="note">No failures recorded.</p>', '')
+      + pn('s7', 'Ledger: geothermal runs', 'append-only; each line chained to the one before', `<div class="scx"><table class="eb"><tr><th>#</th><th>Pack</th><th>Model</th><th>Run</th><th class="r">Pass</th><th class="r">Correct</th><th class="r">Cost</th><th>Hash</th></tr>${Lg.map(e => `<tr><td class="m">${e.seq}</td><td>${esc((EB.packs[e.pack] || {}).title || e.pack)}</td><td>${esc(e.model.replace('claude-', ''))}</td><td class="m" style="font-size:11px">${esc(e.suite)} · ${esc((e.generated || '').slice(0, 10))}${e.backfilled ? ' · backfilled' : ''}</td><td class="r m">${e.passed}/${e.tasks}</td><td class="r m">${e.correct ?? '–'}</td><td class="r m">$${(e.usd || 0).toFixed(2)}</td><td class="m" style="font-size:11px;color:var(--ink-3)">${esc(e.hash.slice(0, 10))}</td></tr>`).join('')}</table></div>`, '')
+      + pn('s5', 'Next tests', 'from a terminal on your machine', `<details class="fold" open><summary>The full well-test pack on Claude (about $0.20)</summary><pre class="cmd">python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite main --max-usd 0.3 --yes</pre></details>`
+        + `<details class="fold"><summary>Create and commit the private held-out set</summary><pre class="cmd">python -m earthbench.private init
+python -m earthbench.private commit</pre><p class="note">The secret stays in your home folder; back it up. Commit only earthbench/private/commitment.json.</p></details>`
+        + `<details class="fold"><summary>Send a pack to an engineer for review</summary><pre class="cmd">python -m earthbench.review_kit welltest</pre><p class="note">Writes earthbench/reviews/kits/welltest.md: method, engine, validation, sample tasks with keys, the questions and a verdict template.</p></details>`, '')
+      + `</div>`; },
+  wire() {} };
 
 /* ================================================================ Guide: short tutorials */
 const GUIDE = [

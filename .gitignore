@@ -30,3 +30,6 @@ __pycache__/
 earthbench/results/fixtures.json
 earthbench/results/mcp/
 backend/public/
+
+# private held-out suites: briefs, answers and traces stay on the owner's machine
+earthbench/results/private/

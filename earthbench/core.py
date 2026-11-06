@@ -62,7 +62,9 @@ _ACC = {"g": 9.80665, "m/s2": 1.0, "cm/s2": 0.01, "gal": 0.01}
 _FLOW = {"L/s": 1.0, "m3/s": 1000.0, "m3/h": 1 / 3.6, "m3/d": 1 / 86.4, "gpm": 3.785411784 / 60, "bbl/d": 158.987294928 / 86400}   # US gallon, oil barrel
 _VOL = {"m3": 1.0, "L": 0.001, "bbl": 0.158987294928}           # "gal" is the acceleration unit here
 _VISC = {"Pa*s": 1.0, "Pa s": 1.0, "mPa*s": 0.001, "mPa s": 0.001, "cP": 0.001, "P": 0.1}
-_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC, _FLOW, _VOL, _VISC]
+_COMPR = {"1/Pa": 1.0, "1/kPa": 1e-3, "1/MPa": 1e-6, "1/bar": 1e-5, "1/psi": 1 / 6894.757293168361}    # compressibility
+_MFLOW = {"kg/s": 1.0, "t/h": 1 / 3.6, "kg/h": 1 / 3600}
+_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC, _FLOW, _VOL, _VISC, _COMPR, _MFLOW]
 
 
 def convert(value: float, src: str, dst: str) -> float:
@@ -86,7 +88,7 @@ def convert(value: float, src: str, dst: str) -> float:
 
 
 UNITS_HELP = ("Convert m, km, cm, mm, ft, in, mi; m2, km2, ha, acre; kg, t, short_ton, lb, oz_troy, g; t/m3, kg/m3, g/cm3; fraction, percent, ppm; "
-              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; L/s, m3/s, m3/h, m3/d, gpm (US), bbl/d; m3, L, bbl; Pa*s, mPa*s, cP; prices such as USD/lb to USD/t.")
+              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; L/s, m3/s, m3/h, m3/d, gpm (US), bbl/d; m3, L, bbl; Pa*s, mPa*s, cP; 1/Pa, 1/kPa, 1/MPa, 1/bar, 1/psi; kg/s, t/h, kg/h; prices such as USD/lb to USD/t.")
 
 
 # ---------------------------------------------------------------------------------------------------- fingerprints

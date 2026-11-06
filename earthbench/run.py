@@ -23,7 +23,7 @@ from gisbench.stats import wilson
 from gisbench.reliability import summarise as reliability, signature
 from .core import score
 
-PACKS = ("mining", "geothermal", "hazard", "solar", "wind", "seismic", "scheduling", "documents")
+PACKS = ("mining", "geothermal", "welltest", "hazard", "solar", "wind", "seismic", "scheduling", "documents")
 HERE = os.path.dirname(__file__)
 RESULTS = os.path.join(HERE, "results")
 MAX_TOKENS = 16000                 # per turn; 2,048 cut off long thinking before a tool call in 14 runs (6 November 2026)
@@ -109,6 +109,13 @@ def record(t, s, r, agent, messages, usage):
     return rec
 
 
+def tasks_for(P, name, suite_name):
+    if suite_name == "private":
+        from . import private
+        return private.suite(P, private.load_secret(), name)
+    return P.suite(suite_name)
+
+
 def model_run(a):
     key_, via_proxy = os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("GISBENCH_KEY_VIA_PROXY") == "1"
     if not key_ and not via_proxy:
@@ -116,17 +123,24 @@ def model_run(a):
     if a.model not in PRICES:
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr); return 2
     P = pack(a.pack)
-    ts = [t for t in P.suite(a.suite) if not a.kind or t.kind == a.kind][a.offset:]
+    try:
+        allts = tasks_for(P, a.pack, a.suite)
+    except Exception as e:
+        print(str(e), file=sys.stderr); return 2
+    ts = [t for t in allts if not a.kind or t.kind == a.kind][a.offset:]
     if not ts:
-        print(f"no tasks; kinds in this pack: {', '.join(sorted({t.kind for t in P.suite(a.suite)}))}", file=sys.stderr); return 2
+        print(f"no tasks; kinds in this pack: {', '.join(sorted({t.kind for t in allts}))}", file=sys.stderr); return 2
     ts = ts[: a.limit] if a.limit else ts
     if not a.yes:
         print(f"{len(ts) * a.repeats} task runs on {a.model}: rough estimate ${len(ts) * a.repeats * (30_000 * PRICES[a.model][0] + 4_000 * PRICES[a.model][1]) / 1e6:.2f}. Re-run with --yes."); return 0
     import anthropic
     client = anthropic.Anthropic(api_key=key_) if key_ else anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com")
     base = f"model-{a.pack}-{a.model}-{a.suite}" + (f"-{a.kind}" if a.kind else "") + (f"-from{a.offset}" if a.offset else "") + (f"-first{a.limit}" if a.limit else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
-    os.makedirs(os.path.join(RESULTS, "records"), exist_ok=True)
-    recs = gzip.open(os.path.join(RESULTS, "records", base + ".jsonl.gz"), "wt", encoding="utf-8")
+    private = a.suite == "private"
+    outdir = os.path.join(RESULTS, "private") if private else RESULTS        # private briefs, answers and traces never leave the machine (git-ignored)
+    os.makedirs(os.path.join(outdir, "records"), exist_ok=True)
+    recs_path = os.path.join(outdir, "records", base + ".jsonl.gz")
+    recs = gzip.open(recs_path, "wt", encoding="utf-8")
     rows, spent, stop = [], 0.0, False
     for t in ts:
         for rep in range(a.repeats):
@@ -167,9 +181,24 @@ def model_run(a):
     recs.close()
     doc = {"pack": a.pack, "model": a.model, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "repeats": a.repeats,
            "usd": spent, "summary": summarise(rows), "reliability": reliability(rows), "rows": rows}
-    out = os.path.join(RESULTS, base + ".json")
+    out = os.path.join(outdir, base + ".json")
     json.dump(doc, open(out, "w"), default=str)
     print("wrote", out)
+    from . import ledger
+    if private:
+        # the public trace of a private run: aggregates only, tied to the committed private set
+        from . import private as pv
+        com = json.load(open(pv.COMMITMENT))["packs"].get(a.pack, {}).get("sha256") if os.path.exists(pv.COMMITMENT) else None
+        pub = {k: doc[k] for k in ("pack", "model", "suite", "generated", "repeats", "usd")}
+        pub.update(summary={k: v for k, v in doc["summary"].items() if k in ("pass", "unsafe", "wrong_answers", "physics_flags_wrong", "physics_false_alarms", "integrity_failures", "by_defect", "by_spec")},
+                   correct=sum(1 for r in rows if r.get("correct")), private_commitment=com)
+        pub_path = os.path.join(RESULTS, base + "-summary.json")
+        json.dump(pub, open(pub_path, "w"), indent=1, default=str)
+        e = ledger.append(ledger.entry_for(pub_path, {**pub, "rows": []}, None, private_commitment=com), os.path.join(RESULTS, "ledger.jsonl"))
+        print("wrote", pub_path, "(aggregates only; safe to publish)")
+    else:
+        e = ledger.append(ledger.entry_for(out, doc, recs_path), os.path.join(RESULTS, "ledger.jsonl"))
+    print(f"ledger entry {e['seq']}: {e['hash'][:12]}")
     return 0
 
 

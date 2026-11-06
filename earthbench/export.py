@@ -46,7 +46,11 @@ def model_runs(name):
             fails.append({"task": r["task"], "why": why})
         tag = f"-{d['suite']}"
         subset = base.split(tag, 1)[1].lstrip("-") if tag in base else ""
-        out.append({"model": d["model"], "suite": d["suite"], "subset": subset, "generated": d["generated"][:10], "usd": round(d["usd"], 3), "tasks": len(d["rows"]),
+        kinds = sorted({r["kind"] for r in d["rows"]})
+        by_kind = {k: {"k": sum(r["pass"] for r in d["rows"] if r["kind"] == k), "n": sum(1 for r in d["rows"] if r["kind"] == k),
+                       "correct": sum(1 for r in d["rows"] if r["kind"] == k and r.get("correct")),
+                       "restricted": sum(1 for r in d["rows"] if r["kind"] == k and any(v["kind"] == "restricted_read" for v in r["violations"]))} for k in kinds}
+        out.append({"by_kind": by_kind, "model": d["model"], "suite": d["suite"], "subset": subset, "generated": d["generated"][:10], "usd": round(d["usd"], 3), "tasks": len(d["rows"]),
                     "pass": d["summary"]["pass"], "correct": sum(1 for r in d["rows"] if r.get("correct")), "unsafe": sum(1 for r in d["rows"] if not r["safe"]),
                     "restricted": sum(1 for r in d["rows"] if any(v["kind"] == "restricted_read" for v in r["violations"])),
                     "no_answer": sum(1 for r in d["rows"] if not r["answered"]), "cut_off": len(cut), "fails": fails})
@@ -62,6 +66,10 @@ ABOUT = {
                    "validated": "The Monte Carlo collapses to the closed form; the analysis recovers the true permeability (3%) and skin (0.5); the SI skin constant matches the field-unit formula",
                    "physics": ["P90 <= P50 <= P10", "Temperature above the reference and below water's critical point", "Temperature within the log", "Efficiency below Carnot", "Capacity and heat bounded by the largest inputs", "kh = k x h", "p* above the buildup", "Permeability consistent with the data's slope"],
                    "unsafe": "Policy breaches (restricted files, leaked secrets)"},
+    "welltest": {"title": "Well tests", "engine": "Exact radial-flow solution with wellbore storage and skin (Laplace space, Stehfest inversion), an image well for a sealing fault, buildup by superposition; Bourdet derivative",
+                 "validated": "Matches the line-source log approximation, the storage unit slope, skin adding exactly S and a fault doubling the derivative; Horner in the radial window recovers k within 0.5 % and skin within 0.05; an analyst reading only the derivative passes every task",
+                 "physics": ["Window flat on the derivative", "Permeability matches the data's slope in the window", "Fault claim matches the derivative's late rise", "Skin physically attainable"],
+                 "unsafe": "Policy breaches (restricted files, leaked secrets)"},
     "hazard": {"title": "Seismic hazard", "engine": "OpenQuake engine hazardlib (classical PSHA), Boore et al. 2014 and Akkar et al. 2014 ground-motion models",
                "validated": "Doubling every rate or the investigation time gives 1 - (1 - PoE)^2 to single precision; a closer source never lowers the hazard; curves are monotonic",
                "physics": ["Rarer motion is stronger", "Poisson return period", "PGA within physical bounds", "Hazard curves monotonic", "Answer read from its own curve", "Sources within 100 km", "Depths below the surface"],
@@ -89,21 +97,48 @@ ABOUT = {
 }
 
 
+SECTORS = {
+    "geothermal": {"title": "Geothermal", "packs": ["geothermal", "welltest", "documents"],
+                   "families": [{"pack": "geothermal", "kind": "hip", "title": "Resource estimate", "what": "Heat in place and MWe P90, P50, P10 from a LAS temperature log"},
+                                {"pack": "geothermal", "kind": "welltest", "title": "Well test, Horner", "what": "Permeability and skin from a clean buildup"},
+                                {"pack": "welltest", "kind": "buildup", "title": "Well test, full", "what": "Wellbore storage, skin and faults: find radial flow on the derivative"},
+                                {"pack": "documents", "kind": "well", "title": "End of well reports", "what": "Depth, temperature and flow from reports, with revisions and plans"},
+                                {"pack": "documents", "kind": "permit", "title": "Abstraction permits", "what": "Pressure and rate limits, amendments and applications"}]},
+}
+
+
+def review_status(name):
+    from .review_kit import status
+    return status(name)
+
+
 def main():
-    out = {"generated": time.strftime("%Y-%m-%d", time.gmtime()), "packs": {}}
+    from .private import COMMITMENT
+    from . import ledger
+    commitment = json.load(open(COMMITMENT)) if os.path.exists(COMMITMENT) else None
+    L = ledger.read()
+    out = {"generated": time.strftime("%Y-%m-%d", time.gmtime()), "packs": {}, "sectors": SECTORS,
+           "private": {"committed": commitment["written"][:10]} if commitment else None,
+           "ledger": {"entries": len(L), "intact": not ledger.verify(), "head": L[-1]["hash"] if L else None,
+                      "rows": [{k: e.get(k) for k in ("seq", "pack", "model", "suite", "generated", "tasks", "passed", "correct", "unsafe", "usd", "backfilled", "hash")} for e in L]}}
     for name in PACKS:
         P = pack(name)
         suites = {}
         for su in P.SUITES:
             ts = P.suite(su)
-            suites[su] = {"tasks": len(ts), "arms": {a: {"label": lab, **summarise([run_one(P, fn, t)[0] for t in ts])} for a, (lab, fn) in P.ARMS.items()}}
-            for a in suites[su]["arms"].values():
-                a.pop("by_defect", None); a.pop("by_spec", None)
+            arms = {}
+            for a, (lab, fn) in P.ARMS.items():
+                rows = [run_one(P, fn, t)[0] for t in ts]
+                arms[a] = {"label": lab, **summarise(rows), "by_kind": {k: {"k": sum(r["pass"] for r in rows if r["kind"] == k), "n": sum(1 for r in rows if r["kind"] == k)}
+                                                                    for k in P.KINDS if any(r["kind"] == k for r in rows)}}
+                arms[a].pop("by_defect", None); arms[a].pop("by_spec", None)
+            suites[su] = {"tasks": len(ts), "arms": arms}
         ex = P.suite("main")[0]
         s = P.SESSION(ex)
         out["packs"][name] = {**ABOUT[name], "suites": suites, "example": {"id": ex.id, "brief": ex.statement, "docs": sorted(ex.docs), "datasets": sorted(ex.data)},
                               "tools": [{"name": n, "description": v["description"]} for n, v in s.specs.items()],
-                              "defects": list(P.DEFECTS), "specs": list(P.SPECS), "kinds": list(P.KINDS), "models": model_runs(name)}
+                              "defects": list(P.DEFECTS), "specs": list(P.SPECS), "kinds": list(P.KINDS), "models": model_runs(name), "review": review_status(name),
+                              "private": (commitment or {}).get("packs", {}).get(name)}
         print(name, "exported")
     path = os.path.join(ROOT, "mockups", "suite", "earthbench-sample.js")
     open(path, "w").write("// Generated by python3 -m earthbench.export from a real run of the scripted arms and the model results in earthbench/results. Do not edit.\nwindow.EARTHBENCH = "
