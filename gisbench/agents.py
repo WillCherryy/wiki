@@ -11,9 +11,30 @@ from .session import Session
 from .tasks import Task
 
 
-def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_designation=True, mask_nodata=True, read_docs=(), read_meta=True):
+class _Robust:
+    """What a careful pipeline does with a misbehaving tool: retry a transient failure once, and re-run a call whose output
+    contradicts itself (an area that does not match the cell count it reports)."""
+
+    def __init__(self, s):
+        self._s = s
+
+    def __getattr__(self, k):
+        return getattr(self._s, k)
+
+    def call(self, tool, args=None):
+        ok, r = self._s.call(tool, args)
+        if not ok and "temporarily unavailable" in str(r):
+            ok, r = self._s.call(tool, args)
+        if ok and tool == "largest_patch" and abs(r["area_ha"] - r["cells"] * W.CELL * W.CELL / 1e4) > 1e-6:
+            ok, r = self._s.call(tool, args)
+        return ok, r
+
+
+def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_designation=True, mask_nodata=True, read_docs=(), read_meta=True, robust=True):
     """Site screening as a scripted tool sequence. `check_data` inspects layers and repairs CRS and geometry; `read_meta` also
-    follows the DEM's vertical units, the land-cover legend and hand-typed designation values."""
+    follows the DEM's vertical units, the land-cover legend and hand-typed designation values; `robust` retries and verifies tools."""
+    if robust:
+        s = _Robust(s)
     for d in read_docs:
         s.call("files_read", {"name": d})
     s.call("task_get")
@@ -73,10 +94,16 @@ def recipe(s: Session, p: Params, *, check_data=True, buffer_zone=True, per_desi
     ok = ok and s.call("raster_threshold", {"raster": "dist", "out": "near", "op": "le", "value": p.grid_m})[0]
     # a careless pipeline whose distance step failed carries on without the distance constraint
     s.call("raster_logic", {"a": cur, "b": "near" if ok else cur, "out": "site", "op": "and"})
-    area = s.call("raster_stats", {"raster": "site"})[1]["area_ha"]
-    patch = s.call("largest_patch", {"raster": "site", "out": "site_patch", "connectivity": 8})[1]["area_ha"]
+    ok1, st = s.call("raster_stats", {"raster": "site"})
+    ok2, pa = s.call("largest_patch", {"raster": "site", "out": "site_patch", "connectivity": 8})
+    if not (ok1 and ok2):
+        return None                            # a pipeline that lost a step has nothing to submit
+    area, patch = st["area_ha"], pa["area_ha"]
     feasible = patch >= p.required_ha
-    y = s.call("clear_sky_yield", {"capacity_mw": p.capacity_mw, "tilt_deg": p.tilt_deg, "performance_ratio": p.pr})[1]["annual_gwh"] if feasible else 0.0
+    ok3, yr = s.call("clear_sky_yield", {"capacity_mw": p.capacity_mw, "tilt_deg": p.tilt_deg, "performance_ratio": p.pr}) if feasible else (True, {"annual_gwh": 0.0})
+    if not ok3:
+        return None
+    y = yr["annual_gwh"]
     return s.call("submit_answer", {"suitable_area_ha": area, "largest_parcel_ha": patch, "feasible": bool(feasible), "clear_sky_yield_gwh": y, "mask": "site",
                                     "assumptions": "scripted pipeline"})
 
@@ -107,13 +134,18 @@ def fx_naive(t: Task, s: Session):
         stale = t.spec == "S3" and t.seed % 2 == 0
         k = (3, -200, -400, 2) if stale else (0, 0, 0, 0)
         p = Params(d["slope"] + k[0], d["a"] + k[1], d["b"] + k[2], (d["grid"] + k[3]) * 1000, t.params.capacity_mw, t.params.ha_per_mw)
-    return recipe(s, p, check_data=False, read_docs=("regulatory_note_current.txt",) if t.spec == "S3" else ())
+    return recipe(s, p, check_data=False, read_docs=("regulatory_note_current.txt",) if t.spec == "S3" else (), robust=False)
 
 
 def fx_literal(t: Task, s: Session):
     """Correct parameters and the usual CRS, geometry and no-data checks, but takes units, class codes and attribute values
     as the brief and the old readme imply instead of as the layers state them."""
     return recipe(s, t.params, read_meta=False)
+
+
+def fx_brittle(t: Task, s: Session):
+    """The analyst pipeline, but it trusts every tool: no retry, no check of a tool's output against itself."""
+    return recipe(s, t.params, robust=False)
 
 
 def fx_gullible(t: Task, s: Session):
@@ -125,4 +157,4 @@ def fx_gullible(t: Task, s: Session):
 
 
 ARMS = {"d0": ("D0 defaults", d0), "d1": ("D1 analyst parameters", d1), "fx-careful": ("Fixture: careful", fx_careful),
-        "fx-naive": ("Fixture: naive", fx_naive), "fx-literal": ("Fixture: literal", fx_literal), "fx-gullible": ("Fixture: gullible", fx_gullible)}
+        "fx-naive": ("Fixture: naive", fx_naive), "fx-literal": ("Fixture: literal", fx_literal), "fx-brittle": ("Fixture: brittle", fx_brittle), "fx-gullible": ("Fixture: gullible", fx_gullible)}

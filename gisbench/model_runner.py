@@ -76,12 +76,13 @@ def run_model(client, model, task, system, max_tokens=2048, max_usd=None, engine
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
-    ap.add_argument("--suite", default="main", choices=["main", "injection", "hard"])
+    ap.add_argument("--suite", default="main", choices=["main", "injection", "hard", "stress"])
     ap.add_argument("--prompt", default="baseline", choices=list(SYSTEMS))
     ap.add_argument("--offset", type=int, default=0, help="skip the first N tasks (main suite: 12 per seed, so 60 skips seeds 0 to 4)")
     ap.add_argument("--limit", type=int, default=0, help="first N tasks only (0 = all)")
     ap.add_argument("--max-usd", type=float, default=5.0, help="stop the whole run beyond this estimated spend")
     ap.add_argument("--engine", default="numpy", choices=["numpy", "qgis"], help="geoprocessing engine behind the tools (qgis needs QGIS 3.x; see engine.py)")
+    ap.add_argument("--repeats", type=int, default=1, help="run each task this many times, to measure consistency")
     ap.add_argument("--yes", action="store_true", help="confirm that this spends money")
     a = ap.parse_args(argv)
     key, via_proxy = os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("GISBENCH_KEY_VIA_PROXY") == "1"
@@ -93,7 +94,7 @@ def main(argv=None):
     if a.model not in PRICES:
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr)
         return 2
-    tl = {"main": T.main_suite, "injection": T.injection_suite, "hard": T.hard_suite}[a.suite]()
+    tl = {"main": T.main_suite, "injection": T.injection_suite, "hard": T.hard_suite, "stress": T.stress_suite}[a.suite]()
     tl = tl[a.offset:]
     tl = tl[: a.limit] if a.limit else tl
     if not a.yes:
@@ -105,19 +106,25 @@ def main(argv=None):
     client = (anthropic.Anthropic(api_key=key) if key else
               anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com"))
     rows, spent, usage = [], 0.0, []
+    stop = False
     for t in tl:
+      for rep in range(max(1, a.repeats)):
         s, u = run_model(client, a.model, t, SYSTEMS[a.prompt], engine=a.engine)
         r = score(t, s)
+        r["repeat"] = rep
         r["trace"] = [{"i": e["i"], "tool": e["tool"], "args": e["args"], "ok": e["ok"], "error": e["error"], "hash": e["hash"][:12]} for e in s.trace]
         r["usage"] = u
         rows.append(r); usage.append(u); spent += u["usd"] or 0
-        print(f"{t.id}: pass={r['pass']} partial={r['partial']:.2f} calls={r['calls']} ${spent:.3f}")
+        print(f"{t.id}{f' #{rep + 1}' if a.repeats > 1 else ''}: pass={r['pass']} partial={r['partial']:.2f} calls={r['calls']} ${spent:.3f}")
         if spent > a.max_usd:
             print("spend cap reached; stopping", file=sys.stderr)
+            stop = True
             break
-    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + ("-qgis" if a.engine == "qgis" else "") + (f"-from{a.offset}" if a.offset else "") + ".json")
+      if stop:
+        break
+    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + ("-qgis" if a.engine == "qgis" else "") + (f"-from{a.offset}" if a.offset else "") + (f"-x{a.repeats}" if a.repeats > 1 else "") + ".json")
     json.dump({"bench_version": T.BENCH_VERSION, "engine": a.engine, "model": a.model, "prompt": a.prompt, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-               "n_run": len(rows), "n_suite": len(tl), "usd": spent, "rows": rows}, open(out, "w"), default=str)
+               "n_run": len(rows), "n_suite": len(tl), "repeats": a.repeats, "usd": spent, "rows": rows}, open(out, "w"), default=str)
     print("wrote", out)
     return 0
 

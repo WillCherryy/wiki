@@ -96,7 +96,8 @@ Answers must be physically right, not just plausible, and checkable even where n
 The agent must stay correct and safe under pressure.
 
 - **Built:** tool allowlist, restricted files, canary secrets, call budget, spend cap, hash-chained trace, prompt-injection suite.
-- **To build:** fault injection (tools that fail, time out or return corrupted output); adversarial data (instructions in attributes, file names and metadata; contradictory documents); resource exhaustion (runaway loops, huge outputs, caps hit mid-task); repeat runs to measure variability; long multi-step tasks; red-team tasks that tempt unsafe shortcuts.
+- **Built (November 2026):** a stress suite in gisbench: transient tool failures, a tool that returns self-contradicting output, a tight call budget, and these combined; repeat runs to measure consistency. A robust scripted pipeline passes 20/20, the same pipeline trusting every tool 5/20.
+- **To build:** timeouts; adversarial data (instructions in attributes, file names and metadata; contradictory documents); resource exhaustion (runaway loops, huge outputs, caps hit mid-task); rephrased briefs; long multi-step tasks; red-team tasks that tempt unsafe shortcuts.
 
 ### 3. Compliance reporting
 
@@ -104,6 +105,21 @@ Evidence a firm can file.
 
 - **Built:** a full audit trail per run, and pass rates with intervals.
 - **To build:** a signed, versioned trial report (PDF and machine-readable) covering what was tested (benchmark version, model, configuration), results with intervals, every failure with its cause, the physical-validation and stress findings, and a mapping to NIST AI RMF, ISO/IEC 42001 and the EU AI Act's expectations on testing and record keeping. Scorcher supplies evidence for these frameworks; it does not certify compliance, which is for accredited bodies, and the reports say so.
+
+## Not a wrapper
+
+The model is a replaceable component. Everything that decides whether an answer is right is deterministic and model-independent: the tasks, the engines, the answer keys, the physical checks, the statistics and the audit trail. No language model grades anything, scripted pipelines run through the same environment, and any agent connects over MCP. A better model makes Scorcher more useful, not obsolete. What is hard to replace is not code: validated task collections with expert ground truth, customer-specific environments, results across models and versions over time, reports that buyers and insurers accept, and integrations with industry software.
+
+## More domains and integrations
+
+- **Mining:** grade and tonnage (built, synthetic); pit limits with an exact optimum; schedules.
+- **Operations and logistics:** crew, rig and equipment scheduling, permits and procurement, checked exactly (constraints met; cost against a solver's optimum, for example OR-Tools).
+- **Documents and data:** extraction from reports, logs and permits, checked field by field against a reference.
+- **Flagship software:** each package (ArcGIS through arcpy, Petrel through its Ocean SDK, Leapfrog, Datamine, PVsyst, WindPRO) becomes an adapter the dashboard can drive, once its licence or partnership allows. Open engines (QGIS, OpenQuake) come first.
+
+## Languages
+
+Python for the evaluation core and the engines (GDAL, QGIS, pvlib, segyio, OpenQuake, OR-Tools are all Python), as one implementation of tasks, tools, scoring and physics, run as services. TypeScript only for the thin web layer on Cloudflare (sign-in, API, storage, serving the console), which is built and tested. The evaluation logic currently exists twice (`gisbench/` in Python, `harness/` in JavaScript); consolidate into Python over time rather than in one rewrite.
 
 ## Quality and rigour
 

@@ -74,7 +74,7 @@ def environment():
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--suite", default="all", choices=["main", "injection", "hard", "all"])
+    ap.add_argument("--suite", default="all", choices=["main", "injection", "hard", "stress", "all"])
     ap.add_argument("--arms", default=",".join(ARMS))
     ap.add_argument("--seeds", type=int, default=10, help="seeds for the main suite (120 tasks at 10)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "results", "phase1-fixtures.json"))
@@ -87,6 +87,8 @@ def main(argv=None):
         suites["injection"] = run_suite("injection", T.injection_suite(), keys)
     if a.suite in ("hard", "all"):
         suites["hard"] = run_suite("hard", T.hard_suite(), keys)
+    if a.suite in ("stress", "all"):
+        suites["stress"] = run_suite("stress", T.stress_suite(), keys)
     doc = {"synthetic": True, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "environment": environment(), "suites": suites,
            "note": "Fixture arms are scripted policies, not language models. No model has been run."}
     os.makedirs(os.path.dirname(a.out), exist_ok=True)

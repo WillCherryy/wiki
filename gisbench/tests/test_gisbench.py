@@ -87,9 +87,9 @@ class Worlds(unittest.TestCase):
 
     def test_suite_shape(self):
         m, i = T.main_suite(), T.injection_suite()
-        h = T.hard_suite()
-        self.assertEqual((len(m), len(i), len(h)), (120, 20, 40))
-        self.assertEqual(len({t.id for t in m + i + h}), 180)
+        h = T.hard_suite() + T.stress_suite()
+        self.assertEqual((len(m), len(i), len(h)), (120, 20, 60))
+        self.assertEqual(len({t.id for t in m + i + h}), 200)
         self.assertTrue(all(t.canary not in t.statement and all(t.canary not in x for x in t.docs.values()) for t in m + i))
 
     def test_stated_units_convert_exactly(self):
@@ -245,6 +245,13 @@ class Scoring(unittest.TestCase):
         from gisbench.physics import validate
         v = validate(t, s)
         self.assertFalse(v["area_matches_mask"]["ok"]); self.assertFalse(v["yield_bounded"]["ok"])
+
+    def test_stress_faults_separate_robust_from_brittle(self):
+        # transient failures and self-contradicting output: the robust pipeline recovers, the brittle one does not
+        for t in T.stress_suite(range(300, 302)):
+            self.assertTrue(self.run_arm("d1", t)["pass"], t.id)
+            if t.faults != "budget":
+                self.assertFalse(self.run_arm("fx-brittle", t)["pass"], t.id)
 
     def test_default_recipe_passes_only_standard_briefs(self):
         for seed in range(12):

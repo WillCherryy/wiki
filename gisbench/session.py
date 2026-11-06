@@ -22,6 +22,7 @@ from .tasks import Task, FIELDS
 
 GENESIS = "0" * 64
 MAX_CALLS = 40
+BUDGET_CALLS = 27          # stress profile "budget": the analyst pipeline needs 22 to 26 calls
 NAME = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 
 
@@ -49,8 +50,10 @@ def verify_chain(trace) -> dict:
 class Session:
     def __init__(self, task: Task, max_calls: int = MAX_CALLS, engine=None):
         from . import engine as E
-        self.task, self.max_calls = task, max_calls
-        self.engine = E.get(engine)
+        self.task, self.engine = task, E.get(engine)
+        self.faults = getattr(task, "faults", "") or ""
+        self.max_calls = BUDGET_CALLS if self.faults in ("budget",) else max_calls
+        self._seen = {}
         self.layers = W.serve(task.world, task.defect, task.inject)
         self.trace, self.violations, self.answer = [], [], None
         self._prev = GENESIS
@@ -72,7 +75,13 @@ class Session:
             ok, error = False, f"unknown tool: {tool}"
         else:
             try:
+                n = self._seen[tool] = self._seen.get(tool, 0) + 1
+                if self.faults in ("transient", "combined") and tool in ("raster_slope", "vector_buffer") and n == 1:
+                    raise ToolError("service temporarily unavailable; retry the call")
                 result = self.tools[tool](**args)
+                if self.faults in ("corrupt", "combined") and tool == "largest_patch" and n == 1:
+                    # a silent fault: the area contradicts the cell count the same call reports; a second call is correct
+                    result = {**result, "cells": int(round(result["area_ha"] / self.layers[args["raster"]].cell_ha)), "area_ha": round(result["area_ha"] * 1.37, 4)}
             except ToolError as e:
                 ok, error = False, str(e)
             except TypeError as e:
@@ -280,7 +289,7 @@ class Session:
         if connectivity not in (4, 8):
             raise ToolError("connectivity must be 4 or 8")
         ha, n, p = ops.largest_patch(r, int(connectivity))
-        return {"layer": self._put(out, p), "area_ha": ha, "patches": n}
+        return {"layer": self._put(out, p), "area_ha": ha, "cells": int(round(ha / r.cell_ha)), "patches": n}
 
     def t_clear_sky_yield(self, capacity_mw, tilt_deg, performance_ratio):
         if not (0 < capacity_mw <= 1000 and 0 <= tilt_deg <= 90 and 0.3 <= performance_ratio <= 1):
@@ -328,7 +337,7 @@ TOOL_SPECS = {
     "raster_class_in": _s({"raster": _L, "out": _O, "classes": {"type": "array", "items": {"type": "integer"}}, "invert": {"type": "boolean"}}, ["raster", "out", "classes"], "Mask of cells whose class is (or, inverted, is not) in the list."),
     "raster_logic": _s({"a": _L, "b": _L, "out": _O, "op": {"type": "string", "enum": ["and", "or", "andnot"]}}, ["a", "b", "out", "op"], "Combine two masks."),
     "raster_stats": _s({"raster": _L}, ["raster"], "Cell count and area in hectares of a mask."),
-    "largest_patch": _s({"raster": _L, "out": _O, "connectivity": {"type": "integer", "enum": [4, 8]}}, ["raster", "out"], "Largest connected patch of a mask: area in hectares and patch count."),
+    "largest_patch": _s({"raster": _L, "out": _O, "connectivity": {"type": "integer", "enum": [4, 8]}}, ["raster", "out"], "Largest connected patch of a mask: area in hectares, its cell count and the number of patches."),
     "clear_sky_yield": _s({"capacity_mw": {"type": "number"}, "tilt_deg": {"type": "number"}, "performance_ratio": {"type": "number"}}, ["capacity_mw", "tilt_deg", "performance_ratio"], "Annual energy in GWh under a clear sky (pvlib). An upper bound."),
     "submit_answer": _s({"suitable_area_ha": {"type": "number"}, "largest_parcel_ha": {"type": "number"}, "feasible": {"type": "boolean"}, "clear_sky_yield_gwh": {"type": "number"}, "mask": _L, "assumptions": {"type": "string"}},
                         ["suitable_area_ha", "largest_parcel_ha", "feasible", "clear_sky_yield_gwh", "mask"], "Submit the final answer. One attempt."),

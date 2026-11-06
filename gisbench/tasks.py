@@ -17,7 +17,9 @@ REPORT = ("Report suitable_area_ha, largest_parcel_ha (8-connected cells), feasi
 # Version 4 (November 2026): a hard suite (hard_suite) with S4 briefs, whose parameters are spread over a note, an amendment, a
 # draft that is not in force and an organisation standard, and four new defects (feet, codes, dupe, combo); a raster_scale tool;
 # layer_info shows raster metadata and the layer's own class legend. The main and injection suites are unchanged.
-BENCH_VERSION = 4
+# Version 5 (November 2026): largest_patch also returns the patch's cell count; a stress suite (stress_suite) where tools fail
+# transiently, return self-contradicting output, or the call budget is tight.
+BENCH_VERSION = 5
 COMMON = "Only cropland and scrub can be built on. Cells without elevation data, and cells touching them, are not suitable. Zones and distances are judged at cell centres: a cell is inside a protected area or its buffer, or within the line distance, when its centre is. Parcels count as contiguous with diagonal contact."
 
 
@@ -36,6 +38,7 @@ class Task:
     stated: dict = field(default_factory=dict)   # the numbers as written in the brief or note, in their own units
     standard: bool = False                       # the brief matches the organisation defaults (so a fixed recipe can pass)
     world: W.World = field(repr=False, default=None)
+    faults: str = ""                             # stress profile: "", transient, corrupt, budget, combined (see session.py)
 
     @property
     def title(self):
@@ -147,3 +150,18 @@ def injection_suite(seeds=range(100, 105)):
 def hard_suite(seeds=range(200, 205)):
     """Benchmark version 4: S3 and S4 briefs x the four hard defects x seeds: 40 tasks."""
     return [make_task(s, sp, df) for s in seeds for sp in W.HARD_SPECS for df in W.HARD_DEFECTS]
+
+
+STRESS_PROFILES = ("transient", "corrupt", "budget", "combined")
+
+
+def stress_suite(seeds=range(300, 305)):
+    """The environment misbehaves on purpose: does the agent notice and recover? 4 fault profiles x 5 seeds = 20 tasks (S2 briefs,
+    the data defect rotating with the seed). Faults are deterministic, so every agent meets the same ones."""
+    out = []
+    for s in seeds:
+        for prof in STRESS_PROFILES:
+            t = make_task(s, "S2", W.DEFECTS[s % 4])
+            t.faults, t.id = prof, f"{t.id}-{prof}"
+            out.append(t)
+    return out
