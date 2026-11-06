@@ -9,13 +9,15 @@ import type { TrialInit } from './core/trial-core.ts';
 import type { Env } from './env.ts';
 import { handleAuth, currentUser, type AuthConfig, type AuthDeps } from './auth-routes.ts';
 import { D1AuthStore } from './core/auth.ts';
+import { D1LoginTokens, ResendMailer } from './core/email-login.ts';
 export { Trial } from './trial.ts';
 
 const ADMIN_TENANT = 'dev';   // the admin key's tenant; signed-in people work in their organisation's tenant
 const authConfig = (env: Env): AuthConfig => ({ publicUrl: env.PUBLIC_URL ?? 'http://localhost:8787', appUrl: env.APP_URL ?? 'http://localhost:3000/build/console', sessionSecret: env.SESSION_SECRET ?? '',
   clients: { google: env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? { id: env.GOOGLE_CLIENT_ID, secret: env.GOOGLE_CLIENT_SECRET } : undefined,
              microsoft: env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET ? { id: env.MICROSOFT_CLIENT_ID, secret: env.MICROSOFT_CLIENT_SECRET } : undefined } });
-const authDeps = (env: Env): AuthDeps => ({ store: new D1AuthStore(env.DB), fetch: (u, i) => fetch(u, i), now: () => Date.now() });
+const authDeps = (env: Env): AuthDeps => ({ store: new D1AuthStore(env.DB), fetch: (u, i) => fetch(u, i), now: () => Date.now(),
+  ...(env.RESEND_API_KEY && env.EMAIL_FROM ? { tokens: new D1LoginTokens(env.DB), mailer: new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) } : {}) });
 // the console is served from APP_URL's origin; it calls this API with the session cookie
 const corsFor = (r: Request, env: Env): Record<string, string> => { const o = r.headers.get('origin'), app = env.APP_URL ? new URL(env.APP_URL).origin : null;
   return o && app && o === app ? { 'access-control-allow-origin': o, 'access-control-allow-credentials': 'true', vary: 'origin' } : {}; };
@@ -30,7 +32,7 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url), p = url.pathname, m = req.method;
     try {
-      if (p === '/health') return json({ ok: true, service: 'scorcher-build', environment: env.ENVIRONMENT, secrets: { anthropic: !!env.ANTHROPIC_API_KEY, admin: !!env.BUILD_ADMIN_KEY, session: !!env.SESSION_SECRET, google: !!env.GOOGLE_CLIENT_ID, microsoft: !!env.MICROSOFT_CLIENT_ID } });
+      if (p === '/health') return json({ ok: true, service: 'scorcher-build', environment: env.ENVIRONMENT, secrets: { anthropic: !!env.ANTHROPIC_API_KEY, admin: !!env.BUILD_ADMIN_KEY, session: !!env.SESSION_SECRET, email: !!(env.RESEND_API_KEY && env.EMAIL_FROM), google: !!env.GOOGLE_CLIENT_ID, microsoft: !!env.MICROSOFT_CLIENT_ID } });
       if (m === 'OPTIONS') { const c = corsFor(req, env); return new Response(null, { status: c['access-control-allow-origin'] ? 204 : 403, headers: { ...c, 'access-control-allow-methods': 'GET, POST, PUT', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '600' } }); }
       if (p.startsWith('/auth/') || p === '/api/me') {
         if (!env.SESSION_SECRET) return json({ error: 'sign-in is not configured: set SESSION_SECRET' }, 503);

@@ -4,9 +4,10 @@
 // Sessions are random 256-bit tokens; only their SHA-256 is stored, so a database leak does not leak sessions.
 import { sha256 } from './chain.ts';
 
-export type Provider = 'google' | 'microsoft';
+export type OidcProvider = 'google' | 'microsoft';
+export type Provider = OidcProvider | 'email';
 export interface ProviderConfig { authorize: string; token: string; jwks: string; scope: string; issuer: (claims: Claims) => boolean }
-export const PROVIDERS: Record<Provider, ProviderConfig> = {
+export const PROVIDERS: Record<OidcProvider, ProviderConfig> = {
   google: { authorize: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token', jwks: 'https://www.googleapis.com/oauth2/v3/certs',
     scope: 'openid email profile', issuer: c => c.iss === 'https://accounts.google.com' || c.iss === 'accounts.google.com' },
   // "common" accepts work, school and personal Microsoft accounts; the issuer then names the account's own tenant
@@ -39,7 +40,7 @@ export async function unseal<T>(value: string, secret: string, now = Date.now())
 }
 export async function pkcePair() { const verifier = randomToken(32); return { verifier, challenge: b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(verifier)))) }; }
 
-export function authorizeUrl(p: Provider, clientId: string, redirectUri: string, state: string, nonce: string, challenge: string): string {
+export function authorizeUrl(p: OidcProvider, clientId: string, redirectUri: string, state: string, nonce: string, challenge: string): string {
   const u = new URL(PROVIDERS[p].authorize);
   for (const [k, v] of Object.entries({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: PROVIDERS[p].scope, state, nonce, code_challenge: challenge, code_challenge_method: 'S256', prompt: 'select_account' })) u.searchParams.set(k, v);
   return u.toString();
@@ -47,7 +48,7 @@ export function authorizeUrl(p: Provider, clientId: string, redirectUri: string,
 
 export interface Jwk { kid?: string; kty: string; n?: string; e?: string; alg?: string; use?: string }
 export class AuthError extends Error {}
-export async function verifyIdToken(jwt: string, o: { provider: Provider; jwks: { keys: Jwk[] }; audience: string; nonce: string; now?: number; skewSeconds?: number }): Promise<Claims> {
+export async function verifyIdToken(jwt: string, o: { provider: OidcProvider; jwks: { keys: Jwk[] }; audience: string; nonce: string; now?: number; skewSeconds?: number }): Promise<Claims> {
   const parts = jwt.split('.'); if (parts.length !== 3) throw new AuthError('malformed token');
   const [h, p, s] = parts as [string, string, string];
   const header = JSON.parse(dec.decode(unb64url(h))) as { alg?: string; kid?: string };
@@ -65,7 +66,7 @@ export async function verifyIdToken(jwt: string, o: { provider: Provider; jwks: 
   if (o.provider === 'google' && c.email !== undefined && c.email_verified !== true) throw new AuthError('email not verified');
   return c;
 }
-export function identityOf(p: Provider, c: Claims): Identity {
+export function identityOf(p: OidcProvider, c: Claims): Identity {
   // Microsoft does not guarantee the email claim is verified: it is shown, never used to grant access to an organisation
   const email = p === 'google' ? (c.email ?? null) : (c.email ?? c.preferred_username ?? null);
   return { provider: p, subject: p === 'microsoft' ? `${c.tid}:${c.sub}` : c.sub!, email: email ? String(email).toLowerCase() : null, name: c.name ?? null, tenantHint: p === 'microsoft' ? (c.tid ?? null) : null };

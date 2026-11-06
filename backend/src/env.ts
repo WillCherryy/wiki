@@ -8,4 +8,6 @@ export interface Env {
   SESSION_SECRET?: string;                            // secret: signs the short-lived sign-in cookie
   GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string;          // secrets: Google Cloud console, OAuth client (web application)
   MICROSOFT_CLIENT_ID?: string; MICROSOFT_CLIENT_SECRET?: string;    // secrets: Microsoft Entra admin centre, app registration
+  RESEND_API_KEY?: string;                            // secret: sends sign-in links (resend.com)
+  EMAIL_FROM?: string;                                // var: the sender, on a domain verified with the email provider, e.g. "Scorcher <signin@scorcher.dev>"
 }
