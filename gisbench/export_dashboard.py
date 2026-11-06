@@ -71,11 +71,11 @@ def _brief_args(args):
     return out
 
 
-def model_runs(results_dir):
+def model_runs(results_dir, files=None):
     """Model result files of the current benchmark version, with each task's mask rebuilt by replaying the recorded tool calls
     (the tools are deterministic), the scripted arms on the same tasks for a paired comparison, and map data per task."""
     tasks, runs, worlds = _all_tasks(), [], {}
-    files = sorted(glob.glob(os.path.join(results_dir, "model-*.json"))) + sorted(glob.glob(os.path.join(results_dir, "v[0-9]*", "model-*.json")), reverse=True)
+    files = files or (sorted(glob.glob(os.path.join(results_dir, "model-*.json"))) + sorted(glob.glob(os.path.join(results_dir, "v[0-9]*", "model-*.json")), reverse=True))
     for f in files:
         m = json.load(open(f))
         if m.get("bench_version", 1) < 2:
@@ -83,7 +83,7 @@ def model_runs(results_dir):
         rows, base = [], {"d0": [], "d1": []}
         for r in m["rows"]:
             t = tasks[r["task"]]
-            mask, replay, phys = None, None, None
+            mask, replay, phys, integ = None, None, None, None
             if all("args" in e for e in r.get("trace", [])):
                 s = Session(t, engine=m.get("engine", "numpy"))
                 for e in r["trace"]:
@@ -94,11 +94,13 @@ def model_runs(results_dir):
                 if replay:
                     from .physics import validate
                     phys = validate(t, s)
+                    from .integrity import check as integrity_check
+                    integ = integrity_check(s)
             for k in base:
                 base[k].append(run_one(ARMS[k][1], t)[0]["pass"])
             u = r.get("usage") or {}
             rows.append({k: r.get(k) for k in ("task", "spec", "defect", "pass", "partial", "correct", "safe", "checks", "answer", "key", "iou", "hard_cells", "violations", "calls", "errors")}
-                        | {"usd": u.get("usd"), "stop": u.get("stop"), "replayed": replay, "mask": mask, "physics": phys,
+                        | {"usd": u.get("usd"), "stop": u.get("stop"), "replayed": replay, "mask": mask, "physics": phys, "integrity": integ, "assumptions": ((r.get("trace") or [{}])[-1].get("args") or {}).get("assumptions"),
                            "trace": [{"tool": e["tool"], "args": _brief_args(e.get("args")), "ok": e["ok"], "error": e["error"]} for e in r.get("trace", [])]})
             if t.id not in worlds:
                 key = W.solve(t.world, t.params, t.defect)
