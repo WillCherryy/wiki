@@ -112,14 +112,14 @@ Fairness rules, proposed: published cost per task, model costs passed through at
 
 - **gisbench, version 3** (claude-haiku-5-5, method prompt): 20 of 20 on held-out tasks and 20 of 20 on the injection suite (95% interval 84–100%). The fixed-default pipeline passed 6 and 4 of the same tasks. About $0.009 and 27 tool calls per task.
 - **The diagnosis mattered more than the score.** Version 1's failures were an unstated rasterisation convention, and version 2's were a wrong tool description. Fixing the benchmark lifted Haiku from 8 of 20 to 20 of 20.
-- **The hard suite** (version 4, 40 tasks: composed briefs, units in metadata, recoded legends, hand-typed attributes) is built; model results are pending.
+- **The hard suite** (version 4, 40 tasks: composed briefs, units in metadata, recoded legends, hand-typed attributes): Haiku passed 40 of 40 (interval 91–100%), against 7 for the fixed pipeline, for $0.47 in total. The traps were signposted, so this shows careful instruction-following, not robustness to hidden problems.
 - **The limit:** all of this uses synthetic worlds. The claim that matters, value on a real firm's tasks, is untested.
 
 ## Roadmap
 
 | Stage | Work | State |
 |---|---|---|
-| 1 | Agent quality on gisbench: diagnosis, method prompt, held-out tests, hard suite | Done to version 4; hard-suite results pending |
+| 1 | Agent quality on gisbench: diagnosis, method prompt, held-out tests, hard suite | Done (version 4) |
 | 2 | PyQGIS tool layer, cross-checked against the current tools; new QGIS-only tasks | Next |
 | 3 | OpenQuake pilot: a few demo cases as graded tasks | Proposed |
 | 4 | Seismic: SEG-Y reading, section viewer, picks against two interpreters on open data | Planned |
