@@ -53,3 +53,19 @@ Secrets are stored encrypted by Cloudflare and survive deploys. Decide the subdo
 ## Not built yet (see `../docs/BUILD-ARCHITECTURE.md`)
 
 Real accounts and tenants (one `dev` tenant, one admin key); an MCP endpoint at the edge; queues for long runs (the run endpoint is synchronous); per-tenant encryption; the Resource Monte Carlo and the other domain tools (only the file, table and unit tools are ported); the QGIS adapter service.
+
+
+## Accounts: sign in with Google or Microsoft
+
+People sign in with a Google or Microsoft account (OpenID Connect, authorization code flow with PKCE). The Worker verifies each ID token itself: RS256 signature against the provider's published keys, issuer (for Microsoft, the account's own tenant), audience, expiry, issue time, the nonce it issued, and for Google a verified email. Sessions are random 256-bit tokens in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie; only their SHA-256 is stored. Requests that change data with a session must come from `APP_URL`'s origin. At first sign-in each person gets a private workspace (an organisation); teams join by invitation, never by email domain, because Microsoft does not guarantee its email claim is verified. The admin key keeps working for scripts.
+
+Routes: `GET /auth/google/start`, `GET /auth/microsoft/start` (the two "Sign in with" buttons link here), the matching `/callback`s, `POST /auth/logout`, `GET /api/me`.
+
+Set up once (the owner):
+
+1. Decide the backend's address and set `PUBLIC_URL` and `APP_URL` in `wrangler.toml`.
+2. **Google:** Google Cloud console, APIs and services, Credentials, Create credentials, OAuth client ID, type Web application. Authorised redirect URI: `PUBLIC_URL/auth/google/callback`. Configure the consent screen (app name Scorcher Build, scopes openid, email, profile). Then `npx wrangler secret put GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+3. **Microsoft:** Microsoft Entra admin centre, App registrations, New registration. Supported account types: accounts in any organisational directory and personal Microsoft accounts. Redirect URI (Web): `PUBLIC_URL/auth/microsoft/callback`. Certificates and secrets, New client secret. Then `npx wrangler secret put MICROSOFT_CLIENT_ID` (the Application ID) and `MICROSOFT_CLIENT_SECRET`.
+4. `npx wrangler secret put SESSION_SECRET` (a long random string), then `npm run migrate` (adds the accounts tables) and `npm run deploy`.
+
+`/health` reports which of these are set. Tests (`test/auth.test.ts`) cover the full flow against a fake provider, and refusal of a forged signature, wrong audience, expired token, replayed nonce, wrong issuer or tenant, unverified Google email, the "none" algorithm and a forged state.

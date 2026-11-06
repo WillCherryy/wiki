@@ -7,9 +7,18 @@ import { anthropicComplete, runModelLoop, systemPrompt } from './core/model.ts';
 import { PRICES } from './core/pricing.ts';
 import type { TrialInit } from './core/trial-core.ts';
 import type { Env } from './env.ts';
+import { handleAuth, currentUser, type AuthConfig, type AuthDeps } from './auth-routes.ts';
+import { D1AuthStore } from './core/auth.ts';
 export { Trial } from './trial.ts';
 
-const TENANT = 'dev';   // one tenant until accounts exist (docs/BUILD-ARCHITECTURE.md)
+const ADMIN_TENANT = 'dev';   // the admin key's tenant; signed-in people work in their organisation's tenant
+const authConfig = (env: Env): AuthConfig => ({ publicUrl: env.PUBLIC_URL ?? 'http://localhost:8787', appUrl: env.APP_URL ?? 'http://localhost:3000/build/console', sessionSecret: env.SESSION_SECRET ?? '',
+  clients: { google: env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? { id: env.GOOGLE_CLIENT_ID, secret: env.GOOGLE_CLIENT_SECRET } : undefined,
+             microsoft: env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET ? { id: env.MICROSOFT_CLIENT_ID, secret: env.MICROSOFT_CLIENT_SECRET } : undefined } });
+const authDeps = (env: Env): AuthDeps => ({ store: new D1AuthStore(env.DB), fetch: (u, i) => fetch(u, i), now: () => Date.now() });
+// the console is served from APP_URL's origin; it calls this API with the session cookie
+const corsFor = (r: Request, env: Env): Record<string, string> => { const o = r.headers.get('origin'), app = env.APP_URL ? new URL(env.APP_URL).origin : null;
+  return o && app && o === app ? { 'access-control-allow-origin': o, 'access-control-allow-credentials': 'true', vary: 'origin' } : {}; };
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const bearer = (r: Request) => /^Bearer (\S+)$/.exec(r.headers.get('authorization') ?? '')?.[1] ?? '';
 // compare digests, not the secrets, and without an early exit
@@ -21,7 +30,12 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url), p = url.pathname, m = req.method;
     try {
-      if (p === '/health') return json({ ok: true, service: 'scorcher-build', environment: env.ENVIRONMENT, secrets: { anthropic: !!env.ANTHROPIC_API_KEY, admin: !!env.BUILD_ADMIN_KEY } });
+      if (p === '/health') return json({ ok: true, service: 'scorcher-build', environment: env.ENVIRONMENT, secrets: { anthropic: !!env.ANTHROPIC_API_KEY, admin: !!env.BUILD_ADMIN_KEY, session: !!env.SESSION_SECRET, google: !!env.GOOGLE_CLIENT_ID, microsoft: !!env.MICROSOFT_CLIENT_ID } });
+      if (m === 'OPTIONS') { const c = corsFor(req, env); return new Response(null, { status: c['access-control-allow-origin'] ? 204 : 403, headers: { ...c, 'access-control-allow-methods': 'GET, POST, PUT', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '600' } }); }
+      if (p.startsWith('/auth/') || p === '/api/me') {
+        if (!env.SESSION_SECRET) return json({ error: 'sign-in is not configured: set SESSION_SECRET' }, 503);
+        const r = await handleAuth(req, authConfig(env), authDeps(env)); if (r) { for (const [k, v] of Object.entries(corsFor(req, env))) r.headers.set(k, v); return r; }
+      }
       if (!p.startsWith('/api/')) return json({ error: 'not found' }, 404);
       const call = /^\/api\/trials\/([a-f0-9]{16,64})\/(call|trace|score|run)$/.exec(p);
 
@@ -31,7 +45,14 @@ export default {
         const b = await req.json().catch(() => null) as { tool?: unknown; args?: unknown } | null; if (!b || typeof b.tool !== 'string') return json({ error: 'body must be { tool, args }' }, 400);
         const o = await stub.call(b.tool, b.args ?? {}); return new Response(o.ok ? `{"ok":true,"result":${o.text}}` : JSON.stringify({ ok: false, error: o.text }), { status: o.ok ? 200 : 422, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
       }
-      if (!(await isAdmin(req, env))) return json({ error: 'unauthorised' }, 401);
+      // who is asking: the admin key (tenant "dev"), or a signed-in person (their first organisation's tenant)
+      let TENANT = ADMIN_TENANT;
+      if (!(await isAdmin(req, env))) {
+        const user = env.SESSION_SECRET ? await currentUser(req, authDeps(env)) : null; if (!user) return json({ error: 'unauthorised' }, 401);
+        if (m !== 'GET' && !corsFor(req, env)['access-control-allow-origin']) return json({ error: 'requests that change data must come from the app' }, 403);   // cookies ride along cross-site; the origin cannot be forged by a browser
+        const orgs = await new D1AuthStore(env.DB).orgsOf(user.id); if (!orgs.length) return json({ error: 'no organisation' }, 403);
+        TENANT = `org:${orgs[0]!.id}`;
+      }
 
       if (p === '/api/tasks' && m === 'POST') {
         const parsed = TaskSpec.safeParse(await req.json().catch(() => null)); if (!parsed.success) return json({ error: 'invalid spec', issues: parsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) }, 400);
