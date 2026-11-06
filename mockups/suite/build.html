@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Scorcher Build — concept mockup</title>
+<title>Scorcher Build</title>
+<meta name="description" content="Scorcher Build tests AI agents for energy and earth-science work against physics engines, not opinions: correct, safe and auditable, on your own tasks.">
 <style>
 @font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
 @font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
@@ -139,6 +140,30 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
 .close .btn { background: var(--signal); color: var(--ink); border-color: var(--signal); }
 .fine { padding: 26px var(--pad) 60px; background: var(--ink); color: rgba(243, 244, 241, .55); font: 400 12px/1.7 var(--mono); border-top: 1px solid rgba(243, 244, 241, .14); }
 
+/* mission, moat, evidence, benchmarks */
+.mission { padding: 120px var(--pad); background: var(--ink); color: var(--ground); display: grid; grid-template-columns: 5fr 7fr; gap: 48px; align-items: end; }
+.mission .h2 { color: var(--ground); } .mission p { color: rgba(243, 244, 241, .78); font-size: clamp(18px, 1.5vw, 22px); max-width: 52ch; text-wrap: pretty; }
+.mission p b { color: var(--signal); font-weight: 560; }
+.why { padding: 120px var(--pad); border-bottom: 1px solid var(--rule); }
+.why .h2 { max-width: 18ch; } .why > .lede { margin-top: 20px; max-width: 60ch; }
+.moat { margin-top: 56px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); }
+.moat > div { padding: 28px 28px 32px 0; border-bottom: 1px solid var(--rule); }
+.moat > div:nth-child(odd) { border-right: 1px solid var(--rule); } .moat > div:nth-child(even) { padding-left: 28px; }
+.moat h3 { font-size: 23px; font-weight: 620; font-stretch: 110%; letter-spacing: -.015em; } .moat p { margin-top: 10px; color: var(--ink-2); font-size: 16px; max-width: 54ch; }
+.moat .meta { margin-top: 14px; display: block; }
+.stats { margin-top: 56px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1.5px solid var(--ink); }
+.stats div { padding: 22px 20px 24px; border-right: 1px solid var(--rule); } .stats div:last-child { border-right: 0; }
+.stats b { display: block; font: 600 clamp(30px, 3vw, 44px)/1 var(--sans); font-stretch: 112%; letter-spacing: -.03em; } .stats span { display: block; margin-top: 10px; color: var(--ink-2); font-size: 14px; }
+.bench { padding: 120px var(--pad); border-bottom: 1px solid var(--rule); }
+.bench .h2 { max-width: 16ch; } .bench > .lede { margin-top: 20px; max-width: 62ch; }
+.btable { margin-top: 48px; width: 100%; border-collapse: collapse; font-size: 15px; }
+.btable th { text-align: left; font: 400 12px var(--mono); color: var(--ink-3); padding: 0 16px 10px 0; border-bottom: 1.5px solid var(--ink); }
+.btable td { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--rule); vertical-align: top; } .btable td:first-child { font-weight: 600; font-stretch: 108%; white-space: nowrap; }
+.btable .st { font: 400 12px var(--mono); padding: 2px 7px; border: 1px solid var(--ink); white-space: nowrap; } .btable .st.next { border-color: var(--rule); color: var(--ink-3); }
+@media (max-width: 960px) {
+  .mission { grid-template-columns: 1fr; } .moat { grid-template-columns: 1fr; } .moat > div:nth-child(odd) { border-right: 0; } .moat > div:nth-child(even) { padding-left: 0; }
+  .stats { grid-template-columns: 1fr 1fr; } .stats div:nth-child(2) { border-right: 0; } .stats div:nth-child(-n+2) { border-bottom: 1px solid var(--rule); } .bench { overflow-x: auto; }
+}
 @media (max-width: 960px) {
   .bar nav { display: none; } .rail { display: none; } main { margin-left: 0; }
   .top { grid-template-columns: 1fr; } .top .copy { border-right: 0; } .section-plot { min-height: 60vh; }
@@ -151,19 +176,19 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
 </style>
 </head>
 <body>
-<div class="concept">Concept mockup · not a live product</div>
+<div class="concept">Early access · benchmarks on synthetic data</div>
 <header class="bar"><a class="mark" href="#"><i></i>Scorcher <span>Build</span></a>
-  <nav><a href="#how">How it works</a><a href="#domains">Domains</a><a href="#report">Example report</a><a href="#legacy">Legacy systems</a><a href="#price">Pricing</a></nav>
+  <nav><a href="#why">Why Scorcher</a><a href="#bench">Benchmarks</a><a href="#how">How it works</a><a href="#report">A real report</a><a href="#legacy">Integrations</a><a href="#price">Pricing</a></nav>
   <a class="btn" href="#top">Start a trial</a></header>
 <div class="rail" id="rail"><div class="bit" id="bit"></div></div>
 
 <main>
 <section class="top" id="top">
   <div class="copy">
-    <div><h1 class="display">Prove an agent on your own work before you buy it.</h1>
-      <p class="lede">Bring your agent or use ours. We run it on tasks from your workflows, measure it against how your team does them today, and show you whether it is worth your time.</p></div>
+    <div><h1 class="display">Agents you can prove.</h1>
+      <p class="lede">Scorcher tests AI agents on real earth-science and energy work, and grades them with the physics engines engineers already trust, not with another language model. Bring your agent or use ours: you find out whether it is right, safe and worth its cost before it touches a project.</p></div>
     <form class="start" onsubmit="return false" aria-label="Start a trial">
-      <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>Seismic QC</option><option>QGIS processing</option><option>Data analysis</option><option>Drilling engineering</option><option>Solar yield</option><option>Wind resource</option></select></label>
+      <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>GIS screening</option><option>Mining</option><option>Geothermal</option><option>Seismic hazard</option><option>Seismic QC</option><option>Solar yield</option><option>Wind resource</option></select></label>
         <label><span>Agent</span><select aria-label="Agent"><option>Scorcher’s agent</option><option>My own agent</option><option>Both, side by side</option></select></label></div>
       <div class="go"><span class="meta">Fixed-fee trial · results you keep</span><button class="btn">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button></div>
     </form>
@@ -171,6 +196,44 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
   <div class="section-plot" id="plot"><canvas id="seis" aria-label="A synthetic seismic section, drawn live in the page"></canvas>
     <div class="pick" id="pick"><span>Horizon picked by the agent</span></div>
     <div class="cap"><span><b>Synthetic section</b>, generated in the page: 84 traces, Ricker wavelet, one fault.</span><span>Illustrative</span></div></div>
+</section>
+
+<section class="mission" id="mission">
+  <h2 class="h2">Faster engineering for the energy transition, without the risk.</h2>
+  <p>The grid connections, geothermal wells, mines for critical minerals and hazard studies the energy transition needs are held up by skilled hours. AI agents could give many of those hours back, but only if a firm can show they are <b>right</b>, <b>safe</b> and <b>lawful to use</b>. Scorcher exists to make that proof routine: so that firms adopt agents where they work, avoid them where they do not, and can show a client, an insurer or a regulator why.</p>
+</section>
+
+<section class="why" id="why">
+  <h2 class="h2">Graded by physics, not by opinion.</h2>
+  <p class="lede">Anyone can wrap a model and call it an agent. What is hard to copy is the test bed: validated engines, tasks with known answers, and checks that work even when there is no answer key.</p>
+  <div class="moat">
+    <div><h3>Engines engineers trust do the grading</h3><p>Every answer is recomputed by deterministic engines: QGIS and GDAL for GIS, the OpenQuake engine for seismic hazard, an exact min-cut solver for open pits, the USGS volumetric method and Horner analysis for geothermal. No language model scores anything, so a better model makes Scorcher more useful, not obsolete.</p><span class="meta">Pit solver equal to brute force; hazard curves obey Poisson exactly</span></div>
+    <div><h3>Physics checks that need no answer key</h3><p>On real projects there is rarely a reference answer. Scorcher checks every answer against physical law and the data itself: mass and metal balances, a pit that respects its own slope, P90 below P10, efficiency below Carnot, energy below the sunlight that reached the panel.</p><span class="meta">No false alarm in more than 2,400 scripted answers</span></div>
+    <div><h3>Safety measured, not assumed</h3><p>Instructions planted in data files, restricted files holding canary secrets, tools that fail or return impossible values, and outputs that would be unsafe to build: a pit steeper than its walls, a design earthquake underestimated, land inside a protected buffer.</p><span class="meta">Injection, stress and unsafe-output suites in every domain</span></div>
+    <div><h3>Evidence a firm can file</h3><p>Every run leaves a complete, tamper-evident record: the brief, the data fingerprints, the model's messages, every tool call and result, and every check. Reports state results with intervals and map the evidence to NIST AI RMF, ISO/IEC 42001 and the EU AI Act. Evidence, not a certificate: certification is for accredited bodies.</p><span class="meta">SHA-256 hash chain per run; reports in HTML and PDF</span></div>
+  </div>
+  <div class="stats">
+    <div><b class="num">480</b><span>benchmark tasks across GIS, mining, geothermal and seismic hazard</span></div>
+    <div><b class="num">40/40</b><span>Claude Haiku on the hard GIS suite; the fixed-recipe pipeline passed 7</span></div>
+    <div><b class="num"><div><b class="num">&lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>
+    <div><b class="num">0</b><span>false alarms from the key-free physics checks in 2,400+ scripted answers</span></div>
+  </div>
+</section>
+
+<section class="bench" id="bench">
+  <h2 class="h2">Benchmarks you can run today.</h2>
+  <p class="lede">Each domain is a pack: generated tasks with known answers, tools that wrap a validated engine, key-free physics checks, stress faults and an injection suite. Any agent connects over the Model Context Protocol.</p>
+  <table class="btable">
+    <thead><tr><th>Domain</th><th>Tasks</th><th>Engine that grades</th><th>Traps from real data</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>GIS site screening</td><td>Suitable land, parcel, feasibility and yield from a brief</td><td>QGIS 3.34 processing or GDAL; pvlib</td><td>Wrong CRS, missing elevation, broken polygons, feet, recoded legends, hand-typed codes</td><td><span class="st">200 tasks</span></td></tr>
+      <tr><td>Mining</td><td>Grade-tonnage at the break-even cut-off; ultimate pit</td><td>Exact maximum-weight closure (min-cut)</td><td>Missing densities, grades in ppm, duplicated blocks, prices in USD/lb</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Geothermal</td><td>Heat in place and MWe P90/P50/P10 from a LAS log; Horner well test</td><td>USGS volumetric Monte Carlo; Horner in SI</td><td>Logs in feet and °F, null codes the header gets wrong, storage and faults outside the radial-flow window</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Seismic hazard</td><td>Design ground motion at 10% and 2% in 50 years</td><td>OpenQuake engine (classical PSHA)</td><td>Swapped coordinates, depth as elevation, rates per century, cited models</td><td><span class="st">56 tasks</span></td></tr>
+      <tr><td>Seismic interpretation</td><td>SEG-Y checks; horizon picks against two interpreters</td><td>segyio; pick comparison</td><td>Header errors, polarity, gaps</td><td><span class="st next">next</span></td></tr>
+      <tr><td>Solar and wind</td><td>Yield with losses; AEP with shear and density</td><td>pvlib; power-curve and wake models</td><td>Time zones, units, missing records</td><td><span class="st next">next</span></td></tr>
+    </tbody>
+  </table>
 </section>
 
 <section class="log" id="how">
@@ -190,38 +253,38 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
   <div class="plate" data-img="img/geothermal.jpg"></div>
   <div class="plate" data-img="img/solar-aerial.jpg"></div>
   <div class="plate" data-img="img/wind-akhisar.jpg"></div>
-  <div class="dtext"><h2>Seismic</h2><p>Quality-check SEG-Y volumes, repair headers, pick horizons and flag acquisition problems before an interpreter opens the data.</p><div class="tools"><span>SEG-Y</span><span>Madagascar</span><span>OpendTect</span><span>Python</span></div></div>
-  <div class="dtext"><h2>Geospatial</h2><p>Drive QGIS processing chains: reproject, clip, buffer and join layers, and write the map and the method behind it.</p><div class="tools"><span>QGIS</span><span>GDAL</span><span>Shapefile</span><span>GeoPackage</span></div></div>
-  <div class="dtext"><h2>Drilling</h2><p>Check well plans, casing and torque-and-drag runs against the limits, and turn daily drilling reports into structured data.</p><div class="tools"><span>LAS</span><span>WITSML</span><span>Daily reports</span><span>Excel</span></div></div>
+  <div class="dtext"><h2>Seismic</h2><p>Hazard at a site through the OpenQuake engine today; SEG-Y quality control and horizon picks checked against two interpreters next.</p><div class="tools"><span>OpenQuake</span><span>SEG-Y</span><span>OpendTect</span><span>Python</span></div></div>
+  <div class="dtext"><h2>Geospatial</h2><p>QGIS processing chains under test: reproject, repair, buffer and rasterise, with every map compared with an answer key cross-checked in QGIS itself.</p><div class="tools"><span>QGIS</span><span>GDAL</span><span>Shapefile</span><span>GeoPackage</span></div></div>
+  <div class="dtext"><h2>Geothermal</h2><p>Resource assessments from well logs with Monte Carlo uncertainty, and pressure-buildup tests, with checks against Carnot and conservation of energy.</p><div class="tools"><span>LAS 2.0</span><span>Horner</span><span>USGS volumetric</span><span>Monte Carlo</span></div></div>
   <div class="dtext"><h2>Solar</h2><p>Screen sites and re-analyse operating plants: what the weather says a system should have produced, and why it did not.</p><div class="tools"><span>pvlib</span><span>PVGIS</span><span>NSRDB</span><span>SCADA exports</span></div></div>
   <div class="dtext"><h2>Wind</h2><p>Resource screening, turbine comparisons and wake losses, with every input traced to its dataset.</p><div class="tools"><span>windpowerlib</span><span>PyWake</span><span>Global Wind Atlas</span><span>ERA5</span></div></div>
-  <nav class="dindex" id="dindex"><a>Seismic</a><a>Geospatial</a><a>Drilling</a><a>Solar</a><a>Wind</a></nav>
+  <nav class="dindex" id="dindex"><a>Seismic</a><a>Geospatial</a><a>Geothermal</a><a>Solar</a><a>Wind</a></nav>
   <div class="credit" id="credit"></div>
 </div></section>
 
 <section class="report" id="report">
-  <h2 class="h2">An example report, before you commit.</h2>
-  <p class="lede">Forty SEG-Y quality-control tasks from one survey: two agents and the team’s current process, on the same data.</p>
-  <p class="note">Synthetic example. The layout of a real report; none of these figures are measurements.</p>
+  <h2 class="h2">A real report, not a mock-up.</h2>
+  <p class="lede">Claude Haiku on the 40-task hard GIS suite: briefs spread over four documents, a DEM in feet, a recoded land-cover legend and hand-typed attributes. Same tasks, same tools, same scorer for every arm.</p>
+  <p class="note">Synthetic worlds; measured results. 95% intervals.</p>
   <table class="cmp">
-    <thead><tr><th>Approach</th><th>Tasks completed</th><th>Median time per task</th><th>Cost per task</th><th>Needed a person to fix</th></tr></thead>
+    <thead><tr><th>Approach</th><th>Tasks passed</th><th>95% interval</th><th>Unsafe runs</th><th>Model cost</th></tr></thead>
     <tbody>
-      <tr><td>Current process (engineer)</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>38 min</td><td>£41.00</td><td>—</td></tr>
-      <tr><td>Your agent</td><td><span class="bar" style="width:52px"></span>29 / 40</td><td>6 min</td><td>£1.90</td><td>11</td></tr>
-      <tr class="best"><td>Scorcher’s seismic agent</td><td><span class="bar" style="width:66px"></span>37 / 40</td><td>4 min</td><td>£1.20</td><td>3</td></tr>
+      <tr><td>Fixed recipe (organisation defaults)</td><td><span class="bar" style="width:13px"></span>7 / 40</td><td>9 to 32%</td><td>32</td><td>—</td></tr>
+      <tr><td>Analyst pipeline (correct parameters, scripted)</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>91 to 100%</td><td>0</td><td>—</td></tr>
+      <tr class="best"><td>Claude Haiku with Scorcher's method prompt</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>91 to 100%</td><td>0</td><td>$0.47 in total</td></tr>
     </tbody>
   </table>
-  <div class="verdict"><p>In this example Scorcher’s agent saves about 23 of the 25 engineer-hours on the survey; 3 tasks still need a person. <a href="build-console.html" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the trial console, with a dashboard for each task</a></p><a class="btn" href="#price">See the plans</a></div>
+  <div class="verdict"><p>It scaled the feet DEM, used the new legend and buffered every hand-typed code on every task, and said the draft regulation was not in force. The signposted traps were followed; unsignposted problems and real data are the next test. <a href="console" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the console: every run, task by task, with maps, tool calls and physics checks</a></p><a class="btn" href="#price">See the plans</a></div>
 </section>
 
 <section class="legacy" id="legacy">
-  <div class="copy"><h2 class="h2">Built for the software you already run.</h2><p>Smaller firms run on desktop tools, shared drives and file formats older than most of their staff. Our agents work with them where they are, and the small models can run on your own machines when the data cannot leave.</p></div>
+  <div class="copy"><h2 class="h2">Works with the software you already run.</h2><p>Agents connect over the Model Context Protocol, so Claude, open models and in-house frameworks are tested the same way. Scorcher drives open engines today and adds commercial packages through their own scripting interfaces as licences and partnerships allow. Small models can run on your hardware when data cannot leave.</p></div>
   <div class="core">
-    <div><b>Desktop applications</b><span>QGIS, spreadsheet macros, vendor tools without an API</span></div>
-    <div><b>Industry file formats</b><span>SEG-Y, LAS, WITSML, shapefile, GeoPackage</span></div>
-    <div><b>Historian and SCADA exports</b><span>CSV and database dumps from plant systems</span></div>
-    <div><b>Documents</b><span>Daily drilling reports, permits, inspection records</span></div>
-    <div><b>Models</b><span>Large models in the cloud, small models on your hardware</span></div>
+    <div><b>Any agent, over MCP</b><span>Claude Desktop, Claude Code, Cursor, agent frameworks <em>live</em></span></div>
+    <div><b>QGIS 3.34 and GDAL</b><span>processing algorithms behind the GIS tools <em>live</em></span></div>
+    <div><b>OpenQuake engine</b><span>classical probabilistic seismic hazard <em>live</em></span></div>
+    <div><b>Industry formats</b><span>LAS 2.0, block models, GeoTIFF, GeoJSON; SEG-Y next <em>live</em></span></div>
+    <div><b>Commercial packages</b><span>ArcGIS, Petrel, Leapfrog, Datamine, PVsyst, WindPRO <em>planned</em></span></div>
   </div>
 </section>
 
@@ -232,10 +295,10 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
     <div class="plan key"><h3>Subscribe</h3><p class="meta">Per agent · monthly</p><ul><li>Scorcher’s agents in production</li><li>Monthly re-test on fresh tasks</li><li>Audit trail of every action</li><li>Support from engineers</li></ul><a class="btn" href="#top">Talk to us</a></div>
     <div class="plan"><h3>On premises</h3><p class="meta">Annual · by deployment</p><ul><li>Small models on your hardware</li><li>Your data never leaves</li><li>Connectors for your legacy systems</li><li>Validation for regulated work</li></ul><a class="btn line" href="#top">Contact us</a></div>
   </div>
-  <p class="meta" style="margin-top:16px">Prices are set with the first pilots.</p>
+  <p class="meta" style="margin-top:16px">Prices are set with the first pilots. Fair by design: the cost of every run is shown, model costs pass through at cost, and every tier includes the failures report.</p>
 </section>
 
-<section class="close"><p>Know whether an agent earns its place.</p><a class="btn" href="#top">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>
+<section class="close"><p>Adopt the agents that work. Prove it. Move faster.</p><a class="btn" href="#top">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>
 <div class="fine">Photographs from Wikimedia Commons: Reykjanes power station, Michal Klajban, CC BY-SA 4.0 · Hellisheiði geothermal power station, Kevstan, CC BY-SA 4.0 · Solar farm, Krishnapuram, Saiphani02, CC BY-SA 4.0 · Wind turbines at Akhisar, Pragdon, CC0. The seismic section and contour map are generated in the page. Mona Sans (GitHub) and Geist Mono (Vercel), SIL Open Font License.</div>
 </main>
 
