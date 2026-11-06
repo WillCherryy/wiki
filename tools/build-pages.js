@@ -9,7 +9,7 @@ const TYPES = { '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.js': 'applicatio
 const page = (file, base = '/build') => {
   let h = fs.readFileSync(path.join(SRC, file), 'utf8').replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex">')
     .replace(/href="build-console\.html"/g, `href="${base}/console"`).replace(/href="build\.html"/g, `href="${base}/"`);
-  if (base === '') h = h.replace(/class="btn" href="#top">Start a trial/g, 'class="btn" href="/auth/signin">Start a trial').replace('<form class="start" onsubmit="return false"', '<form class="start" onsubmit="location.href=\'/auth/signin\';return false"');
+  if (base === '') h = h.replace(/class="btn" href="#top">Start a trial/g, 'class="btn" href="/app">Start a trial').replace('<form class="start" onsubmit="return false"', '<form class="start" onsubmit="location.href=\'/app\';return false"');
   return h;
 };
 module.exports = { ASSETS, TYPES, indexHtml: (base) => page('build.html', base), consoleHtml: (base) => page('build-console.html', base), SRC };

@@ -59,6 +59,15 @@ Real accounts and tenants (one `dev` tenant, one admin key); an MCP endpoint at 
 
 `build.playscorcher.com` serves everything from this one Worker: the landing page at `/`, the console at `/console` (static files built into `public/` from `mockups/suite` by `scripts/build-public.mjs`, which `npm run deploy` runs first), and the API, sign-in and health from the Worker's code (`/api/*`, `/auth/*`, `/health`). One origin means the sign-in cookie works in the console without any cross-site rules. On this host "Start a trial" opens the email sign-in.
 
+## The app (/app)
+
+Signed in, a person picks a task from the built-in catalogue (`src/catalogue.ts`: four tasks with exact references and traps from real data: gold grade-tonnage, the same with a planted instruction, a geothermal well log in feet and Fahrenheit with null codes, a wind mast in knots with missing hours), then chooses who does it:
+
+- **Scorcher's agent:** Claude Haiku works it on the server (`POST /api/trials/:id/run`; needs the `ANTHROPIC_API_KEY` secret on this Worker; 25 runs per organisation per day).
+- **Their own agent:** a private trial address over the Model Context Protocol (streamable HTTP, `src/mcp.ts`): `/mcp/<trial>/<token>`, or `/mcp/<trial>` with `Authorization: Bearer <token>`. Claude Code: `claude mcp add --transport http scorcher-trial <address>`; Claude Desktop: Settings, Connectors, Add custom connector.
+
+The page then polls the trial and shows every tool call, the answer against the reference, safety and the state of the hash chain. "Your trials" lists the organisation's trials; a person can open only their own organisation's. Routes: `GET /api/catalogue`, `POST /api/trials` (`{catalogueId, agent}`), `GET /api/trials`, `GET /api/trials/:id`. Migration 0004 adds the trial title, agent and last run time.
+
 ## Accounts: sign in by emailed link (the default)
 
 People type their email at `GET /auth/signin` and get a link. The link opens a page with a "Sign in" button; only pressing it (a same-origin POST) signs in, because mail scanners such as Outlook Safe Links open every link in an email and would otherwise spend it or sign in themselves. Links are 256-bit random tokens, valid for 15 minutes, single use, stored only as SHA-256. Every address gets the same reply, so the form cannot reveal who has an account, and requests are limited to 5 per address and 20 per client per hour. Each person gets a private workspace at first sign-in. Google and Microsoft sign-in (below) stay available, off until their secrets are set, for when a firm wants single sign-on with Office 365.

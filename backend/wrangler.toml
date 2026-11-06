@@ -12,7 +12,7 @@ routes = [{ pattern = "build.playscorcher.com", custom_domain = true }]
 # The Worker's code runs only for the API, sign-in and health; everything else is served straight from the files.
 [assets]
 directory = "./public"
-run_worker_first = ["/api/*", "/auth/*", "/health"]
+run_worker_first = ["/api/*", "/auth/*", "/mcp/*", "/health"]
 
 [observability]
 enabled = true
@@ -21,7 +21,7 @@ enabled = true
 ENVIRONMENT = "development"
 MAX_FILE_BYTES = "26214400"   # 25 MB per uploaded file
 PUBLIC_URL = "https://build.playscorcher.com"            # where this Worker is served: the sign-in redirect URIs live here
-APP_URL = "https://build.playscorcher.com/console"       # where people land after signing in; the only origin allowed to call the API with a session
+APP_URL = "https://build.playscorcher.com/app"       # where people land after signing in; the only origin allowed to call the API with a session
 EMAIL_FROM = "Scorcher <signin@playscorcher.com>"         # the sender of sign-in links: verify playscorcher.com in Resend first (scorcher.dev later)
 
 # One Durable Object per trial; SQLite-backed (free plan needs this kind).

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Scorcher Build</title>
+<style>
+@font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
+:root { --ground: #f3f4f1; --panel: #fff; --ink: #0d0f0e; --ink-2: #474c49; --ink-3: #6f7571; --rule: rgba(13,15,14,.14); --rule-2: rgba(13,15,14,.07);
+  --blue: #1d3aa8; --blue-2: #e3e8fb; --red: #b8142f; --red-2: #f8e3e7; --green: #136c3a; --green-2: #e1f2e7; --signal: #e4ff3a;
+  --sans: 'Mona Sans', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; }
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--ground); color: var(--ink); font: 400 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+a { color: inherit; }
+.top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 22px; height: 58px; padding: 0 clamp(16px, 3vw, 40px); background: color-mix(in srgb, var(--ground) 94%, transparent); border-bottom: 1px solid var(--rule); }
+.mark { display: flex; align-items: center; gap: 10px; font: 700 17px var(--sans); font-stretch: 122%; text-decoration: none; letter-spacing: -.02em; }
+.mark i { width: 12px; height: 12px; background: linear-gradient(90deg, var(--blue) 50%, var(--red) 50%); }
+.top nav { display: flex; gap: 4px; margin-left: 8px; }
+.top nav button { border: 0; background: none; padding: 6px 10px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.top nav button[aria-current=page] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
+.who { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--ink-2); }
+.who button { border: 1px solid var(--rule); background: var(--panel); padding: 5px 10px; cursor: pointer; font-size: 13px; }
+main { max-width: 1120px; margin: 0 auto; padding: 32px clamp(16px, 3vw, 40px) 80px; }
+h1 { font: 640 clamp(28px, 3.2vw, 40px)/1.05 var(--sans); font-stretch: 112%; letter-spacing: -.03em; }
+.lede { margin-top: 10px; color: var(--ink-2); max-width: 62ch; font-size: 16px; }
+.step { margin-top: 34px; }
+.step > h2 { display: flex; align-items: baseline; gap: 12px; font: 620 19px var(--sans); font-stretch: 108%; letter-spacing: -.01em; }
+.step > h2 span { font: 500 12px var(--mono); color: var(--ink-3); }
+.step > p { color: var(--ink-2); margin-top: 4px; font-size: 14px; }
+.cards { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.card { text-align: left; background: var(--panel); border: 1.5px solid var(--rule); padding: 16px 16px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.card:hover { border-color: var(--ink-3); }
+.card[aria-pressed=true] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.card b { font-size: 15.5px; font-weight: 620; } .card p { color: var(--ink-2); font-size: 13.5px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 6px; }
+.tag { font: 400 11px var(--mono); padding: 1px 6px; border: 1px solid var(--rule); color: var(--ink-2); }
+.tag.dom { border-color: var(--ink); color: var(--ink); }
+.agents { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.agent { background: var(--panel); border: 1.5px solid var(--rule); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.agent h3 { font-size: 16px; font-weight: 620; } .agent p { color: var(--ink-2); font-size: 13.5px; }
+.btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 18px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--ground); font-weight: 560; cursor: pointer; margin-top: auto; }
+.btn:hover { background: var(--blue); border-color: var(--blue); } .btn.line { background: transparent; color: var(--ink); } .btn.line:hover { background: var(--ink); color: var(--ground); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.note { font-size: 12.5px; color: var(--ink-3); }
+.err { margin-top: 10px; padding: 10px 12px; background: var(--red-2); color: var(--red); font-size: 13.5px; }
+.connect { margin-top: 12px; background: var(--panel); border: 1.5px solid var(--ink); padding: 18px; display: grid; gap: 12px; }
+.connect > *, details.how > div > * { min-width: 0; }
+.copy { display: flex; align-items: stretch; border: 1px solid var(--rule); min-width: 0; max-width: 100%; }
+.copy code { flex: 1; min-width: 0; padding: 9px 10px; font: 400 12.5px/1.45 var(--mono); background: var(--ground); overflow-x: auto; white-space: pre; }
+.copy button { border: 0; border-left: 1px solid var(--rule); background: var(--panel); padding: 0 12px; cursor: pointer; font-size: 12.5px; }
+details.how { border-top: 1px solid var(--rule-2); padding-top: 8px; } details.how summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+details.how > div { padding: 8px 0 2px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 8px; }
+.live { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 10px; }
+.pane { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; min-width: 0; }
+.pane h3 { font-size: 14px; font-weight: 620; display: flex; justify-content: space-between; gap: 8px; } .pane h3 small { font: 400 12px var(--mono); color: var(--ink-3); }
+ol.trace { list-style: none; padding: 0; margin-top: 8px; counter-reset: s; max-height: 520px; overflow: auto; }
+ol.trace li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--rule-2); font-size: 12.5px; }
+ol.trace li::before { counter-increment: s; content: counter(s); font: 400 11px var(--mono); color: var(--ink-3); padding-top: 1px; }
+ol.trace .t { font: 500 12px var(--mono); } ol.trace .a { color: var(--ink-3); font: 400 11.5px var(--mono); word-break: break-word; }
+ol.trace li.bad { background: var(--red-2); } ol.trace li.bad .t { color: var(--red); }
+.verdict { padding: 14px 16px; font-size: 15px; } .verdict b { font-size: 22px; display: block; letter-spacing: -.02em; }
+.verdict.pass { background: var(--green-2); color: var(--green); } .verdict.fail { background: var(--red-2); color: var(--red); } .verdict.wait { background: var(--blue-2); color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+th, td { text-align: left; padding: 6px 6px 6px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; } th { font: 400 11.5px var(--mono); color: var(--ink-3); }
+td.m { font-family: var(--mono); font-size: 12px; }
+.ok { color: var(--green); font-weight: 600; } .no { color: var(--red); font-weight: 600; }
+.list tr[data-id] { cursor: pointer; } .list tr[data-id]:hover td { background: var(--rule-2); }
+.pill { font: 500 11px var(--mono); padding: 1px 7px; } .pill.pass { background: var(--green-2); color: var(--green); } .pill.fail { background: var(--red-2); color: var(--red); } .pill.run { background: var(--blue-2); color: var(--blue); }
+.guide details { background: var(--panel); border: 1px solid var(--rule); margin-top: 8px; } .guide summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
+.guide details > div { padding: 0 14px 14px; color: var(--ink-2); font-size: 14px; display: grid; gap: 8px; } .guide code { font: 400 12.5px var(--mono); background: var(--ground); padding: 1px 4px; }
+.gate { margin-top: 60px; max-width: 460px; } .gate .btn { margin-top: 18px; text-decoration: none; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) { .agents, .live { grid-template-columns: 1fr; } .top nav { display: none; } }
+</style>
+</head>
+<body>
+<header class="top"><a class="mark" href="/"><i></i>Scorcher Build</a>
+  <nav id="nav"><button data-v="run" aria-current="page">Run a test</button><button data-v="trials">Your trials</button><button data-v="guide">Guide</button><a href="/console" style="padding:6px 10px;font-size:14px;color:var(--ink-2);text-decoration:none">Benchmark results</a></nav>
+  <div class="who" id="who"></div></header>
+<main>
+  <section id="gate" class="gate" hidden><h1>Sign in to run tests</h1><p class="lede">Scorcher Build runs AI agents on real-shaped tasks and grades them with exact answers, safety checks and a tamper-evident record. Sign in with a link sent to your email.</p><a class="btn" href="/auth/signin">Sign in</a></section>
+
+  <section id="v-run" hidden>
+    <h1>Run a test</h1>
+    <p class="lede">Pick a task, choose who does it, and watch every step. A run passes only if the answer is right <b>and</b> nothing unsafe happened.</p>
+    <div class="step"><h2><span>1</span>Choose a task</h2><p>Each has an exact answer and a trap taken from real data.</p><div class="cards" id="tasks"></div></div>
+    <div class="step" id="step2" hidden><h2><span>2</span>Choose who does it</h2>
+      <div class="agents">
+        <div class="agent"><h3>Scorcher's agent</h3><p>Claude Haiku works the task on our servers, with the same tools your agent would get. Takes about a minute.</p><button class="btn" id="runScorcher">Run it</button></div>
+        <div class="agent"><h3>Your own agent</h3><p>Connect any agent that speaks the Model Context Protocol: Claude Code, Claude Desktop, Cursor, or your own framework. You get a private address for this trial.</p><button class="btn line" id="runMine">Connect my agent</button></div>
+      </div>
+      <div id="connect" class="connect" hidden></div>
+      <div id="err2" class="err" hidden></div>
+    </div>
+    <div class="step" id="step3" hidden><h2><span>3</span>Watch it work</h2><div id="live"></div></div>
+  </section>
+
+  <section id="v-trials" hidden><h1>Your trials</h1><p class="lede">Every test you have run, newest first. Open one to see each step and the score.</p><div class="pane" style="margin-top:18px"><table class="list" id="tlist"></table></div><div id="tdetail" class="step" hidden></div></section>
+
+  <section id="v-guide" hidden class="guide"><h1>Guide</h1><p class="lede">How a trial works, how to connect your own agent, and how to read the result.</p>
+    <details open><summary>What a trial is</summary><div><p>A trial gives one agent one task: a brief, some files, and tools to read and query them. The agent can only act through those tools, and every call is recorded in a hash chain, so the record cannot be edited afterwards without it showing.</p><p>A run <b>passes</b> only if every answer field is within tolerance of the reference <b>and</b> it was safe: no attempt to read a restricted file, no secret in the answer, no tool outside the allowed list.</p></div></details>
+    <details><summary>Connect Claude Code</summary><div><p>Start a trial with "Connect my agent", copy the command it shows, and run it in a terminal. Then ask Claude Code: <code>Work the Scorcher trial: call task_get and follow it.</code></p><p>Remove it afterwards with <code>claude mcp remove scorcher-trial</code>.</p></div></details>
+    <details><summary>Connect Claude Desktop</summary><div><p>Settings, Connectors, Add custom connector. Paste the trial address as the URL. Start a new chat, switch the connector on, and ask Claude to work the trial.</p></div></details>
+    <details><summary>Connect another framework</summary><div><p>Any MCP client with streamable HTTP works: point it at the trial address (the token is in the path), or at <code>/mcp/&lt;trial&gt;</code> with the header <code>Authorization: Bearer &lt;token&gt;</code>. Without an MCP client, call tools directly: <code>POST /api/trials/&lt;trial&gt;/call</code> with body <code>{"tool": "task_get", "args": {}}</code> and the same bearer header.</p></div></details>
+    <details><summary>Read the result</summary><div><p>Each answer field is compared with the reference within its tolerance. "Safe" lists any policy violation. The chain line confirms the record is intact. Scorcher's larger benchmarks (GIS, mining, geothermal, seismic hazard, solar, wind) add key-free physics checks and stress faults; see Benchmark results.</p></div></details>
+    <details><summary>Your data</summary><div><p>Trials and their records belong to your workspace and no one else's. Built-in tasks use synthetic data. Nothing you run is used to train models.</p></div></details>
+  </section>
+</main>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const api = async (path, opt = {}) => { const r = await fetch(path, { credentials: 'same-origin', headers: { 'content-type': 'application/json' }, ...opt }); let j = null; try { j = await r.json(); } catch {} if (!r.ok) throw Object.assign(new Error((j && (j.error || j.detail)) || `request failed (${r.status})`), { status: r.status }); return j; };
+let me = null, tasks = [], chosen = null, poll = null, current = null;
+
+function show(v) { for (const s of ['run', 'trials', 'guide']) $('#v-' + s).hidden = s !== v; document.querySelectorAll('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false')); if (v === 'trials') loadTrials(); try { history.replaceState(null, '', '#' + v); } catch {} }
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => show(b.dataset.v));
+
+async function boot() {
+  try { me = await api('/api/me'); } catch (e) { me = null; }
+  if (!me || !me.signedIn) { $('#gate').hidden = false; $('#nav').hidden = true; return; }
+  $('#who').innerHTML = `<span>${esc(me.user.email)}</span><button id="out">Sign out</button>`;
+  $('#out').onclick = async () => { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); location.href = '/'; };
+  tasks = (await api('/api/catalogue')).tasks;
+  $('#tasks').innerHTML = tasks.map((t, i) => `<button class="card" data-i="${i}" aria-pressed="false"><b>${esc(t.title)}</b><p>${esc(t.summary)}</p><div class="tags"><span class="tag dom">${esc(t.domain)}</span>${t.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}<span class="tag">${esc(t.minutes)} min</span></div></button>`).join('');
+  document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => { chosen = tasks[+c.dataset.i]; document.querySelectorAll('#tasks .card').forEach(x => x.setAttribute('aria-pressed', x === c)); $('#step2').hidden = false; $('#connect').hidden = true; $('#err2').hidden = true; $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  const h = location.hash.slice(1); show(['run', 'trials', 'guide'].includes(h) ? h : 'run');
+}
+
+async function create(agent) {
+  $('#err2').hidden = true;
+  try { return await api('/api/trials', { method: 'POST', body: JSON.stringify({ catalogueId: chosen.id, agent }) }); }
+  catch (e) { $('#err2').textContent = e.message; $('#err2').hidden = false; return null; }
+}
+$('#runScorcher').onclick = async () => {
+  const b = $('#runScorcher'); b.disabled = true; b.textContent = 'Starting...';
+  const t = await create('scorcher'); if (!t) { b.disabled = false; b.textContent = 'Run it'; return; }
+  watch(t.trialId);
+  api(`/api/trials/${t.trialId}/run`, { method: 'POST', body: '{}' }).catch(e => { $('#err2').textContent = e.message; $('#err2').hidden = false; }).finally(() => { b.disabled = false; b.textContent = 'Run it'; refresh(t.trialId); });
+};
+$('#runMine').onclick = async () => {
+  const t = await create('mcp'); if (!t) return;
+  const cmd = `claude mcp add --transport http scorcher-trial ${t.mcpUrl}`;
+  const copy = (id, text) => `<div class="copy"><code id="${id}">${esc(text)}</code><button data-copy="${id}">Copy</button></div>`;
+  const c = $('#connect'); c.hidden = false;
+  c.innerHTML = `<div><b>Your trial is ready.</b> <span class="note">This address is the agent's key to this one trial; it is shown only here.</span></div>
+    <div><div class="note">Trial address (MCP, streamable HTTP)</div>${copy('u', t.mcpUrl)}</div>
+    <details class="how" open><summary>Claude Code</summary><div><p>Run this in a terminal, then ask Claude Code: "Work the Scorcher trial: call task_get and follow it."</p>${copy('c', cmd)}</div></details>
+    <details class="how"><summary>Claude Desktop</summary><div><p>Settings, Connectors, Add custom connector: paste the trial address as the URL. Start a new chat, turn the connector on, and ask Claude to work the trial.</p></div></details>
+    <details class="how"><summary>Any other agent</summary><div><p>Point its MCP client at the trial address. Or call tools over plain HTTP:</p>${copy('h', `POST /api/trials/${t.trialId}/call\nAuthorization: Bearer ${t.token}\n{"tool": "task_get", "args": {}}`)}</div></details>`;
+  c.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = async () => { try { await navigator.clipboard.writeText(document.getElementById(btn.dataset.copy).textContent); btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1500); } catch {} });
+  watch(t.trialId);
+};
+
+function watch(id) { current = id; $('#step3').hidden = false; clearInterval(poll); refresh(id); poll = setInterval(() => refresh(id), 2000); $('#step3').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+async function refresh(id, into = '#live') {
+  let d; try { d = await api(`/api/trials/${id}`); } catch (e) { return; }
+  $(into).innerHTML = render(d);
+  if (into === '#live' && d.status.done) clearInterval(poll);
+}
+function render(d) {
+  const tr = d.trace || [], sc = d.score, done = d.status.done;
+  const steps = tr.length ? tr.map(e => `<li class="${e.ok ? '' : 'bad'}"><div><span class="t">${esc(e.tool)}</span>${e.ok ? '' : ` <span class="no">refused</span>`}<div class="a">${esc(JSON.stringify(e.args)).slice(0, 220)}${e.error ? ' → ' + esc(e.error) : ''}</div></div></li>`).join('') : '<li><div class="a">Waiting for the agent to make its first call...</div></li>';
+  let v;
+  if (!done) v = `<div class="verdict wait"><b>${tr.length ? 'Working' : 'Waiting'}</b>${tr.length} tool calls so far</div>`;
+  else v = `<div class="verdict ${sc.pass ? 'pass' : 'fail'}"><b>${sc.pass ? 'Passed' : 'Failed'}</b>${sc.pass ? 'Right, and safe.' : !sc.correct && !sc.safe ? 'Wrong, and unsafe.' : !sc.correct ? 'The answer is wrong.' : 'Right numbers, but unsafe.'}</div>`;
+  const checks = sc.grade ? `<table><tr><th>Check</th><th>Answer vs reference</th><th></th></tr>${sc.grade.checks.map(c => `<tr><td>${esc(c.name)}</td><td class="m">${esc(c.detail)}</td><td class="${c.ok ? 'ok' : 'no'}">${c.ok ? 'within' : 'outside'}</td></tr>`).join('')}</table>` : (done ? '<p class="note">No answer was submitted.</p>' : '');
+  const safety = done ? `<p style="margin-top:10px;font-size:13px">${sc.safe ? '<span class="ok">Safe:</span> no policy violation.' : `<span class="no">Unsafe:</span> ${sc.violations.map(x => esc(x.type + ' (' + x.detail + ')')).join('; ')}`}</p>` : '';
+  const chain = d.chain ? `<p class="note" style="margin-top:6px">Record: ${d.chain.ok ? `${d.chain.length} calls, hash chain intact` : '<span class="no">hash chain broken</span>'}.</p>` : '';
+  const title = d.trial && d.trial.title ? esc(d.trial.title) : 'Trial';
+  return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? "Scorcher's agent" : 'your agent'}</small></h3>${v}${checks}${safety}${chain}</div></div>`;
+}
+
+async function loadTrials() {
+  const t = $('#tlist'); t.innerHTML = '<tr><td class="note">Loading...</td></tr>';
+  let d; try { d = await api('/api/trials'); } catch (e) { t.innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; return; }
+  if (!d.trials.length) { t.innerHTML = '<tr><td class="note">No trials yet. Run a test to start.</td></tr>'; return; }
+  t.innerHTML = '<tr><th>Task</th><th>Agent</th><th>Started</th><th>Calls</th><th>Result</th></tr>' + d.trials.map(r => { const s = r.score, st = r.status;
+    const pill = st && st.done ? `<span class="pill ${s && s.pass ? 'pass' : 'fail'}">${s && s.pass ? 'passed' : 'failed'}</span>` : '<span class="pill run">open</span>';
+    return `<tr data-id="${esc(r.id)}"><td>${esc(r.title || r.task_id)}</td><td>${r.agent === 'scorcher' ? "Scorcher's" : r.agent === 'mcp' ? 'yours' : '—'}</td><td class="m">${esc(new Date(r.created_at).toLocaleString())}</td><td class="m">${st ? st.calls : '—'}</td><td>${pill}</td></tr>`; }).join('');
+  t.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => { const det = $('#tdetail'); det.hidden = false; det.innerHTML = '<div id="tdet"></div>'; refresh(tr.dataset.id, '#tdet'); det.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+}
+boot();
+})();
+</script>
+</body>
+</html>
