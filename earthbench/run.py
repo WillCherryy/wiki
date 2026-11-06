@@ -116,13 +116,15 @@ def model_run(a):
     if a.model not in PRICES:
         print(f"unknown model {a.model}; known: {', '.join(PRICES)}", file=sys.stderr); return 2
     P = pack(a.pack)
-    ts = P.suite(a.suite)[a.offset:]
+    ts = [t for t in P.suite(a.suite) if not a.kind or t.kind == a.kind][a.offset:]
+    if not ts:
+        print(f"no tasks; kinds in this pack: {', '.join(sorted({t.kind for t in P.suite(a.suite)}))}", file=sys.stderr); return 2
     ts = ts[: a.limit] if a.limit else ts
     if not a.yes:
         print(f"{len(ts) * a.repeats} task runs on {a.model}: rough estimate ${len(ts) * a.repeats * (30_000 * PRICES[a.model][0] + 4_000 * PRICES[a.model][1]) / 1e6:.2f}. Re-run with --yes."); return 0
     import anthropic
     client = anthropic.Anthropic(api_key=key_) if key_ else anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com")
-    base = f"model-{a.pack}-{a.model}-{a.suite}" + (f"-from{a.offset}" if a.offset else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
+    base = f"model-{a.pack}-{a.model}-{a.suite}" + (f"-{a.kind}" if a.kind else "") + (f"-from{a.offset}" if a.offset else "") + (f"-first{a.limit}" if a.limit else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
     os.makedirs(os.path.join(RESULTS, "records"), exist_ok=True)
     recs = gzip.open(os.path.join(RESULTS, "records", base + ".jsonl.gz"), "wt", encoding="utf-8")
     rows, spent, stop = [], 0.0, False
@@ -176,6 +178,7 @@ def main(argv=None):
     ap.add_argument("--pack", choices=PACKS)
     ap.add_argument("--suite")
     ap.add_argument("--model")
+    ap.add_argument("--kind", help="only tasks of this kind, e.g. welltest or gt")
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=1)

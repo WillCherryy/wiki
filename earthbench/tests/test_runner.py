@@ -55,9 +55,9 @@ class Runner(unittest.TestCase):
                 mock.patch.object(R, "RESULTS", d):
             rc = R.main(["--model", "claude-haiku-5-5", "--pack", "mining", "--suite", "main", "--limit", "2", "--yes"])
             self.assertEqual(rc, 0)
-            out = json.load(open(os.path.join(d, "model-mining-claude-haiku-5-5-main.json")))
+            out = json.load(open(os.path.join(d, "model-mining-claude-haiku-5-5-main-first2.json")))
             self.assertEqual(out["summary"]["pass"]["k"], 2)
-            recs = [json.loads(x) for x in gzip.open(os.path.join(d, "records", "model-mining-claude-haiku-5-5-main.jsonl.gz"), "rt")]
+            recs = [json.loads(x) for x in gzip.open(os.path.join(d, "records", "model-mining-claude-haiku-5-5-main-first2.jsonl.gz"), "rt")]
             self.assertEqual(len(recs), 2)
             for rec in recs:
                 body = {k: v for k, v in rec.items() if k != "record_sha256"}
