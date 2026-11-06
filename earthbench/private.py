@@ -105,7 +105,15 @@ def main(argv=None):
         return 0
     secret = load_secret()
     packs = _packs()
-    current = {name: {"tasks": len(ts), "sha256": suite_digest(ts)} for name, P in packs.items() for ts in [suite(P, secret, name)]}
+    current, skipped = {}, []
+    for name, P in packs.items():
+        try:
+            ts = suite(P, secret, name)
+        except ImportError as e:                # the pack's engine library is not installed here (segyio, ortools, OpenQuake)
+            skipped.append(f"{name} ({e.name or e})"); continue
+        current[name] = {"tasks": len(ts), "sha256": suite_digest(ts)}
+    if skipped:
+        print("skipped, engine not installed: " + ", ".join(skipped) + ". Install it and run this again to include it (pip install -r earthbench/requirements.txt).")
     if a.action == "commit":
         old = json.load(open(COMMITMENT)) if os.path.exists(COMMITMENT) else {"packs": {}}
         doc = {"schema": "scorcher.private-commitment/1", "written": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
