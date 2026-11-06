@@ -23,6 +23,8 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | MCP over HTTP with one bearer token per trial (`mcp.js`) | Built; an agent working a task over it is in the tests |
 | MCP over stdio (`node harness/mcp.js --task res-001`) | Built; tested with an SDK client (the trace is written when the agent disconnects) |
 | QGIS engine for gisbench (`gisbench/engine.py`, `qgis_worker.py`): the GIS tools on QGIS 3.34 processing, cross-checked on 180 tasks | Built |
+| Domain benchmarks on a shared core (`earthbench/`): mining, geothermal, seismic hazard (OpenQuake), solar, wind; a model runner with run records; an MCP server that puts any agent into any task (gisbench too) | Built, tested (see `earthbench/README.md`) |
+| Sign-in with Google or Microsoft, organisations, sessions (`backend/src/core/auth.ts`) | Built, tested; not deployed |
 | ArcGIS, SEG-Y reading, document extraction | Not built |
 | Persistence, accounts, billing, a real dashboard behind the console mockup | Not built |
 

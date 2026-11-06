@@ -1,0 +1,6 @@
+numpy
+scipy
+hypothesis
+networkx            # optional: independent min-cut check of the pit solver in the tests
+# optional, for the seismic hazard pack: the engine wheel without its heavy extras, then what hazardlib imports
+#   pip install --no-deps openquake.engine && pip install psutil numba h3 alpha_shapes matplotlib pyzmq fiona toml decorator

@@ -27,3 +27,5 @@ gisbench/results/phase1-fixtures.json
 docs/research/papers/
 __pycache__/
 *.pyc
+earthbench/results/fixtures.json
+earthbench/results/mcp/

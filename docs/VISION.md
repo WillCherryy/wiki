@@ -56,12 +56,12 @@ Each domain is a *pack*: tools wrapping established open engines, task generator
 | Domain | Example tasks | Engines and data | Grading | State |
 |---|---|---|---|---|
 | **GIS and QGIS** | Site screening from a written brief; reprojection and repair of dirty data; constraint mapping from planning documents; cable corridors; parcel statistics | numpy and GDAL stack, or QGIS 3.34 processing (switchable engine, cross-checked on all 180 tasks) | Deterministic key, cross-checked against QGIS 3.34 | Benchmark built (180 tasks, versions 1 to 4); Haiku runs complete; QGIS engine built; QGIS-only tasks *next* |
-| **Solar** | Screening, yield with uncertainty, pre-feasibility report | pvlib; PVGIS, NASA POWER, ERA5 | Reference cases; yield labelled as an upper bound where clear-sky | Clear-sky yield in gisbench; full pre-feasibility *planned* |
-| **Wind** | Capacity factor from wind data; visibility and setback screening | Open wind and terrain data; QGIS viewshed | Reference cases | *Planned* |
-| **Geothermal** | Heat-in-place with P90/P50/P10; well-test (Horner) analysis; parameters extracted from well reports | Scorcher's Monte Carlo and well tools (tested against closed forms) | Reference answers, interval agreement | Tools built and tested; end-to-end tasks *planned* |
+| **Solar** | First-year energy, specific yield and performance ratio from a weather year; later pre-feasibility | pvlib (SPA, plane-of-array, SAPM, PVWatts) | Same engine with the true inputs; energy below the sunlight on the plane | Benchmark built (`earthbench/solar.py`, 56 tasks) |
+| **Wind** | Gross and net annual energy with shear and air density; later wakes and setbacks | Power-law shear, IEC 61400-12-1 density correction, power curve | Same engine; gross energy below the Betz limit on the measured wind | Benchmark built (`earthbench/wind.py`, 56 tasks) |
+| **Geothermal** | Heat in place and MWe P90/P50/P10 from a LAS log; Horner buildup analysis | USGS volumetric Monte Carlo; Horner in SI | Closed form; recovers the true permeability and skin; efficiency below Carnot | Benchmark built (`earthbench/geothermal.py`, 112 tasks) |
 | **Seismic interpretation** | SEG-Y quality checks; horizon picking orchestrated through dedicated methods and checked | segyio and open picking methods; open surveys (licences to check) | Agent picks against two human interpreters, their own spread as the pass mark | Pick comparison built; SEG-Y reading and real sections *planned* |
-| **Seismic hazard** | Set up and run probabilistic hazard jobs; check hazard curves, maps and spectra against reference cases; explain limits | OpenQuake engine (GEM Foundation; licence to be confirmed, believed AGPL-3.0) | The engine's own demo and test cases with known results | *Proposed*: a small pilot after PyQGIS |
-| **Mining** | Grade and tonnage above a cut-off from block models; later pit limits | Scorcher's table tools; exact solvers for pit limits | Exact answers; optimality gap | Grade-tonnage suite built on synthetic data |
+| **Seismic hazard** | Design ground motion at 10% and 2% in 50 years from a source model | OpenQuake engine hazardlib 3.26 (AGPL-3.0; hosted use needs its network terms checked) | Exact Poisson relations; monotonic curves; underestimating the design motion is unsafe | Benchmark built (`earthbench/hazard.py`, 56 tasks) |
+| **Mining** | Grade-tonnage at the break-even cut-off; ultimate pit; later schedules | Exact maximum-weight closure (min-cut) | Brute force and an independent min-cut; a pit steeper than its walls is unsafe | Benchmark built (`earthbench/mining.py`, 112 tasks) |
 
 OpenQuake computes the probability of different levels of shaking at a site over a period, and the expected losses. It does not predict earthquakes, and nothing Scorcher publishes will say it does. Hazard results are modelled values; design use needs a qualified engineer.
 
@@ -172,12 +172,12 @@ Fairness rules, proposed: published cost per task, model costs passed through at
 | 1 | Agent quality on gisbench: diagnosis, method prompt, held-out tests, hard suite | Done (version 4) |
 | 2 | PyQGIS tool layer, cross-checked against the current tools; new QGIS-only tasks | Engine built and cross-checked; QGIS-only tasks next |
 | 2a | Physical validation (key-free checks), then sandbox stress testing, then the trial report | Physics checks built; stress testing and report next |
-| 3 | OpenQuake pilot: a few demo cases as graded tasks | Proposed |
+| 3 | Domain packs on one shared core (`earthbench/`): mining, geothermal, seismic hazard (OpenQuake), solar, wind; MCP server for any agent; console views and tutorials | Built (November 2026); model runs next |
 | 4 | Seismic: SEG-Y reading, section viewer, picks against two interpreters on open data | Planned |
-| 5 | Geothermal end-to-end tasks from well reports | Planned |
+| 5 | Geothermal from real well reports (document extraction), reservoir simulation | Planned |
 | 6 | Accounts, storage, run history; then billing | Planned |
 | 7 | First pilot with a real firm, on their own tasks | The most important step; to arrange |
-| 8 | Solar pre-feasibility and wind packs; Scorcher agents offered for subscription | Planned |
+| 8 | Solar pre-feasibility and wind wakes; Scorcher agents offered for subscription | Planned |
 
 ## Risks, and what we will not claim
 
