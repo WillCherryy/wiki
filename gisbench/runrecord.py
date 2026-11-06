@@ -22,6 +22,7 @@ import platform
 import subprocess
 import time
 from . import tasks as T
+from .reliability import signature
 
 SCHEMA = "scorcher.run/1"
 
@@ -70,7 +71,8 @@ def build(task, s, scored: dict, *, agent: dict, messages=None, usage=None) -> d
         "environment": environment(s.engine),
         "agent": agent,
         "messages": _jsonable(messages) if messages is not None else None,
-        "trace": [{k: e[k] for k in ("i", "tool", "args", "ok", "error", "result", "ms", "hash")} for e in s.trace],
+        "trace": [{**{k: e[k] for k in ("i", "tool", "args", "ok", "error", "result", "ms", "hash")},
+                   **({"error_signature": signature(e["tool"], e["error"])} if e["error"] else {})} for e in s.trace],
         "assertions": {k: scored.get(k) for k in ("checks", "partial", "correct", "safe", "pass", "hard_cells", "iou", "violations",
                                                    "physics", "physics_ok", "integrity", "integrity_ok", "chain", "key", "answer")},
         "usage": usage,

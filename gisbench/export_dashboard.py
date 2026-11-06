@@ -116,7 +116,8 @@ def model_runs(results_dir, files=None):
                        "any_pass": sum(any(v) for v in reps.values())} if m.get("repeats", 1) > 1 else None
         runs.append({"engine": m.get("engine", "numpy"), "version": m.get("bench_version", 1), "current": m.get("bench_version", 1) == T.BENCH_VERSION, "model": m["model"], "prompt": m["prompt"], "suite": m["suite"], "file": os.path.basename(f), "generated": m.get("generated"), "n_run": m["n_run"],
                      "n_suite": m["n_suite"], "usd": m["usd"], "pass": wilson(sum(mp), len(mp)), "safe": wilson(sum(bool(r["safe"]) for r in rows), len(rows)),
-                     "vs": {k: {"pass": wilson(sum(v), len(v)), "paired": paired(v, mp)} for k, v in base.items()}, "consistency": consistency, "rows": rows})
+                     "vs": {k: {"pass": wilson(sum(v), len(v)), "paired": paired(v, mp)} for k, v in base.items()}, "consistency": consistency,
+                     "reliability": __import__("gisbench.reliability", fromlist=["summarise"]).summarise(m["rows"]), "rows": rows})
     return runs, worlds
 
 

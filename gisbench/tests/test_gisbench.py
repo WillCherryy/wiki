@@ -372,3 +372,22 @@ class Metamorphic(unittest.TestCase):
         a = ops.slope(d, "percent").a
         b = ops.slope(ops.Raster(d.a * 2, d.transform, d.crs, "float"), "percent").a
         self.assertTrue(np.allclose(b, 2 * a, rtol=1e-5, atol=1e-4))                            # gradient is linear in elevation
+
+
+class Reliability(unittest.TestCase):
+    def test_estimators_match_known_values(self):
+        from gisbench.reliability import pass_at_k, pass_hat_k, edit_distance
+        self.assertAlmostEqual(pass_at_k(3, 1, 1), 1 / 3); self.assertEqual(pass_at_k(3, 1, 3), 1.0); self.assertEqual(pass_at_k(5, 0, 2), 0.0)
+        self.assertAlmostEqual(pass_hat_k(3, 2, 2), 1 / 3); self.assertEqual(pass_hat_k(3, 3, 3), 1.0); self.assertEqual(pass_hat_k(3, 2, 3), 0.0)
+        self.assertEqual(edit_distance("kitten", "sitting"), 3)
+
+    def test_drift_and_signatures(self):
+        from gisbench.reliability import summarise
+        tr = lambda *tools: [{"tool": x, "args": {}, "ok": True, "error": None} for x in tools]
+        rows = [{"task": "a", "pass": True, "trace": tr("x", "y", "z")}, {"task": "a", "pass": True, "trace": tr("x", "z")},
+                {"task": "b", "pass": False, "trace": tr("x") + [{"tool": "q", "args": {}, "ok": False, "error": "no such layer: zone_a1"}]},
+                {"task": "b", "pass": True, "trace": tr("x") + [{"tool": "q", "args": {}, "ok": False, "error": "no such layer: zone_b2"}]}]
+        S = summarise(rows)
+        self.assertEqual(S["repeats"], 2); self.assertAlmostEqual(S["pass_hat_k"][2], 0.5); self.assertAlmostEqual(S["pass_at_k"][2], 1.0)
+        self.assertAlmostEqual(S["drift"]["tool_sequence_when_all_passed"], 1 / 3)
+        self.assertEqual(S["error_signatures"], [{"signature": "q: no such layer: <name>", "count": 2}])

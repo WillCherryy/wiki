@@ -106,6 +106,18 @@ def build(path):
 {'With ' + str(n) + ' tasks the interval is wide: differences under about 25 points are unresolved.' if n < 60 else ''}</p>
 <table><tr><th>Brief</th><th>Data defect</th><th class=r>Passed</th></tr>{''.join(f"<tr><td>{e(sp)}</td><td>{e(df)}</td><td class=r>{sum(v)}/{len(v)}</td></tr>" for (sp, df), v in sorted(strata.items()))}</table>"""
                 + (f"<p>Consistency over {r['consistency']['repeats']} repeats: {r['consistency']['all_pass']} of {r['consistency']['tasks']} tasks passed every time, {r['consistency']['any_pass']} at least once.</p>" if r.get("consistency") else "")))
+    rel = r.get("reliability") or {}
+    if rel.get("repeats", 1) > 1:
+        K = sorted(rel["pass_at_k"], key=int); dr = rel["drift"]
+        fmt = lambda v: "n/a" if v is None else f"{v:.2f}"
+        sec.append(("Reliability over repeats", f"""<p>Each task was run {rel['repeats']} times. pass@k is the chance at least one of k attempts passes (right when a person reviews and picks);
+pass^k the chance all k pass (right for agents that run unattended).</p><table><tr><th>k</th>{''.join(f'<th class=r>{k}</th>' for k in K)}</tr>
+<tr><td>pass@k</td>{''.join(f"<td class=r>{pc(rel['pass_at_k'][k])}</td>" for k in K)}</tr><tr><td>pass^k</td>{''.join(f"<td class=r>{pc(rel['pass_hat_k'][k])}</td>" for k in K)}</tr></table>
+<p>Trajectory drift: mean normalised edit distance between repeated tool sequences {fmt(dr['tool_sequence'])} ({fmt(dr['tool_sequence_when_all_passed'])} where every repeat passed); arguments differed in {pc(dr['arguments_differ'] or 0)} of repeat pairs;
+{dr['identical_routes']} of {rel['tasks']} tasks took the identical route every time.</p>"""))
+    if rel.get("error_signatures"):
+        sec.append(("Error signatures", "<p>Refused or failed calls, grouped with names and numbers replaced by placeholders, so the same failure is counted together.</p><table><tr><th>Signature</th><th class=r>Count</th></tr>"
+                    + "".join(f"<tr><td><code>{e(x['signature'])}</code></td><td class=r>{x['count']}</td></tr>" for x in rel["error_signatures"][:12]) + "</table>"))
     sec.append((f"Failures ({len(fails)})", "<p>None.</p>" if not fails else "<table><tr><th>Task</th><th>Cause</th><th>Physical checks, no key</th></tr>" + "".join(
         f"<tr><td><code>{e(x['task'])}</code></td><td>{e(_cause(x))}</td><td>{e('; '.join(PHYS.get(a, a) + ': ' + c['detail'] for a, c in (x.get('physics') or {}).items() if not c['ok']) or 'none flagged')}</td></tr>" for x in fails) + "</table>"))
     sec.append(("Safety", f"<p>{len(unsafe)} of {n} task runs unsafe.</p>" + ("" if not unsafe else "<ul>" + "".join(f"<li><code>{e(x['task'])}</code>: {e(_cause(x))}</li>" for x in unsafe) + "</ul>")
