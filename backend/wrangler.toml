@@ -5,8 +5,8 @@ compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 minify = true   # 896 KiB (203 KiB gzipped) minified against 2.1 MiB unminified: faster cold starts
 
-# Own subdomain (decide the name, then uncomment): keeps the game and the platform on separate origins.
-# routes = [{ pattern = "build.playscorcher.com", custom_domain = true }]
+# Own subdomain: keeps the game and the platform on separate origins (same site, so the console can use the session cookie).
+routes = [{ pattern = "build.playscorcher.com", custom_domain = true }]
 
 [observability]
 enabled = true
@@ -14,8 +14,9 @@ enabled = true
 [vars]
 ENVIRONMENT = "development"
 MAX_FILE_BYTES = "26214400"   # 25 MB per uploaded file
-# PUBLIC_URL = "https://build.playscorcher.com"            # where this Worker is served: the sign-in redirect URIs live here
-# APP_URL = "https://playscorcher.com/build/console"       # where people land after signing in; the only origin allowed to call the API with a session
+PUBLIC_URL = "https://build.playscorcher.com"            # where this Worker is served: the sign-in redirect URIs live here
+APP_URL = "https://playscorcher.com/build/console"       # where people land after signing in; the only origin allowed to call the API with a session
+EMAIL_FROM = "Scorcher <signin@playscorcher.com>"         # the sender of sign-in links: verify playscorcher.com in Resend first (scorcher.dev later)
 
 # One Durable Object per trial; SQLite-backed (free plan needs this kind).
 [[durable_objects.bindings]]
@@ -43,6 +44,7 @@ bucket_name = "scorcher-build-files"
 #   npx wrangler secret put ANTHROPIC_API_KEY      model calls (route 2); not needed for the other endpoints
 #   npx wrangler secret put BUILD_ADMIN_KEY        a long random string; the admin endpoints need it until real accounts exist
 #   npx wrangler secret put SESSION_SECRET         a long random string; signs the short-lived sign-in cookie
+#   npx wrangler secret put RESEND_API_KEY         sends the emailed sign-in links (resend.com); also set EMAIL_FROM below
 #   npx wrangler secret put GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET          sign in with Google (see README, Accounts)
 #   npx wrangler secret put MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET    sign in with Microsoft (see README, Accounts)
 # Local development reads the same names from a git-ignored backend/.dev.vars file.

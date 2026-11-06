@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MemoryAuthStore, b64url, seal, unseal, verifyIdToken, type Claims, type Jwk, type Provider } from '../src/core/auth.ts';
+import { MemoryAuthStore, b64url, seal, unseal, verifyIdToken, type Claims, type Jwk, type OidcProvider } from '../src/core/auth.ts';
 import { handleAuth, clearJwksCache, type AuthConfig } from '../src/auth-routes.ts';
 
 const enc = new TextEncoder();
@@ -14,12 +14,12 @@ async function sign(priv: CryptoKey, header: object, claims: object) {
   return `${h}.${p}.${b64url(new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', priv, enc.encode(`${h}.${p}`))))}`;
 }
 const TID = '72f988bf-86f1-41af-91ab-2d7cd011db47';
-const goodClaims = (p: Provider, over: Partial<Claims> = {}): Claims => ({ ...(p === 'google' ? { iss: 'https://accounts.google.com', email: 'Ada@Example.com', email_verified: true }
+const goodClaims = (p: OidcProvider, over: Partial<Claims> = {}): Claims => ({ ...(p === 'google' ? { iss: 'https://accounts.google.com', email: 'Ada@Example.com', email_verified: true }
   : { iss: `https://login.microsoftonline.com/${TID}/v2.0`, tid: TID, preferred_username: 'ada@contoso.com' }), aud: 'client-1', sub: 'user-123', iat: SEC - 10, exp: SEC + 3600, nonce: 'n-1', name: 'Ada', ...over });
 
 test('ID token: a valid token verifies, and every tampering or mismatch is refused', async () => {
   const { priv, jwk } = await keypair('k1'), other = await keypair('k1'), jwks = { keys: [jwk] };
-  for (const p of ['google', 'microsoft'] as Provider[]) {
+  for (const p of ['google', 'microsoft'] as OidcProvider[]) {
     const ok = await sign(priv, { alg: 'RS256', kid: 'k1' }, goodClaims(p));
     assert.equal((await verifyIdToken(ok, { provider: p, jwks, audience: 'client-1', nonce: 'n-1', now: NOW })).sub, 'user-123');
     const bad: [string, string, string?][] = [
@@ -87,4 +87,56 @@ test('full sign-in flow with a fake provider: start, callback, session, me, logo
   assert.equal((await handleAuth(new Request('https://build.example/api/me', { headers: { cookie: session } }), cfg, d))!.status, 401);
   // a provider that is not configured says so
   assert.equal((await handleAuth(new Request('https://build.example/auth/microsoft/start'), cfg, d))!.status, 503);
+});
+
+import { MemoryLoginTokens, normaliseEmail, type Mailer } from '../src/core/email-login.ts';
+test('email link: request, a scanner opening the link, the button, single use, expiry, rate limit, no enumeration, login CSRF', async () => {
+  const store = new MemoryAuthStore(), tokens = new MemoryLoginTokens(), sent: { to: string; text: string }[] = [];
+  const mailer: Mailer = { async send(to, _s, text) { sent.push({ to, text }); } };
+  let now = NOW;
+  const cfg: AuthConfig = { publicUrl: 'https://build.example', appUrl: 'https://example/build/console', sessionSecret: 's', clients: {} };
+  const d = { store, fetch: fetch, now: () => now, tokens, mailer };
+  const ask = (email: unknown, ip = '1.2.3.4') => handleAuth(new Request('https://build.example/auth/email/start', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip }, body: JSON.stringify({ email }) }), cfg, d);
+  // same reply for any valid address; bad input refused
+  const r1 = await (await ask('Ada@Example.com '))!.json() as { message: string };
+  assert.match(r1.message, /If that address can receive email/);
+  assert.equal((await ask('not an email'))!.status, 400);
+  assert.equal((await ask('a@b.com\r\nBcc: victim@x.com'))!.status, 400);              // no header injection
+  assert.equal(sent.length, 1); assert.equal(sent[0]!.to, 'ada@example.com');
+  const link = new URL(/https:\S+/.exec(sent[0]!.text)![0]), token = link.searchParams.get('token')!;
+  // a mail scanner opens the link: a page, no session, the token still unused
+  const scan = (await handleAuth(new Request(link.toString()), cfg, d))!;
+  assert.equal(scan.status, 200); assert.equal(scan.headers.get('set-cookie'), null); assert.match(await scan.text(), /<form method="post"/);
+  assert.equal(tokens.rows[0]!.used, false);
+  const press = (tok: string, origin = 'https://build.example') => handleAuth(new Request('https://build.example/auth/email/verify', { method: 'POST', headers: { origin, 'content-type': 'application/x-www-form-urlencoded' }, body: `token=${tok}` }), cfg, d);
+  // a form posted from another site is refused (login CSRF)
+  assert.match(await (await press(token, 'https://evil.example'))!.text(), /came from somewhere else/);
+  assert.equal(tokens.rows[0]!.used, false);
+  // the person presses the button: signed in
+  const ok = (await press(token))!;
+  assert.equal(ok.status, 303); assert.equal(ok.headers.get('location'), cfg.appUrl);
+  const session = ok.headers.getSetCookie().find(c => c.startsWith('__Host-sb_session='))!.split(';')[0]!;
+  const me = await (await handleAuth(new Request('https://build.example/api/me', { headers: { cookie: session } }), cfg, d))!.json() as { user: { email: string; provider: string } };
+  assert.deepEqual([me.user.email, me.user.provider], ['ada@example.com', 'email']);
+  assert.ok(!tokens.rows.some(r => r.hash === token), 'only the hash of the link token is stored');
+  // single use
+  assert.match((await press(token))!.headers.get('location')!, /signin=failed/);
+  // expiry
+  await ask('grace@example.com'); const t2 = new URL(/https:\S+/.exec(sent.at(-1)!.text)![0]).searchParams.get('token')!;
+  now += 16 * 60_000; assert.match((await press(t2))!.headers.get('location')!, /signin=failed/);
+  // rate limit per address
+  for (let i = 0; i < 5; i++) await ask('flood@example.com', `9.9.9.${i}`);
+  assert.equal((await ask('flood@example.com', '9.9.9.99'))!.status, 429);
+  assert.equal(normaliseEmail('A.B+tag@Sub.Example.co.uk'), 'a.b+tag@sub.example.co.uk'); assert.equal(normaliseEmail('a@-bad.com'), null);
+});
+
+test('the sign-in page: an email form, Microsoft and Google only when configured, a strict content policy', async () => {
+  const d = { store: new MemoryAuthStore(), fetch, now: () => NOW };
+  const base: AuthConfig = { publicUrl: 'https://b.example', appUrl: 'https://a', sessionSecret: 's', clients: {} };
+  const r = (await handleAuth(new Request('https://b.example/auth/signin'), base, d))!;
+  const html = await r.text();
+  assert.match(html, /Email me a link/); assert.doesNotMatch(html, /Sign in with Microsoft/);
+  assert.match(r.headers.get('content-security-policy')!, /script-src 'nonce-signin'/);
+  const withMs = await (await handleAuth(new Request('https://b.example/auth/signin'), { ...base, clients: { microsoft: { id: 'x', secret: 'y' } } }, d))!.text();
+  assert.match(withMs, /Sign in with Microsoft/);
 });

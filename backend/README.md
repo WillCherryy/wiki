@@ -55,6 +55,19 @@ Secrets are stored encrypted by Cloudflare and survive deploys. Decide the subdo
 Real accounts and tenants (one `dev` tenant, one admin key); an MCP endpoint at the edge; queues for long runs (the run endpoint is synchronous); per-tenant encryption; the Resource Monte Carlo and the other domain tools (only the file, table and unit tools are ported); the QGIS adapter service.
 
 
+## Accounts: sign in by emailed link (the default)
+
+People type their email at `GET /auth/signin` and get a link. The link opens a page with a "Sign in" button; only pressing it (a same-origin POST) signs in, because mail scanners such as Outlook Safe Links open every link in an email and would otherwise spend it or sign in themselves. Links are 256-bit random tokens, valid for 15 minutes, single use, stored only as SHA-256. Every address gets the same reply, so the form cannot reveal who has an account, and requests are limited to 5 per address and 20 per client per hour. Each person gets a private workspace at first sign-in. Google and Microsoft sign-in (below) stay available, off until their secrets are set, for when a firm wants single sign-on with Office 365.
+
+Set up once:
+
+1. Create a free account at resend.com and verify a sending domain (it asks you to add a few DNS records at your domain registrar; `scorcher.dev` when you have it, or a subdomain of `playscorcher.com` until then).
+2. Create an API key in Resend, then `npx wrangler secret put RESEND_API_KEY`.
+3. In `wrangler.toml` set `EMAIL_FROM = "Scorcher <signin@your-verified-domain>"`, plus `PUBLIC_URL` and `APP_URL`.
+4. `npx wrangler secret put SESSION_SECRET` (a long random string), `npm run migrate`, `npm run deploy`, then open `PUBLIC_URL/auth/signin`.
+
+`/health` shows `email: true` once both are set.
+
 ## Accounts: sign in with Google or Microsoft
 
 People sign in with a Google or Microsoft account (OpenID Connect, authorization code flow with PKCE). The Worker verifies each ID token itself: RS256 signature against the provider's published keys, issuer (for Microsoft, the account's own tenant), audience, expiry, issue time, the nonce it issued, and for Google a verified email. Sessions are random 256-bit tokens in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie; only their SHA-256 is stored. Requests that change data with a session must come from `APP_URL`'s origin. At first sign-in each person gets a private workspace (an organisation); teams join by invitation, never by email domain, because Microsoft does not guarantee its email claim is verified. The admin key keeps working for scripts.
