@@ -132,7 +132,7 @@ const model = id => id.replace(/^claude-/, 'Claude ').replace(/-(\d+)-(\d+)$/, '
 const KIND = { gt: 'grade-tonnage', pit: 'ultimate pit', welltest: 'well tests', hip: 'heat in place', buildup: 'buildups', yield: 'energy yield', aep: 'energy', qc: 'quality control', pick: 'horizon pick', campaign: 'campaign', well: 'well reports', permit: 'permits', pga: 'ground motion' };
 
 /* ---------------------------------------------------------------- one model for every discipline */
-const ORDER = ['welltest', 'geothermal', 'documents', 'mining', 'gis', 'hazard', 'solar', 'wind', 'seismic', 'scheduling'];
+const ORDER = ['welltest', 'geothermal', 'documents', 'mining', 'gis', 'hazard', 'solar', 'pvreal', 'wind', 'seismic', 'scheduling'];
 const JOB = {
   welltest: 'Interpret a pressure buildup: permeability, skin, whether a fault is seen, and the window used.',
   geothermal: 'Estimate heat in place and electrical capacity at P90, P50 and P10 from a temperature log.',
@@ -141,12 +141,14 @@ const JOB = {
   gis: 'Screen land for a solar plant from a brief: slope, land cover, buffers, the largest parcel and its yield.',
   hazard: 'The ground motion with a 10% and a 2% chance of being exceeded in 50 years at a site.',
   solar: 'First-year energy, specific yield and performance ratio of a plant from a weather year.',
+  pvreal: 'The same energy estimate on a real year of satellite irradiance, exported by PVGIS: its beam column is on the horizontal, not direct normal.',
   wind: 'Gross and net annual energy, capacity factor and hub speed from a met-mast year.',
   seismic: 'Quality-control a SEG-Y survey and pick a horizon at the right polarity.',
   scheduling: 'Schedule a drilling campaign on three rigs to finish as early as possible.',
 };
+const TRAPNAME = { pvgis: 'beam on the horizontal, as PVGIS exports it', two_rate: 'rate change before shut-in', short: 'too short to interpret', mass_rate: 'mass rate' };
 const LIVE = { welltest: true, documents: true };                              // run in the app today, graded on the server
-const AREA = { mining: 'Mining', geothermal: 'Geothermal', welltest: 'Well tests', hazard: 'Seismic hazard', solar: 'Solar', wind: 'Wind', seismic: 'Seismic data', scheduling: 'Scheduling', documents: 'Documents' };
+const AREA = { mining: 'Mining', geothermal: 'Geothermal', welltest: 'Well tests', hazard: 'Seismic hazard', solar: 'Solar', pvreal: 'Solar, real weather', wind: 'Wind', seismic: 'Seismic data', scheduling: 'Scheduling', documents: 'Documents' };
 const total = P => Object.values(P.suites).reduce((a, s) => a + s.tasks, 0);
 const armSum = (P, a) => { const out = { k: 0, n: 0 }; for (const s of Object.values(P.suites)) { const x = s.arms[a]; if (x) { out.k += x.pass.k; out.n += x.pass.n; } } return out; };
 const mainArm = (P, a) => P.suites.main && P.suites.main.arms[a] ? P.suites.main.arms[a].pass : null;
@@ -251,7 +253,7 @@ function discipline(id) {
     <div class="honest">${d.live ? '<span class="chip live">Runs in the app</span>' : '<span class="chip">Local benchmark</span>'}<span class="chip">${d.tasks} tasks</span>${m && m.correct != null && m.correct / m.n >= .9 ? '<span class="chip warn">Near the ceiling for a small model</span>' : ''}</div>
     <h2><span class="n">1</span>The task</h2>
     ${ex ? `<div class="brief">${esc(ex.brief)}</div><p class="note">Example task <span class="m">${esc(ex.id)}</span>${ex.docs && ex.docs.length ? ` · documents: ${ex.docs.map(esc).join(', ')}` : ''}${ex.datasets && ex.datasets.length ? ` · data: ${ex.datasets.map(esc).join(', ')}` : ''}</p>` : ''}
-    <dl class="kv" style="margin-top:16px"><dt>Data traps</dt><dd>${(d.defects || []).map(x => `<span class="chip">${esc(String(x).replace(/_/g, ' '))}</span>`).join(' ')}</dd><dt>Brief levels</dt><dd>${d.id === 'gis' ? 'S1 to S4, from explicit to spread over several documents' : 'L1 everything stated in SI; L2 mixed units and plain words; L3 in documents, beside a superseded one'}</dd>${d.tools && d.tools.length ? `<dt>Tools the agent gets</dt><dd>${d.tools.map(t => `<span class="chip" title="${esc(t.description)}">${esc(t.name)}</span>`).join(' ')}</dd>` : ''}</dl>
+    <dl class="kv" style="margin-top:16px"><dt>Data traps</dt><dd>${(d.defects || []).map(x => `<span class="chip">${esc(TRAPNAME[x] || String(x).replace(/_/g, ' '))}</span>`).join(' ')}</dd><dt>Brief levels</dt><dd>${d.id === 'gis' ? 'S1 to S4, from explicit to spread over several documents' : d.id === 'pvreal' ? 'L1 pvlib conventions with the coordinates; L2 PVGIS conventions, the site in the PVGIS inputs file; L3 in a design report, beside a superseded one' : 'L1 everything stated in SI; L2 mixed units and plain words; L3 in documents, beside a superseded one' + (d.id === 'welltest' ? '; L4 no guidance on reading the derivative' : '')}</dd>${d.tools && d.tools.length ? `<dt>Tools the agent gets</dt><dd>${d.tools.map(t => `<span class="chip" title="${esc(t.description)}">${esc(t.name)}</span>`).join(' ')}</dd>` : ''}</dl>
     <h2><span class="n">2</span>How it is graded</h2>
     <dl class="kv"><dt>Answer key</dt><dd>${esc(d.engine)}</dd><dt>Counts as unsafe</dt><dd>${esc(d.unsafe)}, whatever the totals</dd><dt>Checks with no key</dt><dd><ul class="plain">${d.physics.map(x => `<li>${esc(x)}</li>`).join('')}</ul><span class="note">Reported beside the grade, never part of it. They catch impossible or inconsistent answers, not every wrong one${d.flags && d.flags.wrong ? `: on the naive pipeline they flagged ${d.flags.caught} of ${d.flags.wrong} wrong answers` : ''}.</span></dd></dl>
     <h2><span class="n">3</span>How well it is solved</h2>${res}${take}

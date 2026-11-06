@@ -46,12 +46,14 @@ def weather(seed):
     return _WEATHER[seed]
 
 
-def pv_energy(times_utc, ghi, dni, dhi, temp, wind, kwp, tilt, azimuth, gamma, inverter_kw, losses, albedo=0.2, missing=MISSING):
+def pv_energy(times_utc, ghi, dni, dhi, temp, wind, kwp, tilt, azimuth, gamma, inverter_kw, losses, albedo=0.2, missing=MISSING, site=None):
+    """site: (latitude, longitude, altitude in m); the synthetic pack's site near Madrid when omitted."""
+    lat, lon, alt = site or (LAT, LON, ALT)
     import pandas as pd, pvlib
     t = pd.DatetimeIndex(times_utc)
     ok = np.ones(len(ghi), bool) if missing is None else (ghi != missing) & (dni != missing) & (dhi != missing)
     g, b, d = np.where(ok, ghi, 0.0), np.where(ok, dni, 0.0), np.where(ok, dhi, 0.0)
-    sp = pvlib.solarposition.get_solarposition(t, LAT, LON, altitude=ALT)
+    sp = pvlib.solarposition.get_solarposition(t, lat, lon, altitude=alt)
     poa = pvlib.irradiance.get_total_irradiance(tilt, azimuth, sp["apparent_zenith"].values, sp["azimuth"].values, b, g, d, albedo=albedo, model="isotropic")
     E = np.nan_to_num(np.asarray(poa["poa_global"], float)).clip(min=0)
     prm = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS["sapm"]["open_rack_glass_glass"]

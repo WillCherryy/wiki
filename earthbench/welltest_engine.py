@@ -77,6 +77,21 @@ class Well:
         pwf = pi - float(self.dp(tp)[0])
         return pwf, pi - (self.dp(tp + dt) - self.dp(dt))
 
+    def buildup_history(self, pi, rates, dt_h):
+        """Buildup after a rate history [(q_j in m3/s, duration_j in h), ...], by superposition of rate changes (the system is linear):
+        p(t) = pi - sum_j (q_j - q_{j-1}) D(t - t_{j-1}), with D the drawdown per unit rate. Returns (pwf at shut-in, pws at dt_h)."""
+        q0, self.q = self.q, 1.0
+        self.scale = self.mu / (2 * math.pi * self.k * self.h)
+        try:
+            starts = np.cumsum([0.0] + [d for _, d in rates])[:-1] * 3600.0; T = sum(d for _, d in rates) * 3600.0
+            steps = [(q - (rates[j - 1][0] if j else 0.0), t0) for j, ((q, _), t0) in enumerate(zip(rates, starts))]
+            dt = np.asarray(dt_h, float) * 3600.0
+            pwf = pi - sum(dq * float(self.dp(T - t0)[0]) for dq, t0 in steps)
+            pws = pi - sum(dq * self.dp(T - t0 + dt) for dq, t0 in steps) + rates[-1][0] * self.dp(dt)
+        finally:
+            self.q = q0; self.scale = q0 * self.mu / (2 * math.pi * self.k * self.h)
+        return pwf, pws
+
     def radial_start_h(self, tol=0.02):
         """Start of radial flow: from then on the infinite-acting drawdown derivative stays within tol of its plateau, q mu / (4 pi k h).
         Read from the solution itself. Ramey's rule of thumb, t_D = (60 + 3.5 S) C_D, starts it too early when skin is high."""

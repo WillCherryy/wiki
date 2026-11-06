@@ -20,6 +20,9 @@ class Private(unittest.TestCase):
         self.assertEqual(d1, private.suite_digest(private.suite(welltest, "secret-one", "welltest")))
         self.assertNotEqual(d1, private.suite_digest(private.suite(welltest, "secret-two", "welltest")))
         self.assertNotEqual(private.seeds("s", "mining"), private.seeds("s", "welltest"))
+        parts = private.committed_sets(welltest, "welltest", private.suite(welltest, "secret-one", "welltest"))
+        self.assertEqual(len(parts["welltest"]), 24)          # the grid committed on 6 November 2026, unchanged by the tasks added later
+        self.assertTrue(all(t.spec != "L4" and t.defect not in ("two_rate", "short") for t in parts["welltest"]))
 
     def test_private_tasks_are_solvable(self):
         from earthbench.core import score

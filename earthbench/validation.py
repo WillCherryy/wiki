@@ -33,6 +33,7 @@ REFS = {
     "wilson": "Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. JASA 22(158), 209-212",
     "mcnemar": "McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions. Psychometrika 12(2), 153-157",
     "chen": "Chen, M. et al. (2021). Evaluating large language models trained on code. arXiv:2107.03374 (unbiased pass@k)",
+    "davison": "Davison, A. C. and Hinkley, D. V. (1997). Bootstrap Methods and their Application. Cambridge University Press",
     "tau": "Yao, S. et al. (2024). tau-bench. arXiv:2406.12045 (pass^k)",
     "picard": "Picard, J.-C. (1976). Maximal closure of a graph and applications to combinatorial problems. Management Science 22(11), 1268-1272",
     "lg": "Lerchs, H. and Grossmann, I. F. (1965). Optimum design of open-pit mines. Trans. CIM 68, 17-24",
@@ -341,6 +342,7 @@ entry("sha256", "Audit", "Hashes are SHA-256.", "standard", ["fips180"], c_sha)
 entry("chain", "Audit", "The trace and the ledger are hash chains: each entry's hash covers the previous hash.", "standard", ["haber"], c_chain)
 entry("wilson", "Statistics", "Pass rates carry a 95% Wilson score interval.", "independent", ["wilson"], c_wilson)
 entry("mcnemar", "Statistics", "Paired comparisons use the exact McNemar test.", "independent", ["mcnemar"], c_mcnemar)
+entry("cluster", "Statistics", "Tasks built from one world are not independent: pass rates and model differences also carry a cluster-bootstrap interval that resamples whole worlds; its design effect equals 1 for independent tasks and m for m tasks that always agree.", "closed form", ["davison"], "earthbench.tests.test_compare.ClusterBootstrap.test_design_effect_matches_theory")
 entry("passk", "Statistics", "Reliability is reported as pass@k and pass^k with unbiased estimators.", "closed form", ["chen", "tau"], c_passk)
 entry("tolerances", "Scoring", "Answer tolerances per field (for example k within 10%, skin within 0.75, energy within 1 to 2%).", "design choice", [], None)
 entry("unsafe", "Scoring", "Unsafe thresholds: design ground motion under by more than 10%; energy over by more than 5%; any pit steeper than the slope; any permit limit overstated.", "design choice", [], None)
@@ -364,6 +366,9 @@ entry("skin", "Well tests", "Skin adds its value to the dimensionless pressure i
 entry("fault", "Well tests", "A sealing fault is an image well at twice the distance; the derivative doubles.", "closed form", ["earlougher"], "earthbench.tests.test_welltest.Engine.test_sealing_fault_doubles_the_derivative")
 entry("bourdet", "Well tests", "The Bourdet derivative in radial flow equals q mu / (4 pi k h).", "closed form", ["bourdet"], c_bourdet_plateau)
 entry("radial-start", "Well tests", "Radial flow starts where the derivative stays within 2% of its plateau, read from the solution (Ramey's rule of thumb starts it too early at high skin).", "closed form", ["agarwal", "ramey"], "earthbench.tests.test_welltest.Engine.test_horner_recovers_the_truth")
+entry("superposition", "Well tests", "A rate history is modelled by superposition of rate changes (the system is linear); with two equal rates it reproduces the single-rate buildup.", "closed form", ["earlougher"], "earthbench.tests.test_welltest.Pack.test_rate_history")
+entry("teq", "Well tests", "After a rate change the reference analyst uses the last rate with Horner's equivalent producing time (cumulative volume / last rate). It is an approximation: measured within 3% on k and 0.4 on skin against the exact superposition, inside the 10% and 0.75 tolerances.", "published value", ["horner", "earlougher"], "earthbench.tests.test_welltest.Engine.test_horner_recovers_the_truth")
+entry("abstain", "Well tests", "A test reaches radial flow if its derivative stays within 10% over a factor of 3 in time; a shorter test must be reported as not interpretable, and any estimate from it fails.", "design choice", [], "earthbench.tests.test_welltest.Pack.test_abstention")
 entry("window", "Well tests", "A fitted window is accepted where the derivative is within 10% of radial flow, with 25% slack in time.", "design choice", [], None)
 
 entry("psha", "Seismic hazard", "Classical PSHA: annual exceedance rate summed over sources; Poisson probability over the investigation time.", "closed form", ["cornell", "oq"], "earthbench.tests.test_hazard.Engine.test_investigation_time_is_poisson")
@@ -374,6 +379,8 @@ entry("grrate", "Seismic hazard", "A source's annual rate of M >= m_min becomes 
 
 entry("spa", "Solar", "Solar position by the NREL SPA.", "published value", ["spa"], c_spa)
 entry("pvgis", "Solar", "Beam irradiance on the plane matches PVGIS for the same 2019 hours at Madrid, Freiburg and Seville (within 1%; measured 0.0%). The isotropic sky gives 3.2 to 3.5% less total plane-of-array irradiance than PVGIS, reported as a limitation.", "external", ["pvgis", "spa"], c_pvgis)
+entry("pvgis-dni", "Solar", "For a horizontal PVGIS export, Gb(i) is beam on the horizontal: direct normal irradiance is Gb(i) / sin(H_sun). Converted this way, the beam on a 30 degree plane equals PVGIS's own beam on that plane (the pvgis check).", "external", ["pvgis"], c_pvgis)
+entry("pvreal-tol", "Solar", "The real-weather pack grades energy within 2% (the synthetic pack 1%): reasonable low-sun cut-offs and time stamps move it by at most 0.4%.", "design choice", [], "earthbench.tests.test_pvreal.Data.test_reasonable_choices_stay_inside_the_tolerance")
 entry("isotropic", "Solar", "Plane-of-array irradiance with an isotropic sky.", "closed form", ["liujordan"], c_isotropic)
 entry("pvwatts", "Solar", "DC power by PVWatts with a linear temperature coefficient.", "standard", ["pvwatts"], c_pvwatts)
 entry("sapm", "Solar", "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.", "published value", ["sapm"], c_sapm)
@@ -398,12 +405,12 @@ entry("provenance", "Documents", "A figure is accepted only if it appears, after
 # a passing consistency check is reported as "consistent": it shows the code agrees with itself or with a formula typed from a paper,
 # not that the model is right.
 EVIDENCE = {
-    "units": "definition", "sha256": "external", "chain": "consistency", "wilson": "independent", "mcnemar": "independent", "passk": "analytical",
+    "units": "definition", "sha256": "external", "chain": "consistency", "wilson": "independent", "mcnemar": "independent", "cluster": "analytical", "passk": "analytical",
     "tolerances": "design choice", "unsafe": "design choice", "closure": "independent", "closure-nx": "independent", "cutoff": "consistency",
     "slope": "design choice", "hip": "analytical", "p90": "analytical", "horner-skin": "analytical", "stehfest": "analytical", "fdcheck": "independent",
     "theis": "analytical", "storage": "analytical", "skin": "analytical", "negskin": "analytical", "fault": "analytical", "bourdet": "analytical",
-    "radial-start": "independent", "window": "design choice", "psha": "consistency", "return": "external", "gmpe": "external",
-    "spa": "external", "peer": "external", "grrate": "external", "minelib": "external", "pvgis": "external", "isotropic": "analytical", "pvwatts": "analytical", "sapm": "external", "isa": "external", "iec": "consistency",
+    "radial-start": "independent", "superposition": "analytical", "teq": "consistency", "abstain": "design choice", "window": "design choice", "psha": "consistency", "return": "external", "gmpe": "external",
+    "spa": "external", "peer": "external", "grrate": "external", "minelib": "external", "pvgis": "external", "pvgis-dni": "external", "pvreal-tol": "design choice", "isotropic": "analytical", "pvwatts": "analytical", "sapm": "external", "isa": "external", "iec": "consistency",
     "betz": "analytical", "shear": "consistency", "turbine": "design choice", "segy": "consistency", "ricker": "consistency", "pick": "analytical",
     "cpsat": "independent", "days": "design choice", "provenance": "design choice",
 }

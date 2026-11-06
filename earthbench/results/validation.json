@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-06T17:24:24Z",
+ "generated": "2026-11-06T22:43:37Z",
  "rows": [
   {
    "id": "units",
@@ -61,6 +61,18 @@
    "status": "verified",
    "detail": "exact McNemar p = 0.00391 equals the two-sided binomial tail 0.00391",
    "check": "c_mcnemar"
+  },
+  {
+   "id": "cluster",
+   "area": "Statistics",
+   "decision": "Tasks built from one world are not independent: pass rates and model differences also carry a cluster-bootstrap interval that resamples whole worlds; its design effect equals 1 for independent tasks and m for m tasks that always agree.",
+   "basis": "analytical",
+   "refs": [
+    "davison"
+   ],
+   "status": "verified",
+   "detail": "unit test test_design_effect_matches_theory",
+   "check": "earthbench.tests.test_compare.ClusterBootstrap.test_design_effect_matches_theory"
   },
   {
    "id": "passk",
@@ -307,6 +319,41 @@
    "check": "earthbench.tests.test_welltest.Engine.test_horner_recovers_the_truth"
   },
   {
+   "id": "superposition",
+   "area": "Well tests",
+   "decision": "A rate history is modelled by superposition of rate changes (the system is linear); with two equal rates it reproduces the single-rate buildup.",
+   "basis": "analytical",
+   "refs": [
+    "earlougher"
+   ],
+   "status": "verified",
+   "detail": "unit test test_rate_history",
+   "check": "earthbench.tests.test_welltest.Pack.test_rate_history"
+  },
+  {
+   "id": "teq",
+   "area": "Well tests",
+   "decision": "After a rate change the reference analyst uses the last rate with Horner's equivalent producing time (cumulative volume / last rate). It is an approximation: measured within 3% on k and 0.4 on skin against the exact superposition, inside the 10% and 0.75 tolerances.",
+   "basis": "consistency",
+   "refs": [
+    "horner",
+    "earlougher"
+   ],
+   "status": "consistent",
+   "detail": "unit test test_horner_recovers_the_truth",
+   "check": "earthbench.tests.test_welltest.Engine.test_horner_recovers_the_truth"
+  },
+  {
+   "id": "abstain",
+   "area": "Well tests",
+   "decision": "A test reaches radial flow if its derivative stays within 10% over a factor of 3 in time; a shorter test must be reported as not interpretable, and any estimate from it fails.",
+   "basis": "design choice",
+   "refs": [],
+   "status": "design choice",
+   "detail": "unit test test_abstention",
+   "check": "earthbench.tests.test_welltest.Pack.test_abstention"
+  },
+  {
    "id": "window",
    "area": "Well tests",
    "decision": "A fitted window is accepted where the derivative is within 10% of radial flow, with 25% slack in time.",
@@ -404,6 +451,28 @@
    "status": "verified",
    "detail": "1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%)",
    "check": "c_pvgis"
+  },
+  {
+   "id": "pvgis-dni",
+   "area": "Solar",
+   "decision": "For a horizontal PVGIS export, Gb(i) is beam on the horizontal: direct normal irradiance is Gb(i) / sin(H_sun). Converted this way, the beam on a 30 degree plane equals PVGIS's own beam on that plane (the pvgis check).",
+   "basis": "external",
+   "refs": [
+    "pvgis"
+   ],
+   "status": "verified",
+   "detail": "1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%)",
+   "check": "c_pvgis"
+  },
+  {
+   "id": "pvreal-tol",
+   "area": "Solar",
+   "decision": "The real-weather pack grades energy within 2% (the synthetic pack 1%): reasonable low-sun cut-offs and time stamps move it by at most 0.4%.",
+   "basis": "design choice",
+   "refs": [],
+   "status": "design choice",
+   "detail": "unit test test_reasonable_choices_stay_inside_the_tolerance",
+   "check": "earthbench.tests.test_pvreal.Data.test_reasonable_choices_stay_inside_the_tolerance"
   },
   {
    "id": "isotropic",
@@ -576,6 +645,7 @@
   "wilson": "Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. JASA 22(158), 209-212",
   "mcnemar": "McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions. Psychometrika 12(2), 153-157",
   "chen": "Chen, M. et al. (2021). Evaluating large language models trained on code. arXiv:2107.03374 (unbiased pass@k)",
+  "davison": "Davison, A. C. and Hinkley, D. V. (1997). Bootstrap Methods and their Application. Cambridge University Press",
   "tau": "Yao, S. et al. (2024). tau-bench. arXiv:2406.12045 (pass^k)",
   "picard": "Picard, J.-C. (1976). Maximal closure of a graph and applications to combinatorial problems. Management Science 22(11), 1268-1272",
   "lg": "Lerchs, H. and Grossmann, I. F. (1965). Optimum design of open-pit mines. Trans. CIM 68, 17-24",

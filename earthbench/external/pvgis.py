@@ -41,16 +41,11 @@ def compare(site, lat, lon):
     ghi = bh + dh
     dni = np.where(hs > 2, bh / np.sin(np.radians(np.clip(hs, 2, 90))), 0.0)
     T = np.array([x["T2m"] for x in H]); W = np.array([x["WS10m"] for x in H])
-    old = (S.LAT, S.LON, S.ALT)
-    try:
-        S.LAT, S.LON, S.ALT = lat, lon, elev
-        import pvlib
-        sp = pvlib.solarposition.get_solarposition(t, lat, lon, altitude=elev)
-        aoi = pvlib.irradiance.aoi(30, 180, sp["apparent_zenith"].values, sp["azimuth"].values)
-        beam = float(np.sum(dni * np.clip(np.cos(np.radians(aoi)), 0, None))) / 1000
-        r = S.pv_energy(t, ghi, dni, dh, T, W, kwp=1.0, tilt=30, azimuth=180, gamma=-0.004, inverter_kw=2.0, losses=0.104, missing=None)
-    finally:
-        S.LAT, S.LON, S.ALT = old
+    import pvlib
+    sp = pvlib.solarposition.get_solarposition(t, lat, lon, altitude=elev)
+    aoi = pvlib.irradiance.aoi(30, 180, sp["apparent_zenith"].values, sp["azimuth"].values)
+    beam = float(np.sum(dni * np.clip(np.cos(np.radians(aoi)), 0, None))) / 1000
+    r = S.pv_energy(t, ghi, dni, dh, T, W, kwp=1.0, tilt=30, azimuth=180, gamma=-0.004, inverter_kw=2.0, losses=0.104, missing=None, site=(lat, lon, elev))
     pb = sum(x["Gb(i)"] for x in P) / 1000; pd_ = sum(x["Gd(i)"] for x in P) / 1000; pr = sum(x["Gr(i)"] for x in P) / 1000; pe = sum(x["P"] for x in P) / 1000
     return {"site": site, "beam_scorcher": beam, "beam_pvgis": pb, "poa_scorcher": r["poa_insolation_kwh_m2"], "poa_pvgis": pb + pd_ + pr,
             "energy_scorcher": r["annual_energy_mwh"] * 1000, "energy_pvgis": pe}

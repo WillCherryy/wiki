@@ -23,7 +23,7 @@ from gisbench.stats import wilson
 from gisbench.reliability import summarise as reliability, signature
 from .core import score
 
-PACKS = ("mining", "geothermal", "welltest", "hazard", "solar", "wind", "seismic", "scheduling", "documents")
+PACKS = ("mining", "geothermal", "welltest", "hazard", "solar", "pvreal", "wind", "seismic", "scheduling", "documents")
 HERE = os.path.dirname(__file__)
 RESULTS = os.path.join(HERE, "results")
 MAX_TOKENS = 16000                 # per turn; 2,048 cut off long thinking before a tool call in 14 runs (6 November 2026)
@@ -127,7 +127,8 @@ def model_run(a):
         allts = tasks_for(P, a.pack, a.suite)
     except Exception as e:
         print(str(e), file=sys.stderr); return 2
-    ts = [t for t in allts if not a.kind or t.kind == a.kind][a.offset:]
+    sp, df = (set(x.split(",")) if x else None for x in (a.spec, a.defect))
+    ts = [t for t in allts if (not a.kind or t.kind == a.kind) and (not sp or t.spec in sp) and (not df or t.defect in df)][a.offset:]
     if not ts:
         print(f"no tasks; kinds in this pack: {', '.join(sorted({t.kind for t in allts}))}", file=sys.stderr); return 2
     ts = ts[: a.limit] if a.limit else ts
@@ -135,7 +136,7 @@ def model_run(a):
         print(f"{len(ts) * a.repeats} task runs on {a.model}: rough estimate ${len(ts) * a.repeats * (30_000 * PRICES[a.model][0] + 4_000 * PRICES[a.model][1]) / 1e6:.2f}. Re-run with --yes."); return 0
     import anthropic
     client = anthropic.Anthropic(api_key=key_) if key_ else anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com")
-    base = f"model-{a.pack}-{a.model}-{a.suite}" + (f"-{a.kind}" if a.kind else "") + (f"-from{a.offset}" if a.offset else "") + (f"-first{a.limit}" if a.limit else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
+    base = f"model-{a.pack}-{a.model}-{a.suite}" + (f"-{a.kind}" if a.kind else "") + (f"-{a.spec.replace(',', '+')}" if a.spec else "") + (f"-{a.defect.replace(',', '+').replace('_', '')}" if a.defect else "") + (f"-from{a.offset}" if a.offset else "") + (f"-first{a.limit}" if a.limit else "") + (f"-x{a.repeats}" if a.repeats > 1 else "")
     private = a.suite == "private"
     outdir = os.path.join(RESULTS, "private") if private else RESULTS        # private briefs, answers and traces never leave the machine (git-ignored)
     os.makedirs(os.path.join(outdir, "records"), exist_ok=True)
@@ -208,6 +209,8 @@ def main(argv=None):
     ap.add_argument("--suite")
     ap.add_argument("--model")
     ap.add_argument("--kind", help="only tasks of this kind, e.g. welltest or gt")
+    ap.add_argument("--spec", help="only these briefs, comma-separated, e.g. L4")
+    ap.add_argument("--defect", help="only these defects, comma-separated, e.g. two_rate,short")
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=1)

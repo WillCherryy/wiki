@@ -4,7 +4,7 @@ Every modelling decision in Scorcher's engines, what backs it, and an automated 
 
 Status: **verified** means a check ran and passed against something outside the code: a published value, a standard, an analytical solution or an independent implementation. **consistent** means a check passed but only shows the code agrees with itself or with a formula typed from a paper. **source only** means the decision follows a cited source with no automated check yet; **design choice** means a judgement with no published source, listed for expert review; **not run** means the engine's library was not installed where this was generated. No engine has yet been compared with external reference data (PEER, MineLib, SAM or PVGIS, field tests), and no outside expert has reviewed any of it.
 
-Totals: consistent 7, design choice 7, source only 1, verified 32.
+Totals: consistent 8, design choice 9, source only 1, verified 35.
 
 
 ## All
@@ -26,6 +26,7 @@ Totals: consistent 7, design choice 7, source only 1, verified 32.
 |---|---|---|---|---|
 | Pass rates carry a 95% Wilson score interval. | independent | Wilson, E. | verified | agrees with SciPy's Wilson interval to 3.9e-09 over 4 sample sizes |
 | Paired comparisons use the exact McNemar test. | independent | McNemar, Q. | verified | exact McNemar p = 0.00391 equals the two-sided binomial tail 0.00391 |
+| Tasks built from one world are not independent: pass rates and model differences also carry a cluster-bootstrap interval that resamples whole worlds; its design effect equals 1 for independent tasks and m for m tasks that always agree. | analytical | Davison, A. | verified | unit test test_design_effect_matches_theory |
 | Reliability is reported as pass@k and pass^k with unbiased estimators. | analytical | Chen, M.; Yao, S. | verified | pass@k and pass^k equal the share of all k-subsets of n runs with at least one / all passes |
 
 ## Scoring
@@ -66,6 +67,9 @@ Totals: consistent 7, design choice 7, source only 1, verified 32.
 | A sealing fault is an image well at twice the distance; the derivative doubles. | analytical | Earlougher, R. | verified | unit test test_sealing_fault_doubles_the_derivative |
 | The Bourdet derivative in radial flow equals q mu / (4 pi k h). | analytical | Bourdet, D. | verified | Bourdet derivative equals q mu / (4 pi k h) within 1.2e-05 in radial flow |
 | Radial flow starts where the derivative stays within 2% of its plateau, read from the solution (Ramey's rule of thumb starts it too early at high skin). | independent | Agarwal, R.; Ramey, H. | verified | unit test test_horner_recovers_the_truth |
+| A rate history is modelled by superposition of rate changes (the system is linear); with two equal rates it reproduces the single-rate buildup. | analytical | Earlougher, R. | verified | unit test test_rate_history |
+| After a rate change the reference analyst uses the last rate with Horner's equivalent producing time (cumulative volume / last rate). It is an approximation: measured within 3% on k and 0.4 on skin against the exact superposition, inside the 10% and 0.75 tolerances. | consistency | Horner, D.; Earlougher, R. | consistent | unit test test_horner_recovers_the_truth |
+| A test reaches radial flow if its derivative stays within 10% over a factor of 3 in time; a shorter test must be reported as not interpretable, and any estimate from it fails. | design choice | none yet | design choice | unit test test_abstention |
 | A fitted window is accepted where the derivative is within 10% of radial flow, with 25% slack in time. | design choice | none yet | design choice | no automated check |
 
 ## Seismic hazard
@@ -84,6 +88,8 @@ Totals: consistent 7, design choice 7, source only 1, verified 32.
 |---|---|---|---|---|
 | Solar position by the NREL SPA. | external | Reda, I. | verified | zenith 50.11162, azimuth 194.34024 against the published 50.11162, 194.34024 |
 | Beam irradiance on the plane matches PVGIS for the same 2019 hours at Madrid, Freiburg and Seville (within 1%; measured 0.0%). The isotropic sky gives 3.2 to 3.5% less total plane-of-array irradiance than PVGIS, reported as a limitation. | external | PVGIS 5.; Reda, I. | verified | 1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%) |
+| For a horizontal PVGIS export, Gb(i) is beam on the horizontal: direct normal irradiance is Gb(i) / sin(H_sun). Converted this way, the beam on a 30 degree plane equals PVGIS's own beam on that plane (the pvgis check). | external | PVGIS 5. | verified | 1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%) |
+| The real-weather pack grades energy within 2% (the synthetic pack 1%): reasonable low-sun cut-offs and time stamps move it by at most 0.4%. | design choice | none yet | design choice | unit test test_reasonable_choices_stay_inside_the_tolerance |
 | Plane-of-array irradiance with an isotropic sky. | analytical | Liu, B. | verified | plane-of-array 796.468 W/m2 equals the isotropic formula 796.468 |
 | DC power by PVWatts with a linear temperature coefficient. | analytical | Dobos, A. | verified | P_dc = P_dc0 (E/1000) (1 + gamma (T_c - 25)) |
 | Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients. | external | King, D. | verified | coefficients equal the published open-rack glass/glass values; cell 52.568 C at 900 W/m2, 25 C, 2 m/s |
@@ -128,6 +134,7 @@ Totals: consistent 7, design choice 7, source only 1, verified 32.
 - **wilson**: Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. JASA 22(158), 209-212
 - **mcnemar**: McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions. Psychometrika 12(2), 153-157
 - **chen**: Chen, M. et al. (2021). Evaluating large language models trained on code. arXiv:2107.03374 (unbiased pass@k)
+- **davison**: Davison, A. C. and Hinkley, D. V. (1997). Bootstrap Methods and their Application. Cambridge University Press
 - **tau**: Yao, S. et al. (2024). tau-bench. arXiv:2406.12045 (pass^k)
 - **picard**: Picard, J.-C. (1976). Maximal closure of a graph and applications to combinatorial problems. Management Science 22(11), 1268-1272
 - **lg**: Lerchs, H. and Grossmann, I. F. (1965). Optimum design of open-pit mines. Trans. CIM 68, 17-24

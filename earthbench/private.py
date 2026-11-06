@@ -61,6 +61,16 @@ def suite(P, secret, pack_name):
     return [P.make_task(s, k, sp, df) for s in seeds(secret, pack_name) for k, sp, df in grid]
 
 
+def committed_sets(P, pack_name, tasks):
+    """The private suite split as it is committed: tasks a pack added later (its ADDED specs or defects) form their own set, name-2, so the
+    commitment already published for the earlier grid still verifies."""
+    added = getattr(P, "ADDED", None)
+    if not added:
+        return {pack_name: tasks}
+    new = lambda t: t.spec in added.get("specs", ()) or t.defect in added.get("defects", ())
+    return {pack_name: [t for t in tasks if not new(t)], f"{pack_name}-2": [t for t in tasks if new(t)]}
+
+
 def task_digest(t):
     from .core import digest
     h = hashlib.sha256()
@@ -111,7 +121,8 @@ def main(argv=None):
             ts = suite(P, secret, name)
         except ImportError as e:                # the pack's engine library is not installed here (segyio, ortools, OpenQuake)
             skipped.append(f"{name} ({e.name or e})"); continue
-        current[name] = {"tasks": len(ts), "sha256": suite_digest(ts)}
+        for n, part in committed_sets(P, name, ts).items():
+            current[n] = {"tasks": len(part), "sha256": suite_digest(part)}
     if skipped:
         print("skipped, engine not installed: " + ", ".join(skipped) + ". Install it and run this again to include it (pip install -r earthbench/requirements.txt).")
     if a.action == "commit":
