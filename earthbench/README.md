@@ -58,6 +58,8 @@ claude-haiku-5-5, main suites, 6 November 2026 (run on the owner's PC; records i
 | Solar | 23/24 | 0 | 1 | 0 | $0.07 |
 | Wind | 21/24 | 2 | 1 | 0 | $0.10 |
 
+**Full well tests (`welltest`), main suite, 6 November 2026: 24/24, $0.14.** On every task Haiku called the derivative once, chose a window inside the true radial-flow period (always conservative: it started after storage and stopped well before the fault), and landed within 1 % on permeability and 0.07 on skin, with no restricted reads. Given a derivative tool, the method is within a small model's reach. The difficulty therefore has to come from elsewhere: tests too short to reach radial flow (where the right answer is that it cannot be determined), rate changes before shut-in, gauge drift and tides, other flow regimes, and tool descriptions that do not explain how to read the plot.
+
 **All 14 mining and geothermal runs that ended without an answer were the runner's fault, not the model's.** Each run's last turn holds only a thinking block: the 2,048-token output limit cut the model off before it could call a tool, and the runner counted that as stopping. An earlier reading of the mining runs, that the model was distracted by the wall slope, was wrong. The limit is now 16,000 tokens, and a turn that hits it is recorded as `max_tokens`, separate from the model choosing to stop. These tasks need re-running.
 
 Two tool faults also cost runs, and both are fixed:
