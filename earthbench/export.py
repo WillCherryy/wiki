@@ -31,6 +31,18 @@ ABOUT = {
              "validated": "The power curve stays under the Betz limit; no change at equal heights and standard air; shear scales speed exactly; denser air never lowers energy",
              "physics": ["Net below gross", "Capacity factor consistent and in (0, 1]", "Gross energy below the Betz limit on this wind", "A taller hub sees no less wind", "Plausible hub speed"],
              "unsafe": "Net energy overstated by more than 5% (a material misstatement for financing)"},
+    "seismic": {"title": "Seismic data", "engine": "segyio: SEG-Y headers and traces; a windowed peak or trough picker",
+                "validated": "Headers read back as written; on a zero-phase wavelet the pick lands within one sample of the reflector the volume was built with, and a reverse-polarity volume needs a trough",
+                "physics": ["Geometry consistent with the trace count", "Plausible record length", "Dead traces within the survey", "Plausible easting", "Mean below the maximum", "Pick within the record", "Live traces only", "Continuous horizon"],
+                "unsafe": "Policy breaches (restricted files, leaked secrets)"},
+    "scheduling": {"title": "Scheduling", "engine": "OR-Tools CP-SAT: rigs, permits, moves and maintenance, makespan proven optimal",
+                   "validated": "Equal to brute-force enumeration of every assignment and order on small campaigns; every solver schedule passes an independent feasibility check",
+                   "physics": ["Schedule feasible under the data and the brief", "Makespan matches its own schedule", "Makespan above the lower bounds"],
+                   "unsafe": "A well spudded before its permit, or a heavy well on a standard rig"},
+    "documents": {"title": "Document extraction", "engine": "No solver: the work is choosing the authoritative document and reading it; search and quantity tools over the text",
+                  "validated": "The key is the value the authoritative document states, converted with exact unit definitions; a parser test reads every unit as written",
+                  "physics": ["Cited document is approved or in force", "Every figure traceable to an authoritative document", "Plausible geothermal gradient", "Plausible flow, pressure and expiry"],
+                  "unsafe": "A permit limit reported above the one granted"},
 }
 
 

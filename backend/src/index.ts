@@ -84,6 +84,13 @@ export default {
         await env.DB.prepare('INSERT INTO tasks (id, tenant, title, domain, spec, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(tenant, id) DO UPDATE SET title = excluded.title, domain = excluded.domain, spec = excluded.spec').bind(s.id, TENANT, s.title, s.domain, JSON.stringify(s), Date.now()).run();
         return json({ id: s.id, upload: s.files.map(f => `/api/tasks/${s.id}/files/${f.path}`) }, 201);
       }
+      if (p === '/api/tasks' && m === 'GET') {   // the organisation's own tasks; the reference answers never leave the server
+        const rows = (await env.DB.prepare('SELECT id, title, domain, spec, created_at FROM tasks WHERE tenant = ? ORDER BY created_at DESC LIMIT 100').bind(TENANT).all<{ id: string; title: string; domain: string; spec: string; created_at: number }>()).results;
+        const out = await Promise.all(rows.map(async r => { const s = JSON.parse(r.spec) as TaskSpec;
+          const files = await Promise.all(s.files.map(async f => ({ name: f.path, sensitivity: f.sensitivity, uploaded: (await env.FILES.head(`${TENANT}/${s.id}/${f.path}`)) !== null })));
+          return { id: r.id, title: r.title, domain: r.domain, statement: s.statement, fields: s.answer.fields.map(f => ({ name: f.name, unit: f.unit ?? null })), files, created_at: r.created_at }; }));
+        return json({ tasks: out });
+      }
       const up = /^\/api\/tasks\/([a-z0-9-]+)\/files\/(.+)$/.exec(p);
       if (up && m === 'PUT') {
         const row = await env.DB.prepare('SELECT spec FROM tasks WHERE tenant = ? AND id = ?').bind(TENANT, up[1]).first<{ spec: string }>(); if (!row) return json({ error: 'no such task' }, 404);
@@ -108,7 +115,10 @@ export default {
         }
         if (!b || typeof b.taskId !== 'string') return json({ error: 'body must be { catalogueId } or { taskId }' }, 400);
         const row = await env.DB.prepare('SELECT spec FROM tasks WHERE tenant = ? AND id = ?').bind(TENANT, b.taskId).first<{ spec: string }>(); if (!row) return json({ error: 'no such task' }, 404);
-        const s = JSON.parse(row.spec) as TaskSpec, t = await startTrial(env, TENANT, s, `${TENANT}/${s.id}/`, agent);
+        const s = JSON.parse(row.spec) as TaskSpec;
+        const missing = (await Promise.all(s.files.map(async f => (await env.FILES.head(`${TENANT}/${s.id}/${f.path}`)) ? null : f.path))).filter(Boolean);
+        if (missing.length) return json({ error: `upload these files first: ${missing.join(', ')}` }, 409);
+        const t = await startTrial(env, TENANT, s, `${TENANT}/${s.id}/`, agent);
         const base = env.PUBLIC_URL ?? new URL(req.url).origin;
         return json({ trialId: t.id, token: t.token, mcpUrl: `${base}/mcp/${t.id}/${t.token}`, note: 'the token is shown once' }, 201);
       }
@@ -127,7 +137,7 @@ export default {
       if (one && m === 'GET') {
         const stub = env.TRIAL.get(env.TRIAL.idFromName(one[1]!)) as TrialStub;
         const [st, sc, tr, row] = await Promise.all([stub.status(), stub.score(), stub.trace(), env.DB.prepare('SELECT task_id, title, agent, created_at FROM trials WHERE id = ?').bind(one[1]).first()]);
-        const cat = row ? findTask(String((row as { task_id: string }).task_id)) : null;
+        const cat = row ? findTask(String((row as { task_id: string }).task_id)) : null;   // the grade's checks already show answer against reference
         return json({ trial: row, status: st, score: sc, ...JSON.parse(tr), reference: st.done && cat ? cat.spec.reference : null });
       }
       if (call) {

@@ -73,13 +73,24 @@ td.m { font-family: var(--mono); font-size: 12px; }
 .guide details { background: var(--panel); border: 1px solid var(--rule); margin-top: 8px; } .guide summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
 .guide details > div { padding: 0 14px 14px; color: var(--ink-2); font-size: 14px; display: grid; gap: 8px; } .guide code { font: 400 12.5px var(--mono); background: var(--ground); padding: 1px 4px; }
 .gate { margin-top: 60px; max-width: 460px; } .gate .btn { margin-top: 18px; text-decoration: none; }
+.form { margin-top: 20px; display: grid; gap: 16px; max-width: 820px; }
+.form label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; } .form label small { font-weight: 400; color: var(--ink-3); font-size: 12.5px; }
+.form input[type=text], .form input[type=number], .form textarea, .form select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--rule); background: var(--panel); font: 400 15px var(--sans); }
+.form textarea { min-height: 110px; resize: vertical; line-height: 1.5; } .form input:focus, .form textarea:focus, .form select:focus { border-color: var(--ink); outline: none; }
+.fields { display: grid; gap: 6px; } .frow { display: grid; grid-template-columns: 2fr 1fr 1.3fr 1fr 32px; gap: 6px; align-items: center; }
+.frow input { padding: 8px 10px !important; font-size: 14px !important; } .frow button, .flist button { border: 1px solid var(--rule); background: var(--panel); height: 36px; cursor: pointer; }
+.fhead { display: grid; grid-template-columns: 2fr 1fr 1.3fr 1fr 32px; gap: 6px; font: 400 11.5px var(--mono); color: var(--ink-3); }
+.flist { display: grid; gap: 4px; } .flist div { display: flex; gap: 10px; align-items: center; padding: 6px 10px; background: var(--panel); border: 1px solid var(--rule); font-size: 13.5px; } .flist div span { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+.flist label { display: flex; gap: 6px; font-weight: 400; font-size: 13px; color: var(--ink-2); }
+.sub { font-size: 13px; color: var(--ink-3); margin-top: 18px; } .card.mine { border-style: dashed; }
+@media (max-width: 760px) { .frow, .fhead { grid-template-columns: 1fr 1fr; } }
 [hidden] { display: none !important; }
 @media (max-width: 760px) { .agents, .live { grid-template-columns: 1fr; } .top nav { display: none; } }
 </style>
 </head>
 <body>
 <header class="top"><a class="mark" href="/"><i></i>Scorcher Build</a>
-  <nav id="nav"><button data-v="run" aria-current="page">Run a test</button><button data-v="trials">Your trials</button><button data-v="guide">Guide</button><a href="/console" style="padding:6px 10px;font-size:14px;color:var(--ink-2);text-decoration:none">Benchmark results</a></nav>
+  <nav id="nav"><button data-v="run" aria-current="page">Run a test</button><button data-v="new">New task</button><button data-v="trials">Your trials</button><button data-v="guide">Guide</button><a href="/console" style="padding:6px 10px;font-size:14px;color:var(--ink-2);text-decoration:none">Benchmark results</a></nav>
   <div class="who" id="who"></div></header>
 <main>
   <section id="gate" class="gate" hidden><h1>Sign in to run tests</h1><p class="lede">Scorcher Build runs AI agents on real-shaped tasks and grades them with exact answers, safety checks and a tamper-evident record. Sign in with a link sent to your email.</p><a class="btn" href="/auth/signin">Sign in</a></section>
@@ -87,7 +98,7 @@ td.m { font-family: var(--mono); font-size: 12px; }
   <section id="v-run" hidden>
     <h1>Run a test</h1>
     <p class="lede">Pick a task, choose who does it, and watch every step. A run passes only if the answer is right <b>and</b> nothing unsafe happened.</p>
-    <div class="step"><h2><span>1</span>Choose a task</h2><p>Each has an exact answer and a trap taken from real data.</p><div class="cards" id="tasks"></div></div>
+    <div class="step"><h2><span>1</span>Choose a task</h2><p>Built-in tasks each have an exact answer and a trap taken from real data. Your own tasks appear after them; make one under New task.</p><div class="cards" id="tasks"></div><p class="sub" id="mineHead" hidden>Your tasks</p><div class="cards" id="mine"></div></div>
     <div class="step" id="step2" hidden><h2><span>2</span>Choose who does it</h2>
       <div class="agents">
         <div class="agent"><h3>Scorcher's agent</h3><p>Claude Haiku works the task on our servers, with the same tools your agent would get. Takes about a minute.</p><button class="btn" id="runScorcher">Run it</button></div>
@@ -98,6 +109,20 @@ td.m { font-family: var(--mono); font-size: 12px; }
     </div>
     <div class="step" id="step3" hidden><h2><span>3</span>Watch it work</h2><div id="live"></div></div>
   </section>
+
+  <section id="v-new" hidden><h1>New task</h1><p class="lede">Describe a job from your own work, attach its files, and say what the right answer is. Any agent can then be tested on it, and graded against your answer.</p>
+    <form class="form" id="nf" autocomplete="off">
+      <label>Title<input type="text" id="nf-title" required minlength="3" maxlength="120" placeholder="Monthly gas production summary"></label>
+      <label>Domain<select id="nf-domain"><option>geothermal</option><option>mining</option><option>gis</option><option>solar</option><option>wind</option><option>seismic</option><option>drilling</option><option>other</option></select></label>
+      <label>The brief <small>What the agent must do, in plain language, as you would brief a colleague. Name the files and the units you want.</small><textarea id="nf-brief" required minlength="20" placeholder="From production.csv, report the total gas produced in March 2026 in million cubic metres, and the number of days the well was shut in."></textarea></label>
+      <label>Your team's procedure <small>Optional: the steps or rules a correct answer follows (cut-offs, what to exclude, conventions).</small><textarea id="nf-proc" style="min-height:80px" placeholder="Exclude days flagged as tests. Shut-in means zero production for the whole day."></textarea></label>
+      <div><label>Files <small>CSV, text or JSON, up to 25 MB each. Tick "restricted" for a file the agent must never read (a safety test).</small><input type="file" id="nf-files" multiple></label><div class="flist" id="nf-flist" style="margin-top:6px"></div></div>
+      <div><label style="margin-bottom:6px">The answer <small>Each value the agent must report: a short name, the unit, the correct value, and how close counts as right.</small></label>
+        <div class="fhead"><span>Name</span><span>Unit</span><span>Correct value</span><span>Tolerance %</span><span></span></div><div class="fields" id="nf-fields"></div>
+        <button type="button" class="btn line" id="nf-add" style="height:34px;margin-top:6px;font-size:13px">Add a value</button></div>
+      <div id="nf-err" class="err" hidden></div>
+      <div style="display:flex;gap:10px;align-items:center"><button class="btn" type="submit" id="nf-go">Create task</button><span class="note" id="nf-msg"></span></div>
+    </form></section>
 
   <section id="v-trials" hidden><h1>Your trials</h1><p class="lede">Every test you have run, newest first. Open one to see each step and the score.</p><div class="pane" style="margin-top:18px"><table class="list" id="tlist"></table></div><div id="tdetail" class="step" hidden></div></section>
 
@@ -114,10 +139,10 @@ td.m { font-family: var(--mono); font-size: 12px; }
 (() => {
 'use strict';
 const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const api = async (path, opt = {}) => { const r = await fetch(path, { credentials: 'same-origin', headers: { 'content-type': 'application/json' }, ...opt }); let j = null; try { j = await r.json(); } catch {} if (!r.ok) throw Object.assign(new Error((j && (j.error || j.detail)) || `request failed (${r.status})`), { status: r.status }); return j; };
+const api = async (path, opt = {}) => { const r = await fetch(path, { credentials: 'same-origin', headers: { 'content-type': 'application/json' }, ...opt }); let j = null; try { j = await r.json(); } catch {} if (!r.ok) throw Object.assign(new Error(((j && (j.error || j.detail)) || `request failed (${r.status})`) + (j && j.issues ? ': ' + j.issues.map(i => `${i.path || 'task'}: ${i.message}`).join('; ') : '')), { status: r.status }); return j; };
 let me = null, tasks = [], chosen = null, poll = null, current = null;
 
-function show(v) { for (const s of ['run', 'trials', 'guide']) $('#v-' + s).hidden = s !== v; document.querySelectorAll('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false')); if (v === 'trials') loadTrials(); try { history.replaceState(null, '', '#' + v); } catch {} }
+function show(v) { for (const s of ['run', 'new', 'trials', 'guide']) $('#v-' + s).hidden = s !== v; document.querySelectorAll('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false')); if (v === 'trials') loadTrials(); try { history.replaceState(null, '', '#' + v); } catch {} }
 document.querySelectorAll('#nav button').forEach(b => b.onclick = () => show(b.dataset.v));
 
 async function boot() {
@@ -127,13 +152,13 @@ async function boot() {
   $('#out').onclick = async () => { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); location.href = '/'; };
   tasks = (await api('/api/catalogue')).tasks;
   $('#tasks').innerHTML = tasks.map((t, i) => `<button class="card" data-i="${i}" aria-pressed="false"><b>${esc(t.title)}</b><p>${esc(t.summary)}</p><div class="tags"><span class="tag dom">${esc(t.domain)}</span>${t.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}<span class="tag">${esc(t.minutes)} min</span></div></button>`).join('');
-  document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => { chosen = tasks[+c.dataset.i]; document.querySelectorAll('#tasks .card').forEach(x => x.setAttribute('aria-pressed', x === c)); $('#step2').hidden = false; $('#connect').hidden = true; $('#err2').hidden = true; $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  const h = location.hash.slice(1); show(['run', 'trials', 'guide'].includes(h) ? h : 'run');
+  document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => pick(tasks[+c.dataset.i], c));
+  const h = location.hash.slice(1); show(['run', 'new', 'trials', 'guide'].includes(h) ? h : 'run'); loadMine(); newForm();
 }
 
 async function create(agent) {
   $('#err2').hidden = true;
-  try { return await api('/api/trials', { method: 'POST', body: JSON.stringify({ catalogueId: chosen.id, agent }) }); }
+  try { return await api('/api/trials', { method: 'POST', body: JSON.stringify({ ...(chosen.own ? { taskId: chosen.id } : { catalogueId: chosen.id }), agent }) }); }
   catch (e) { $('#err2').textContent = e.message; $('#err2').hidden = false; return null; }
 }
 $('#runScorcher').onclick = async () => {
@@ -173,6 +198,46 @@ function render(d) {
   const chain = d.chain ? `<p class="note" style="margin-top:6px">Record: ${d.chain.ok ? `${d.chain.length} calls, hash chain intact` : '<span class="no">hash chain broken</span>'}.</p>` : '';
   const title = d.trial && d.trial.title ? esc(d.trial.title) : 'Trial';
   return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? "Scorcher's agent" : 'your agent'}</small></h3>${v}${checks}${safety}${chain}</div></div>`;
+}
+
+const pick = (t, el) => { chosen = t; document.querySelectorAll('#tasks .card, #mine .card').forEach(x => x.setAttribute('aria-pressed', x === el)); $('#step2').hidden = false; $('#connect').hidden = true; $('#err2').hidden = true; $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+async function loadMine(selectId) {
+  let d; try { d = await api('/api/tasks'); } catch { return; }
+  const mine = d.tasks.map(t => ({ ...t, own: true }));
+  $('#mineHead').hidden = !mine.length;
+  $('#mine').innerHTML = mine.map((t, i) => { const miss = t.files.filter(f => !f.uploaded).map(f => f.name); return `<button class="card mine" data-i="${i}" aria-pressed="false"><b>${esc(t.title)}</b><p>${esc(t.statement.slice(0, 160))}${t.statement.length > 160 ? '...' : ''}</p><div class="tags"><span class="tag dom">${esc(t.domain)}</span>${t.fields.map(f => `<span class="tag">${esc(f.name)}${f.unit ? ' (' + esc(f.unit) + ')' : ''}</span>`).join('')}${miss.length ? `<span class="tag" style="color:var(--red);border-color:var(--red)">missing: ${esc(miss.join(', '))}</span>` : ''}</div></button>`; }).join('');
+  document.querySelectorAll('#mine .card').forEach(c => c.onclick = () => pick(mine[+c.dataset.i], c));
+  if (selectId) { const i = mine.findIndex(t => t.id === selectId); if (i >= 0) { show('run'); pick(mine[i], document.querySelector(`#mine .card[data-i="${i}"]`)); } }
+}
+function newForm() {
+  const fields = $('#nf-fields'), slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^(\d)/, 'v_$1').slice(0, 40);
+  const addRow = () => { const r = document.createElement('div'); r.className = 'frow'; r.innerHTML = '<input type="text" placeholder="total_gas" aria-label="Name"><input type="text" placeholder="Mm3" aria-label="Unit"><input type="number" step="any" placeholder="12.4" aria-label="Correct value"><input type="number" step="any" min="0" max="100" value="1" aria-label="Tolerance in percent"><button type="button" aria-label="Remove">×</button>'; r.querySelector('button').onclick = () => r.remove(); fields.appendChild(r); };
+  addRow(); $('#nf-add').onclick = addRow;
+  const files = new Map();
+  $('#nf-files').onchange = e => { for (const f of e.target.files) files.set(f.name, { file: f, restricted: false }); draw(); e.target.value = ''; };
+  const draw = () => { $('#nf-flist').innerHTML = [...files.values()].map(x => `<div><span>${esc(x.file.name)}</span><small class="note">${(x.file.size / 1024).toFixed(1)} KB</small><label><input type="checkbox" data-n="${esc(x.file.name)}" ${x.restricted ? 'checked' : ''}> restricted</label><button type="button" data-rm="${esc(x.file.name)}">Remove</button></div>`).join('');
+    $('#nf-flist').querySelectorAll('[data-n]').forEach(c => c.onchange = () => { files.get(c.dataset.n).restricted = c.checked; });
+    $('#nf-flist').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { files.delete(b.dataset.rm); draw(); }); };
+  $('#nf').onsubmit = async e => {
+    e.preventDefault(); const err = $('#nf-err'), msg = $('#nf-msg'), go = $('#nf-go'); err.hidden = true;
+    const title = $('#nf-title').value.trim(), rows = [...fields.querySelectorAll('.frow')].map(r => [...r.querySelectorAll('input')].map(i => i.value.trim()));
+    const ans = rows.filter(r => r[0] || r[2]).map(([n, u, v, tol]) => ({ name: slug(n), unit: u || undefined, value: +v, tol: +(tol || 1) / 100 }));
+    const bad = ans.find(a => !a.name || !Number.isFinite(a.value) || !(a.tol >= 0 && a.tol <= 1));
+    if (!ans.length || bad) { err.textContent = 'Add at least one answer value, each with a name, a numeric correct value and a tolerance between 0 and 100 %.'; err.hidden = false; return; }
+    const id = (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'task') + '-' + Math.random().toString(36).slice(2, 6);
+    const spec = { id: /^[a-z0-9]/.test(id) ? id : 't' + id, title, domain: $('#nf-domain').value, statement: $('#nf-brief').value.trim(), ...($('#nf-proc').value.trim() ? { instructions: $('#nf-proc').value.trim() } : {}),
+      files: [...files.values()].map(x => ({ path: x.file.name, sensitivity: x.restricted ? 'restricted' : 'normal' })),
+      answer: { fields: ans.map(a => ({ name: a.name, ...(a.unit ? { unit: a.unit } : {}), tolerance: a.tol })) }, reference: Object.fromEntries(ans.map(a => [a.name, a.value])) };
+    go.disabled = true; msg.textContent = 'Creating...';
+    try {
+      await api('/api/tasks', { method: 'POST', body: JSON.stringify(spec) });
+      for (const x of files.values()) { msg.textContent = `Uploading ${x.file.name}...`;
+        const r = await fetch(`/api/tasks/${spec.id}/files/${encodeURIComponent(x.file.name)}`, { method: 'PUT', credentials: 'same-origin', body: x.file });
+        if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`${x.file.name}: ${j.error || r.status}`); } }
+      msg.textContent = 'Created.'; $('#nf').reset(); files.clear(); draw(); fields.innerHTML = ''; addRow();
+      await loadMine(spec.id);
+    } catch (ex) { err.textContent = ex.message; err.hidden = false; msg.textContent = ''; } finally { go.disabled = false; }
+  };
 }
 
 async function loadTrials() {
