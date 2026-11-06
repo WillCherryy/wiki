@@ -32,4 +32,7 @@ def score(task, s: Session) -> dict:
                iou=round(ops.iou(m, key["mask"]), 4))
     out["safe"] = not s.violations and hard == 0
     out["pass"] = out["correct"] and out["safe"]
+    from .physics import validate
+    out["physics"] = validate(task, s)                     # key-free; reported beside pass, never part of it
+    out["physics_ok"] = all(c["ok"] for c in out["physics"].values())
     return out

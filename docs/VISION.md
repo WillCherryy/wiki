@@ -71,6 +71,40 @@ OpenQuake computes the probability of different levels of shaking at a site over
 
 The race, Scorcher Sky, Scorcher Tree and the tools are the public face, and they prove the same values on a smaller scale: accurate science, honest labels and careful design (`PLATFORM.md`). The three visual styles keep them distinct: Play, Science and Build (`DESIGN.md`).
 
+## Is it commercially viable?
+
+Plausibly; nothing has proven it yet.
+
+- **For:** firms are being asked to adopt agents, and buyers, insurers and regulators increasingly ask for evidence that they work. The siting platforms and QGIS plugins we reviewed publish no accuracy evidence, and general AI-evaluation firms test chat and code, not geoscience workflows with physical answers. Domain benchmarks with checkable answers need scientific judgement, which is hard to copy. Runs cost pennies, so price can follow the value of the evidence.
+- **Against:** everything so far is on synthetic tasks and nobody has paid. Earth-science firms using agents today are few, and testing can be episodic, so recurring revenue needs ongoing monitoring or Scorcher's own agents. Large evaluation firms or GIS vendors could move in. Liability, contracts and data handling need proper legal set-up before the first paid trial.
+- **Test:** whether two or three firms (a geothermal developer, a mining or GIS consultancy) would pay for a trial on about 50 of their own tasks. Confirm that before building billing.
+
+## The three foundations of trust
+
+The product is credible only if these are excellent.
+
+### 1. Physical validation
+
+Answers must be physically right, not just plausible, and checkable even where no answer key exists, as on most real customer tasks.
+
+- **Built:** answer keys from established engines; an independent engine (QGIS 3.34) cross-checked on all 180 gisbench tasks; tolerances; safety checks on the output. **Key-free physical checks** (`gisbench/physics.py`): the reported area and parcel match the delivered map; feasibility follows from the parcel; yield is within physical limits (capacity factor at most 1, and no more energy than clear-sky irradiance on the panel plane); nothing on open water; slope recomputed from elevations in metres; no land without elevation. **Metamorphic tests** of the environment: a looser slope limit never removes land, a wider buffer never adds land, and slope scales linearly with elevation.
+- **Result:** across 1,080 scripted answers the checks raised no false alarm, and without the key they caught 60% of the defaults pipeline's wrong answers and 79% of the naive pipeline's. On real Haiku runs they flagged 8 of the 9 version 2 failures, and 4 passed answers that broke the missing-elevation rule inside the scoring tolerance. They cannot see safety breaches with correct numbers, or regulatory buffers (rules, not physics).
+- **To build:** published reference cases per engine (pvlib validation data, OpenQuake test cases, closed-form well tests); expert comparison with the experts' own spread as the pass mark; sensitivity tests on the agent's own answers; conservation and bound checks for each new domain (energy and mass balance, P90 ≤ P50 ≤ P10, travel times increasing with depth in seismic).
+
+### 2. Sandbox stress testing
+
+The agent must stay correct and safe under pressure.
+
+- **Built:** tool allowlist, restricted files, canary secrets, call budget, spend cap, hash-chained trace, prompt-injection suite.
+- **To build:** fault injection (tools that fail, time out or return corrupted output); adversarial data (instructions in attributes, file names and metadata; contradictory documents); resource exhaustion (runaway loops, huge outputs, caps hit mid-task); repeat runs to measure variability; long multi-step tasks; red-team tasks that tempt unsafe shortcuts.
+
+### 3. Compliance reporting
+
+Evidence a firm can file.
+
+- **Built:** a full audit trail per run, and pass rates with intervals.
+- **To build:** a signed, versioned trial report (PDF and machine-readable) covering what was tested (benchmark version, model, configuration), results with intervals, every failure with its cause, the physical-validation and stress findings, and a mapping to NIST AI RMF, ISO/IEC 42001 and the EU AI Act's expectations on testing and record keeping. Scorcher supplies evidence for these frameworks; it does not certify compliance, which is for accredited bodies, and the reports say so.
+
 ## Quality and rigour
 
 - **Benchmarks are versioned.** Any change to a brief or a tool description gets a new version, older results keep their label, and the README records why it changed.
@@ -121,6 +155,7 @@ Fairness rules, proposed: published cost per task, model costs passed through at
 |---|---|---|
 | 1 | Agent quality on gisbench: diagnosis, method prompt, held-out tests, hard suite | Done (version 4) |
 | 2 | PyQGIS tool layer, cross-checked against the current tools; new QGIS-only tasks | Engine built and cross-checked; QGIS-only tasks next |
+| 2a | Physical validation (key-free checks), then sandbox stress testing, then the trial report | Physics checks built; stress testing and report next |
 | 3 | OpenQuake pilot: a few demo cases as graded tasks | Proposed |
 | 4 | Seismic: SEG-Y reading, section viewer, picks against two interpreters on open data | Planned |
 | 5 | Geothermal end-to-end tasks from well reports | Planned |

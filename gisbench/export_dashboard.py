@@ -83,7 +83,7 @@ def model_runs(results_dir):
         rows, base = [], {"d0": [], "d1": []}
         for r in m["rows"]:
             t = tasks[r["task"]]
-            mask, replay = None, None
+            mask, replay, phys = None, None, None
             if all("args" in e for e in r.get("trace", [])):
                 s = Session(t, engine=m.get("engine", "numpy"))
                 for e in r["trace"]:
@@ -91,11 +91,14 @@ def model_runs(results_dir):
                 replay = s.answer is not None and all(s.answer.get(k) == v for k, v in (r.get("answer") or {}).items())
                 lay = s.layers.get((s.answer or {}).get("mask"))
                 mask = bits(lay.a) if lay is not None and getattr(lay, "kind", None) != "vector" and hasattr(lay, "a") else None
+                if replay:
+                    from .physics import validate
+                    phys = validate(t, s)
             for k in base:
                 base[k].append(run_one(ARMS[k][1], t)[0]["pass"])
             u = r.get("usage") or {}
             rows.append({k: r.get(k) for k in ("task", "spec", "defect", "pass", "partial", "correct", "safe", "checks", "answer", "key", "iou", "hard_cells", "violations", "calls", "errors")}
-                        | {"usd": u.get("usd"), "stop": u.get("stop"), "replayed": replay, "mask": mask,
+                        | {"usd": u.get("usd"), "stop": u.get("stop"), "replayed": replay, "mask": mask, "physics": phys,
                            "trace": [{"tool": e["tool"], "args": _brief_args(e.get("args")), "ok": e["ok"], "error": e["error"]} for e in r.get("trace", [])]})
             if t.id not in worlds:
                 key = W.solve(t.world, t.params, t.defect)

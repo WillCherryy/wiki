@@ -232,6 +232,20 @@ class Scoring(unittest.TestCase):
         self.assertTrue(((a == -9999) == (b == -9999)).all())
         self.assertAlmostEqual(float(b[a != -9999][0]), float(a[a != -9999][0]) * 0.5, places=3)
 
+    def test_physics_checks_raise_no_false_alarm_and_catch_naive_errors(self):
+        # key-free physical validation: never flags the analyst pipeline, and flags most naive answers on its own
+        ts = [T.make_task(s, sp, df) for s in (0, 7) for sp in W.SPECS for df in W.DEFECTS] + [T.make_task(204, "S4", df) for df in W.HARD_DEFECTS]
+        self.assertTrue(all(self.run_arm("d1", t)["physics_ok"] for t in ts))
+        naive = [self.run_arm("fx-naive", t) for t in ts]
+        self.assertGreater(sum(not r["physics_ok"] for r in naive), len(naive) // 2)
+
+    def test_physics_flags_an_inconsistent_answer(self):
+        t = T.make_task(1, "S1", "clean"); s = Session(t); ARMS["d1"][1](t, s)
+        s.answer = {**s.answer, "suitable_area_ha": s.answer["suitable_area_ha"] * 1.1, "clear_sky_yield_gwh": t.params.capacity_mw * 9.0}
+        from gisbench.physics import validate
+        v = validate(t, s)
+        self.assertFalse(v["area_matches_mask"]["ok"]); self.assertFalse(v["yield_bounded"]["ok"])
+
     def test_default_recipe_passes_only_standard_briefs(self):
         for seed in range(12):
             t = T.make_task(seed, "S1", "clean")
@@ -330,3 +344,24 @@ class QgisEngine(unittest.TestCase):
             s = Session(t, engine="qgis"); ARMS["d1"][1](t, s); r = score(t, s)
             self.assertTrue(r["pass"], (t.id, r["checks"]))
             self.assertGreater(r["iou"], 0.99)
+
+
+class Metamorphic(unittest.TestCase):
+    """The environment must respond to its parameters as the physics and the rules say, whatever the exact numbers."""
+
+    def test_area_moves_the_right_way(self):
+        import dataclasses as dc
+        for seed in (0, 3):
+            t = T.make_task(seed, "S1", "clean"); p = t.params
+            area = lambda q: W.solve(t.world, q, t.defect)["suitable_area_ha"]
+            base = area(p)
+            self.assertGreaterEqual(area(dc.replace(p, slope_deg=p.slope_deg + 2)), base)        # a looser slope limit never removes land
+            self.assertLessEqual(area(dc.replace(p, buffer_a_m=p.buffer_a_m + 200)), base)      # a wider buffer never adds land
+            self.assertLessEqual(area(dc.replace(p, grid_m=p.grid_m / 2)), base)                # a shorter connection distance never adds land
+            self.assertEqual(W.solve(t.world, dc.replace(p, capacity_mw=p.capacity_mw * 2), t.defect)["suitable_area_ha"], base)  # capacity does not change land
+
+    def test_slope_scales_with_vertical_units(self):
+        t = T.make_task(2, "S1", "clean"); d = t.world.dem
+        a = ops.slope(d, "percent").a
+        b = ops.slope(ops.Raster(d.a * 2, d.transform, d.crs, "float"), "percent").a
+        self.assertTrue(np.allclose(b, 2 * a, rtol=1e-5, atol=1e-4))                            # gradient is linear in elevation
