@@ -50,7 +50,11 @@ async function handleEmail(r: Request, url: URL, cfg: AuthConfig, d: AuthDeps): 
     return page('Sign in', `<h1>Sign in to Scorcher Build</h1><p>Press the button to finish signing in on this device.</p><form method="post" action="/auth/email/verify"><input type="hidden" name="token" value="${t}"><button type="submit">Sign in</button></form>`);
   }
   if (url.pathname === '/auth/email/verify' && r.method === 'POST') {
-    if (r.headers.get('origin') !== new URL(cfg.publicUrl).origin) return page('Not allowed', '<h1>That request came from somewhere else.</h1><p>Open the link from your email and press the button there.</p>');
+    // a same-origin form: the page is served with no-referrer, so browsers send Origin "null"; Sec-Fetch-Site (set by the browser, not
+    // by any page) then says whether the form came from this site. Anything cross-site is refused (login CSRF).
+    const origin = r.headers.get('origin'), site = r.headers.get('sec-fetch-site');
+    const sameSite = origin === new URL(cfg.publicUrl).origin || ((origin === null || origin === 'null') && site === 'same-origin');
+    if (!sameSite || (site !== null && site !== 'same-origin')) return page('Not allowed', '<h1>That request came from somewhere else.</h1><p>Open the link from your email and press the button there.</p>');
     const form = await r.formData().catch(() => null);
     const email = await redeemLink(form?.get('token'), d.tokens, d.now());
     if (!email) return redirect(`${cfg.appUrl}?signin=failed&reason=link`);

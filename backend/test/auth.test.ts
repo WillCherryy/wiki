@@ -112,8 +112,12 @@ test('email link: request, a scanner opening the link, the button, single use, e
   // a form posted from another site is refused (login CSRF)
   assert.match(await (await press(token, 'https://evil.example'))!.text(), /came from somewhere else/);
   assert.equal(tokens.rows[0]!.used, false);
-  // the person presses the button: signed in
-  const ok = (await press(token))!;
+  // origin "null" with a cross-site fetch header is refused; origin "null" from the page itself (no-referrer) is accepted
+  const pressNull = (tok: string, site: string) => handleAuth(new Request('https://build.example/auth/email/verify', { method: 'POST', headers: { origin: 'null', 'sec-fetch-site': site, 'content-type': 'application/x-www-form-urlencoded' }, body: `token=${tok}` }), cfg, d);
+  assert.match(await (await pressNull(token, 'cross-site'))!.text(), /came from somewhere else/);
+  assert.equal(tokens.rows[0]!.used, false);
+  // the person presses the button (as a browser sends it from a no-referrer page): signed in
+  const ok = (await pressNull(token, 'same-origin'))!;
   assert.equal(ok.status, 303); assert.equal(ok.headers.get('location'), cfg.appUrl);
   const session = ok.headers.getSetCookie().find(c => c.startsWith('__Host-sb_session='))!.split(';')[0]!;
   const me = await (await handleAuth(new Request('https://build.example/api/me', { headers: { cookie: session } }), cfg, d))!.json() as { user: { email: string; provider: string } };
