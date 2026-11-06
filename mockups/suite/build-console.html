@@ -29,7 +29,14 @@ a { color: inherit; }
 .rail h2 { padding: 8px 14px 3px; font-size: 11px; font-weight: 600; color: var(--ink-3); }
 .rail button { display: flex; width: 100%; align-items: baseline; gap: 6px; padding: 6px 14px; border: 0; border-left: 3px solid transparent; background: none; text-align: left; font-size: 13px; color: var(--ink-2); }
 .rail button:hover { background: var(--rule-2); color: var(--ink); } .rail button[aria-selected=true] { color: var(--ink); font-weight: 600; border-left-color: var(--blue); background: var(--blue-2); }
-.rail button small { margin-left: auto; font: 400 10.5px var(--mono); color: var(--ink-3); }
+.rail button small, .rail a.out small { margin-left: auto; font: 400 10.5px var(--mono); color: var(--ink-3); }
+.rail a.out { display: flex; align-items: baseline; gap: 6px; padding: 6px 14px; border-left: 3px solid transparent; font-size: 13px; color: var(--ink-2); text-decoration: none; } .rail a.out:hover { background: var(--rule-2); color: var(--ink); }
+.rail h2.cn { margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.rail button[data-concept] { color: var(--ink-3); } .rail button[data-concept][aria-selected=true] { color: var(--ink); }
+.golist a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule-2); text-decoration: none; color: var(--ink); }
+.golist a:hover b { color: var(--blue); } .golist b { font-size: 15px; font-weight: 620; } .golist span { grid-column: 1; color: var(--ink-2); font-size: 13px; } .golist em { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 400 12px var(--mono); color: var(--ink-3); font-style: normal; }
+.vfilt { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; } .vfilt button { border: 1px solid var(--rule); background: var(--panel); padding: 4px 10px; font-size: 12.5px; cursor: pointer; } .vfilt button[aria-pressed=true] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.st-verified { color: var(--blue); } .st-design { color: var(--red); } .st-source { color: var(--ink-3); }
 main { padding: 10px 12px 12px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .view { display: none; min-height: 0; } .view.on { display: flex; flex-direction: column; flex: 1; gap: 8px; }
 
@@ -98,41 +105,43 @@ pre.cmd { margin: 6px 0; padding: 8px 10px; background: var(--ink); color: var(-
 .guide h2 { font-size: 12px; font-weight: 600; color: var(--ink-3); margin: 0 0 6px; } .guide details { background: var(--panel); border: 1px solid var(--rule); margin-bottom: 6px; }
 .gb { padding: 0 12px 12px; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); } .gb p, .gb ol { margin: 6px 0; } .gb ol { padding-left: 18px; } .gb b { color: var(--ink); }
 @media (max-width: 1000px) {
-  #shell { height: auto !important; zoom: 1 !important; } .app { grid-template-columns: minmax(0, 1fr); } .rail { display: flex; overflow-x: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--rule); } .rail h2 { display: none; } .rail button { flex: none; width: auto; border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; padding: 11px 12px; } .rail button small { display: none; } .rail button[aria-selected=true] { border-bottom-color: var(--blue); }
+  #shell { height: auto !important; zoom: 1 !important; } .app { grid-template-columns: minmax(0, 1fr); } .rail { display: flex; overflow-x: auto; padding: 0; border-right: 0; border-bottom: 1px solid var(--rule); } .rail h2 { display: none; } .rail { align-items: stretch; } .rail a.out { flex: none; white-space: nowrap; padding: 11px 12px; border-left: 0; } .rail a.out small { display: none; } .bar a.b { display: none; } .bar .c { font-size: 10.5px; } .rail button { flex: none; width: auto; border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; padding: 11px 12px; } .rail button small { display: none; } .rail button[aria-selected=true] { border-bottom-color: var(--blue); }
   .dash { display: flex; flex-direction: column; } .pn { min-height: 240px; } .pb[data-draw] { min-height: 230px; } .ks { flex-wrap: wrap; } .k { flex: 1 1 45%; border-bottom: 1px solid var(--rule-2); } .bar .t { display: none; } .about p { right: auto; left: 0; }
 }
 </style>
 </head>
 <body>
 <div id="shell">
-<header class="bar"><a class="mark" href="build.html"><i></i>Scorcher Build</a><span class="t">Trial <b>geothermal-pilot-demo</b></span><span class="c">Concept · synthetic data · fixture agents</span><a class="b" href="build-paper.html" style="margin-right:14px">Paper</a><a class="b" href="build.html">Back to Build</a></header>
+<header class="bar"><a class="mark" href="build.html"><i></i>Scorcher Build</a><span class="t" id="bart">Measured results <b>from real runs</b></span><span class="c" id="barc">Measured · real runs</span><a class="b" href="build-paper.html" style="margin-right:14px">Paper</a><a class="b" href="build.html">Back to Build</a></header>
 <div class="app">
   <nav class="rail" role="tablist" aria-label="Dashboards">
-    <h2>Trial</h2>
-    <button role="tab" data-v="overview" aria-selected="true">Overview</button>
-    <button role="tab" data-v="agents" aria-selected="false">Agents and plans</button>
-    <button role="tab" data-v="suites" aria-selected="false">Suites<small>4 domains</small></button>
-    <h2>Sectors</h2>
+    <h2>Measured results</h2>
+    <button role="tab" data-v="start" aria-selected="true">Start here</button>
     <button role="tab" data-v="geo" aria-selected="false">Geothermal<small>sector</small></button>
-    <h2>Task dashboards</h2>
-    <button role="tab" data-v="resource" aria-selected="false">Resource estimate<small>ref</small></button>
-    <button role="tab" data-v="gis" aria-selected="false">GIS screening<small>ref</small></button>
-    <button role="tab" data-v="seismic" aria-selected="false">Seismic picks<small>judg.</small></button>
-    <button role="tab" data-v="well" aria-selected="false">Well data<small>ref</small></button>
-    <button role="tab" data-v="docs" aria-selected="false">Documents<small>ref</small></button>
-    <button role="tab" data-v="mining" aria-selected="false">Mining: grade, tonnage<small>ref</small></button>
-    <button role="tab" data-v="gisbench" aria-selected="false">GIS benchmark<small>phase 1</small></button>
-    <button role="tab" data-v="runs" aria-selected="false">Agent runs<small>models</small></button>
-    <button role="tab" data-v="domains" aria-selected="false">Domain benchmarks<small>9 packs</small></button>
-    <h2>Set up</h2>
-    <button role="tab" data-v="newtask" aria-selected="false">New task</button>
+    <button role="tab" data-v="domains" aria-selected="false">All benchmarks<small>9 packs</small></button>
+    <button role="tab" data-v="gisbench" aria-selected="false">GIS benchmark<small>200 tasks</small></button>
+    <button role="tab" data-v="validation" aria-selected="false">Validation<small>register</small></button>
+    <h2>Run and connect</h2>
+    <a class="out" href="https://build.playscorcher.com/app">Run a test in the app<small>↗</small></a>
     <button role="tab" data-v="connect" aria-selected="false">Connect an agent</button>
-    <button role="tab" data-v="guide" aria-selected="false">Guide<small>help</small></button>
-    <h2>Trust</h2>
-    <button role="tab" data-v="security" aria-selected="false">Security</button>
+    <button role="tab" data-v="guide" aria-selected="false">Guide</button>
+    <a class="out" href="build-paper.html">The paper<small>↗</small></a>
+    <h2 class="cn">Concept views · sample data</h2>
+    <button role="tab" data-v="overview" data-concept="1" aria-selected="false">Trial overview</button>
+    <button role="tab" data-v="agents" data-concept="1" aria-selected="false">Agents and plans</button>
+    <button role="tab" data-v="suites" data-concept="1" aria-selected="false">Suites</button>
+    <button role="tab" data-v="resource" data-concept="1" aria-selected="false">Resource estimate</button>
+    <button role="tab" data-v="gis" data-concept="1" aria-selected="false">GIS screening</button>
+    <button role="tab" data-v="seismic" data-concept="1" aria-selected="false">Seismic picks</button>
+    <button role="tab" data-v="well" data-concept="1" aria-selected="false">Well data</button>
+    <button role="tab" data-v="docs" data-concept="1" aria-selected="false">Documents</button>
+    <button role="tab" data-v="mining" data-concept="1" aria-selected="false">Mining</button>
+    <button role="tab" data-v="runs" data-concept="1" aria-selected="false">Agent runs</button>
+    <button role="tab" data-v="newtask" data-concept="1" aria-selected="false">Task builder</button>
+    <button role="tab" data-v="security" data-concept="1" aria-selected="false">Security</button>
   </nav>
   <main>
-    <section class="view on" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-runs"></section><section class="view" id="v-domains"></section><section class="view" id="v-geo"></section><section class="view" id="v-guide"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
+    <section class="view" id="v-overview"></section><section class="view" id="v-agents"></section><section class="view" id="v-resource"></section><section class="view" id="v-gis"></section><section class="view" id="v-seismic"></section><section class="view" id="v-well"></section><section class="view" id="v-docs"></section><section class="view" id="v-connect"></section><section class="view" id="v-suites"></section><section class="view" id="v-mining"></section><section class="view" id="v-gisbench"></section><section class="view" id="v-runs"></section><section class="view" id="v-domains"></section><section class="view" id="v-geo"></section><section class="view" id="v-start"></section><section class="view" id="v-validation"></section><section class="view" id="v-guide"></section><section class="view" id="v-newtask"></section><section class="view" id="v-security"></section>
   </main>
 </div>
 </div>
@@ -603,6 +612,36 @@ python -m earthbench.private commit</pre><p class="note">The secret stays in you
       + `</div>`; },
   wire() {} };
 
+/* ================================================================ Start here and Validation (real output: earthbench export, ledger, validation register) */
+views.start = {
+  html() { if (!EB) return '<p>Run python3 -m earthbench.export to generate earthbench-sample.js.</p>';
+    const P = Object.values(EB.packs), tasks = P.reduce((a, p) => a + Object.values(p.suites).reduce((b, s) => b + s.tasks, 0), 0) + 200, L = EB.ledger || { rows: [] }, V = EB.validation;
+    const ver = V ? V.rows.filter(r => r.status === 'verified').length : 0, nV = V ? V.rows.length : 0, runs = [...L.rows].reverse();
+    const go = (href, title, sub, tag, ext) => `<a href="${href}"${ext ? '' : ` data-go="${href.slice(1)}"`}><b>${title}</b><span>${sub}</span><em>${tag}</em></a>`;
+    return vh('Start here', 'Measured', [[`${P.length + 1} benchmark packs`], [`${tasks} tasks`], [`${L.entries || 0} model runs in the ledger`]],
+        'The views under Measured results come from real runs of Scorcher\'s engines and real model runs, exported from the repository when the site was built. The tasks themselves are synthetic. Views under Concept are sample data that show what a customer trial will look like.')
+      + ks([[P.length + 1, 'Benchmark packs'], [tasks, 'Tasks, each with a known answer'], [L.entries || 0, 'Model runs, hash-chained'], [V ? `${ver}/${nV}` : '–', 'Engine decisions verified']])
+      + `<div class="verdict">To test an agent now, open the app: sign in with your email, pick a task, and run Scorcher's agent or connect your own over MCP. Geothermal well tests and document tasks run live, with the same key and physics checks as the benchmark packs.<small>The console reports results; the app runs tests.</small></div>`
+      + `<div class="dash" style="grid-template-rows:none;grid-auto-rows:max-content;overflow:auto;align-content:start">`
+      + pn('s7', 'Where to go', '', `<div class="golist">${go('https://build.playscorcher.com/app', 'Run a test', 'Pick a task, choose an agent, watch every tool call, read the grade', 'app ↗', 1)}${go('#geo', 'Geothermal', 'Every geothermal task family, Claude\'s results and why runs fail', 'sector')}${go('#domains', 'All benchmarks', 'Nine packs: engines, traps, scripted pipelines and model runs', 'packs')}${go('#validation', 'Validation register', 'Each engine decision, its paper or standard, and the check that ran', `${ver}/${nV}`)}${go('#gisbench', 'GIS benchmark', 'Site screening, the most complete model results', '200 tasks')}${go('build-paper.html', 'The paper', 'How it all works, from first principles, with references', 'read ↗', 1)}</div>`, '')
+      + pn('s5', 'What is real here', '', `<ul class="chk">${ckRow(true, 'Engines and keys', 'every answer key is computed by a deterministic engine; scripted pipelines prove each key')}${ckRow(true, 'Model runs', 'Claude Haiku runs on each pack, logged in a hash-chained ledger')}${ckRow(true, 'Validation', `${ver} of ${nV} engine decisions checked against published values, papers and standards`)}${ckRow(true, 'Live tests', 'the app runs tasks for any agent over MCP, graded on the server')}${ckRow(false, 'Real data', 'the worlds are synthetic; real public datasets are the next step')}${ckRow(false, 'Outside review', 'no pack has yet been reviewed by an outside expert')}</ul>`, '')
+      + pn('s12', 'Latest model runs', 'from the results ledger, newest first', runs.length ? `<div class="scx"><table class="eb"><tr><th>#</th><th>Pack</th><th>Model</th><th>Run</th><th class="r">Pass</th><th class="r">Correct</th><th class="r">Cost</th><th>Hash</th></tr>${runs.map(e => `<tr><td class="m">${e.seq}</td><td>${esc((EB.packs[e.pack] || {}).title || e.pack)}</td><td>${esc(e.model.replace('claude-', ''))}</td><td class="m" style="font-size:11px">${esc(e.suite)} · ${esc((e.generated || '').slice(0, 10))}${e.backfilled ? ' · backfilled' : ''}</td><td class="r m">${e.passed}/${e.tasks}</td><td class="r m">${e.correct ?? '–'}</td><td class="r m">$${(e.usd || 0).toFixed(2)}</td><td class="m" style="font-size:11px;color:var(--ink-3)">${esc(e.hash.slice(0, 10))}</td></tr>`).join('')}</table></div>` : '<p class="note">No model runs yet.</p>', '')
+      + `</div>`; },
+  wire() { document.querySelectorAll('#v-start [data-go]').forEach(a => a.onclick = e => { e.preventDefault(); show(a.dataset.go); }); } };
+let vFilter = 'all';
+const shortRef = r => { const m = /^(.*?\(\d{4}\))/.exec(r), head = m ? m[1] : r.split('.')[0], a = /^([A-Z][\w'’-]+), [A-Z]\.[^(]*\((\d{4})\)$/.exec(head); return a ? `${a[1]}${/ and | et al/.test(head) ? ' et al.' : ''} (${a[2]})` : head; };
+views.validation = {
+  html() { const V = EB && EB.validation; if (!V) return '<p>Run python -m earthbench.validation, then python -m earthbench.export.</p>';
+    const n = s => V.rows.filter(r => r.status === s).length, cls = s => s === 'verified' ? 'st-verified' : s === 'design choice' ? 'st-design' : 'st-source';
+    const rows = V.rows.filter(r => vFilter === 'all' || r.status === vFilter); let area = '';
+    return vh('Validation register', 'Measured', [[`${V.rows.length} decisions`], [`generated ${esc(V.generated)}`]],
+        'Every modelling decision in Scorcher\'s engines, what backs it, and the automated check that ran: a published value reproduced, a closed form, a standard, an exact definition, or an independent implementation. Design choices have no published source and are listed for expert review. Generated by python -m earthbench.validation.')
+      + ks([[n('verified'), 'Verified by a check'], [n('source only'), 'Sourced, no check yet'], [n('design choice'), 'Design choices for review', RED], [n('FAILED'), 'Failed']])
+      + `<div class="dash" style="grid-template-rows:none;grid-auto-rows:max-content;overflow:auto;align-content:start">`
+      + pn('s12', 'Decisions', 'filter by status', `<div class="vfilt">${[['all', 'All'], ['verified', 'Verified'], ['source only', 'Source only'], ['design choice', 'Design choice']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${vFilter === k}">${l}</button>`).join('')}</div><div class="scx"><table class="eb" style="table-layout:fixed;min-width:760px"><colgroup><col style="width:33%"><col style="width:10%"><col style="width:17%"><col style="width:10%"><col style="width:30%"></colgroup><tr><th>Decision</th><th>Basis</th><th>Source</th><th>Status</th><th>What the check showed</th></tr>${rows.map(r => (r.area !== area ? `<tr class="first"><td colspan="5"><b>${esc(area = r.area)}</b></td></tr>` : '') + `<tr><td style="white-space:normal">${esc(r.decision)}</td><td style="white-space:normal">${esc(r.basis)}</td><td style="font-size:12px;color:var(--ink-2);overflow-wrap:anywhere">${r.refs.map(k => esc(shortRef(V.refs[k] || k))).join('; ') || 'none yet'}</td><td class="${cls(r.status)}" style="font-weight:600">${esc(r.status)}</td><td style="font-size:12.5px;white-space:normal;overflow-wrap:anywhere">${esc(r.status === 'design choice' ? 'No published source: listed for expert review' : r.detail)}</td></tr>`).join('')}</table></div>`, '')
+      + `</div>`; },
+  wire() { document.querySelectorAll('#v-validation .vfilt button').forEach(b => b.onclick = () => { vFilter = b.dataset.f; render('validation'); }); } };
+
 /* ================================================================ Guide: short tutorials */
 const GUIDE = [
   ['Start here', 'What Scorcher measures', `<p>Scorcher runs an AI agent on tasks with known answers, inside a sandbox, and records everything it does. A run <b>passes</b> only if the answer is within tolerance <b>and</b> nothing unsafe happened: no restricted file read, no secret leaked, no tool outside the allowlist, and no unsafe output (land inside a protected buffer, a pit steeper than its walls, an underestimated design earthquake).</p><p>Beside pass and fail, every run gets <b>physical checks</b> that need no answer key, and <b>integrity checks</b> that its inputs were not altered. Results always come with a 95 % interval: 20 tasks cannot separate small differences.</p>`],
@@ -626,11 +665,14 @@ views.guide = {
 /* ================================================================ shell */
 function render(id) { $('v-' + id).innerHTML = views[id].html(); views[id].wire(); drawActive(); }
 const ids = Object.keys(views), tabs = [...document.querySelectorAll('.rail button')];
-function show(v) { tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.v === v)); document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v)); render(v); try { history.replaceState(null, '', '#' + v); } catch {} }
+function show(v) { tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.v === v));
+  const concept = !!document.querySelector(`.rail button[data-v="${v}"][data-concept]`);   // say plainly which views are sample data
+  $('bart').innerHTML = concept ? 'Trial <b>geothermal-pilot-demo</b>' : 'Measured results <b>from real runs</b>'; $('barc').textContent = concept ? 'Concept · sample data' : 'Measured · real runs';
+  $('barc').style.background = concept ? 'var(--red)' : 'var(--ink)'; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v)); render(v); try { history.replaceState(null, '', '#' + v); } catch {} }
 tabs.forEach(t => t.onclick = () => show(t.dataset.v));
 let timer; addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { fit(); drawActive(); }, 120); });
 fit();
-show(ids.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview');
+show(ids.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'start');
 })();
 </script>
 </body>

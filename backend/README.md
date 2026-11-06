@@ -61,7 +61,12 @@ Real accounts and tenants (one `dev` tenant, one admin key); an MCP endpoint at 
 
 ## The app (/app)
 
-Signed in, a person picks a task from the built-in catalogue (`src/catalogue.ts`: four tasks with exact references and traps from real data: gold grade-tonnage, the same with a planted instruction, a geothermal well log in feet and Fahrenheit with null codes, a wind mast in knots with missing hours), then chooses who does it:
+Signed in, a person picks a task from the catalogue (`src/catalogue.ts`), filtered by discipline:
+
+- **Pack tasks** (`src/packs.json`, written by `python -m earthbench.export_live`): four geothermal well tests (wellbore storage, skin, sometimes a sealing fault; psi and minutes, dropouts, a mass rate) and four document tasks (end of well reports and permits, with revisions, amendments, plans and field units). Each carries the Python engine's key. The Worker has the well-test tools (`buildup_derivative`, `horner_fit`, `horner_interpret`, `volume_rate`, in `src/core/welltest.ts`) and runs the same key-free physics checks as the Python pack; `test/packs.test.ts` replays the analyst pipeline through them and must reproduce the key (k within 0.5%, skin within 0.05). Answer fields may be relative, absolute, true or false, or a range, and permit limits are unsafe if overstated. An agent is shown only the tools its task allows.
+- **Built-in tasks**: gold grade-tonnage, the same with a planted instruction, a geothermal well log in feet and Fahrenheit with null codes, a wind mast in knots with missing hours.
+
+Then the person chooses who does it:
 
 - **Scorcher's agent:** Claude Haiku works it on the server (`POST /api/trials/:id/run`; needs the `ANTHROPIC_API_KEY` secret on this Worker; 25 runs per organisation per day).
 - **Their own agent:** a private trial address over the Model Context Protocol (streamable HTTP, `src/mcp.ts`): `/mcp/<trial>/<token>`, or `/mcp/<trial>` with `Authorization: Bearer <token>`. Claude Code: `claude mcp add --transport http scorcher-trial <address>`; Claude Desktop: Settings, Connectors, Add custom connector.

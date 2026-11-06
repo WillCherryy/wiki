@@ -107,6 +107,9 @@ SECTORS = {
 }
 
 
+VAL = os.path.join(os.path.dirname(__file__), "results", "validation.json")
+
+
 def review_status(name):
     from .review_kit import status
     return status(name)
@@ -119,6 +122,8 @@ def main():
     L = ledger.read()
     out = {"generated": time.strftime("%Y-%m-%d", time.gmtime()), "packs": {}, "sectors": SECTORS,
            "private": {"committed": commitment["written"][:10]} if commitment else None,
+           "validation": (lambda v: {"generated": v["generated"][:10], "rows": [{k: r[k] for k in ("id", "area", "decision", "basis", "status", "detail", "refs")} for r in v["rows"]],
+                                     "refs": v["refs"]} if v else None)(json.load(open(VAL)) if os.path.exists(VAL) else None),
            "ledger": {"entries": len(L), "intact": not ledger.verify(), "head": L[-1]["hash"] if L else None,
                       "rows": [{k: e.get(k) for k in ("seq", "pack", "model", "suite", "generated", "tasks", "passed", "correct", "unsafe", "usd", "backfilled", "hash")} for e in L]}}
     for name in PACKS:
