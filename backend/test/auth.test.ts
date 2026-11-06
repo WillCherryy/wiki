@@ -149,3 +149,11 @@ test('a refused email says why, and the reply stays the same shape', async () =>
   assert.equal(r.status, 502); assert.match((await r.json() as { error: string }).error, /not verified/);
   assert.equal(d.tokens.rows.length, 0, 'a link that was never sent does not count towards the limit');
 });
+
+test('the email sender calls fetch unbound, as Workers require', async () => {
+  const { ResendMailer } = await import('../src/core/email-login.ts');
+  const real = globalThis.fetch; let thisArg: unknown = 'unset';
+  globalThis.fetch = function (this: unknown) { thisArg = this; return Promise.resolve(new Response('{}', { status: 200 })); } as typeof fetch;
+  try { await new ResendMailer('k', 'S <s@x.com>').send('a@b.com', 's', 't', 'h'); } finally { globalThis.fetch = real; }
+  assert.ok(thisArg === undefined || thisArg === globalThis, 'fetch must not be called as a method of the mailer (Workers: Illegal invocation)');
+});

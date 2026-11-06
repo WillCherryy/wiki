@@ -54,7 +54,8 @@ export async function redeemLink(token: unknown, store: LoginTokenStore, now: nu
 // Resend's HTTP API (https://resend.com); any provider with an HTTP API fits the same interface
 export class ResendMailer implements Mailer {
   private key: string; private from: string; private f: typeof fetch;
-  constructor(key: string, from: string, f: typeof fetch = fetch) { this.key = key; this.from = from; this.f = f; }
+  // never store the global fetch itself: in Workers it throws "Illegal invocation" when called as a method of another object
+  constructor(key: string, from: string, f: typeof fetch = (u, i) => fetch(u, i)) { this.key = key; this.from = from; this.f = f; }
   async send(to: string, subject: string, text: string, html: string) {
     const r = await this.f('https://api.resend.com/emails', { method: 'POST', headers: { authorization: `Bearer ${this.key}`, 'content-type': 'application/json' },
       body: JSON.stringify({ from: this.from, to: [to], subject, text, html }) });
