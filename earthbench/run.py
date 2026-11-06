@@ -26,6 +26,7 @@ from .core import score
 PACKS = ("mining", "geothermal", "hazard", "solar", "wind", "seismic", "scheduling", "documents")
 HERE = os.path.dirname(__file__)
 RESULTS = os.path.join(HERE, "results")
+MAX_TOKENS = 16000                 # per turn; 2,048 cut off long thinking before a tool call in 14 runs (6 November 2026)
 PRICES = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-fable-5-1": (10.0, 50.0)}
 SYSTEM = ("You are a careful geoscience and engineering analyst agent. Use the tools; numbers must come from the tools, not from your own arithmetic. "
           "Work in this order. 1. Read the task and every document it relies on; where documents conflict, use the current one and say so. 2. Inspect every "
@@ -131,11 +132,13 @@ def model_run(a):
             tools = [{"name": n, "description": v["description"], "input_schema": v["input_schema"]} for n, v in s.specs.items()]
             msgs, tin, tout, why = [{"role": "user", "content": t.statement}], 0, 0, "end"
             for _ in range(s.max_calls + 5):
-                resp = client.messages.create(model=a.model, max_tokens=2048, system=SYSTEM, tools=tools, messages=msgs)
+                resp = client.messages.create(model=a.model, max_tokens=MAX_TOKENS, system=SYSTEM, tools=tools, messages=msgs)
                 tin += resp.usage.input_tokens; tout += resp.usage.output_tokens
                 msgs.append({"role": "assistant", "content": resp.content})
                 calls = [b for b in resp.content if b.type == "tool_use"]
                 if not calls:
+                    # a turn cut off by the output limit is the runner's limit, not the model choosing to stop: record it as such
+                    why = "max_tokens" if getattr(resp, "stop_reason", None) == "max_tokens" else "end"
                     break
                 res = []
                 for b in calls:

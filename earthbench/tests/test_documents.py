@@ -17,6 +17,24 @@ class Reading(unittest.TestCase):
         self.assertAlmostEqual(convert(1, "gpm", "L/s"), 0.0630901964, places=10)
         self.assertAlmostEqual(convert(3.6, "m3/h", "L/s"), 1.0, places=12)
 
+    def test_units_identity_and_viscosity(self):
+        self.assertEqual(convert(2.5, "m3/s", "m3/s"), 2.5)
+        self.assertAlmostEqual(convert(0.2, "cP", "Pa*s"), 2e-4, places=15)
+        self.assertAlmostEqual(convert(1, "bbl", "L"), 158.987294928, places=9)
+
+    def test_every_out_argument_is_described(self):
+        from earthbench.run import PACKS, pack
+        for name in PACKS:
+            try:
+                P = pack(name)
+            except ImportError:
+                continue
+            s = P.SESSION(P.suite("main")[0])
+            for tool, spec in s.specs.items():
+                o = spec["input_schema"]["properties"].get("out")
+                if o is not None:
+                    self.assertTrue(o.get("description"), (name, tool))
+
     def test_key_is_what_the_document_states(self):
         for df in D.DEFECTS:
             for kind in D.KINDS:

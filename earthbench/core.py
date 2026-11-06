@@ -50,7 +50,7 @@ def canary_for(seed: int, rng) -> str:
 
 # ---------------------------------------------------------------------------------------------------- units
 # Exact definitions: international foot and pound, US short ton, troy ounce; temperatures handled separately (affine).
-_LEN = {"m": 1.0, "km": 1000.0, "ft": 0.3048, "mi": 1609.344}
+_LEN = {"m": 1.0, "km": 1000.0, "cm": 0.01, "mm": 0.001, "ft": 0.3048, "in": 0.0254, "mi": 1609.344}
 _AREA = {"m2": 1.0, "km2": 1e6, "ha": 1e4, "acre": 4046.8564224}
 _MASS = {"kg": 1.0, "t": 1000.0, "short_ton": 907.18474, "lb": 0.45359237, "oz_troy": 0.0311034768, "g": 0.001}
 _DENS = {"t/m3": 1.0, "kg/m3": 0.001, "g/cm3": 1.0}
@@ -59,8 +59,10 @@ _PRESS = {"Pa": 1.0, "kPa": 1e3, "MPa": 1e6, "bar": 1e5, "psi": 6894.75729316836
 _ENERGY = {"J": 1.0, "kJ": 1e3, "MJ": 1e6, "GJ": 1e9, "PJ": 1e15, "EJ": 1e18, "kWh": 3.6e6, "MWh": 3.6e9}
 _SPEED = {"m/s": 1.0, "ft/s": 0.3048, "km/h": 1 / 3.6}
 _ACC = {"g": 9.80665, "m/s2": 1.0, "cm/s2": 0.01, "gal": 0.01}
-_FLOW = {"L/s": 1.0, "m3/h": 1 / 3.6, "gpm": 3.785411784 / 60, "bbl/d": 158.987294928 / 86400}   # US gallon, oil barrel
-_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC, _FLOW]
+_FLOW = {"L/s": 1.0, "m3/s": 1000.0, "m3/h": 1 / 3.6, "m3/d": 1 / 86.4, "gpm": 3.785411784 / 60, "bbl/d": 158.987294928 / 86400}   # US gallon, oil barrel
+_VOL = {"m3": 1.0, "L": 0.001, "bbl": 0.158987294928}           # "gal" is the acceleration unit here
+_VISC = {"Pa*s": 1.0, "Pa s": 1.0, "mPa*s": 0.001, "mPa s": 0.001, "cP": 0.001, "P": 0.1}
+_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC, _FLOW, _VOL, _VISC]
 
 
 def convert(value: float, src: str, dst: str) -> float:
@@ -68,6 +70,8 @@ def convert(value: float, src: str, dst: str) -> float:
     v = float(value)
     if not math.isfinite(v):
         raise ValueError("value must be a finite number")
+    if src == dst:
+        return v
     t = {"C", "F", "K"}
     if src in t and dst in t:
         c = v if src == "C" else (v - 32) * 5 / 9 if src == "F" else v - 273.15
@@ -81,8 +85,8 @@ def convert(value: float, src: str, dst: str) -> float:
     raise ValueError(f"cannot convert {src} to {dst}")
 
 
-UNITS_HELP = ("Convert m, km, ft, mi; m2, km2, ha, acre; kg, t, short_ton, lb, oz_troy, g; t/m3, kg/m3, g/cm3; fraction, percent, ppm; "
-              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; L/s, m3/h, gpm (US), bbl/d; prices such as USD/lb to USD/t.")
+UNITS_HELP = ("Convert m, km, cm, mm, ft, in, mi; m2, km2, ha, acre; kg, t, short_ton, lb, oz_troy, g; t/m3, kg/m3, g/cm3; fraction, percent, ppm; "
+              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; L/s, m3/s, m3/h, m3/d, gpm (US), bbl/d; m3, L, bbl; Pa*s, mPa*s, cP; prices such as USD/lb to USD/t.")
 
 
 # ---------------------------------------------------------------------------------------------------- fingerprints
@@ -113,6 +117,10 @@ COMMON_SPECS = {
 }
 
 
+OUT_HELP = ("Name for the new table or layer this call writes (a full copy with the change applied; the input is left as it was). "
+            "It is not a column name. Pass this name as the dataset of later calls to use the result.")
+
+
 class Session:
     """A pack subclasses this, defines TOOL_SPECS (merged with COMMON_SPECS and submit_answer) and t_<tool> methods."""
     TOOL_SPECS: dict = {}
@@ -129,6 +137,10 @@ class Session:
         self._prev, self._seen = GENESIS, {}
         self._snap = {"data": {k: digest(v) for k, v in self.data.items()}, "docs": {k: digest(v) for k, v in task.docs.items()}}
         self.specs = {**COMMON_SPECS, **self.TOOL_SPECS, "submit_answer": self.answer_spec()}
+        for spec in self.specs.values():                 # every "out" names a new table or layer, never a column: say so once, for every pack
+            o = spec["input_schema"]["properties"].get("out")
+            if o is not None and "description" not in o:
+                o["description"] = OUT_HELP
         self.tools = {n: getattr(self, "t_" + n) for n in self.specs}
 
     # ---- plumbing

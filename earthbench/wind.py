@@ -178,7 +178,7 @@ class WindSession(Session):
         name = self.put(out, v)
         mm = {"columns": dict(m["columns"]), "missing_value": m["missing_value"]}; mm["columns"][column] = f"{mm['columns'].get(column, column)} x {factor:g}"
         self._m = {**getattr(self, "_m", {}), name: mm}
-        return {"layer": name, "column": column, "factor": factor}
+        return {"table": name, "column": column, "factor": factor, "note": f"a copy of {dataset} with {column} scaled; pass dataset='{name}' to later calls"}
 
     def t_wind_aep(self, dataset, measurement_height_m, hub_height_m, shear_alpha, availability, losses_fraction, missing_value=None):
         v = self._t(dataset)

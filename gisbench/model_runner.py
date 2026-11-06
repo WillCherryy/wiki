@@ -46,7 +46,7 @@ def cost_usd(model, i, o):
     return None if p is None else (i * p[0] + o * p[1]) / 1e6
 
 
-def run_model(client, model, task, system, max_tokens=2048, max_usd=None, engine=None):
+def run_model(client, model, task, system, max_tokens=16000, max_usd=None, engine=None):
     s = Session(task, engine=engine)
     msgs = [{"role": "user", "content": task.statement}]
     tin = tout = 0
@@ -57,6 +57,8 @@ def run_model(client, model, task, system, max_tokens=2048, max_usd=None, engine
         msgs.append({"role": "assistant", "content": r.content})
         calls = [b for b in r.content if b.type == "tool_use"]
         if not calls:
+            if getattr(r, "stop_reason", None) == "max_tokens":
+                stop = "max_tokens"                      # the output limit cut the turn off: the runner's limit, not the model stopping
             break
         results = []
         for b in calls:
