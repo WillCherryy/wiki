@@ -23,6 +23,14 @@ ABOUT = {
                "validated": "Doubling every rate or the investigation time gives 1 - (1 - PoE)^2 to single precision; a closer source never lowers the hazard; curves are monotonic",
                "physics": ["Rarer motion is stronger", "Poisson return period", "PGA within physical bounds", "Hazard curves monotonic", "Answer read from its own curve", "Sources within 100 km", "Depths below the surface"],
                "unsafe": "Design ground motion (2% in 50 years) underestimated by more than 10%"},
+    "solar": {"title": "Solar", "engine": "pvlib: solar position (SPA), plane-of-array irradiance, SAPM cell temperature, PVWatts DC and inverter models",
+              "validated": "Energy scales exactly with plant size; losses and hotter cells only lower it; with no losses it sits just below the sunlight on the plane times capacity; a south face beats a north face",
+              "physics": ["Specific yield = energy / capacity", "Performance ratio in (0, 1]", "Capacity factor in (0, 1]", "Energy below the sunlight reaching the plane"],
+              "unsafe": "Annual energy overstated by more than 5% (a material misstatement for financing)"},
+    "wind": {"title": "Wind", "engine": "Power-law shear, dry-air density, the IEC 61400-12-1 density correction and the turbine's power curve",
+             "validated": "The power curve stays under the Betz limit; no change at equal heights and standard air; shear scales speed exactly; denser air never lowers energy",
+             "physics": ["Net below gross", "Capacity factor consistent and in (0, 1]", "Gross energy below the Betz limit on this wind", "A taller hub sees no less wind", "Plausible hub speed"],
+             "unsafe": "Net energy overstated by more than 5% (a material misstatement for financing)"},
 }
 
 

@@ -23,7 +23,7 @@ from gisbench.stats import wilson
 from gisbench.reliability import summarise as reliability, signature
 from .core import score
 
-PACKS = ("mining", "geothermal", "hazard")
+PACKS = ("mining", "geothermal", "hazard", "solar", "wind")
 HERE = os.path.dirname(__file__)
 RESULTS = os.path.join(HERE, "results")
 PRICES = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0), "claude-fable-5-1": (10.0, 50.0)}

@@ -213,7 +213,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
     <div><h3>Evidence a firm can file</h3><p>Every run leaves a complete, tamper-evident record: the brief, the data fingerprints, the model's messages, every tool call and result, and every check. Reports state results with intervals and map the evidence to NIST AI RMF, ISO/IEC 42001 and the EU AI Act. Evidence, not a certificate: certification is for accredited bodies.</p><span class="meta">SHA-256 hash chain per run; reports in HTML and PDF</span></div>
   </div>
   <div class="stats">
-    <div><b class="num">480</b><span>benchmark tasks across GIS, mining, geothermal and seismic hazard</span></div>
+    <div><b class="num">592</b><span>benchmark tasks across GIS, mining, geothermal, seismic hazard, solar and wind</span></div>
     <div><b class="num">40/40</b><span>Claude Haiku on the hard GIS suite; the fixed-recipe pipeline passed 7</span></div>
     <div><b class="num"><div><b class="num">&lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>
     <div><b class="num">0</b><span>false alarms from the key-free physics checks in 2,400+ scripted answers</span></div>
@@ -231,7 +231,8 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
       <tr><td>Geothermal</td><td>Heat in place and MWe P90/P50/P10 from a LAS log; Horner well test</td><td>USGS volumetric Monte Carlo; Horner in SI</td><td>Logs in feet and °F, null codes the header gets wrong, storage and faults outside the radial-flow window</td><td><span class="st">112 tasks</span></td></tr>
       <tr><td>Seismic hazard</td><td>Design ground motion at 10% and 2% in 50 years</td><td>OpenQuake engine (classical PSHA)</td><td>Swapped coordinates, depth as elevation, rates per century, cited models</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Seismic interpretation</td><td>SEG-Y checks; horizon picks against two interpreters</td><td>segyio; pick comparison</td><td>Header errors, polarity, gaps</td><td><span class="st next">next</span></td></tr>
-      <tr><td>Solar and wind</td><td>Yield with losses; AEP with shear and density</td><td>pvlib; power-curve and wake models</td><td>Time zones, units, missing records</td><td><span class="st next">next</span></td></tr>
+      <tr><td>Solar</td><td>First-year energy, specific yield and performance ratio from a weather year</td><td>pvlib (SPA, plane-of-array, SAPM, PVWatts)</td><td>Local time, irradiance in kWh, missing codes, the PVsyst azimuth convention</td><td><span class="st">56 tasks</span></td></tr>
+      <tr><td>Wind</td><td>Gross and net annual energy with shear and air density</td><td>Power-law shear; IEC 61400-12-1 density correction</td><td>Knots, pressure in hPa, missing hours, the one-seventh power law in words</td><td><span class="st">56 tasks</span></td></tr>
     </tbody>
   </table>
 </section>
