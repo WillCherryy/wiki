@@ -1,5 +1,6 @@
 import json
 import math
+import os
 import unittest
 from collections import deque
 import numpy as np
@@ -320,3 +321,12 @@ class Stats(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(os.path.exists(os.environ.get("GISBENCH_QGIS_PYTHON", "/usr/bin/python3.12")) and os.path.exists("/usr/share/qgis/python"), "QGIS not installed")
+class QgisEngine(unittest.TestCase):
+    def test_analyst_pipeline_passes_under_qgis(self):
+        for t in (T.make_task(5, "S1", "crs"), T.make_task(5, "S3", "invalid"), T.make_task(203, "S4", "combo")):
+            s = Session(t, engine="qgis"); ARMS["d1"][1](t, s); r = score(t, s)
+            self.assertTrue(r["pass"], (t.id, r["checks"]))
+            self.assertGreater(r["iou"], 0.99)

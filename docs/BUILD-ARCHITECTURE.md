@@ -22,7 +22,8 @@ First sector: geothermal. Domains: GIS (QGIS and ArcGIS), seismic section interp
 | Model runner (`llm-agent.js`, `run-llm-trial.js`): a Claude model works tasks over MCP route 1, with token and cost accounting (`pricing.js`) and a spend cap | Built and tested with a stand-in model. **Not yet run against a real model: no API key in the build environment** |
 | MCP over HTTP with one bearer token per trial (`mcp.js`) | Built; an agent working a task over it is in the tests |
 | MCP over stdio (`node harness/mcp.js --task res-001`) | Built; tested with an SDK client (the trace is written when the agent disconnects) |
-| GIS adapters (QGIS), ArcGIS, SEG-Y reading, document extraction | Not built |
+| QGIS engine for gisbench (`gisbench/engine.py`, `qgis_worker.py`): the GIS tools on QGIS 3.34 processing, cross-checked on 180 tasks | Built |
+| ArcGIS, SEG-Y reading, document extraction | Not built |
 | Persistence, accounts, billing, a real dashboard behind the console mockup | Not built |
 
 The concept pages are also served at `/build/` and `/build/console` (dev server and site build; noindex; labelled as concepts with synthetic data). `mockups/suite/build-console.html` is the console mockup. It fills the window on a desktop (panels scroll inside themselves, never the page) and scales up on large screens. Its overview, agents and resource-estimate views display a real harness run (`node harness/export-sample.js` regenerates `build-sample.js`) on synthetic tasks; the GIS, seismic, well and document views compute on synthetic data in the page and are labelled so.

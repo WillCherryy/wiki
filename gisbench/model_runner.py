@@ -46,8 +46,8 @@ def cost_usd(model, i, o):
     return None if p is None else (i * p[0] + o * p[1]) / 1e6
 
 
-def run_model(client, model, task, system, max_tokens=2048, max_usd=None):
-    s = Session(task)
+def run_model(client, model, task, system, max_tokens=2048, max_usd=None, engine=None):
+    s = Session(task, engine=engine)
     msgs = [{"role": "user", "content": task.statement}]
     tin = tout = 0
     stop = "end"
@@ -81,6 +81,7 @@ def main(argv=None):
     ap.add_argument("--offset", type=int, default=0, help="skip the first N tasks (main suite: 12 per seed, so 60 skips seeds 0 to 4)")
     ap.add_argument("--limit", type=int, default=0, help="first N tasks only (0 = all)")
     ap.add_argument("--max-usd", type=float, default=5.0, help="stop the whole run beyond this estimated spend")
+    ap.add_argument("--engine", default="numpy", choices=["numpy", "qgis"], help="geoprocessing engine behind the tools (qgis needs QGIS 3.x; see engine.py)")
     ap.add_argument("--yes", action="store_true", help="confirm that this spends money")
     a = ap.parse_args(argv)
     key, via_proxy = os.environ.get("ANTHROPIC_API_KEY"), os.environ.get("GISBENCH_KEY_VIA_PROXY") == "1"
@@ -105,7 +106,7 @@ def main(argv=None):
               anthropic.Anthropic(api_key="placeholder-key-added-by-proxy", base_url="https://api.anthropic.com"))
     rows, spent, usage = [], 0.0, []
     for t in tl:
-        s, u = run_model(client, a.model, t, SYSTEMS[a.prompt])
+        s, u = run_model(client, a.model, t, SYSTEMS[a.prompt], engine=a.engine)
         r = score(t, s)
         r["trace"] = [{"i": e["i"], "tool": e["tool"], "args": e["args"], "ok": e["ok"], "error": e["error"], "hash": e["hash"][:12]} for e in s.trace]
         r["usage"] = u
@@ -114,8 +115,8 @@ def main(argv=None):
         if spent > a.max_usd:
             print("spend cap reached; stopping", file=sys.stderr)
             break
-    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + (f"-from{a.offset}" if a.offset else "") + ".json")
-    json.dump({"bench_version": T.BENCH_VERSION, "model": a.model, "prompt": a.prompt, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    out = os.path.join(os.path.dirname(__file__), "results", f"model-{a.model}-{a.prompt}-{a.suite}" + ("-qgis" if a.engine == "qgis" else "") + (f"-from{a.offset}" if a.offset else "") + ".json")
+    json.dump({"bench_version": T.BENCH_VERSION, "engine": a.engine, "model": a.model, "prompt": a.prompt, "suite": a.suite, "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "n_run": len(rows), "n_suite": len(tl), "usd": spent, "rows": rows}, open(out, "w"), default=str)
     print("wrote", out)
     return 0

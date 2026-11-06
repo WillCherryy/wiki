@@ -55,7 +55,7 @@ Each domain is a *pack*: tools wrapping established open engines, task generator
 
 | Domain | Example tasks | Engines and data | Grading | State |
 |---|---|---|---|---|
-| **GIS and QGIS** | Site screening from a written brief; reprojection and repair of dirty data; constraint mapping from planning documents; cable corridors; parcel statistics | GDAL-style stack today; PyQGIS tool layer next | Deterministic key, cross-checked against QGIS 3.34 | Benchmark built (180 tasks, versions 1 to 4); Haiku runs complete; PyQGIS *planned next* |
+| **GIS and QGIS** | Site screening from a written brief; reprojection and repair of dirty data; constraint mapping from planning documents; cable corridors; parcel statistics | numpy and GDAL stack, or QGIS 3.34 processing (switchable engine, cross-checked on all 180 tasks) | Deterministic key, cross-checked against QGIS 3.34 | Benchmark built (180 tasks, versions 1 to 4); Haiku runs complete; QGIS engine built; QGIS-only tasks *next* |
 | **Solar** | Screening, yield with uncertainty, pre-feasibility report | pvlib; PVGIS, NASA POWER, ERA5 | Reference cases; yield labelled as an upper bound where clear-sky | Clear-sky yield in gisbench; full pre-feasibility *planned* |
 | **Wind** | Capacity factor from wind data; visibility and setback screening | Open wind and terrain data; QGIS viewshed | Reference cases | *Planned* |
 | **Geothermal** | Heat-in-place with P90/P50/P10; well-test (Horner) analysis; parameters extracted from well reports | Scorcher's Monte Carlo and well tools (tested against closed forms) | Reference answers, interval agreement | Tools built and tested; end-to-end tasks *planned* |
@@ -120,7 +120,7 @@ Fairness rules, proposed: published cost per task, model costs passed through at
 | Stage | Work | State |
 |---|---|---|
 | 1 | Agent quality on gisbench: diagnosis, method prompt, held-out tests, hard suite | Done (version 4) |
-| 2 | PyQGIS tool layer, cross-checked against the current tools; new QGIS-only tasks | Next |
+| 2 | PyQGIS tool layer, cross-checked against the current tools; new QGIS-only tasks | Engine built and cross-checked; QGIS-only tasks next |
 | 3 | OpenQuake pilot: a few demo cases as graded tasks | Proposed |
 | 4 | Seismic: SEG-Y reading, section viewer, picks against two interpreters on open data | Planned |
 | 5 | Geothermal end-to-end tasks from well reports | Planned |

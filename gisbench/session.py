@@ -47,8 +47,10 @@ def verify_chain(trace) -> dict:
 
 
 class Session:
-    def __init__(self, task: Task, max_calls: int = MAX_CALLS):
+    def __init__(self, task: Task, max_calls: int = MAX_CALLS, engine=None):
+        from . import engine as E
         self.task, self.max_calls = task, max_calls
+        self.engine = E.get(engine)
         self.layers = W.serve(task.world, task.defect, task.inject)
         self.trace, self.violations, self.answer = [], [], None
         self._prev = GENESIS
@@ -168,22 +170,14 @@ class Session:
         if epsg not in (4326, 32630):
             raise ToolError("supported EPSG codes: 4326, 32630")
         dst = f"EPSG:{epsg}"
-        t = pyproj.Transformer.from_crs(v.crs, dst, always_xy=True)
-        name = self._put(out, Vector([(ops.reproject_geometry(g, t), p) for g, p in v.feats], dst))
+        name = self._put(out, self.engine.reproject(v, dst))
         return {"layer": name, "crs": dst}
 
     def t_fix_geometry(self, layer, out):
         v = self._get(layer, "vector")
-        feats = []
-        for g, p in v.feats:
-            if not g.is_valid:
-                g = make_valid(g)
-                if isinstance(g, GeometryCollection) and not isinstance(g, (Polygon, MultiPolygon)):
-                    parts = [x for x in g.geoms if isinstance(x, (Polygon, MultiPolygon))]
-                    g = MultiPolygon([q for x in parts for q in (x.geoms if isinstance(x, MultiPolygon) else [x])])
-            feats.append((g, p))
-        name = self._put(out, Vector(feats, v.crs))
-        return {"layer": name, "repaired": sum(1 for (a, _), (b, _) in zip(v.feats, feats) if a is not b)}
+        bad = len(v.invalid())
+        name = self._put(out, self.engine.fix(v))
+        return {"layer": name, "repaired": bad}
 
     def t_vector_buffer(self, layer, distance_m, out, where_field=None, where_equals=None):
         v = self._get(layer, "vector")
@@ -192,31 +186,31 @@ class Session:
         self._vec_ok(v, layer)
         if not isinstance(distance_m, (int, float)) or distance_m < 0:
             raise ToolError("distance_m must be a number of metres, 0 or more")
-        where = (where_field, where_equals) if where_field is not None else None
-        b = ops.buffer_vector(v, float(distance_m), where)
-        if not b.feats:
+        sel = [(g, p) for g, p in v.feats if where_field is None or p.get(where_field) == where_equals]
+        if not sel:
             raise ToolError("no features matched the filter")
+        b = self.engine.buffer(Vector(sel, v.crs), float(distance_m))
         return {"layer": self._put(out, b), "features": len(b.feats)}
 
     def t_rasterize_vector(self, layer, template, out, all_touched=False):
         v, r = self._get(layer, "vector"), self._get(template, "raster")
         self._same_crs(v, r, layer)
         self._vec_ok(v, layer)
-        m = ops.rasterize(v, r, bool(all_touched))
+        m = self.engine.rasterize(v, r, bool(all_touched))
         return {"layer": self._put(out, m), "cells": int(m.a.sum())}
 
     def t_distance_to_vector(self, layer, template, out):
         v, r = self._get(layer, "vector"), self._get(template, "raster")
         self._same_crs(v, r, layer)
         self._vec_ok(v, layer)
-        d = ops.distance_to(v, r)
+        d = self.engine.distance(v, r)
         return {"layer": self._put(out, d), "max_m": float(d.a.max())}
 
     def t_raster_slope(self, dem, out, unit="degrees"):
         r = self._get(dem, "raster")
         if unit not in ("degrees", "percent"):
             raise ToolError("unit must be degrees or percent")
-        s = ops.slope(r, unit, honor_nodata=r.nodata_declared)
+        s = self.engine.slope(r, unit)
         return {"layer": self._put(out, s), "unit": unit, "nodata_cells": int((s.a == NODATA).sum())}
 
     def t_raster_scale(self, raster, factor, out):

@@ -53,11 +53,14 @@ class Vector:
 
 
 def slope(dem: Raster, unit: str = "degrees", honor_nodata: bool = True) -> Raster:
-    """Horn (1981) slope, with GDAL and QGIS conventions for missing data.
+    """Horn (1981) slope.
 
-    honor_nodata: a nodata cell stays nodata; a nodata neighbour is replaced by the centre value (what gdaldem and QGIS native:slope do),
-    so cells beside a gap still get a slope. Without it (an undeclared nodata value) the raw numbers are used, as GIS software does.
+    honor_nodata: a nodata cell stays nodata; a nodata neighbour is replaced by the centre value, so cells beside a gap still get a
+    slope, as in QGIS and in gdaldem with computeEdges. Without it (an undeclared nodata value) the raw numbers are used.
     Cells beyond the raster edge repeat the edge value.
+    Checked (gisbench/engine_check.py): away from the outer ring and from gaps this agrees with QGIS 3.34 native:slope to 2e-6
+    degrees and with GDAL 3.8 gdaldem to 1e-4. On the outer ring and beside gaps the three use different conventions, up to 0.8
+    degrees apart on the ring and 3.5 beside gaps. The brief excludes cells beside gaps; all 180 tasks pass under both engines.
     """
     z = dem.a.astype("float64")
     zz = np.where(z == NODATA, np.nan, z) if honor_nodata else z
