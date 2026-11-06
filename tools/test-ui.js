@@ -114,5 +114,5 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build, its console and the paper open, are noindex and build a task spec; the paper's citations and validation register check out)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build, its console and the paper open, are noindex and build a task spec; the citations and validation register of the paper check out)');
 })().catch(e => { console.error(e); process.exit(1); });
