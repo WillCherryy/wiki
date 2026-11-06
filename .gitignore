@@ -29,3 +29,4 @@ __pycache__/
 *.pyc
 earthbench/results/fixtures.json
 earthbench/results/mcp/
+backend/public/

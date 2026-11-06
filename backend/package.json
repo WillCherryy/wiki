@@ -7,12 +7,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test --test-reporter=spec test/*.test.ts",
-    "dev": "wrangler dev",
-    "bundle": "wrangler deploy --dry-run --outdir .bundle",
-    "deploy": "wrangler deploy",
+    "dev": "node scripts/build-public.mjs && wrangler dev",
+    "bundle": "node scripts/build-public.mjs && wrangler deploy --dry-run --outdir .bundle",
+    "deploy": "node scripts/build-public.mjs && wrangler deploy",
     "smoke": "node scripts/smoke.mjs",
     "migrate:local": "wrangler d1 migrations apply scorcher-build --local",
-    "migrate": "wrangler d1 migrations apply scorcher-build --remote"
+    "migrate": "wrangler d1 migrations apply scorcher-build --remote",
+    "build:public": "node scripts/build-public.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.5.0",

@@ -55,6 +55,10 @@ Secrets are stored encrypted by Cloudflare and survive deploys. Decide the subdo
 Real accounts and tenants (one `dev` tenant, one admin key); an MCP endpoint at the edge; queues for long runs (the run endpoint is synchronous); per-tenant encryption; the Resource Monte Carlo and the other domain tools (only the file, table and unit tools are ported); the QGIS adapter service.
 
 
+## Pages on the same host
+
+`build.playscorcher.com` serves everything from this one Worker: the landing page at `/`, the console at `/console` (static files built into `public/` from `mockups/suite` by `scripts/build-public.mjs`, which `npm run deploy` runs first), and the API, sign-in and health from the Worker's code (`/api/*`, `/auth/*`, `/health`). One origin means the sign-in cookie works in the console without any cross-site rules. On this host "Start a trial" opens the email sign-in.
+
 ## Accounts: sign in by emailed link (the default)
 
 People type their email at `GET /auth/signin` and get a link. The link opens a page with a "Sign in" button; only pressing it (a same-origin POST) signs in, because mail scanners such as Outlook Safe Links open every link in an email and would otherwise spend it or sign in themselves. Links are 256-bit random tokens, valid for 15 minutes, single use, stored only as SHA-256. Every address gets the same reply, so the form cannot reveal who has an account, and requests are limited to 5 per address and 20 per client per hour. Each person gets a private workspace at first sign-in. Google and Microsoft sign-in (below) stay available, off until their secrets are set, for when a firm wants single sign-on with Office 365.
