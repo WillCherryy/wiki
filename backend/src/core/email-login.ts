@@ -14,6 +14,7 @@ export interface LoginTokenStore {
   consumeLoginToken(tokenHash: string, now: number): Promise<string | null>;        // atomically: unused and unexpired -> mark used, return the email
   recentRequests(email: string, clientHash: string, since: number): Promise<{ email: number; client: number }>;
 }
+export class MailError extends Error {}
 export interface Mailer { send(to: string, subject: string, text: string, html: string): Promise<void> }
 
 // a pragmatic address check: one @, a dot in the domain, no spaces or control characters (which also rules out header injection)
@@ -54,7 +55,10 @@ export class ResendMailer implements Mailer {
   async send(to: string, subject: string, text: string, html: string) {
     const r = await this.f('https://api.resend.com/emails', { method: 'POST', headers: { authorization: `Bearer ${this.key}`, 'content-type': 'application/json' },
       body: JSON.stringify({ from: this.from, to: [to], subject, text, html }) });
-    if (!r.ok) throw new Error(`email provider refused the message (${r.status})`);
+    if (!r.ok) {   // the provider's own reason (for example an unverified sending domain) is safe to show: it names no recipient or secret
+      const why = await r.json().then(j => String((j as { message?: unknown }).message ?? '')).catch(() => '');
+      throw new MailError(`the email could not be sent (${r.status}${why ? `: ${why}` : ''})`);
+    }
   }
 }
 

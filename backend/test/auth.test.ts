@@ -140,3 +140,11 @@ test('the sign-in page: an email form, Microsoft and Google only when configured
   const withMs = await (await handleAuth(new Request('https://b.example/auth/signin'), { ...base, clients: { microsoft: { id: 'x', secret: 'y' } } }, d))!.text();
   assert.match(withMs, /Sign in with Microsoft/);
 });
+
+test('a refused email says why, and the reply stays the same shape', async () => {
+  const { ResendMailer, MemoryLoginTokens: Mem } = await import('../src/core/email-login.ts');
+  const f = (async () => new Response(JSON.stringify({ message: 'The playscorcher.com domain is not verified.' }), { status: 403 })) as unknown as typeof fetch;
+  const d = { store: new MemoryAuthStore(), fetch, now: () => NOW, tokens: new Mem(), mailer: new ResendMailer('k', 'S <s@playscorcher.com>', f) };
+  const r = (await handleAuth(new Request('https://b.example/auth/email/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'a@b.com' }) }), { publicUrl: 'https://b.example', appUrl: 'https://a', sessionSecret: 's', clients: {} }, d))!;
+  assert.equal(r.status, 502); assert.match((await r.json() as { error: string }).error, /not verified/);
+});

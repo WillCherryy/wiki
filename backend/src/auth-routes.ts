@@ -2,7 +2,7 @@
 // Dependencies (fetch, store, clock) are injected so the whole flow is tested without a network or a database.
 import { AuthError, PROVIDERS, authorizeUrl, identityOf, pkcePair, randomToken, seal, sessionUser, signIn, unseal, verifyIdToken, type AuthStore, type Jwk, type OidcProvider, type User } from './core/auth.ts';
 import { sha256 } from './core/chain.ts';
-import { requestLink, redeemLink, type LoginTokenStore, type Mailer } from './core/email-login.ts';
+import { requestLink, redeemLink, MailError, type LoginTokenStore, type Mailer } from './core/email-login.ts';
 
 export interface AuthConfig {
   publicUrl: string;          // where this backend is served, e.g. https://build.playscorcher.com (the OAuth redirect URIs live here)
@@ -36,7 +36,9 @@ async function handleEmail(r: Request, url: URL, cfg: AuthConfig, d: AuthDeps): 
   if (!d.tokens || !d.mailer) return json({ error: 'email sign-in is not configured' }, 503);
   if (url.pathname === '/auth/email/start' && r.method === 'POST') {
     const b = await r.json().catch(() => null) as { email?: unknown } | null;
-    const out = await requestLink({ email: b?.email, client: r.headers.get('cf-connecting-ip') ?? 'unknown', store: d.tokens, mailer: d.mailer, publicUrl: cfg.publicUrl, now: d.now() });
+    let out;
+    try { out = await requestLink({ email: b?.email, client: r.headers.get('cf-connecting-ip') ?? 'unknown', store: d.tokens, mailer: d.mailer, publicUrl: cfg.publicUrl, now: d.now() }); }
+    catch (e) { if (e instanceof MailError) { console.error('sign-in email failed:', e.message); return json({ error: `Sorry: ${e.message}. Try again in a few minutes.` }, 502); } throw e; }
     if (out.reason === 'invalid') return json({ error: 'that does not look like an email address' }, 400);
     if (out.reason === 'rate') return json({ error: 'too many sign-in links requested; try again in an hour' }, 429);
     return json({ ok: true, message: 'If that address can receive email, a sign-in link is on its way. It works once, for 15 minutes.' });   // the same reply for every address
