@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-06T14:09:45Z",
+ "generated": "2026-11-06T14:41:30Z",
  "rows": [
   {
    "id": "units",
@@ -164,9 +164,9 @@
    "refs": [
     "prms"
    ],
-   "status": "source only",
-   "detail": "no automated check",
-   "check": null
+   "status": "verified",
+   "detail": "P90 18.29 MWe against the 10th percentile of the input 18.30 MWe",
+   "check": "c_p90"
   },
   {
    "id": "horner-skin",
@@ -382,13 +382,13 @@
    "id": "sapm",
    "area": "Solar",
    "decision": "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.",
-   "basis": "standard",
+   "basis": "published value",
    "refs": [
     "sapm"
    ],
-   "status": "source only",
-   "detail": "no automated check",
-   "check": null
+   "status": "verified",
+   "detail": "coefficients equal the published open-rack glass/glass values; cell 52.568 C at 900 W/m2, 25 C, 2 m/s",
+   "check": "c_sapm"
   },
   {
    "id": "isa",

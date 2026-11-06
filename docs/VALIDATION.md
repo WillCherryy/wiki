@@ -4,7 +4,7 @@ Every modelling decision in Scorcher's engines, what backs it, and an automated 
 
 Status: **verified** means the check ran and passed in this environment; **source only** means the decision follows a cited source but has no automated check yet; **design choice** means a judgement with no published source, listed for expert review; **not run** means the engine's library was not installed where this was generated.
 
-Totals: design choice 7, source only 4, verified 32.
+Totals: design choice 7, source only 2, verified 34.
 
 
 ## All
@@ -49,7 +49,7 @@ Totals: design choice 7, source only 4, verified 32.
 | Decision | Basis | Source | Status | Check |
 |---|---|---|---|---|
 | Heat in place H = A h [rho_r c_r (1 - phi) + rho_f c_f phi] (T - T_ref); the Monte Carlo reduces to it when every input is fixed. | closed form | Muffler, P. | verified | unit test test_monte_carlo_collapses_to_the_closed_form |
-| P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes). | standard | SPE, WPC, AAPG, SPEE, SEG, SPWLA, EAGE (2018). | source only | no automated check |
+| P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes). | standard | SPE, WPC, AAPG, SPEE, SEG, SPWLA, EAGE (2018). | verified | P90 18.29 MWe against the 10th percentile of the input 18.30 MWe |
 | The SI skin formula equals the field-unit formula (constant 3.23) after unit conversion; 0.3514 = log10(2.2458). | closed form | Horner, D.; Theis, C. | verified | unit test test_skin_formula_in_si_matches_field_units |
 | Horner analysis recovers the permeability and skin the data were generated with. | closed form | Horner, D. | verified | unit test test_horner_recovers_the_true_reservoir |
 
@@ -82,7 +82,7 @@ Totals: design choice 7, source only 4, verified 32.
 | Solar position by the NREL SPA. | published value | Reda, I. | verified | zenith 50.11162, azimuth 194.34024 against the published 50.11162, 194.34024 |
 | Plane-of-array irradiance with an isotropic sky. | closed form | Liu, B. | verified | plane-of-array 796.468 W/m2 equals the isotropic formula 796.468 |
 | DC power by PVWatts with a linear temperature coefficient. | standard | Dobos, A. | verified | P_dc = P_dc0 (E/1000) (1 + gamma (T_c - 25)) |
-| Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients. | standard | King, D. | source only | no automated check |
+| Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients. | published value | King, D. | verified | coefficients equal the published open-rack glass/glass values; cell 52.568 C at 900 W/m2, 25 C, 2 m/s |
 
 ## Wind
 

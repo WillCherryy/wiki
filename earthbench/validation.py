@@ -247,6 +247,30 @@ def c_pvwatts():
     return _close(p, 1000 * 0.8 * (1 - 0.004 * 20), 1e-12), "P_dc = P_dc0 (E/1000) (1 + gamma (T_c - 25))"
 
 
+def c_sapm():
+    """King et al. 2004: T_m = E exp(a + b WS) + T_a; T_c = T_m + (E / 1000) dT; open rack, glass/glass: a = -3.47, b = -0.0594, dT = 3."""
+    import pvlib
+    prm = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS["sapm"]["open_rack_glass_glass"]
+    E, Ta, WS = 900.0, 25.0, 2.0
+    hand = E * math.exp(-3.47 - 0.0594 * WS) + Ta + E / 1000 * 3
+    got = float(pvlib.temperature.sapm_cell(E, Ta, WS, **prm))
+    return (prm["a"], prm["b"], prm["deltaT"]) == (-3.47, -0.0594, 3) and _close(got, hand, 1e-12), f"coefficients equal the published open-rack glass/glass values; cell {got:.3f} C at 900 W/m2, 25 C, 2 m/s"
+
+
+def c_p90():
+    """P90 is exceeded with 90% probability: with only the area uncertain, the Monte Carlo P90 must equal capacity at the area's 10th percentile."""
+    from .geothermal import heat_in_place_mc
+    lo, mode, hi = 4.0, 6.0, 10.0
+    fixed = dict(thickness_m=[500, 500, 500], temperature_c=[220, 220, 220], porosity=[0.1, 0.1, 0.1], recovery_factor=[0.1, 0.1, 0.1], rock_density=2600,
+                 rock_heat_capacity=900, fluid_density=850, fluid_heat_capacity=4500, reference_temp_c=15, conversion_efficiency=0.12, plant_life_years=30, capacity_factor=0.9)
+    r = heat_in_place_mc(area_km2=[lo, mode, hi], **fixed)
+    one = heat_in_place_mc(area_km2=[1, 1, 1], **fixed)["mwe_p50"]                 # capacity per km2
+    Fc = (mode - lo) / (hi - lo)
+    q = lambda u: lo + math.sqrt(u * (hi - lo) * (mode - lo)) if u < Fc else hi - math.sqrt((1 - u) * (hi - lo) * (hi - mode))
+    want = one * q(0.10)
+    return _close(r["mwe_p90"], want, 0.005) and r["mwe_p90"] < r["mwe_p50"] < r["mwe_p10"], f"P90 {r['mwe_p90']:.2f} MWe against the 10th percentile of the input {want:.2f} MWe"
+
+
 def c_segy_scalar():
     import tempfile, numpy as np, segyio
     with tempfile.TemporaryDirectory() as d:
@@ -276,7 +300,7 @@ entry("cutoff", "Mining", "Break-even cut-off grade g_c = c_p / (r P): the grade
 entry("slope", "Mining", "Wall slope approximated by block precedence over up to four benches.", "design choice", ["lg"], None)
 
 entry("hip", "Geothermal", "Heat in place H = A h [rho_r c_r (1 - phi) + rho_f c_f phi] (T - T_ref); the Monte Carlo reduces to it when every input is fixed.", "closed form", ["muffler"], "earthbench.tests.test_geothermal.Engines.test_monte_carlo_collapses_to_the_closed_form")
-entry("p90", "Geothermal", "P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes).", "standard", ["prms"], None)
+entry("p90", "Geothermal", "P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes).", "standard", ["prms"], c_p90)
 entry("horner-skin", "Geothermal", "The SI skin formula equals the field-unit formula (constant 3.23) after unit conversion; 0.3514 = log10(2.2458).", "closed form", ["horner", "theis"], "earthbench.tests.test_geothermal.Engines.test_skin_formula_in_si_matches_field_units")
 entry("horner-k", "Geothermal", "Horner analysis recovers the permeability and skin the data were generated with.", "closed form", ["horner"], "earthbench.tests.test_geothermal.Engines.test_horner_recovers_the_true_reservoir")
 
@@ -297,7 +321,7 @@ entry("peer", "Seismic hazard", "OpenQuake reproduces the PEER PSHA code-verific
 entry("spa", "Solar", "Solar position by the NREL SPA.", "published value", ["spa"], c_spa)
 entry("isotropic", "Solar", "Plane-of-array irradiance with an isotropic sky.", "closed form", ["liujordan"], c_isotropic)
 entry("pvwatts", "Solar", "DC power by PVWatts with a linear temperature coefficient.", "standard", ["pvwatts"], c_pvwatts)
-entry("sapm", "Solar", "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.", "standard", ["sapm"], None)
+entry("sapm", "Solar", "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.", "published value", ["sapm"], c_sapm)
 
 entry("isa", "Wind", "Standard air density 1.225 kg/m3; dry-air density p / (R_d T) with R_d = 287.05 J/(kg K).", "standard", ["isa"], c_isa)
 entry("iec", "Wind", "Wind speed normalised to standard density by (rho / rho_0)^(1/3) before reading the power curve.", "standard", ["iec"], c_iec)
