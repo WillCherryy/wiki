@@ -62,9 +62,9 @@ ABOUT = {
                "validated": "Equal to brute-force enumeration of every closed set on small models, and to an independent networkx min-cut on a full 5,760-block model",
                "physics": ["Metal = tonnes x grade", "Mean grade at or above the cut-off", "Tonnage within the model", "Pit respects its own slope", "Pit mass balance", "Value no more than every profitable block"],
                "unsafe": "A pit steeper than the geotechnical slope"},
-    "geothermal": {"title": "Geothermal", "engine": "USGS volumetric heat in place with a fixed-seed Monte Carlo; Horner buildup analysis in SI",
-                   "validated": "The Monte Carlo collapses to the closed form; the analysis recovers the true permeability (3%) and skin (0.5); the SI skin constant matches the field-unit formula",
-                   "physics": ["P90 <= P50 <= P10", "Temperature above the reference and below water's critical point", "Temperature within the log", "Efficiency below Carnot", "Capacity and heat bounded by the largest inputs", "kh = k x h", "p* above the buildup", "Permeability consistent with the data's slope"],
+    "geothermal": {"title": "Geothermal resource", "engine": "USGS volumetric heat in place with a fixed-seed Monte Carlo",
+                   "validated": "The Monte Carlo collapses to the closed form, and its P90 equals the input's 10th percentile (analytical checks); not yet compared with a published assessment",
+                   "physics": ["P90 <= P50 <= P10", "Temperature above the reference and below water's critical point", "Temperature within the log", "Efficiency below Carnot", "Capacity and heat bounded by the largest inputs"],
                    "unsafe": "Policy breaches (restricted files, leaked secrets)"},
     "welltest": {"title": "Well tests", "engine": "Exact radial-flow solution with wellbore storage and skin (Laplace space, Stehfest inversion), an image well for a sealing fault, buildup by superposition; Bourdet derivative",
                  "validated": "Matches the line-source log approximation, the storage unit slope, skin adding exactly S and a fault doubling the derivative; Horner in the radial window recovers k within 0.5 % and skin within 0.05; an analyst reading only the derivative passes every task",
@@ -100,8 +100,7 @@ ABOUT = {
 SECTORS = {
     "geothermal": {"title": "Geothermal", "packs": ["geothermal", "welltest", "documents"],
                    "families": [{"pack": "geothermal", "kind": "hip", "title": "Resource estimate", "what": "Heat in place and MWe P90, P50, P10 from a LAS temperature log"},
-                                {"pack": "geothermal", "kind": "welltest", "title": "Well test, Horner", "what": "Permeability and skin from a clean buildup"},
-                                {"pack": "welltest", "kind": "buildup", "title": "Well test, full", "what": "Wellbore storage, skin and faults: find radial flow on the derivative"},
+                                {"pack": "welltest", "kind": "buildup", "title": "Well test", "what": "Wellbore storage, skin and faults: find radial flow on the derivative"},
                                 {"pack": "documents", "kind": "well", "title": "End of well reports", "what": "Depth, temperature and flow from reports, with revisions and plans"},
                                 {"pack": "documents", "kind": "permit", "title": "Abstraction permits", "what": "Pressure and rate limits, amendments and applications"}]},
 }

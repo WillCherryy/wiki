@@ -16,8 +16,8 @@ const page = (file, base = '/build') => {
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const register = () => {
   let v; try { v = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'earthbench', 'results', 'validation.json'), 'utf8')); } catch { return '<p class="meta">Register not generated yet: run python -m earthbench.validation.</p>'; }
-  const n = s => v.rows.filter(r => r.status === s).length, col = { verified: 'var(--blue)', 'design choice': 'var(--pos)', FAILED: 'var(--pos)' };
-  let area = '', out = `<p class="meta">Generated ${esc(v.generated.slice(0, 10))}: ${v.rows.length} decisions; verified ${n('verified')}, source only ${n('source only')}, design choice ${n('design choice')}, not run ${n('not run')}, failed ${n('FAILED')}.</p><div class="tw"><table><tr><th>Decision</th><th>Basis</th><th>Status</th><th>What the check showed</th></tr>`;
+  const n = s => v.rows.filter(r => r.status === s).length, col = { verified: 'var(--blue)', consistent: 'var(--ink-2)', 'design choice': 'var(--pos)', FAILED: 'var(--pos)' };
+  let area = '', out = `<p class="meta">Generated ${esc(v.generated.slice(0, 10))}: ${v.rows.length} decisions; verified ${n('verified')}, consistency only ${n('consistent')}, source only ${n('source only')}, design choice ${n('design choice')}, not run ${n('not run')}, failed ${n('FAILED')}.</p><div class="tw"><table><tr><th>Decision</th><th>Basis</th><th>Status</th><th>What the check showed</th></tr>`;
   for (const r of v.rows) {
     if (r.area !== area) { area = r.area; out += `<tr><th colspan="4" style="background:var(--paper);color:var(--ink)">${esc(area)}</th></tr>`; }
     out += `<tr><td>${esc(r.decision)}</td><td>${esc(r.basis)}</td><td style="white-space:nowrap;color:${col[r.status] || 'var(--ink-2)'}">${esc(r.status)}</td><td>${esc(r.status === 'design choice' ? 'No published source: listed for expert review' : r.detail)}</td></tr>`;
