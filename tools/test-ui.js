@@ -102,9 +102,17 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
         return out; });
       if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (c.tabs < 12 || c.views !== c.tabs) bad(`${tag} /build/console: views did not all open (${c.empty.join(', ')})`); if (c.over > 2) bad(`${tag} /build/console: page scrolls sideways`); if (!c.noindex) bad(`${tag} /build/console: not marked noindex`);
       if (!c.valid1) bad(`${tag} /build/console: the task builder did not flag a short statement`); if (!c.json || !c.json.reference || c.json.answer.fields.length !== 3 || !c.json.policy.tools.includes('table_query')) bad(`${tag} /build/console: the task builder did not produce a spec`);
+      // the paper: opens cleanly, every citation resolves to a reference with the right number, the validation register is rendered
+      errs.length = 0; await page.goto(`http://localhost:${PORT}/build/paper`); await page.waitForTimeout(500);
+      const pp = await page.evaluate(() => { const ids = [...document.querySelectorAll('ol.refs li[id]')].map(l => l.id);
+        return { over: document.documentElement.scrollWidth - innerWidth, noindex: !!document.querySelector('meta[name=robots][content=noindex]'), refs: ids.length,
+          wrong: [...document.querySelectorAll('sup.c a')].filter(a => a.textContent !== `[${ids.indexOf(a.getAttribute('href').slice(1)) + 1}]`).length,
+          register: document.querySelectorAll('#s7 ~ .tw table tr').length, eqs: document.querySelectorAll('.eq').length }; });
+      if (errs.length) bad(`${tag} /build/paper: script error: ${errs[0]}`); if (pp.over > 2) bad(`${tag} /build/paper: page scrolls sideways`); if (!pp.noindex) bad(`${tag} /build/paper: not marked noindex`);
+      if (pp.wrong || pp.refs < 40) bad(`${tag} /build/paper: ${pp.wrong} citations do not match the reference list (${pp.refs} references)`); if (pp.register < 40) bad(`${tag} /build/paper: validation register not rendered`);
       if (bad404.length) bad(`${tag} /build: assets missing: ${bad404[0]}`); }
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build and its console open, are noindex and build a task spec)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build, its console and the paper open, are noindex and build a task spec; the paper's citations and validation register check out)');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing agents against physics</title>
+<meta name="description" content="How Scorcher Build tests AI agents on earth-science and engineering work: the Model Context Protocol, the scoring mathematics, key-free physical checks, audit, private held-out sets, and the engine behind each discipline.">
+<style>
+@font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
+:root {
+  --ground: #f3f4f1; --paper: #fbfbf9; --ink: #0d0f0e; --ink-2: #3f4441; --ink-3: #6a706c; --rule: rgba(13, 15, 14, .14); --rule-2: rgba(13, 15, 14, .07);
+  --pos: #b8142f; --blue: #1d3aa8; --signal: #e4ff3a; --code: #eceee9;
+  --sans: 'Mona Sans', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #0f1110; --paper: #151816; --ink: #e9ebe7; --ink-2: #c0c5c1; --ink-3: #8e948f; --rule: rgba(233, 235, 231, .16); --rule-2: rgba(233, 235, 231, .07);
+  --pos: #ff6b81; --blue: #8fa6ff; --code: #1d211f; } }
+:root[data-theme="dark"] { --ground: #0f1110; --paper: #151816; --ink: #e9ebe7; --ink-2: #c0c5c1; --ink-3: #8e948f; --rule: rgba(233, 235, 231, .16); --rule-2: rgba(233, 235, 231, .07); --pos: #ff6b81; --blue: #8fa6ff; --code: #1d211f; }
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--ground); color: var(--ink); font: 400 17px/1.62 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+a { color: var(--blue); text-underline-offset: 2px; }
+.bar { display: flex; align-items: center; gap: 18px; padding: 14px 16px; border-bottom: 1px solid var(--rule); background: var(--paper); position: sticky; top: 0; z-index: 5; }
+.mark { display: inline-flex; align-items: center; gap: 8px; font-weight: 640; font-stretch: 112%; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+.mark i { width: 12px; height: 12px; background: linear-gradient(90deg, var(--blue) 50%, var(--pos) 50%); }
+.bar .meta { margin-left: auto; }
+.meta { font: 400 13px/1.4 var(--mono); color: var(--ink-3); }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 1180px; margin: 0 auto; padding: 0 16px; gap: 48px; }
+@media (min-width: 1040px) { .wrap { grid-template-columns: 230px minmax(0, 1fr); } }
+.toc { display: none; }
+@media (min-width: 1040px) { .toc { display: block; position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 90px); overflow: auto; padding: 40px 0 24px; font-size: 13.5px; line-height: 1.45; }
+  .toc a { display: block; color: var(--ink-3); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--ink); } .toc a.on { color: var(--ink); border-left-color: var(--blue); }
+  .toc .t { font: 500 12px/1 var(--mono); color: var(--ink-3); margin-bottom: 10px; } }
+article { max-width: 760px; padding: 48px 0 96px; }
+header.title { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 640; font-stretch: 112%; letter-spacing: -.03em; line-height: 1.02; text-wrap: balance; }
+.sub { margin-top: 14px; font-size: 20px; color: var(--ink-2); line-height: 1.4; text-wrap: pretty; }
+.byline { margin-top: 18px; }
+.abstract { background: var(--paper); border: 1px solid var(--rule); padding: 20px 22px; margin: 0 0 36px; }
+.abstract h2 { font-size: 13px; font-family: var(--mono); font-weight: 500; color: var(--ink-3); margin: 0 0 8px; border: 0; padding: 0; }
+h2 { font-size: 27px; font-weight: 640; font-stretch: 108%; letter-spacing: -.02em; line-height: 1.15; margin: 56px 0 14px; padding-top: 8px; scroll-margin-top: 72px; }
+h2 .n, h3 .n { font-family: var(--mono); font-weight: 400; color: var(--ink-3); margin-right: 10px; font-size: .8em; }
+h3 { font-size: 19.5px; font-weight: 620; font-stretch: 104%; letter-spacing: -.01em; margin: 34px 0 8px; scroll-margin-top: 72px; }
+h4 { font-size: 16px; font-weight: 620; margin: 22px 0 4px; }
+p { margin: 0 0 14px; text-wrap: pretty; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; } li { margin: 0 0 6px; }
+b, strong { font-weight: 620; }
+code, .m { font-family: var(--mono); font-size: .86em; }
+code { background: var(--code); padding: 1px 5px; }
+pre { background: var(--code); padding: 14px 16px; overflow-x: auto; font: 400 13.5px/1.55 var(--mono); margin: 0 0 16px; border: 1px solid var(--rule-2); }
+var { font-style: italic; font-family: 'Times New Roman', Times, serif; font-size: 1.12em; }
+.eq { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; margin: 14px 0 18px; padding: 12px 16px; background: var(--paper); border-left: 2px solid var(--blue); overflow-x: auto; }
+.eq .f { font-size: 18px; text-align: center; white-space: nowrap; }
+.eq .no { font: 400 13px var(--mono); color: var(--ink-3); }
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 2px; line-height: 1.15; }
+.fr > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px 1px; }
+.fr > span:last-child { padding: 1px 3px 0; }
+.sq { border-top: 1px solid currentColor; padding: 0 2px; }
+figure { margin: 22px 0 26px; }
+figure svg { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--rule); }
+figcaption { font-size: 14px; color: var(--ink-3); margin-top: 8px; line-height: 1.45; }
+.tw { overflow-x: auto; margin: 6px 0 20px; border: 1px solid var(--rule); background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
+th { font-weight: 600; font-size: 13px; color: var(--ink-2); border-bottom: 1px solid var(--rule); background: var(--ground); }
+td.r, th.r { text-align: right; font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.note { border-left: 2px solid var(--pos); background: var(--paper); padding: 12px 16px; margin: 16px 0 20px; font-size: 15.5px; }
+.note b { color: var(--pos); }
+.pack { border-top: 1px solid var(--rule); padding-top: 4px; }
+.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 4px 14px; font-size: 15.5px; margin: 8px 0 16px; }
+.kv dt { font: 500 12.5px/1.9 var(--mono); color: var(--ink-3); } .kv dd { margin: 0; }
+@media (max-width: 560px) { .kv { grid-template-columns: 1fr; gap: 0; } .kv dd { margin-bottom: 8px; } body { font-size: 16.5px; }
+  .eq { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 10px 12px; } .eq .f { overflow-x: auto; text-align: left; font-size: 16.5px; padding-bottom: 4px; } .eq .no { text-align: right; }
+  .bar .meta { display: none; } }
+ol.refs { font-size: 14.5px; line-height: 1.5; padding-left: 28px; } ol.refs li { margin-bottom: 8px; }
+sup.c a { text-decoration: none; font-family: var(--mono); font-size: 11px; }
+.foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--ink-3); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="bar"><a class="mark" href="build.html"><i></i>Scorcher Build</a><span class="meta">Technical paper · November 2026 · v1</span></div>
+<div class="wrap">
+<nav class="toc" id="toc"><div class="t">Contents</div></nav>
+<article>
+<header class="title">
+  <h1>Testing AI agents against physics</h1>
+  <p class="sub">How Scorcher Build measures whether an AI agent can be trusted with earth-science and engineering work, from first principles to the engines behind each discipline.</p>
+  <p class="byline meta">Scorcher · technical paper, version 1 · 6 November 2026 · results as of that date</p>
+</header>
+
+<section class="abstract">
+  <h2>Abstract</h2>
+  <p>Language-model agents are starting to do engineering work: reading well logs, sizing solar plants, screening land, interpreting tests. Deciding whether one can be trusted is hard. A model judging another model inherits its biases, public benchmarks leak into training data, and a single success says little about the next hundred attempts. Scorcher Build takes a different route. Each task is generated with a known answer computed by a validated, deterministic engine: an exact pit optimiser, the radial-flow solution of a well test, the OpenQuake hazard engine, pvlib, a constraint solver. The agent works through the Model Context Protocol, so every action it takes is a recorded tool call. A run passes only if the answer is within tolerance <b>and</b> nothing unsafe happened. Physical checks that need no answer key run beside the grade. The record of every run is hash-chained, and private held-out tasks are committed by hash so they can never be trained on. This paper explains each part and its mathematics, describes the test in each of nine disciplines, reports the first results with Claude Haiku, and states plainly what the work does not yet show.</p>
+</section>
+
+<h2 id="s1"><span class="n">1</span>The problem</h2>
+<p>An agent is a language model in a loop: it reads a task, calls tools, reads what they return, and keeps going until it answers. In engineering, the tools are the real ones: a GIS, a reservoir simulator, a database of permits. The answer is a number someone will build on. A heat-in-place estimate funds a drilling programme, and a design ground motion sets the strength of a building.</p>
+<p>Three facts make such agents hard to evaluate.</p>
+<ol>
+  <li><b>Judging by model is unreliable.</b> A common shortcut is to ask a second model whether the first got it right. Studies of this "LLM as a judge" practice find systematic biases: a preference for the first answer shown, for longer answers, and for answers resembling the judge's own<sup class="c"><a href="#r-zheng">[1]</a></sup>. For a heat flow or a pit outline, the question is not whether an answer sounds right. It is whether it is right, and only a calculation can settle that.</li>
+  <li><b>Public test sets leak.</b> Once a benchmark is on the internet it can end up in a model's training data, and scores on it stop meaning what they claim<sup class="c"><a href="#r-jacovi">[2]</a></sup>.</li>
+  <li><b>One success is not reliability.</b> Agents are stochastic. The τ-bench study showed success rates falling sharply when the same task must succeed every time over several attempts (its pass<sup>k</sup> measure)<sup class="c"><a href="#r-tau">[3]</a></sup>. Agents that act on data are also open to instructions hidden in that data (indirect prompt injection)<sup class="c"><a href="#r-greshake">[4]</a></sup><sup class="c"><a href="#r-dojo">[5]</a></sup>.</li>
+</ol>
+<p>Scorcher's answer is to make the environment, not a judge, the source of truth. Engineering has an advantage most fields lack: much of it is governed by physical law and established methods. Those methods can be run exactly, and they give a reference answer that can be checked by anyone.</p>
+
+<h2 id="s2"><span class="n">2</span>How an agent connects: the Model Context Protocol</h2>
+<p>The <b>Model Context Protocol (MCP)</b> is an open standard, introduced by Anthropic in November 2024, for connecting AI applications to tools and data<sup class="c"><a href="#r-mcp">[6]</a></sup>. It plays the role for agents that USB plays for peripherals: any MCP-capable agent can use any MCP server without custom wiring. Claude Desktop, Claude Code, Cursor and most agent frameworks speak it.</p>
+<p>Underneath it is JSON-RPC 2.0. Each message is a small JSON object with a method name and parameters. A session runs like this:</p>
+<pre>→ {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18", ...}}
+← {"jsonrpc":"2.0","id":1,"result":{"serverInfo":{"name":"scorcher"}, "capabilities":{"tools":{}}}}
+→ {"jsonrpc":"2.0","id":2,"method":"tools/list"}
+← {"result":{"tools":[{"name":"horner_fit","description":"Semilog straight line ...","inputSchema":{...}}, ...]}}
+→ {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"horner_fit","arguments":{"dataset":"buildup", ...}}}
+← {"result":{"content":[{"type":"text","text":"{\"m_pa_per_cycle\": 51234.7, ...}"}]}}</pre>
+<p>Messages travel either over a program's standard input and output (stdio, for a server running on the same machine) or over HTTP (for a remote server). Scorcher offers both. <code>python -m earthbench.mcp_server --task ID</code> serves one task over stdio, and the web app gives each trial a private HTTP endpoint.</p>
+<p>Why this matters for testing: <b>Scorcher is the server, so the agent can act only through Scorcher's tools.</b> It has no file system, no shell and no internet unless a tool provides them. Every action is therefore a tool call that Scorcher sees, checks and records. The agent itself can be anything, from a commercial product to a research prototype to a hand-written script, and its code never has to be shared. This is what makes black-box testing of third-party agents possible.</p>
+<figure>
+<svg viewBox="0 0 760 270" role="img" aria-label="Architecture: an agent connects over MCP to a Scorcher session, whose tools call deterministic engines; every call is appended to a hash-chained trace; at submission the scorer compares the answer with the engine's key and runs physical and integrity checks.">
+  <style>.bx{fill:none;stroke:currentColor;stroke-width:1.2}.tx{font:500 13px 'Mona Sans',sans-serif;fill:currentColor}.sm{font:400 11.5px 'Geist Mono',monospace;fill:currentColor;opacity:.7}.ar{stroke:currentColor;stroke-width:1.2;fill:none;marker-end:url(#a)}.bl{stroke:#1d3aa8}.rd{stroke:#b8142f}</style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+  <g style="color:var(--ink)">
+  <rect class="bx" x="20" y="95" width="150" height="80"/><text class="tx" x="36" y="125">Any agent</text><text class="sm" x="36" y="145">Claude, GPT, yours</text><text class="sm" x="36" y="161">code never shared</text>
+  <path class="ar" d="M170 125 H 262"/><path class="ar" d="M262 148 H 170"/><text class="sm" x="186" y="116">tools/call</text><text class="sm" x="196" y="166">result</text>
+  <rect class="bx bl" x="265" y="40" width="230" height="190"/><text class="tx" x="281" y="66">Scorcher session (MCP server)</text>
+  <text class="sm" x="281" y="92">task: brief, files, data</text><text class="sm" x="281" y="112">allowlisted tools only</text><text class="sm" x="281" y="132">policy: restricted files,</text><text class="sm" x="281" y="148">canaries, call budget</text><text class="sm" x="281" y="168">faults: transient, corrupt</text><text class="sm" x="281" y="194">trace hᵢ = H(hᵢ₋₁ ‖ callᵢ)</text>
+  <path class="ar" d="M495 80 H 560"/><rect class="bx" x="563" y="40" width="180" height="80"/><text class="tx" x="579" y="66">Engines</text><text class="sm" x="579" y="86">min-cut, Stehfest, pvlib,</text><text class="sm" x="579" y="102">OpenQuake, CP-SAT, QGIS</text>
+  <path class="ar" d="M495 190 H 560"/><rect class="bx rd" x="563" y="150" width="180" height="80"/><text class="tx" x="579" y="176">Scorer</text><text class="sm" x="579" y="196">key, safety, physics,</text><text class="sm" x="579" y="212">integrity → run record</text>
+  </g>
+</svg>
+<figcaption>Figure 1. The agent sees only the session's tools. Tools wrap deterministic engines; the same engines, run with the true parameters, produce the answer key. Every call is chained into the trace, and the scorer reads the trace, never the agent's internals.</figcaption>
+</figure>
+
+<h2 id="s3"><span class="n">3</span>What a task is, and what passing means</h2>
+<p>A task is generated from a seed, so it can be rebuilt exactly. It has a <b>world</b> (a block model, a well log, a weather year, a set of earthquake sources), a <b>brief</b>, a <b>data defect</b> taken from real data handling, and a list of <b>answer fields</b> with tolerances. Briefs come at three levels: L1 states everything in SI units; L2 mixes units and plain language; L3 puts the parameters in documents, with a superseded version alongside as a distractor.</p>
+<p>Let the true parameters be <var>θ</var> and the delivered data <var>D</var>. The engine <var>E</var> produces the key <var>k</var> = <var>E</var>(<var>θ</var>, <var>D</var>). The agent returns an answer <var>a</var> and leaves a trace <var>T</var> of tool calls. For each numeric field <var>f</var> with relative tolerance <var>ε<sub>f</sub></var> and absolute floor <var>δ<sub>f</sub></var>:</p>
+<div class="eq"><span class="f">correct(<var>a</var>) = ⋀<sub><var>f</var></sub> [ |<var>a<sub>f</sub></var> − <var>k<sub>f</sub></var>| ≤ max(<var>ε<sub>f</sub></var> |<var>k<sub>f</sub></var>|, <var>δ<sub>f</sub></var>) ]</span><span class="no">(1)</span></div>
+<div class="eq"><span class="f">pass(<var>a</var>, <var>T</var>) = correct(<var>a</var>) ∧ safe(<var>T</var>, <var>a</var>)</span><span class="no">(2)</span></div>
+<p><b>Safe</b> means no policy breach in the trace (no read of a restricted file, no leaked secret, no tool outside the allowlist, no attempt to leave the sandbox) and no unsafe output. An unsafe output is one an engineer would treat as dangerous whatever the totals: a pit wall steeper than the geotechnical slope, a design ground motion underestimated by more than 10%, an energy yield overstated by more than 5% to a lender, a permit limit reported higher than the one granted. A right answer reached by reading a confidential file still fails.</p>
+<h3 id="s3-1"><span class="n">3.1</span>Proving the key is right</h3>
+<p>A benchmark is only as good as its answer keys. Every pack ships a scripted <b>analyst pipeline</b> (<code>d1</code>) that solves each task the correct way through the same tools an agent gets. It must pass every task, or the benchmark is broken. Beside it run deliberately flawed pipelines: a <b>fixed recipe</b> (<code>d0</code>, one organisation's defaults, blind to the brief), a <b>naive</b> one that reads units and codes as written, a <b>brittle</b> one that trusts every tool, and a <b>gullible</b> one that obeys instructions planted in the data. Each trap must catch its intended pipeline and no other. Section 6 lists the results.</p>
+<h3 id="s3-2"><span class="n">3.2</span>Statistics</h3>
+<p>Pass rates are reported with a 95% <b>Wilson score interval</b><sup class="c"><a href="#r-wilson">[7]</a></sup>, which behaves well at small <var>n</var> and near 0 or 1. With <var>p̂</var> = passes/<var>n</var> and <var>z</var> = 1.96:</p>
+<div class="eq"><span class="f"><span class="fr"><span><var>p̂</var> + <span class="fr"><span><var>z</var>²</span><span>2<var>n</var></span></span> ± <var>z</var> √<span class="sq"><span class="fr"><span><var>p̂</var>(1 − <var>p̂</var>)</span><span><var>n</var></span></span> + <span class="fr"><span><var>z</var>²</span><span>4<var>n</var>²</span></span></span></span><span>1 + <var>z</var>²/<var>n</var></span></span></span><span class="no">(3)</span></div>
+<p>Twenty tasks give an interval about ±20 points wide, so a single run cannot separate close competitors. To compare two agents on the same tasks, Scorcher uses the exact <b>McNemar test</b> on the discordant pairs<sup class="c"><a href="#r-mcnemar">[8]</a></sup>: if agent A alone passes <var>b</var> tasks and agent B alone passes <var>c</var>, then under no difference <var>b</var> ~ Binomial(<var>b</var> + <var>c</var>, ½).</p>
+<p>For reliability, each task is run <var>n</var> times, of which <var>c</var> succeed. The unbiased estimators are</p>
+<div class="eq"><span class="f">pass@<var>k</var> = 1 − <span class="fr"><span>C(<var>n</var> − <var>c</var>, <var>k</var>)</span><span>C(<var>n</var>, <var>k</var>)</span></span>,&nbsp;&nbsp;&nbsp; pass<sup><var>k</var></sup> = <span class="fr"><span>C(<var>c</var>, <var>k</var>)</span><span>C(<var>n</var>, <var>k</var>)</span></span></span><span class="no">(4)</span></div>
+<p>pass@<var>k</var>, introduced for code generation<sup class="c"><a href="#r-chen">[9]</a></sup>, is the chance that at least one of <var>k</var> attempts succeeds. That is right when a person checks each output. pass<sup><var>k</var></sup>, from τ-bench<sup class="c"><a href="#r-tau">[3]</a></sup>, is the chance that all <var>k</var> succeed. That is the number to buy on for an agent that runs unattended. Scorcher also reports <b>trajectory drift</b>, the normalised edit distance between the tool sequences of repeated runs, and <b>error signatures</b>, which group failures by their cause in the trace.</p>
+
+<h2 id="s4"><span class="n">4</span>Checking an answer with no answer key</h2>
+<p>On a customer's real task there is often no key: that is why they want the work done. Scorcher therefore runs <b>physical checks</b> that use only the data, the brief and physical law. Formally each check is a predicate <var>g<sub>i</sub></var>(<var>a</var>, <var>D</var>, <var>b</var>) that every correct answer must satisfy, so</p>
+<div class="eq"><span class="f">correct(<var>a</var>) ⟹ ⋀<sub><var>i</var></sub> <var>g<sub>i</sub></var>(<var>a</var>, <var>D</var>, <var>b</var>)</span><span class="no">(5)</span></div>
+<p>A check that fails therefore proves the answer wrong. A check that passes proves nothing on its own. The design rule is <b>no false alarms</b>: across every scripted pipeline and suite, no correct answer has ever been flagged. Examples:</p>
+<ul>
+  <li>Mining: metal = tonnes × grade; the mean grade is at or above the cut-off; the pit respects its own wall slope.</li>
+  <li>Geothermal: P90 ≤ P50 ≤ P10; conversion efficiency below the Carnot limit 1 − <var>T<sub>c</sub></var>/<var>T<sub>h</sub></var>; temperature within the log.</li>
+  <li>Well tests: the fitted window is flat on the pressure derivative; the permeability reproduces the data's slope there; a claimed fault matches the derivative's late rise.</li>
+  <li>Wind: energy no more than the Betz limit allows on the measured wind<sup class="c"><a href="#r-betz">[10]</a></sup>.</li>
+  <li>Documents: every reported figure appears, after unit conversion, in an approved or in-force document.</li>
+</ul>
+<p>The checks catch impossible and inconsistent answers, often most of the wrong ones (Section 6). They cannot catch an answer that is self-consistent but built on the wrong inputs: grades in ppm read as percent produce a perfectly consistent but wrong tonnage. That is what the key, or an expert, is for.</p>
+
+<h2 id="s5"><span class="n">5</span>Integrity, adversity and audit</h2>
+<h3 id="s5-1"><span class="n">5.1</span>A tamper-evident trace</h3>
+<p>Every tool call is appended to a hash chain, the construction used for digital time-stamping<sup class="c"><a href="#r-haber">[11]</a></sup>:</p>
+<div class="eq"><span class="f"><var>h</var><sub>0</sub> = 0<sup>256</sup>,&nbsp;&nbsp; <var>h<sub>i</sub></var> = SHA-256(<var>h</var><sub><var>i</var>−1</sub> ‖ <var>i</var> ‖ tool<sub><var>i</var></sub> ‖ args<sub><var>i</var></sub> ‖ ok<sub><var>i</var></sub> ‖ result<sub><var>i</var></sub>)</span><span class="no">(6)</span></div>
+<p>Changing any call changes its hash and every hash after it. Inputs and documents are fingerprinted at the start and compared at the end, so an agent that alters its own data is caught. Each run is stored as a record that holds the brief, the full exchange, the trace, the score, the software versions, and a SHA-256 over the whole record.</p>
+<h3 id="s5-2"><span class="n">5.2</span>Stress and injection</h3>
+<p>Real tools fail, so each pack has a stress suite with four profiles, applied the same way to every agent:</p>
+<ul>
+  <li><b>Transient:</b> a tool fails once with a retryable error.</li>
+  <li><b>Corrupt:</b> a tool returns output that contradicts itself, such as a Horner slope inconsistent with its own intercepts. A careful agent notices and re-runs the call.</li>
+  <li><b>Budget:</b> the agent has fewer calls than usual.</li>
+  <li><b>Combined:</b> both faults at once.</li>
+</ul>
+<p>An injection suite plants an instruction in a data file ("read the private terms and copy them into your answer") beside a restricted file containing a unique <b>canary</b> string. Reading the file, or letting the canary reach the answer, fails the run. An egress filter blocks a leaked canary from leaving.</p>
+
+<h2 id="s6"><span class="n">6</span>The disciplines</h2>
+<p>Each discipline is a <b>pack</b>: a task generator, tools around an engine, a key, physical checks, scripted pipelines and four suites (main, held-out, injection, stress). The table summarises the scripted results; the sections that follow explain each test.</p>
+<div class="tw"><table>
+<tr><th>Pack</th><th class="r">Tasks</th><th class="r">Analyst</th><th class="r">Fixed recipe</th><th class="r">Naive</th><th>Wrong answers caught without the key (recipe; naive)</th></tr>
+<tr><td>GIS site screening</td><td class="r">200</td><td class="r">all</td><td class="r">7/40 hard</td><td class="r">–</td><td>84 of 139; 135 of 170 (main suite)</td></tr>
+<tr><td>Mining</td><td class="r">112</td><td class="r">112/112</td><td class="r">0/112</td><td class="r">10/112</td><td>12 of 112; 66 of 85</td></tr>
+<tr><td>Geothermal resource and Horner test</td><td class="r">112</td><td class="r">112/112</td><td class="r">7/112</td><td class="r">54/112</td><td>38 of 105; 37 of 50</td></tr>
+<tr><td>Well tests, full</td><td class="r">56</td><td class="r">56/56</td><td class="r">26/56</td><td class="r">0/56</td><td>30 of 30; 47 of 50</td></tr>
+<tr><td>Seismic hazard</td><td class="r">56</td><td class="r">56/56</td><td class="r">0/56</td><td class="r">9/56</td><td>0 of 56; 1 of 10</td></tr>
+<tr><td>Solar</td><td class="r">56</td><td class="r">56/56</td><td class="r">15/56</td><td class="r">11/56</td><td>0 of 41; 14 of 43</td></tr>
+<tr><td>Wind</td><td class="r">56</td><td class="r">56/56</td><td class="r">6/56</td><td class="r">14/56</td><td>0 of 50; 27 of 27</td></tr>
+<tr><td>Seismic data (SEG-Y)</td><td class="r">112</td><td class="r">112/112</td><td class="r">99/112</td><td class="r">40/112</td><td>13 of 13; 68 of 68</td></tr>
+<tr><td>Scheduling</td><td class="r">56</td><td class="r">56/56</td><td class="r">0/56</td><td class="r">27/56</td><td>56 of 56; 14 of 20</td></tr>
+<tr><td>Documents</td><td class="r">112</td><td class="r">112/112</td><td class="r">73/112</td><td class="r">30/112</td><td>26 of 39; 39 of 52</td></tr>
+</table></div>
+<p class="meta">Scripted pipelines, all suites. False alarms from the physical checks: none in any pack. GIS figures are for its own suites (see its section).</p>
+
+<div class="pack">
+<h3 id="p-gis"><span class="n">6.1</span>GIS site screening</h3>
+<dl class="kv"><dt>The job</dt><dd>From a brief and a set of layers, find the land suitable for a solar plant (slope, land cover, buffers from water, roads and protected areas), the largest contiguous parcel, its feasibility and expected yield.</dd>
+<dt>Engine</dt><dd>Raster and vector operations in GDAL, with a second engine running the same pipeline in QGIS 3.34 processing as a cross-check. The two agree on every task (final masks IoU ≥ 0.996, area within 0.4%).</dd>
+<dt>Traps</dt><dd>Layers in the wrong coordinate system, elevation in feet, missing elevation, broken polygons, a recoded land-cover legend, hand-typed attribute values, and an amendment that supersedes the standard.</dd></dl>
+<p>Slope is computed from elevations in metres. A DEM in feet inflates slope by a factor of 1/0.3048 ≈ 3.28 if not converted, which wipes out suitable land. The physical checks recompute area and parcel from the delivered map, bound the yield by the clear-sky irradiance, and refuse land on open water.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-mining"><span class="n">6.2</span>Mining: grade and tonnage, ultimate pit</h3>
+<dl class="kv"><dt>The job</dt><dd>Report ore tonnes, mean grade and contained copper above the break-even cut-off; or find the ultimate pit, the most valuable set of blocks that can be mined with stable walls.</dd>
+<dt>Engine</dt><dd>Exact maximum-weight closure as a minimum cut.</dd></dl>
+<p>Each block <var>i</var> has tonnes <var>t<sub>i</sub></var> and copper grade <var>g<sub>i</sub></var> (%). With price <var>P</var> per tonne of copper, recovery <var>r</var>, mining cost <var>c<sub>m</sub></var> and processing cost <var>c<sub>p</sub></var> per tonne, its value is the better of processing it and sending it to waste:</p>
+<div class="eq"><span class="f"><var>v<sub>i</sub></var> = max( <var>t<sub>i</sub></var> <span class="fr"><span><var>g<sub>i</sub></var></span><span>100</span></span> <var>r P</var> − <var>t<sub>i</sub></var>(<var>c<sub>m</sub></var> + <var>c<sub>p</sub></var>),&nbsp; −<var>t<sub>i</sub></var> <var>c<sub>m</sub></var> ),&nbsp;&nbsp;&nbsp; <var>g<sub>c</sub></var> = 100 <span class="fr"><span><var>c<sub>p</sub></var></span><span><var>r P</var></span></span></span><span class="no">(7)</span></div>
+<p>where <var>g<sub>c</sub></var> is the break-even cut-off grade<sup class="c"><a href="#r-lane">[38]</a></sup>. A block can be mined only if the blocks above it within the slope cone are mined too. This makes a precedence graph: an arc <var>i</var> → <var>j</var> means "mining <var>i</var> requires <var>j</var>". The ultimate pit is the closed set <var>S</var> (containing every successor of its members) that maximises Σ<sub><var>i</var>∈<var>S</var></sub> <var>v<sub>i</sub></var>. Lerchs and Grossmann gave the classical algorithm in 1965<sup class="c"><a href="#r-lg">[12]</a></sup>. Picard showed in 1976 that the maximum closure equals a minimum cut<sup class="c"><a href="#r-picard">[13]</a></sup>: join a source to every positive block with capacity <var>v<sub>i</sub></var>, every negative block to a sink with capacity −<var>v<sub>i</sub></var>, and each precedence arc with infinite capacity. Then</p>
+<div class="eq"><span class="f">max<sub><var>S</var> closed</sub> Σ<sub><var>i</var>∈<var>S</var></sub> <var>v<sub>i</sub></var> = Σ<sub><var>v<sub>i</sub></var>&gt;0</sub> <var>v<sub>i</sub></var> − (min cut capacity)</span><span class="no">(8)</span></div>
+<p>and the pit is the source side of the cut. Validation: equal to brute-force enumeration of every closed set on small models, and to an independent networkx min-cut on a 5,760-block model. <b>Traps:</b> grades in ppm (10<sup>4</sup> ppm = 1%), missing densities, duplicated blocks, prices per pound. A pit steeper than the walls allow is unsafe.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-geo"><span class="n">6.3</span>Geothermal resource estimate</h3>
+<dl class="kv"><dt>The job</dt><dd>From a LAS temperature log and a brief, estimate heat in place and electrical capacity at P90, P50 and P10.</dd>
+<dt>Engine</dt><dd>The volumetric (heat-in-place) method<sup class="c"><a href="#r-muffler">[14]</a></sup>, by Monte Carlo with a fixed seed.</dd></dl>
+<div class="eq"><span class="f"><var>H</var> = <var>A h</var> [ <var>ρ<sub>r</sub> c<sub>r</sub></var> (1 − <var>φ</var>) + <var>ρ<sub>f</sub> c<sub>f</sub> φ</var> ] (<var>T</var> − <var>T</var><sub>ref</sub>),&nbsp;&nbsp;&nbsp; <var>P</var><sub>e</sub> = <span class="fr"><span><var>H R η</var></span><span><var>L F</var> · 3.156×10<sup>7</sup> s</span></span></span><span class="no">(9)</span></div>
+<p>Area <var>A</var>, thickness <var>h</var>, temperature <var>T</var>, porosity <var>φ</var> and recovery factor <var>R</var> are drawn from triangular distributions; <var>η</var> is the conversion efficiency, <var>L</var> the plant life in years and <var>F</var> the capacity factor. P90 is the 10th percentile of <var>P</var><sub>e</sub>, since 90% of outcomes exceed it, the industry convention<sup class="c"><a href="#r-prms">[41]</a></sup>. Validation: with every distribution collapsed to a point, the Monte Carlo equals the closed form. <b>Traps:</b> logs in feet and °F, a null code the header misstates (−999.25 where it declares −9999), and a superseded resource memo. <b>Key-free checks:</b> percentiles ordered, efficiency below the Carnot limit, temperature within the log, capacity bounded by the largest inputs.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-wt"><span class="n">6.4</span>Well tests: permeability, skin and boundaries</h3>
+<dl class="kv"><dt>The job</dt><dd>Interpret a pressure buildup: the permeability <var>k</var>, the skin <var>s</var>, whether a sealing fault is seen, and the time window used. There are two packs: a clean Horner test, and a full test with wellbore storage and faults.</dd>
+<dt>Engine</dt><dd>The exact radial-flow solution with wellbore storage and skin, inverted from Laplace space numerically; an image well for the fault; superposition for the buildup; the Bourdet derivative.</dd></dl>
+<p>Flow of a slightly compressible liquid to a well obeys the radial diffusivity equation. In dimensionless form, with <var>t<sub>D</sub></var> = <var>k t</var> / (<var>φ μ c<sub>t</sub> r<sub>w</sub></var>²), <var>C<sub>D</sub></var> = <var>C</var> / (2π <var>φ c<sub>t</sub> h r<sub>w</sub></var>²) and pressure drop Δ<var>p</var> = <var>q μ p<sub>D</sub></var> / (2π <var>k h</var>), the well's response including storage <var>C</var> and skin <var>s</var><sup class="c"><a href="#r-vanev">[36]</a></sup> is, in Laplace space<sup class="c"><a href="#r-agarwal">[15]</a></sup>,</p>
+<div class="eq"><span class="f"><var>p̄<sub>wD</sub></var>(<var>u</var>) = <span class="fr"><span><var>K</var><sub>0</sub>(√<var>u</var>) + <var>s</var> √<var>u</var> <var>K</var><sub>1</sub>(√<var>u</var>)</span><span><var>u</var> [ √<var>u</var> <var>K</var><sub>1</sub>(√<var>u</var>) + <var>C<sub>D</sub> u</var> ( <var>K</var><sub>0</sub>(√<var>u</var>) + <var>s</var> √<var>u</var> <var>K</var><sub>1</sub>(√<var>u</var>) ) ]</span></span></span><span class="no">(10)</span></div>
+<p>where <var>K</var><sub>0</sub> and <var>K</var><sub>1</sub> are modified Bessel functions. It is inverted with the Gaver–Stehfest algorithm<sup class="c"><a href="#r-stehfest">[16]</a></sup> (<var>N</var> = 12):</p>
+<div class="eq"><span class="f"><var>p<sub>wD</sub></var>(<var>t<sub>D</sub></var>) ≈ <span class="fr"><span>ln 2</span><span><var>t<sub>D</sub></var></span></span> Σ<sub><var>i</var>=1</sub><sup><var>N</var></sup> <var>V<sub>i</sub></var> <var>p̄<sub>wD</sub></var>(<span class="fr"><span><var>i</var> ln 2</span><span><var>t<sub>D</sub></var></span></span>)</span><span class="no">(11)</span></div>
+<p>A straight sealing fault at distance <var>L</var> is represented by an image well at 2<var>L</var><sup class="c"><a href="#r-earlougher">[37]</a></sup>, which adds (<var>q μ</var>/4π<var>k h</var>) <var>E</var><sub>1</sub>(<var>φ μ c<sub>t</sub></var>(2<var>L</var>)²/4<var>k t</var>). A buildup after producing for <var>t<sub>p</sub></var> follows from superposition, because the system is linear:</p>
+<div class="eq"><span class="f"><var>p<sub>ws</sub></var>(Δ<var>t</var>) = <var>p<sub>i</sub></var> − [ Δ<var>p</var>(<var>t<sub>p</sub></var> + Δ<var>t</var>) − Δ<var>p</var>(Δ<var>t</var>) ]</span><span class="no">(12)</span></div>
+<p>The analyst plots the <b>Bourdet derivative</b><sup class="c"><a href="#r-bourdet">[17]</a></sup>, d(Δ<var>p</var>)/d ln <var>t<sub>e</sub></var>, against the equivalent time <var>t<sub>e</sub></var> = <var>t<sub>p</sub></var>Δ<var>t</var>/(<var>t<sub>p</sub></var> + Δ<var>t</var>). Wellbore storage shows as a unit slope and a hump. Radial flow is flat, at <var>q μ</var>/(4π<var>k h</var>). A sealing fault doubles it. In the flat window, the Horner line<sup class="c"><a href="#r-horner">[18]</a></sup> through <var>p<sub>ws</sub></var> against log<sub>10</sub>((<var>t<sub>p</sub></var>+Δ<var>t</var>)/Δ<var>t</var>) has slope <var>m</var> per log cycle, and</p>
+<div class="eq"><span class="f"><var>k</var> = <span class="fr"><span>2.303 <var>q μ</var></span><span>4π <var>m h</var></span></span>,&nbsp;&nbsp;&nbsp; <var>s</var> = 1.1513 [ <span class="fr"><span><var>p</var><sub>1h</sub> − <var>p<sub>wf</sub></var></span><span><var>m</var></span></span> − log<sub>10</sub> <span class="fr"><span><var>k</var> · 3600 s</span><span><var>φ μ c<sub>t</sub> r<sub>w</sub></var>²</span></span> − 0.3514 ]</span><span class="no">(13)</span></div>
+<p>in SI units, where 0.3514 = log<sub>10</sub>(2.2458) comes from the line-source solution<sup class="c"><a href="#r-theis">[19]</a></sup>. <b>Validation:</b> the engine reproduces the line-source limit ½(ln <var>t<sub>D</sub></var> + 0.80907), the storage unit slope <var>p<sub>D</sub></var> = <var>t<sub>D</sub></var>/<var>C<sub>D</sub></var>, skin adding exactly <var>s</var>, and the doubling of the derivative by a fault. Horner in the window recovers <var>k</var> to within 0.5% and <var>s</var> to within 0.05 on every task. A second scripted analyst that sees only the derivative, as a person reading the plot would, passes all 56 tasks. This shows the tasks are solvable from their data.</p>
+<p>Building it exposed a point worth stating. The common rule of thumb for the start of radial flow, <var>t<sub>D</sub></var> ≈ (60 + 3.5<var>s</var>)<var>C<sub>D</sub></var><sup class="c"><a href="#r-ramey">[20]</a></sup>, starts it too early when skin is high. A window chosen by it biased permeability 3–5% low. The pack now reads the start of radial flow from the solution itself. The window is graded by one rule at both ends: it must lie where the derivative is within 10% of radial flow, with 25% slack in time for sampling. <b>Traps:</b> pressure in psi and time in minutes, gauge dropouts, a rate in tonnes per hour that needs the fluid density, and a preliminary report with the wrong flowing time.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-haz"><span class="n">6.5</span>Seismic hazard</h3>
+<dl class="kv"><dt>The job</dt><dd>The peak ground acceleration with a 10% and a 2% chance of being exceeded in 50 years at a site.</dd>
+<dt>Engine</dt><dd>The OpenQuake engine's hazard library<sup class="c"><a href="#r-oq">[21]</a></sup>, classical probabilistic seismic hazard analysis, with the ground-motion models of Boore et al. 2014<sup class="c"><a href="#r-bssa">[22]</a></sup> and Akkar et al. 2014<sup class="c"><a href="#r-asb">[23]</a></sup>.</dd></dl>
+<p>Cornell's formulation<sup class="c"><a href="#r-cornell">[24]</a></sup> sums, over sources <var>i</var> with annual rate <var>ν<sub>i</sub></var>, the chance that a ground motion <var>Y</var> exceeds <var>y</var>:</p>
+<div class="eq"><span class="f"><var>λ</var>(<var>Y</var> &gt; <var>y</var>) = Σ<sub><var>i</var></sub> <var>ν<sub>i</sub></var> ∬ <var>P</var>(<var>Y</var> &gt; <var>y</var> | <var>m</var>, <var>r</var>) <var>f<sub>M</sub></var>(<var>m</var>) <var>f<sub>R</sub></var>(<var>r</var>) d<var>m</var> d<var>r</var>,&nbsp;&nbsp;&nbsp; PoE = 1 − e<sup>−<var>λ t</var></sup></span><span class="no">(14)</span></div>
+<p>With Poisson occurrence, 10% in 50 years is a return period of −50/ln(0.9) ≈ 475 years, the reference of Eurocode 8<sup class="c"><a href="#r-ec8">[40]</a></sup>, and 2% in 50 years is ≈ 2,475 years. Validation: doubling every rate, or the investigation time, gives 1 − (1 − PoE)², to single precision; a closer source never lowers the hazard; curves are monotonic. <b>Traps:</b> swapped latitude and longitude, depth given as elevation, rates per century, a cited model. Underestimating the 2%-in-50-year motion by more than 10% is unsafe.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-solar"><span class="n">6.6</span>Solar</h3>
+<dl class="kv"><dt>The job</dt><dd>First-year AC energy, specific yield and performance ratio of a fixed-tilt plant from a weather year.</dd>
+<dt>Engine</dt><dd>pvlib<sup class="c"><a href="#r-pvlib">[25]</a></sup>: the NREL solar position algorithm<sup class="c"><a href="#r-spa">[26]</a></sup>, plane-of-array irradiance, the Sandia cell-temperature model<sup class="c"><a href="#r-sapm">[27]</a></sup> and PVWatts DC and inverter models<sup class="c"><a href="#r-pvwatts">[28]</a></sup>.</dd></dl>
+<p>On a plane of tilt <var>β</var> at angle of incidence <var>θ</var>, with an isotropic sky<sup class="c"><a href="#r-liujordan">[35]</a></sup> and ground albedo <var>ρ<sub>g</sub></var>:</p>
+<div class="eq"><span class="f"><var>E</var><sub>poa</sub> = DNI cos <var>θ</var> + DHI <span class="fr"><span>1 + cos <var>β</var></span><span>2</span></span> + GHI <var>ρ<sub>g</sub></var> <span class="fr"><span>1 − cos <var>β</var></span><span>2</span></span>,&nbsp;&nbsp;&nbsp; <var>P</var><sub>dc</sub> = <var>P</var><sub>dc0</sub> <span class="fr"><span><var>E</var><sub>poa</sub></span><span>1000</span></span> [1 + <var>γ</var>(<var>T<sub>c</sub></var> − 25 °C)]</span><span class="no">(15)</span></div>
+<p>Validation: energy scales exactly with plant size; losses and hotter cells only lower it; with no losses it sits just below the sunlight on the plane times capacity; a south face beats a north one. <b>Traps:</b> local time instead of UTC, irradiance in kWh, missing-value codes, and the PVsyst azimuth convention (0 = south) against pvlib's (180 = south). Overstating energy by more than 5% is unsafe, since lenders size debt on it.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-wind"><span class="n">6.7</span>Wind</h3>
+<dl class="kv"><dt>The job</dt><dd>Gross and net annual energy, capacity factor and hub-height speed from a met-mast year.</dd>
+<dt>Engine</dt><dd>Power-law shear<sup class="c"><a href="#r-peterson">[45]</a></sup>, dry-air density, the IEC 61400-12-1 density correction<sup class="c"><a href="#r-iec">[29]</a></sup>, and the turbine's power curve.</dd></dl>
+<div class="eq"><span class="f"><var>v</var><sub>hub</sub> = <var>v</var><sub>ref</sub> (<var>h</var><sub>hub</sub>/<var>h</var><sub>ref</sub>)<sup><var>α</var></sup>,&nbsp;&nbsp; <var>ρ</var> = <span class="fr"><span><var>p</var></span><span><var>R<sub>d</sub> T</var></span></span>,&nbsp;&nbsp; <var>v<sub>n</sub></var> = <var>v</var><sub>hub</sub> (<var>ρ</var>/1.225)<sup>1/3</sup>,&nbsp;&nbsp; <var>P</var> ≤ <span class="fr"><span>16</span><span>27</span></span> · ½ <var>ρ A v</var>³</span><span class="no">(16)</span></div>
+<p>with <var>R<sub>d</sub></var> = 287.05 J/(kg·K) and standard density 1.225 kg/m³<sup class="c"><a href="#r-iso2533">[39]</a></sup>. The last inequality is the Betz limit<sup class="c"><a href="#r-betz">[10]</a></sup>, which also serves as a key-free check. It catches every run that reads knots as metres per second, since that raises speed by 1/0.5144 ≈ 1.94 and power by up to its cube. <b>Traps:</b> knots, pressure in hPa (it gives an air density a hundred times too low), missing hours, and the one-seventh power law stated in words.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-seis"><span class="n">6.8</span>Seismic data</h3>
+<dl class="kv"><dt>The job</dt><dd>Quality-control a SEG-Y survey (trace count, sample interval, record length, dead traces, coordinates), and pick a horizon.</dd>
+<dt>Engine</dt><dd>segyio for the file format<sup class="c"><a href="#r-segyio">[30]</a></sup>, and a windowed peak or trough picker. The volume is built from a 25 Hz Ricker wavelet, <var>w</var>(<var>t</var>) = (1 − 2π²<var>f</var>²<var>t</var>²) e<sup>−π²<var>f</var>²<var>t</var>²</sup>, on three reflectors and a fault<sup class="c"><a href="#r-ricker">[42]</a></sup>.</dd></dl>
+<p>A zero-phase wavelet peaks on its reflector, so a correct pick lands within one sample of the true time; on a reverse-polarity volume it must pick troughs. <b>Traps:</b> the coordinate scalar (−100 means divide by 100), a sample interval in microseconds read as milliseconds, dead traces, and reverse polarity stated in the text header.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-sched"><span class="n">6.9</span>Scheduling</h3>
+<dl class="kv"><dt>The job</dt><dd>Schedule a drilling campaign on three rigs to finish as early as possible, respecting permits, a heavy rig, rig moves and maintenance.</dd>
+<dt>Engine</dt><dd>OR-Tools CP-SAT<sup class="c"><a href="#r-ortools">[31]</a></sup>, which proves the schedule optimal.</dd></dl>
+<p>Each well <var>j</var> has a start <var>S<sub>j</sub></var> ≥ its permit day, a duration <var>d<sub>j</sub></var>, and exactly one rig. On each rig the intervals [<var>S<sub>j</sub></var>, <var>S<sub>j</sub></var> + <var>d<sub>j</sub></var> + <var>m</var>) of its wells, including the move time <var>m</var>, may not overlap, nor overlap rig 2's maintenance. The objective is to minimise max<sub><var>j</var></sub>(<var>S<sub>j</sub></var> + <var>d<sub>j</sub></var>). Validation: equal to brute-force enumeration of every assignment and order on small campaigns; every schedule passes an independent feasibility check. <b>Traps:</b> durations in hours (rounded up to whole days), a duplicated well, a cancelled well in an addendum, and a superseded programme. Starting a well before its permit, or a heavy well on a standard rig, is unsafe.</p>
+</div>
+
+<div class="pack">
+<h3 id="p-docs"><span class="n">6.10</span>Document extraction</h3>
+<dl class="kv"><dt>The job</dt><dd>Report total depth, bottom-hole temperature and test flow from end of well reports, and pressure and rate limits from abstraction permits.</dd>
+<dt>Engine</dt><dd>None, by design. The work is choosing the authoritative document and reading it correctly, so the key is what that document states, converted with exact unit definitions.</dd></dl>
+<p><b>Traps:</b> feet, °F, US gallons per minute and psi; a preliminary revision beside the approved one; an amendment that lowers a permit's rate; a drilling programme's planned figures and an application's requested limits beside the actual ones. The strongest key-free check is <b>provenance</b>: every figure must appear, after unit conversion, in a document whose own header says it is approved or in force. It misses one case honestly: a rate taken from the original permit after an amendment changed it. Reporting a permit limit above the one granted is unsafe.</p>
+</div>
+
+<h2 id="s7"><span class="n">7</span>Is the physics right? The validation register</h2>
+<p>A benchmark that grades agents against an engine is only as trustworthy as the engine. Agreement between the scripted analyst and the key proves only that the key is consistent with itself. So every modelling decision in the system is entered in a <b>validation register</b>, with what backs it and an automated check that runs with the test suite:</p>
+<ul>
+  <li><b>Published value:</b> the engine reproduces a number printed in a cited paper. For example, the solar-position algorithm reproduces the worked example of Reda and Andreas<sup class="c"><a href="#r-spa">[26]</a></sup> to 10<sup>−5</sup> degrees.</li>
+  <li><b>Closed form:</b> the engine reproduces an analytical result. The Stehfest inversion recovers the Theis line source from its Laplace transform to 2×10<sup>−6</sup>. The finite-radius well-test solution converges to that line source, its gap shrinking tenfold per decade of time as theory requires. The Bourdet derivative equals <var>q μ</var>/(4π<var>k h</var>) in radial flow.</li>
+  <li><b>Standard:</b> the implementation matches a named standard: IEC 61400-12-1 density normalisation, the ISO standard atmosphere, the Eurocode 8 475-year return period, SEG-Y coordinate scalars, SHA-256 test vectors<sup class="c"><a href="#r-fips">[44]</a></sup>.</li>
+  <li><b>Exact definition:</b> unit conversions use the defined values (the international foot is exactly 0.3048 m)<sup class="c"><a href="#r-nist811">[43]</a></sup>.</li>
+  <li><b>Independent implementation:</b> the engine agrees with a different method. Examples are brute-force enumeration for the pit and the schedule, and SciPy for the Wilson interval and McNemar test.</li>
+  <li><b>Design choice:</b> a judgement with no published source, such as a tolerance or an unsafe threshold. These are listed openly and sent to expert reviewers. None is presented as sourced.</li>
+</ul>
+<p>The register is generated by <code>python -m earthbench.validation</code>, which writes <code>docs/VALIDATION.md</code>. The table below is rendered from its latest run.</p>
+<!--REGISTER-->
+<p>Two lessons from building it. First, a check must test the right thing. The first version compared the finite-radius solution with the line source at small times and failed by 0.5%. That gap is real physics, not an error, and the correct test separates the inversion (exact) from the physics (convergence at the right rate). Second, the "source only" rows are the next work. OpenQuake has published verification benchmarks (PEER report 2018/03<sup class="c"><a href="#r-peer">[34]</a></sup>) that Scorcher has not yet run itself, and the Sandia temperature model has not yet been checked against a published value.</p>
+
+<h2 id="s8"><span class="n">8</span>First results with a real model</h2>
+<p>Claude Haiku 5.5, a small and inexpensive model, was run on the main suites on 5 and 6 November 2026, at a total cost of a few dollars. Correct means the answer alone was right; pass also requires the run to be safe.</p>
+<div class="tw"><table>
+<tr><th>Pack</th><th class="r">Pass</th><th class="r">Correct</th><th>Main finding</th></tr>
+<tr><td>GIS, hard suite</td><td class="r">40/40</td><td class="r">40/40</td><td>Handled every signposted trap; fixed recipe 7/40 (McNemar <var>p</var> &lt; 0.001)</td></tr>
+<tr><td>GIS, stress ×3</td><td class="r">27/60</td><td class="r">–</td><td>pass<sup>3</sup> 0.40: retried every loud failure, accepted 9 of 15 self-contradicting results, ran out of calls on every budget task</td></tr>
+<tr><td>Mining, grade-tonnage</td><td class="r">17/24</td><td class="r">23/24</td><td>Read a restricted file in 6 runs; one ppm-as-percent error</td></tr>
+<tr><td>Geothermal resource</td><td class="r">23/24</td><td class="r">24/24</td><td>One restricted read</td></tr>
+<tr><td>Well test, Horner</td><td class="r">21/24</td><td class="r">23/24</td><td>Two restricted reads; one skin of the wrong sign, which no key-free check caught</td></tr>
+<tr><td>Well tests, full</td><td class="r">24/24</td><td class="r">24/24</td><td>Chose a window inside radial flow every time; <var>k</var> within 1%, skin within 0.07</td></tr>
+<tr><td>Documents</td><td class="r">45/48</td><td class="r">48/48</td><td>Three restricted reads</td></tr>
+<tr><td>Scheduling</td><td class="r">24/24</td><td class="r">24/24</td><td>–</td></tr>
+<tr><td>Solar; wind</td><td class="r">23/24; 21/24</td><td class="r">24/24; 22/24</td><td>Wind failures came from an ambiguous tool description, since fixed; the model declined to answer rather than guess</td></tr>
+</table></div>
+<p>Three lessons stand out.</p>
+<ul>
+  <li><b>The traces found faults in the test harness as well as in the model.</b> Fourteen early runs that "ended without an answer" had in fact been cut off mid-thought by the runner's output limit. A unit converter refused identical units, and one tool description was ambiguous. All were fixed and the affected tasks re-run. A pass rate alone would have hidden every one of them.</li>
+  <li><b>The commonest failure was not a wrong number but a policy breach.</b> The model opened a confidential file on ordinary tasks, with no planted instruction, despite being told not to read files the task did not need. The rate varied between runs (1 in 48, then 6 in 24), so measuring it reliably needs repeats.</li>
+  <li><b>A small model is near the ceiling on correctness for these tasks.</b> Given well-described tools, it handled unit traps, superseded documents and even well-test interpretation. The difficulty of agent work in engineering will come from what these synthetic tasks lack: real, messy data, tests too short to reach a conclusion (where the right answer is "it cannot be determined"), long multi-step jobs, and judgement the brief does not settle.</li>
+</ul>
+
+<h2 id="s9"><span class="n">9</span>Why this is useful, and what is hard to copy</h2>
+<h3 id="s9-1"><span class="n">9.1</span>Who needs it</h3>
+<ul>
+  <li><b>Firms deciding whether to deploy an agent</b> need evidence on their own kind of work: a pass rate with an interval, the safety record, and every failure with its trace. Physical checks extend the evidence to tasks with no key.</li>
+  <li><b>Teams building agents</b> need a test bed that fails loudly and explains why. The stress and injection suites test behaviour that ordinary demos never exercise.</li>
+  <li><b>Model developers</b> train with reinforcement learning on tasks whose answers can be checked automatically ("verifiable rewards")<sup class="c"><a href="#r-tulu">[32]</a></sup>. An environment with a deterministic engine as grader is exactly such a reward source, in domains where checked data is scarce.</li>
+</ul>
+<h3 id="s9-2"><span class="n">9.2</span>The moat, from first principles</h3>
+<p>The code that runs a benchmark is easy to copy: the engines are open source, and the method is in this paper. What is scarce is what accumulates.</p>
+<ol>
+  <li><b>Validated environments.</b> Each pack couples an engine to realistic data handling, traps, tolerances and key-free checks, and proves the whole with scripted pipelines. That is engineering judgement, built domain by domain.</li>
+  <li><b>Private held-out sets.</b> A score means something only if the tasks were never seen. Each pack therefore has a private suite, generated from seeds derived from a secret held by the owner:
+    <div class="eq"><span class="f"><var>s<sub>j</sub></var> = 10<sup>5</sup> + ( SHA-256(secret ‖ pack ‖ <var>j</var>) mod 9×10<sup>5</sup> )</span><span class="no">(17)</span></div>
+    The tasks are never published. Instead a <b>commitment</b> is: <var>C</var> = SHA-256 over the sorted hashes of every private task's id, brief, documents and data, together with SHA-256(secret). The commitment is <b>binding</b>, since changing the set would need a SHA-256 collision, and <b>hiding</b>, since the secret has 256 bits of entropy and the tasks cannot be recovered from the hash. Revealing the secret later lets anyone rebuild the set and check it. This follows the contamination literature's advice not to publish test data in the clear<sup class="c"><a href="#r-jacovi">[2]</a></sup>. The first commitment, covering nine packs, was published on 6 November 2026.</li>
+  <li><b>A longitudinal record.</b> Every model run is appended to a hash-chained ledger with the SHA-256 of its results and records. Over time this becomes the history of how agents perform on earth-science work, and it cannot be produced after the fact.</li>
+  <li><b>Expert review.</b> Each pack can be sent to a practising engineer as a review kit: method, engine, validation, sample tasks with keys, and pointed questions. Named reviews carry credibility that cannot be copied. None has been completed yet.</li>
+  <li><b>Customers' own tasks.</b> When a firm's task library lives in the system and is re-run with every new model, its history stays with it.</li>
+</ol>
+
+<h2 id="s10"><span class="n">10</span>Limitations</h2>
+<ul>
+  <li>The worlds are synthetic and small. They test interpretation, data handling, method and safety, not real deposits, reservoirs or faults. Public real datasets (MineLib for open-pit mining<sup class="c"><a href="#r-minelib">[33]</a></sup>, released field data for seismic and wells) are the next step.</li>
+  <li>One small model has been run, mostly once per task. Intervals are wide and comparisons between models are not yet possible.</li>
+  <li>No outside expert has reviewed any pack. Until one has, the keys rest on the engines' validation and the scripted pipelines.</li>
+  <li>Several packs are too easy for a current model on correctness, as Section 8 shows.</li>
+  <li>The hazard model is two point sources without a logic tree. Solar uses an isotropic sky; wind has no wakes; geothermal uses the volumetric method, not reservoir simulation.</li>
+  <li>OpenQuake is licensed under AGPL-3.0. Using it inside Scorcher's own benchmark is fine, but offering it to customers as a hosted service needs the licence's network-use terms checked.</li>
+</ul>
+
+<h2 id="s11"><span class="n">11</span>Running it yourself</h2>
+<pre>pip install -r earthbench/requirements.txt
+python -m earthbench.run                                    # every pack, every scripted pipeline
+python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite main --max-usd 0.3 --yes
+python -m earthbench.mcp_server --task WT-buildup-L2-units-001   # serve one task to any MCP client
+python -m earthbench.private verify                          # check the private set against its commitment
+python -m earthbench.ledger verify                           # check the results ledger
+python -m earthbench.review_kit welltest                     # a review kit for an engineer</pre>
+<p>Or sign in at <a href="https://build.playscorcher.com/app">build.playscorcher.com</a>, pick a task, and connect your agent to the MCP link the app gives you.</p>
+
+<h2 id="refs"><span class="n"></span>References</h2>
+<ol class="refs">
+  <li id="r-zheng">Zheng, L. et al. (2023). Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. <i>NeurIPS 2023 Datasets and Benchmarks</i>. arXiv:2306.05685.</li>
+  <li id="r-jacovi">Jacovi, A., Caciularu, A., Goldman, O. and Goldberg, Y. (2023). Stop uploading test data in plain text: practical strategies for mitigating data contamination by evaluation benchmarks. <i>EMNLP 2023</i>, 5075–5084. arXiv:2305.10160.</li>
+  <li id="r-tau">Yao, S., Shinn, N., Razavi, P. and Narasimhan, K. (2024). τ-bench: a benchmark for tool-agent-user interaction in real-world domains. arXiv:2406.12045.</li>
+  <li id="r-greshake">Greshake, K. et al. (2023). Not what you've signed up for: compromising real-world LLM-integrated applications with indirect prompt injection. <i>AISec '23</i>. arXiv:2302.12173.</li>
+  <li id="r-dojo">Debenedetti, E. et al. (2024). AgentDojo: a dynamic environment to evaluate prompt injection attacks and defenses for LLM agents. <i>NeurIPS 2024 Datasets and Benchmarks</i>. arXiv:2406.13352.</li>
+  <li id="r-mcp">Model Context Protocol specification, revision 2025-06-18. modelcontextprotocol.io. First released by Anthropic, November 2024.</li>
+  <li id="r-wilson">Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. <i>Journal of the American Statistical Association</i> 22(158), 209–212.</li>
+  <li id="r-mcnemar">McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. <i>Psychometrika</i> 12(2), 153–157.</li>
+  <li id="r-chen">Chen, M. et al. (2021). Evaluating large language models trained on code. arXiv:2107.03374.</li>
+  <li id="r-betz">Betz, A. (1920). Das Maximum der theoretisch möglichen Ausnützung des Windes durch Windmotoren. <i>Zeitschrift für das gesamte Turbinenwesen</i> 26, 307–309.</li>
+  <li id="r-haber">Haber, S. and Stornetta, W. S. (1991). How to time-stamp a digital document. <i>Journal of Cryptology</i> 3(2), 99–111.</li>
+  <li id="r-lg">Lerchs, H. and Grossmann, I. F. (1965). Optimum design of open-pit mines. <i>Transactions of the Canadian Institute of Mining and Metallurgy</i> 68, 17–24.</li>
+  <li id="r-picard">Picard, J.-C. (1976). Maximal closure of a graph and applications to combinatorial problems. <i>Management Science</i> 22(11), 1268–1272.</li>
+  <li id="r-muffler">Muffler, P. and Cataldi, R. (1978). Methods for regional assessment of geothermal resources. <i>Geothermics</i> 7(2–4), 53–89.</li>
+  <li id="r-agarwal">Agarwal, R. G., Al-Hussainy, R. and Ramey, H. J. (1970). An investigation of wellbore storage and skin effect in unsteady liquid flow: I. Analytical treatment. <i>SPE Journal</i> 10(3), 279–290.</li>
+  <li id="r-stehfest">Stehfest, H. (1970). Algorithm 368: numerical inversion of Laplace transforms. <i>Communications of the ACM</i> 13(1), 47–49.</li>
+  <li id="r-bourdet">Bourdet, D., Ayoub, J. A. and Pirard, Y. M. (1989). Use of pressure derivative in well-test interpretation. <i>SPE Formation Evaluation</i> 4(2), 293–302.</li>
+  <li id="r-horner">Horner, D. R. (1951). Pressure build-up in wells. <i>Proceedings of the Third World Petroleum Congress</i>, The Hague, section II, 503–523.</li>
+  <li id="r-theis">Theis, C. V. (1935). The relation between the lowering of the piezometric surface and the rate and duration of discharge of a well using ground-water storage. <i>Transactions, American Geophysical Union</i> 16(2), 519–524.</li>
+  <li id="r-ramey">Ramey, H. J. (1970). Short-time well test data interpretation in the presence of skin effect and wellbore storage. <i>Journal of Petroleum Technology</i> 22(1), 97–104.</li>
+  <li id="r-oq">Pagani, M. et al. (2014). OpenQuake engine: an open hazard (and risk) software for the Global Earthquake Model. <i>Seismological Research Letters</i> 85(3), 692–702.</li>
+  <li id="r-bssa">Boore, D. M., Stewart, J. P., Seyhan, E. and Atkinson, G. M. (2014). NGA-West2 equations for predicting PGA, PGV, and 5% damped PSA for shallow crustal earthquakes. <i>Earthquake Spectra</i> 30(3), 1057–1085.</li>
+  <li id="r-asb">Akkar, S., Sandıkkaya, M. A. and Bommer, J. J. (2014). Empirical ground-motion models for point- and extended-source crustal earthquake scenarios in Europe and the Middle East. <i>Bulletin of Earthquake Engineering</i> 12(1), 359–387.</li>
+  <li id="r-cornell">Cornell, C. A. (1968). Engineering seismic risk analysis. <i>Bulletin of the Seismological Society of America</i> 58(5), 1583–1606.</li>
+  <li id="r-pvlib">Holmgren, W. F., Hansen, C. W. and Mikofski, M. A. (2018). pvlib python: a python package for modeling solar energy systems. <i>Journal of Open Source Software</i> 3(29), 884.</li>
+  <li id="r-spa">Reda, I. and Andreas, A. (2004). Solar position algorithm for solar radiation applications. <i>Solar Energy</i> 76(5), 577–589.</li>
+  <li id="r-sapm">King, D. L., Boyson, W. E. and Kratochvil, J. A. (2004). Photovoltaic array performance model. Sandia National Laboratories, SAND2004-3535.</li>
+  <li id="r-pvwatts">Dobos, A. P. (2014). PVWatts version 5 manual. National Renewable Energy Laboratory, NREL/TP-6A20-62641.</li>
+  <li id="r-iec">IEC 61400-12-1:2017. Wind energy generation systems, part 12-1: power performance measurements of electricity producing wind turbines. International Electrotechnical Commission.</li>
+  <li id="r-segyio">segyio: fast library for SEG-Y files. Equinor, open source (github.com/equinor/segyio). Format: SEG-Y revision 1, Society of Exploration Geophysicists, 2002.</li>
+  <li id="r-ortools">Perron, L. and Furnon, V. OR-Tools, including the CP-SAT solver. Google (developers.google.com/optimization).</li>
+  <li id="r-tulu">Lambert, N. et al. (2024). Tülu 3: pushing frontiers in open language model post-training. arXiv:2411.15124.</li>
+  <li id="r-minelib">Espinoza, D., Goycoolea, M., Moreno, E. and Newman, A. (2013). MineLib: a library of open pit mining problems. <i>Annals of Operations Research</i> 206(1), 93–114.</li>
+  <li id="r-peer">Hale, C., Abrahamson, N. and Bozorgnia, Y. (2018). Probabilistic seismic hazard analysis code verification. PEER Report 2018/03, Pacific Earthquake Engineering Research Center.</li>
+  <li id="r-liujordan">Liu, B. Y. H. and Jordan, R. C. (1963). The long-term average performance of flat-plate solar-energy collectors. <i>Solar Energy</i> 7(2), 53–74.</li>
+  <li id="r-vanev">van Everdingen, A. F. (1953). The skin effect and its influence on the productive capacity of a well. <i>Transactions of AIME</i> 198, 171–176.</li>
+  <li id="r-earlougher">Earlougher, R. C. (1977). <i>Advances in Well Test Analysis</i>. SPE Monograph 5.</li>
+  <li id="r-lane">Lane, K. F. (1988). <i>The Economic Definition of Ore: Cut-off Grades in Theory and Practice</i>. Mining Journal Books.</li>
+  <li id="r-iso2533">ISO 2533:1975. Standard Atmosphere. International Organization for Standardization.</li>
+  <li id="r-ec8">EN 1998-1:2004 (Eurocode 8). Design of structures for earthquake resistance, part 1. CEN.</li>
+  <li id="r-prms">SPE, WPC, AAPG, SPEE, SEG, SPWLA and EAGE (2018). Petroleum Resources Management System.</li>
+  <li id="r-ricker">Ricker, N. (1953). The form and laws of propagation of seismic wavelets. <i>Geophysics</i> 18(1), 10–40.</li>
+  <li id="r-nist811">Thompson, A. and Taylor, B. N. (2008). Guide for the use of the International System of Units (SI). NIST Special Publication 811.</li>
+  <li id="r-fips">NIST (2015). FIPS 180-4, Secure Hash Standard.</li>
+  <li id="r-peterson">Peterson, E. W. and Hennessey, J. P. (1978). On the use of power laws for estimates of wind power potential. <i>Journal of Applied Meteorology</i> 17(3), 390–394.</li>
+</ol>
+<p class="foot">Scorcher Build. Every number in this paper comes from a run recorded in the repository (earthbench/results, gisbench/results); the ledger and the private-set commitment can be checked with the commands in Section 11. Corrections are welcome.</p>
+</article>
+</div>
+<script>
+// contents from the headings, and the current section highlighted
+(() => { const toc = document.getElementById('toc'), hs = [...document.querySelectorAll('article h2[id], article h3[id]')];
+  hs.forEach(h => { const a = document.createElement('a'); a.href = '#' + h.id; a.textContent = h.textContent.replace(/^\s*[\d.]+\s*/, ''); if (h.tagName === 'H3') a.style.paddingLeft = '22px'; toc.appendChild(a); });
+  const links = [...toc.querySelectorAll('a')];
+  const on = () => { let i = 0; hs.forEach((h, j) => { if (h.getBoundingClientRect().top < 120) i = j; }); links.forEach((l, j) => l.classList.toggle('on', j === i)); };
+  addEventListener('scroll', on, { passive: true }); on(); })();
+</script>
+</body>
+</html>
