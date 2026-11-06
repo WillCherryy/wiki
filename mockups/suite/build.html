@@ -42,7 +42,7 @@ a { color: inherit; text-underline-offset: .2em; }
 .mark i { display: block; width: 14px; height: 14px; background: linear-gradient(90deg, var(--neg) 50%, var(--pos) 50%); }
 .mark span { font-weight: 450; font-stretch: 100%; color: var(--ink-3); letter-spacing: 0; }
 .bar nav { display: flex; gap: 28px; margin-left: auto; font-size: 15px; } .bar nav a { text-decoration: none; color: var(--ink-2); } .bar nav a:hover { color: var(--ink); }
-.bar .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+.bar .btn { height: 40px; padding: 0 16px; font-size: 14px; } .bar .acts { display: flex; gap: 8px; } @media (max-width: 960px) { .bar .acts { margin-left: auto; } .bar .acts .line { display: none; } }
 
 /* depth rail: the page is a borehole; sections sit at depths */
 .rail { position: fixed; z-index: 70; left: 0; top: 64px; bottom: 0; width: 44px; border-right: 1px solid var(--rule); background: var(--ground); }
@@ -82,21 +82,38 @@ main { margin-left: 44px; }
 .track svg { position: sticky; top: 64px; width: 100%; height: calc(100vh - 64px); display: block; }
 .track .lbl { position: sticky; top: 76px; padding: 0 16px; display: flex; justify-content: space-between; font: 400 12px var(--mono); color: var(--ink-3); }
 
-/* domains: photographs revealed through shifting traces */
-.domains { position: relative; height: 640vh; background: var(--ink); color: var(--ground); }
-.domains .stage { position: sticky; top: 64px; height: calc(100vh - 64px); overflow: hidden; }
-.plate { position: absolute; inset: 0; }
-.plate .s { position: absolute; top: 0; bottom: 0; background-size: var(--W) 100%; background-repeat: no-repeat; will-change: transform; }
-.plate canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.plate::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13, 15, 14, .78) 0, rgba(13, 15, 14, .55) 36%, rgba(13, 15, 14, 0) 70%); pointer-events: none; }
-.dtext { position: absolute; z-index: 3; left: var(--pad); bottom: clamp(40px, 9vh, 96px); width: min(560px, 80vw); opacity: 0; transform: translateY(24px); transition: opacity .5s cubic-bezier(.2, .9, .1, 1), transform .5s cubic-bezier(.2, .9, .1, 1); }
-.dtext.on { opacity: 1; transform: none; }
-.dtext h2 { font-size: clamp(40px, 5vw, 80px); font-weight: 640; font-stretch: 118%; letter-spacing: -.035em; line-height: .96; }
-.dtext p { margin-top: 16px; font-size: 18px; color: rgba(243, 244, 241, .82); max-width: 44ch; }
-.dtext .tools { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px; } .dtext .tools span { padding: 4px 8px; border: 1px solid rgba(243, 244, 241, .35); font: 400 12px var(--mono); color: rgba(243, 244, 241, .9); }
-.dindex { position: absolute; z-index: 3; right: var(--pad); top: 40px; display: grid; gap: 2px; text-align: right; padding: 12px 14px; background: rgba(13, 15, 14, .82); }
-.dindex a { font: 400 13px var(--mono); color: rgba(243, 244, 241, .45); text-decoration: none; transition: color .3s; } .dindex a.on { color: var(--signal); }
-.credit { position: absolute; z-index: 3; right: var(--pad); bottom: 16px; padding: 4px 8px; background: rgba(13, 15, 14, .7); font: 400 11px var(--mono); color: rgba(243, 244, 241, .7); }
+/* domains: a grid of disciplines, each linked to its results */
+.domains { padding: 120px var(--pad); background: var(--ink); color: var(--ground); }
+.domains .h2 { color: var(--ground); max-width: 16ch; } .domains > .lede { margin-top: 20px; color: rgba(243, 244, 241, .78); max-width: 60ch; }
+.dgrid { margin-top: 56px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: rgba(243, 244, 241, .16); border: 1px solid rgba(243, 244, 241, .16); }
+.dcard { background: var(--ink); display: flex; flex-direction: column; color: inherit; text-decoration: none; }
+.dcard .ph { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #1b1e1c; }
+.dcard .ph img, .dcard .ph canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.2, .9, .1, 1); }
+.dcard:hover .ph img, .dcard:hover .ph canvas { transform: scale(1.03); }
+.dcard .ph .cr { position: absolute; right: 8px; bottom: 8px; padding: 2px 6px; background: rgba(13, 15, 14, .7); font: 400 10.5px var(--mono); color: rgba(243, 244, 241, .75); }
+.dcard .tx { padding: 22px 22px 24px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.dcard h3 { font-size: 26px; font-weight: 640; font-stretch: 114%; letter-spacing: -.025em; line-height: 1.05; }
+.dcard p { color: rgba(243, 244, 241, .78); font-size: 16px; max-width: 46ch; }
+.dcard .tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; } .dcard .tools span { padding: 3px 7px; border: 1px solid rgba(243, 244, 241, .3); font: 400 12px var(--mono); color: rgba(243, 244, 241, .88); }
+.dcard .go { margin-top: auto; padding-top: 10px; font: 400 13px var(--mono); color: var(--signal); }
+.dcard.small .tx { padding-top: 26px; } .dcard.small h3 { font-size: 22px; }
+.dgrid .wide { grid-column: span 3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: rgba(243, 244, 241, .16); }
+@media (max-width: 960px) { .dgrid { grid-template-columns: 1fr; } .dgrid .wide { grid-column: auto; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .dgrid .wide { grid-template-columns: 1fr; } }
+
+/* the paper */
+.paper { display: grid; grid-template-columns: 6fr 5fr; border-bottom: 1px solid var(--rule); }
+.paper .copy { padding: 120px var(--pad); border-right: 1px solid var(--rule); }
+.paper .copy .lede { margin-top: 20px; max-width: 50ch; }
+.paper .copy .acts { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
+.paper .toc { padding: 120px var(--pad); background: #fff; }
+.paper .toc ol { list-style: none; padding: 0; margin: 18px 0 0; counter-reset: c; border-top: 1.5px solid var(--ink); }
+.paper .toc li { counter-increment: c; display: grid; grid-template-columns: 34px 1fr; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 16px; }
+.paper .toc li::before { content: counter(c); font: 400 13px var(--mono); color: var(--ink-3); padding-top: 3px; }
+.paper .facts { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--ink); }
+.paper .facts div { padding: 14px 14px 16px; border-right: 1px solid var(--rule); } .paper .facts div:last-child { border-right: 0; }
+.paper .facts b { display: block; font: 600 28px/1 var(--sans); font-stretch: 112%; letter-spacing: -.02em; } .paper .facts span { display: block; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+@media (max-width: 960px) { .paper { grid-template-columns: 1fr; } .paper .copy { border-right: 0; padding-bottom: 40px; } .paper .toc { padding-top: 40px; } }
 
 /* a real comparison, drenched in the negative-polarity blue */
 .report { background: var(--neg); color: #eef1ff; padding: 120px var(--pad) 110px; }
@@ -178,8 +195,8 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
 <body>
 <div class="concept">Concept · early access · benchmarks on synthetic data</div>
 <header class="bar"><a class="mark" href="#"><i></i>Scorcher <span>Build</span></a>
-  <nav><a href="#why">Why Scorcher</a><a href="#bench">Benchmarks</a><a href="#how">How it works</a><a href="#report">A real report</a><a href="#legacy">Integrations</a><a href="#price">Pricing</a><a href="build-paper.html">Paper</a></nav>
-  <a class="btn" href="#top">Start a trial</a></header>
+  <nav><a href="#why">Why Scorcher</a><a href="#domains">Disciplines</a><a href="#report">Results</a><a href="#paper">Paper</a><a href="#price">Pricing</a><a href="build-console.html">Console</a></nav>
+  <div class="acts"><a class="btn line" href="https://build.playscorcher.com/app">Sign in</a><a class="btn" href="https://build.playscorcher.com/app">Run a test</a></div></header>
 <div class="rail" id="rail"><div class="bit" id="bit"></div></div>
 
 <main>
@@ -187,10 +204,10 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
   <div class="copy">
     <div><h1 class="display">Agents you can prove.</h1>
       <p class="lede">Scorcher tests AI agents on real earth-science and energy work, and grades them with the physics engines engineers already trust, not with another language model. Bring your agent or use ours: you find out whether it is right, safe and worth its cost before it touches a project.</p></div>
-    <form class="start" onsubmit="return false" aria-label="Start a trial">
+    <form class="start" onsubmit="location.href='https://build.playscorcher.com/app';return false" aria-label="Start a trial">
       <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>GIS screening</option><option>Mining</option><option>Geothermal</option><option>Seismic hazard</option><option>Seismic QC</option><option>Solar yield</option><option>Wind resource</option></select></label>
         <label><span>Agent</span><select aria-label="Agent"><option>Scorcher’s agent</option><option>My own agent</option><option>Both, side by side</option></select></label></div>
-      <div class="go"><span class="meta">Fixed-fee trial · results you keep</span><button class="btn">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button></div>
+      <div class="go"><span class="meta">Free to try · sign in with email</span><button class="btn">Run a test <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button></div>
     </form>
   </div>
   <div class="section-plot" id="plot"><canvas id="seis" aria-label="A synthetic seismic section, drawn live in the page"></canvas>
@@ -213,10 +230,10 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
     <div><h3>Evidence a firm can file</h3><p>Every run leaves a complete, tamper-evident record: the brief, the data fingerprints, the model's messages, every tool call and result, and every check. Reports state results with intervals and map the evidence to NIST AI RMF, ISO/IEC 42001 and the EU AI Act. Evidence, not a certificate: certification is for accredited bodies.</p><span class="meta">SHA-256 hash chain per run; reports in HTML and PDF</span></div>
   </div>
   <div class="stats">
-    <div><b class="num">872</b><span>benchmark tasks across GIS, mining, geothermal, seismic hazard, solar, wind, seismic data, scheduling and documents</span></div>
-    <div><b class="num">40/40</b><span>Claude Haiku on the hard GIS suite; the fixed-recipe pipeline passed 7</span></div>
-    <div><b class="num"><div><b class="num">&lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>lt;1p</b><span>model cost per GIS screening task with Haiku ($0.012 on the hard suite)</span></div>
-    <div><b class="num">0</b><span>false alarms from the key-free physics checks in 2,400+ scripted answers</span></div>
+    <div><b class="num">928</b><span>benchmark tasks across nine disciplines, each with a known answer</span></div>
+    <div><b class="num">34/43</b><span>engine decisions verified against published values, papers and standards</span></div>
+    <div><b class="num">40/40</b><span>Claude Haiku on the hard GIS suite, for $0.47; the fixed-recipe pipeline passed 7</span></div>
+    <div><b class="num">0</b><span>false alarms from the key-free physics checks in every scripted answer</span></div>
   </div>
 </section>
 
@@ -229,6 +246,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
       <tr><td>GIS site screening</td><td>Suitable land, parcel, feasibility and yield from a brief</td><td>QGIS 3.34 processing or GDAL; pvlib</td><td>Wrong CRS, missing elevation, broken polygons, feet, recoded legends, hand-typed codes</td><td><span class="st">200 tasks</span></td></tr>
       <tr><td>Mining</td><td>Grade-tonnage at the break-even cut-off; ultimate pit</td><td>Exact maximum-weight closure (min-cut)</td><td>Missing densities, grades in ppm, duplicated blocks, prices in USD/lb</td><td><span class="st">112 tasks</span></td></tr>
       <tr><td>Geothermal</td><td>Heat in place and MWe P90/P50/P10 from a LAS log; Horner well test</td><td>USGS volumetric Monte Carlo; Horner in SI</td><td>Logs in feet and °F, null codes the header gets wrong, storage and faults outside the radial-flow window</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Well tests</td><td>Permeability, skin and boundaries from a buildup</td><td>Exact radial-flow solution with storage and skin; Bourdet derivative</td><td>Psi and minutes, gauge dropouts, rates in t/h, a preliminary report</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Seismic hazard</td><td>Design ground motion at 10% and 2% in 50 years</td><td>OpenQuake engine (classical PSHA)</td><td>Swapped coordinates, depth as elevation, rates per century, cited models</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Solar</td><td>First-year energy, specific yield and performance ratio from a weather year</td><td>pvlib (SPA, plane-of-array, SAPM, PVWatts)</td><td>Local time, irradiance in kWh, missing codes, the PVsyst azimuth convention</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Wind</td><td>Gross and net annual energy with shear and air density</td><td>Power-law shear; IEC 61400-12-1 density correction</td><td>Knots, pressure in hPa, missing hours, the one-seventh power law in words</td><td><span class="st">56 tasks</span></td></tr>
@@ -250,20 +268,39 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
   <div class="track"><div class="lbl"><span>Evidence gathered</span><span>none · enough to decide</span></div><svg id="curve" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path id="cv" fill="none" stroke="#b8142f" stroke-width="2" vector-effect="non-scaling-stroke"/><path id="cvf" fill="rgba(184,20,47,.08)"/></svg></div>
 </section>
 
-<section class="domains" id="domains"><div class="stage" id="dstage">
-  <div class="plate" data-img="img/reykjanes.jpg"></div>
-  <div class="plate" data-gen="map"></div>
-  <div class="plate" data-img="img/geothermal.jpg"></div>
-  <div class="plate" data-img="img/solar-aerial.jpg"></div>
-  <div class="plate" data-img="img/wind-akhisar.jpg"></div>
-  <div class="dtext"><h2>Seismic</h2><p>Hazard at a site through the OpenQuake engine today; SEG-Y quality control and horizon picks checked against two interpreters next.</p><div class="tools"><span>OpenQuake</span><span>SEG-Y</span><span>OpendTect</span><span>Python</span></div></div>
-  <div class="dtext"><h2>Geospatial</h2><p>QGIS processing chains under test: reproject, repair, buffer and rasterise, with every map compared with an answer key cross-checked in QGIS itself.</p><div class="tools"><span>QGIS</span><span>GDAL</span><span>Shapefile</span><span>GeoPackage</span></div></div>
-  <div class="dtext"><h2>Geothermal</h2><p>Resource assessments from well logs with Monte Carlo uncertainty, and pressure-buildup tests, with checks against Carnot and conservation of energy.</p><div class="tools"><span>LAS 2.0</span><span>Horner</span><span>USGS volumetric</span><span>Monte Carlo</span></div></div>
-  <div class="dtext"><h2>Solar</h2><p>Screen sites and re-analyse operating plants: what the weather says a system should have produced, and why it did not.</p><div class="tools"><span>pvlib</span><span>PVGIS</span><span>NSRDB</span><span>SCADA exports</span></div></div>
-  <div class="dtext"><h2>Wind</h2><p>Resource screening, turbine comparisons and wake losses, with every input traced to its dataset.</p><div class="tools"><span>windpowerlib</span><span>PyWake</span><span>Global Wind Atlas</span><span>ERA5</span></div></div>
-  <nav class="dindex" id="dindex"><a>Seismic</a><a>Geospatial</a><a>Geothermal</a><a>Solar</a><a>Wind</a></nav>
-  <div class="credit" id="credit"></div>
-</div></section>
+<section class="domains" id="domains">
+  <h2 class="h2">Nine disciplines, one method.</h2>
+  <p class="lede">Each discipline is a pack of tasks with known answers, tools around an engine engineers already use, traps taken from real data handling, and physical checks that work with no answer key. Every engine decision is traced to a paper or a standard.</p>
+  <div class="dgrid">
+    <a class="dcard" href="build-console.html#geo"><div class="ph"><img src="img/geothermal.jpg" alt="Hellisheiði geothermal power station, Iceland" loading="lazy"><span class="cr">Hellisheiði · Kevstan · CC BY-SA 4.0</span></div>
+      <div class="tx"><h3>Geothermal</h3><p>Heat in place and capacity at P90, P50 and P10 from a temperature log; pressure buildups with wellbore storage, skin and faults, read from the derivative.</p><div class="tools"><span>LAS 2.0</span><span>Horner</span><span>Bourdet derivative</span><span>Monte Carlo</span></div><span class="go">168 tasks · sector dashboard →</span></div></a>
+    <a class="dcard" href="build-console.html#domains"><div class="ph"><img src="img/solar-aerial.jpg" alt="Solar farm at Krishnapuram, from the air" loading="lazy"><span class="cr">Krishnapuram · Saiphani02 · CC BY-SA 4.0</span></div>
+      <div class="tx"><h3>Solar</h3><p>First-year energy, specific yield and performance ratio from a weather year, through the solar position, plane-of-array, cell temperature and inverter models engineers use.</p><div class="tools"><span>pvlib</span><span>NREL SPA</span><span>SAPM</span><span>PVWatts</span></div><span class="go">56 tasks · results →</span></div></a>
+    <a class="dcard" href="build-console.html#domains"><div class="ph"><img src="img/wind-akhisar.jpg" alt="Wind turbines at Akhisar, Turkey" loading="lazy"><span class="cr">Akhisar · Pragdon · CC0</span></div>
+      <div class="tx"><h3>Wind</h3><p>Gross and net annual energy from a met-mast year: shear to hub height, air density from pressure and temperature, the IEC density correction and the turbine's power curve. The Betz limit catches knots read as metres per second.</p><div class="tools"><span>IEC 61400-12-1</span><span>Power-law shear</span><span>Betz limit</span></div><span class="go">56 tasks · results →</span></div></a>
+    <a class="dcard" href="build-console.html#gisbench"><div class="ph"><canvas id="mapc" aria-label="A generated contour map with a route and a protected area"></canvas><span class="cr">Generated in the page</span></div>
+      <div class="tx"><h3>Geospatial</h3><p>Site screening from a brief: reproject, repair, buffer and rasterise, the largest parcel and its yield, with every map checked against a key cross-checked in QGIS itself.</p><div class="tools"><span>QGIS 3.34</span><span>GDAL</span><span>GeoPackage</span></div><span class="go">200 tasks · results →</span></div></a>
+    <a class="dcard" href="build-console.html#domains"><div class="ph"><img src="img/reykjanes.jpg" alt="Reykjanes power station on the Mid-Atlantic Ridge" loading="lazy"><span class="cr">Reykjanes · Michal Klajban · CC BY-SA 4.0</span></div>
+      <div class="tx"><h3>Seismic hazard</h3><p>The ground motion with a 10% and a 2% chance of being exceeded in 50 years, by classical probabilistic hazard analysis. Underestimating the design motion counts as unsafe.</p><div class="tools"><span>OpenQuake</span><span>NGA-West2</span><span>Akkar 2014</span></div><span class="go">56 tasks · results →</span></div></a>
+    <a class="dcard" href="build-console.html#domains"><div class="ph"><canvas id="seisc" aria-label="A synthetic seismic section"></canvas><span class="cr">Synthetic section, generated in the page</span></div>
+      <div class="tx"><h3>Seismic data</h3><p>SEG-Y quality control and a horizon pick: coordinate scalars, sample intervals in microseconds, dead traces, and a volume whose polarity is reversed.</p><div class="tools"><span>SEG-Y rev 1</span><span>segyio</span><span>Ricker wavelet</span></div><span class="go">112 tasks · results →</span></div></a>
+    <div class="wide">
+      <a class="dcard small" href="build-console.html#domains"><div class="tx"><h3>Mining</h3><p>Grade and tonnage at the break-even cut-off, and the ultimate pit by exact minimum cut.</p><span class="go">112 tasks →</span></div></a>
+      <a class="dcard small" href="build-console.html#domains"><div class="tx"><h3>Scheduling</h3><p>A drilling campaign on three rigs, solved to a proven optimum under permits and maintenance.</p><span class="go">56 tasks →</span></div></a>
+      <a class="dcard small" href="build-console.html#domains"><div class="tx"><h3>Documents</h3><p>Figures from well reports and permits, with revisions, amendments and plans beside the actuals.</p><span class="go">112 tasks →</span></div></a>
+      <a class="dcard small" href="build-paper.html#s7"><div class="tx"><h3>Validation</h3><p>Every engine decision, its paper or standard, and an automated check: 34 of 43 verified.</p><span class="go">The register →</span></div></a>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="paper">
+  <div class="copy"><h2 class="h2">Read exactly how it works.</h2>
+    <p class="lede">A technical paper sets out the whole system from first principles: how agents connect over the Model Context Protocol, the scoring mathematics, checks that need no answer key, the tamper-evident record, private held-out tests, and the engine and equations behind every discipline, with 45 references and the first results with a real model.</p>
+    <div class="acts"><a class="btn" href="build-paper.html">Read the paper <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a><a class="btn line" href="scorcher-build-paper.pdf" download>Download PDF</a></div>
+    <div class="facts"><div><b class="num">45</b><span>references, each checked</span></div><div><b class="num">34/43</b><span>engine decisions verified against papers and standards</span></div><div><b class="num">21</b><span>A4 pages</span></div></div></div>
+  <div class="toc"><span class="meta">Contents</span><ol>
+    <li>The problem: judges, leaks and reliability</li><li>How an agent connects: the Model Context Protocol</li><li>What a task is, and what passing means</li><li>Checking an answer with no answer key</li><li>Integrity, adversity and audit</li><li>The disciplines, one by one</li><li>Is the physics right? The validation register</li><li>First results with a real model</li><li>Why it is useful, and what is hard to copy</li><li>Limitations</li></ol></div>
+</section>
 
 <section class="report" id="report">
   <h2 class="h2">A real report, not a mock-up.</h2>
@@ -277,7 +314,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
       <tr class="best"><td>Claude Haiku with Scorcher's method prompt</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>91 to 100%</td><td>0</td><td>$0.47 in total</td></tr>
     </tbody>
   </table>
-  <div class="verdict"><p>It scaled the feet DEM, used the new legend and buffered every hand-typed code on every task, and said the draft regulation was not in force. The signposted traps were followed; unsignposted problems and real data are the next test. <a href="build-console.html" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the console: every run, task by task, with maps, tool calls and physics checks</a></p><a class="btn" href="#price">See the plans</a></div>
+  <div class="verdict"><p>It scaled the feet DEM, used the new legend and buffered every hand-typed code on every task, and said the draft regulation was not in force. The signposted traps were followed; unsignposted problems and real data are the next test. <a href="build-console.html" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the console: every model run by discipline, with the reason for each failure</a></p><a class="btn" href="#price">See the plans</a></div>
 </section>
 
 <section class="legacy" id="legacy">
@@ -286,7 +323,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
     <div><b>Any agent, over MCP</b><span>Claude Desktop, Claude Code, Cursor, agent frameworks <em>live</em></span></div>
     <div><b>QGIS 3.34 and GDAL</b><span>processing algorithms behind the GIS tools <em>live</em></span></div>
     <div><b>OpenQuake engine</b><span>classical probabilistic seismic hazard <em>live</em></span></div>
-    <div><b>Industry formats</b><span>LAS 2.0, block models, GeoTIFF, GeoJSON; SEG-Y next <em>live</em></span></div>
+    <div><b>Industry formats</b><span>LAS 2.0, SEG-Y, block models, GeoTIFF, GeoJSON <em>live</em></span></div>
     <div><b>Commercial packages</b><span>ArcGIS, Petrel, Leapfrog, Datamine, PVsyst, WindPRO <em>planned</em></span></div>
   </div>
 </section>
@@ -334,15 +371,11 @@ function contours(cv) { const g = cv.getContext('2d'), d = Math.min(2, devicePix
   const tmp = document.createElement('canvas'); tmp.width = N; tmp.height = h; tmp.getContext('2d').putImageData(img, 0, 0); g.imageSmoothingEnabled = true; g.drawImage(tmp, 0, 0, W, H);
   g.strokeStyle = '#b8142f'; g.lineWidth = 3 * d; g.beginPath(); g.moveTo(W * .2, H * .8); g.lineTo(W * .45, H * .55); g.lineTo(W * .7, H * .62); g.lineTo(W * .88, H * .3); g.stroke();
   g.fillStyle = 'rgba(29,58,168,.25)'; g.strokeStyle = '#1d3aa8'; g.lineWidth = 1.5 * d; g.beginPath(); g.arc(W * .62, H * .42, H * .16, 0, 7); g.fill(); g.stroke(); }
-// ---- domain plates: each photograph is cut into vertical traces that slide into place out of step, like a seismic gather lining up
-const plates = $$('.plate'), dtexts = $$('.dtext'), dlinks = $$('#dindex a'), NSTRIP = 28, CREDIT = ['Reykjanes power station, Iceland · Michal Klajban · CC BY-SA 4.0', 'Generated contour map', 'Hellisheiði geothermal power station · Kevstan · CC BY-SA 4.0', 'Solar farm, Krishnapuram · Saiphani02 · CC BY-SA 4.0', 'Wind turbines at Akhisar · Pragdon · CC0'];
-function buildPlates() { const st = $('#dstage'), W = st.clientWidth; plates.forEach((p, k) => { p.innerHTML = ''; p.style.setProperty('--W', W + 'px');
-  if (p.dataset.gen) { const c = document.createElement('canvas'); p.appendChild(c); requestAnimationFrame(() => contours(c)); p._strips = [c]; return; }
-  p._strips = Array.from({ length: NSTRIP }, (_, i) => { const s = document.createElement('div'); s.className = 's'; const w = W / NSTRIP; s.style.cssText = `left:${i * w}px;width:${w + 1}px;background-image:url(${p.dataset.img});background-position:${-i * w}px 0;background-size:${W}px auto`; p.appendChild(s); return s; });
-  const im = new Image(); im.onload = () => { const H = st.clientHeight, sc = Math.max(W / im.width, H / im.height), bw = im.width * sc, bh = im.height * sc, ox = (W - bw) / 2, oy = (H - bh) / 2; p._strips.forEach((s, i) => { s.style.backgroundSize = `${bw}px ${bh}px`; s.style.backgroundPosition = `${ox - i * W / NSTRIP}px ${oy}px`; }); }; im.src = p.dataset.img; }); }
-buildPlates(); addEventListener('resize', () => { buildPlates(); });
+// ---- the discipline cards: a contour map and a small seismic section, drawn once when they scroll into view
+{ const io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; io.unobserve(e.target); if (e.target.id === 'mapc') contours(e.target); else seismic(e.target, { traces: 60, seed: 11 }).draw(1); }), { rootMargin: '200px' });
+  ['#mapc', '#seisc'].forEach(q => $(q) && io.observe($(q))); }
 // ---- the depth rail: section depths, and the bit following the scroll
-const DEPTHS = [['#top', '0 m'], ['#how', '400 m'], ['#domains', '900 m'], ['#report', '1,400 m'], ['#legacy', '1,800 m'], ['#price', '2,200 m']];
+const DEPTHS = [['#top', '0 m'], ['#how', '400 m'], ['#domains', '900 m'], ['#report', '1,400 m'], ['#paper', '1,600 m'], ['#legacy', '1,800 m'], ['#price', '2,200 m']];
 function rail() { const r = $('#rail'), H = document.body.scrollHeight, rh = r.clientHeight; r.querySelectorAll('.tick,.d').forEach(x => x.remove()); for (let k = 0; k <= 60; k++) { const t = document.createElement('div'); t.className = 'tick' + (k % 10 ? '' : ' l'); t.style.top = (k / 60 * rh) + 'px'; r.appendChild(t); }
   DEPTHS.forEach(([sel, lab], i) => { const d = document.createElement('div'); d.className = 'd'; d.textContent = lab; d.style.top = (i / (DEPTHS.length - 1) * (rh - 70) + 8) + 'px'; r.appendChild(d); }); }
 addEventListener('load', rail); addEventListener('resize', rail);
@@ -355,8 +388,6 @@ function frame(now) {
   if (S.pickY != null) $('#pick').style.top = (S.pickY * 100) + '%';
   { const tops = DEPTHS.map(([s]) => $(s).offsetTop), y = scrollY + 64; let i = 0; while (i < tops.length - 2 && y >= tops[i + 1]) i++; const f = clamp((y - tops[i]) / (tops[i + 1] - tops[i])), rh = $('#rail').clientHeight - 70; $('#bit').style.top = ((i + f) / (DEPTHS.length - 1) * rh + 8) + 'px'; }
   { const lg = $('#how'), r = lg.getBoundingClientRect(), q = clamp((innerHeight * .6 - r.top) / r.height); curve(q); $$('#steps li').forEach(li => li.classList.toggle('on', q >= +li.dataset.y - .2 && q < +li.dataset.y + .08)); }
-  { const q = prog($('#domains')) * plates.length; plates.forEach((pl, k) => { const loc = q - k; const n = (pl._strips || []).length; (pl._strips || []).forEach((s, i) => { const u = i / Math.max(1, n - 1), lag = .32 * u + .05 * Math.sin(u * Math.PI * 3), t = k === 0 ? 1 : clamp((loc + .62 - lag) * 2.2), e = 1 - Math.pow(1 - t, 3); s.style.transform = `translateY(${(1 - e) * 101}%)`; }); pl.style.zIndex = k; });
-    const on = clamp(Math.floor(q + .25), 0, plates.length - 1); dtexts.forEach((d, k) => d.classList.toggle('on', k === on)); dlinks.forEach((a, k) => a.classList.toggle('on', k === on)); $('#credit').textContent = CREDIT[on]; }
   requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 </script>
