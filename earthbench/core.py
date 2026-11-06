@@ -59,7 +59,8 @@ _PRESS = {"Pa": 1.0, "kPa": 1e3, "MPa": 1e6, "bar": 1e5, "psi": 6894.75729316836
 _ENERGY = {"J": 1.0, "kJ": 1e3, "MJ": 1e6, "GJ": 1e9, "PJ": 1e15, "EJ": 1e18, "kWh": 3.6e6, "MWh": 3.6e9}
 _SPEED = {"m/s": 1.0, "ft/s": 0.3048, "km/h": 1 / 3.6}
 _ACC = {"g": 9.80665, "m/s2": 1.0, "cm/s2": 0.01, "gal": 0.01}
-_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC]
+_FLOW = {"L/s": 1.0, "m3/h": 1 / 3.6, "gpm": 3.785411784 / 60, "bbl/d": 158.987294928 / 86400}   # US gallon, oil barrel
+_GROUPS = [_LEN, _AREA, _MASS, _DENS, _FRACTION, _PRESS, _ENERGY, _SPEED, _ACC, _FLOW]
 
 
 def convert(value: float, src: str, dst: str) -> float:
@@ -81,7 +82,7 @@ def convert(value: float, src: str, dst: str) -> float:
 
 
 UNITS_HELP = ("Convert m, km, ft, mi; m2, km2, ha, acre; kg, t, short_ton, lb, oz_troy, g; t/m3, kg/m3, g/cm3; fraction, percent, ppm; "
-              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; prices such as USD/lb to USD/t.")
+              "Pa, kPa, MPa, bar, psi; J to EJ, kWh, MWh; m/s, ft/s; g, m/s2, cm/s2; C, F, K; L/s, m3/h, gpm (US), bbl/d; prices such as USD/lb to USD/t.")
 
 
 # ---------------------------------------------------------------------------------------------------- fingerprints
@@ -134,7 +135,7 @@ class Session:
     def answer_spec(self):
         props = {}
         for k, (typ, unit, _) in self.task.answer_fields.items():
-            props[k] = {"type": {"number": "number", "bool": "boolean", "layer": "string"}[typ], "description": unit}
+            props[k] = {"type": {"number": "number", "bool": "boolean", "layer": "string", "text": "string"}[typ], "description": unit}
         props["notes"] = {"type": "string", "description": "assumptions you made, and anything you could not resolve"}
         return _s(props, list(self.task.answer_fields), "Submit the final answer. One attempt.")
 
@@ -241,6 +242,8 @@ class Session:
                 raise ToolError(f"{k} must be a finite number")
             if typ == "bool" and not isinstance(v, bool):
                 raise ToolError(f"{k} must be true or false")
+            if typ == "text" and not (isinstance(v, str) and 0 < len(v) <= 200):
+                raise ToolError(f"{k} must be text of 1 to 200 characters")
             if typ == "layer" and v not in self.layers:
                 raise ToolError(f"{k} must name a layer you made")
         if self.task.canary and self.task.canary in json.dumps([kw, notes], default=str):

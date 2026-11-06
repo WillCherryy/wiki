@@ -1,6 +1,6 @@
 # earthbench: Scorcher's domain benchmarks
 
-Mining, geothermal, seismic hazard, solar and wind benchmarks for AI agents, built the same way as `gisbench/` (GIS site screening) and sharing its machinery. In every pack:
+Mining, geothermal, seismic hazard, solar, wind, seismic data, scheduling and document extraction benchmarks for AI agents, built the same way as `gisbench/` (GIS site screening) and sharing its machinery. In every pack:
 
 - **Tasks** are generated from a seed: a world (a block model, a well log and a buildup test, a seismic source model), a brief at three levels (L1 explicit SI; L2 mixed units; L3 in documents, with a superseded document as a distractor), and a data defect taken from real data handling.
 - **Tools** wrap deterministic engines, never a language model: an exact min-cut pit solver, the USGS volumetric method, Horner analysis, and the OpenQuake engine's hazard library.
@@ -17,6 +17,9 @@ Mining, geothermal, seismic hazard, solar and wind benchmarks for AI agents, bui
 | `hazard` | PGA at 10% and 2% in 50 years | OpenQuake hazardlib 3.26 (classical PSHA; Boore et al. 2014, Akkar et al. 2014) | Doubling every rate or the investigation time gives 1 − (1 − PoE)² (to single precision); a closer source never lowers the hazard; curves are monotonic |
 | `solar` | First-year AC energy, specific yield, performance ratio from a weather year | pvlib: SPA, isotropic plane-of-array, SAPM cell temperature, PVWatts DC and inverter | Energy scales exactly with plant size; losses and hotter cells only lower it; with no losses it sits just below plane-of-array sunlight × capacity; south beats north |
 | `wind` | Gross and net annual energy, capacity factor, hub speed | Power-law shear, dry-air density, IEC 61400-12-1 density correction, power curve | The power curve is under the Betz limit everywhere; no change at equal heights and standard air; shear scales speed exactly; denser air never lowers energy |
+| `seismic` | SEG-Y quality control (traces, sample interval, record length, dead traces, coordinates); a horizon pick | segyio; a windowed peak or trough picker | Headers read back as written; on a zero-phase wavelet the pick lands within one sample of the true reflector; reverse polarity needs a trough |
+| `scheduling` | A drilling campaign on three rigs: shortest makespan under permits, a heavy rig, moves and maintenance | OR-Tools CP-SAT, proven optimal | Equal to brute-force enumeration of every assignment and order on small campaigns; an independent check confirms every schedule is feasible |
+| `documents` | Total depth, bottom-hole temperature and flow from end of well reports; limits and expiry from permits | No solver: search and quantity tools over the text, exact unit definitions | The key is what the authoritative document states; a parser test reads every unit as written |
 
 Scripted arms on every suite (`python3 -m earthbench.run`; results in `results/fixtures.json`):
 
@@ -27,8 +30,11 @@ Scripted arms on every suite (`python3 -m earthbench.run`; results in `results/f
 | Hazard | 56/56 | 0/56 (21 unsafe) | 9/56 | 0 of 56; 1 of 10 | 0 |
 | Solar | 56/56 | 15/56 (12 unsafe) | 11/56 | 0 of 41; 14 of 43 | 0 |
 | Wind | 56/56 | 6/56 (5 unsafe) | 14/56 (14 unsafe) | 0 of 50; 27 of 27 (the Betz limit catches every knots-as-m/s error) | 0 |
+| Seismic data | 112/112 | 99/112 | 40/112 | 13 of 13; 68 of 68 | 0 |
+| Scheduling | 56/56 | 0/56 | 27/56 | 56 of 56; 14 of 20 | 0 |
+| Documents | 112/112 | 73/112 (26 unsafe) | 30/112 (26 unsafe) | 26 of 39; 39 of 52 | 0 |
 
-Physical checks catch inconsistent and impossible answers (metal ≠ tonnes × grade, P90 > P10, a pit that breaks its own slope, a source placed 1,000 km away). They cannot catch a self-consistent answer built on wrong economics or the wrong ground-motion model. That is what the key and the expert are for.
+Physical checks catch inconsistent and impossible answers (metal ≠ tonnes × grade, P90 > P10, a pit that breaks its own slope, a source placed 1,000 km away). For documents, the strongest key-free check is provenance: every figure must appear, after unit conversion, in an approved or in-force document on the same well or permit. It misses a value taken from the original permit when an amendment changed it. Physical checks cannot catch a self-consistent answer built on wrong economics or the wrong ground-motion model. That is what the key and the expert are for.
 
 ## Run a model
 
@@ -66,4 +72,5 @@ Register the second command as a stdio MCP server in any MCP client (Claude Desk
 - The geothermal method is the volumetric (heat-in-place) method, not a reservoir simulation.
 - Solar uses an isotropic sky and a synthetic weather year; wind uses a single turbine with no wakes and a power-law profile.
 - The hazard model is two point sources with no logic tree. OpenQuake is AGPL-3.0: running it inside Scorcher's own benchmark is fine, but offering it as a hosted service to customers needs the licence's network-use terms checked.
+- Scheduling has no costs, crews or weather; documents are short generated text, not scanned PDFs.
 - 20 to 50 tasks per suite give wide intervals.
