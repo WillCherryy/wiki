@@ -94,13 +94,23 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build`); await page.waitForTimeout(800);
       const a = await page.evaluate(() => ({ url: location.pathname, noindex: !!document.querySelector('meta[name=robots][content=noindex]'), fonts: [...document.fonts].filter(f => f.status === 'loaded').length, concept: /concept/i.test(document.body.innerText), over: document.documentElement.scrollWidth - innerWidth, link: document.querySelector('a[href="/build/console"]') ? 1 : 0 }));
       if (errs.length) bad(`${tag} /build: script error: ${errs[0]}`); if (a.url !== '/build/') bad(`${tag} /build: did not redirect to /build/ (${a.url})`); if (!a.noindex) bad(`${tag} /build: not marked noindex`); if (!a.concept) bad(`${tag} /build: not labelled as a concept`); if (a.over > 2) bad(`${tag} /build: page scrolls sideways`); if (!a.link) bad(`${tag} /build: no link to the console`);
-      errs.length = 0; await page.goto(`http://localhost:${PORT}/build/console`); await page.waitForTimeout(900);
+      // the results dashboard: every page and every discipline renders, with no script error and no sideways scroll
+      errs.length = 0; await page.goto(`http://localhost:${PORT}/build/console`); await page.waitForTimeout(700);
+      const rc = await page.evaluate(async () => { const out = { pages: 0, empty: [], over: 0 }, wait = () => new Promise(r => setTimeout(r, 120));
+        const discs = [...document.querySelectorAll('.card')].map(a => a.getAttribute('href')); out.discs = discs.length;
+        for (const h of ['#overview', '#validation', '#runs', ...discs]) { location.hash = h; await wait(); const m = document.getElementById('main');
+          if (m.innerText.length > 400 && document.querySelector('h1')) out.pages++; else out.empty.push(h); out.over = Math.max(out.over, document.documentElement.scrollWidth - innerWidth); }
+        return out; });
+      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (rc.discs < 10) bad(`${tag} /build/console: only ${rc.discs} disciplines listed`);
+      if (rc.empty.length) bad(`${tag} /build/console: empty pages ${rc.empty.join(', ')}`); if (rc.over > 2) bad(`${tag} /build/console: a page scrolls sideways`);
+      // the concept views (sample data), one page apart from the results
+      errs.length = 0; await page.goto(`http://localhost:${PORT}/build/concept`); await page.waitForTimeout(900);
       const c = await page.evaluate(async () => { const out = { views: 0, empty: [], over: document.documentElement.scrollWidth - innerWidth, noindex: !!document.querySelector('meta[name=robots][content=noindex]') }; const tabs = [...document.querySelectorAll('.rail button')]; out.tabs = tabs.length;
         for (const t of tabs) { t.click(); await new Promise(r => setTimeout(r, 120)); const v = document.getElementById('v-' + t.dataset.v); if (v && v.classList.contains('on') && v.innerText.length > 200) out.views++; else out.empty.push(t.dataset.v); }
         document.querySelector('[data-v=newtask]').click(); await new Promise(r => setTimeout(r, 150)); const st = document.getElementById('nt-statement'); st.value = 'x'; st.dispatchEvent(new Event('input')); out.valid1 = /at least a sentence/.test(document.getElementById('nt-valid').innerText);
         const refs = [...document.querySelectorAll('#nt-fields input[data-k=ref]')]; refs.forEach(r => { r.value = '1'; r.dispatchEvent(new Event('input')); }); st.value = 'A full sentence saying what is to be done with the files.'; st.dispatchEvent(new Event('input')); out.json = (() => { try { return JSON.parse(document.getElementById('nt-json').textContent); } catch { return null; } })();
         return out; });
-      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (c.tabs < 12 || c.views !== c.tabs) bad(`${tag} /build/console: views did not all open (${c.empty.join(', ')})`); if (c.over > 2) bad(`${tag} /build/console: page scrolls sideways`); if (!c.noindex) bad(`${tag} /build/console: not marked noindex`);
+      if (errs.length) bad(`${tag} /build/concept: script error: ${errs[0]}`); if (c.tabs < 12 || c.views !== c.tabs) bad(`${tag} /build/concept: views did not all open (${c.empty.join(', ')})`); if (c.over > 2) bad(`${tag} /build/console: page scrolls sideways`); if (!c.noindex) bad(`${tag} /build/console: not marked noindex`);
       if (!c.valid1) bad(`${tag} /build/console: the task builder did not flag a short statement`); if (!c.json || !c.json.reference || c.json.answer.fields.length !== 3 || !c.json.policy.tools.includes('table_query')) bad(`${tag} /build/console: the task builder did not produce a spec`);
       // the paper: opens cleanly, every citation resolves to a reference with the right number, the validation register is rendered
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build/paper`); await page.waitForTimeout(500);
@@ -114,5 +124,5 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
     await ctx.close();
   }
   await browser.close(); srv.kill();
-  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build, its console and the paper open, are noindex and build a task spec; the citations and validation register of the paper check out)');
+  if (fails) { console.error(`ui smoke: ${fails} failure(s)`); process.exit(1); } console.log('ok: ui smoke (styles parse, 15 pages x desktop and phone open cleanly, no sideways scroll; Scorcher Sky inspects, compares, searches coordinates; Scorcher Tree inspects, compares, opens groups, searches; Tools calculate; Evolve plays a round; /build, the results dashboard (every page and discipline), the concept views and the paper open, are noindex and build a task spec; the citations and validation register of the paper check out)');
 })().catch(e => { console.error(e); process.exit(1); });

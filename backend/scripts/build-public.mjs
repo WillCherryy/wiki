@@ -10,6 +10,7 @@ fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive:
 fs.writeFileSync(path.join(out, 'index.html'), BP.indexHtml(''));
 fs.writeFileSync(path.join(out, 'console.html'), BP.consoleHtml(''));
 fs.writeFileSync(path.join(out, 'paper.html'), BP.paperHtml(''));
+fs.writeFileSync(path.join(out, 'concept.html'), BP.conceptHtml(''));
 fs.copyFileSync(path.join(here, '..', 'app', 'app.html'), path.join(out, 'app.html'));   // the working app: run tests, connect agents, see results
 for (const a of BP.ASSETS) { fs.mkdirSync(path.dirname(path.join(out, a)), { recursive: true }); fs.copyFileSync(path.join(BP.SRC, a), path.join(out, a)); }
 fs.writeFileSync(path.join(out, '_headers'), '/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n');
