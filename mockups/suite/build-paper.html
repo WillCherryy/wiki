@@ -131,10 +131,7 @@ sup.c a { text-decoration: none; font-family: var(--mono); font-size: 11px; }
 ← {"result":{"tools":[{"name":"horner_fit","description":"Semilog straight line ...","inputSchema":{...}}, ...]}}
 → {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"horner_fit","arguments":{"dataset":"buildup", ...}}}
 ← {"result":{"content":[{"type":"text","text":"{\"m_pa_per_cycle\": 51234.7, ...}"}]}}</pre>
-<p>Messages travel either over a program's standard input and output (stdio, for a server running on the same machine) or over HTTP (for a remote server). Scorcher offers both. <code>python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite main --defect two_rate,short --repeats 3 --yes
-python -m earthbench.compare claude-haiku-5-5 claude-sonnet-5-5     # pass rates and the paired difference, resampling worlds
-python -m earthbench.external.peer                          # also .minelib and .pvgis: the outside comparisons
-python -m earthbench.mcp_server --task ID</code> serves one task over stdio, and the web app gives each trial a private HTTP endpoint.</p>
+<p>Messages travel either over a program's standard input and output (stdio, for a server running on the same machine) or over HTTP (for a remote server). Scorcher offers both. <code>python -m earthbench.mcp_server --task ID</code> serves one task over stdio, and the web app gives each trial a private HTTP endpoint.</p>
 <p>Why this matters for testing: <b>Scorcher is the server, so the agent can act only through Scorcher's tools.</b> It has no file system, no shell and no internet unless a tool provides them. Every action is therefore a tool call that Scorcher sees, checks and records. The agent itself can be anything, from a commercial product to a research prototype to a hand-written script, and its code never has to be shared. This is what makes black-box testing of third-party agents possible.</p>
 <figure>
 <svg viewBox="0 0 760 270" role="img" aria-label="Architecture: an agent connects over MCP to a Scorcher session, whose tools call deterministic engines; every call is appended to a hash-chained trace; at submission the scorer compares the answer with the engine's key and runs physical and integrity checks.">
@@ -392,6 +389,9 @@ python -m earthbench.mcp_server --task ID</code> serves one task over stdio, and
 <pre>pip install -r earthbench/requirements.txt
 python -m earthbench.run                                    # every pack, every scripted pipeline
 python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite main --max-usd 0.3 --yes
+python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite main --defect two_rate,short --repeats 3 --yes
+python -m earthbench.compare claude-haiku-5-5 claude-sonnet-5-5     # pass rates and the paired difference, resampling worlds
+python -m earthbench.external.peer                          # also .minelib and .pvgis: the outside comparisons
 python -m earthbench.mcp_server --task WT-buildup-L2-units-001   # serve one task to any MCP client
 python -m earthbench.private verify                          # check the private set against its commitment
 python -m earthbench.ledger verify                           # check the results ledger
