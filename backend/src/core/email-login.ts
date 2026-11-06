@@ -11,7 +11,8 @@ export const LIMIT_PER_EMAIL = 5, LIMIT_PER_CLIENT = 20, LIMIT_WINDOW_MS = 60 * 
 
 export interface LoginTokenStore {
   createLoginToken(tokenHash: string, email: string, clientHash: string, now: number, expires: number): Promise<void>;
-  consumeLoginToken(tokenHash: string, now: number): Promise<string | null>;        // atomically: unused and unexpired -> mark used, return the email
+  consumeLoginToken(tokenHash: string, now: number): Promise<string | null>;
+  deleteLoginToken(tokenHash: string): Promise<void>;                               // a link that was never sent: it must not count towards the limit        // atomically: unused and unexpired -> mark used, return the email
   recentRequests(email: string, clientHash: string, since: number): Promise<{ email: number; client: number }>;
 }
 export class MailError extends Error {}
@@ -33,13 +34,15 @@ export async function requestLink(o: { email: unknown; client: string; store: Lo
   const recent = await o.store.recentRequests(email, clientHash, o.now - LIMIT_WINDOW_MS);
   if (recent.email >= LIMIT_PER_EMAIL || recent.client >= LIMIT_PER_CLIENT) return { ok: false, reason: 'rate' };
   const token = randomToken(32);
-  await o.store.createLoginToken(await sha256(token), email, clientHash, o.now, o.now + LINK_MINUTES * 60_000);
+  const hash = await sha256(token);
+  await o.store.createLoginToken(hash, email, clientHash, o.now, o.now + LINK_MINUTES * 60_000);
   const link = `${o.publicUrl}/auth/email/verify?token=${token}`;
   const text = `Sign in to Scorcher Build:\n\n${link}\n\nThe link works once, for ${LINK_MINUTES} minutes. If you did not ask for it, ignore this email: nothing happens unless the link is used.`;
   const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#0d0f0e;max-width:480px"><p style="font-weight:700">Scorcher Build</p>`
     + `<p>Sign in with the button below. It works once, for ${LINK_MINUTES} minutes.</p><p><a href="${link}" style="display:inline-block;background:#0d0f0e;color:#f3f4f1;padding:12px 20px;text-decoration:none">Sign in</a></p>`
     + `<p style="color:#6f7571;font-size:13px">If you did not ask for this, ignore it: nothing happens unless the link is used.</p></div>`;
-  await o.mailer.send(email, 'Your Scorcher Build sign-in link', text, html);
+  try { await o.mailer.send(email, 'Your Scorcher Build sign-in link', text, html); }
+  catch (e) { await o.store.deleteLoginToken(hash); throw e; }
   return { ok: true };
 }
 
@@ -65,6 +68,7 @@ export class ResendMailer implements Mailer {
 export class MemoryLoginTokens implements LoginTokenStore {
   rows: { hash: string; email: string; client: string; created: number; expires: number; used: boolean }[] = [];
   async createLoginToken(hash: string, email: string, client: string, now: number, expires: number) { this.rows.push({ hash, email, client, created: now, expires, used: false }); }
+  async deleteLoginToken(hash: string) { this.rows = this.rows.filter(r => r.hash !== hash); }
   async consumeLoginToken(hash: string, now: number) { const r = this.rows.find(x => x.hash === hash && !x.used && x.expires > now); if (!r) return null; r.used = true; return r.email; }
   async recentRequests(email: string, client: string, since: number) { const R = this.rows.filter(x => x.created >= since); return { email: R.filter(x => x.email === email).length, client: R.filter(x => x.client === client).length }; }
 }
@@ -75,6 +79,7 @@ export class D1LoginTokens implements LoginTokenStore {
   async createLoginToken(hash: string, email: string, client: string, now: number, expires: number) {
     await this.db.prepare('INSERT INTO login_tokens (token_sha256, email, client_sha256, created_at, expires_at, used) VALUES (?, ?, ?, ?, ?, 0)').bind(hash, email, client, now, expires).run();
   }
+  async deleteLoginToken(hash: string) { await this.db.prepare('DELETE FROM login_tokens WHERE token_sha256 = ?').bind(hash).run(); }
   async consumeLoginToken(hash: string, now: number) {
     const r = await this.db.prepare('UPDATE login_tokens SET used = 1 WHERE token_sha256 = ? AND used = 0 AND expires_at > ? RETURNING email').bind(hash, now).first<{ email: string }>();
     return r?.email ?? null;

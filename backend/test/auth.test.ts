@@ -147,4 +147,5 @@ test('a refused email says why, and the reply stays the same shape', async () =>
   const d = { store: new MemoryAuthStore(), fetch, now: () => NOW, tokens: new Mem(), mailer: new ResendMailer('k', 'S <s@playscorcher.com>', f) };
   const r = (await handleAuth(new Request('https://b.example/auth/email/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'a@b.com' }) }), { publicUrl: 'https://b.example', appUrl: 'https://a', sessionSecret: 's', clients: {} }, d))!;
   assert.equal(r.status, 502); assert.match((await r.json() as { error: string }).error, /not verified/);
+  assert.equal(d.tokens.rows.length, 0, 'a link that was never sent does not count towards the limit');
 });
