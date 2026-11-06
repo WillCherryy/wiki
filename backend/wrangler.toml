@@ -38,7 +38,7 @@ new_sqlite_classes = ["Trial"]
 [[d1_databases]]
 binding = "DB"
 database_name = "scorcher-build"
-database_id = "REPLACE_WITH_THE_ID_FROM_wrangler_d1_create"
+database_id = "d563c315-3dd8-4748-9ba0-3f16ff93261d"
 migrations_dir = "migrations"
 
 # Create once:  npx wrangler r2 bucket create scorcher-build-files
