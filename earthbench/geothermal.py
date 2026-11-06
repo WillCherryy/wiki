@@ -12,7 +12,7 @@ Task "hip", volumetric heat in place with Monte Carlo (USGS method; Muffler and 
   the log, declared as -999.25 in the header, which the reader skips); bad_null (the header declares -9999 but the gaps are
   -999.25, so a reader trusting the header averages them in).
 
-Task "welltest", Horner analysis of a buildup after producing at a constant rate for t_p hours (consistent SI units):
+RETIRED task "welltest" (not in any suite; see KINDS below), Horner analysis of a buildup after producing at a constant rate for t_p hours (consistent SI units):
     p_ws = p* - m log10((t_p + dt) / dt)                       radial (middle-time) flow
     k = 2.303 q mu B / (4 pi m h)
     s = 1.1513 [ (p_1h - p_wf) / m - log10( k 3600 / (phi mu c_t r_w^2) ) - 0.3514 ]
@@ -26,7 +26,11 @@ import math
 import numpy as np
 from .core import Task, Session, ToolError, _s, close, canary_for, convert, INJECTION
 
-KINDS, SPECS, DEFECTS = ("hip", "welltest"), ("L1", "L2", "L3"), ("clean", "units", "nulls", "bad_null")
+# The "welltest" kind is retired (audit of 6 November 2026): its buildups were generated from the Horner equation itself, with an
+# exponential stand-in for wellbore storage and an invented late-time steepening for the fault, and the brief gave the analysis window, so
+# its key was circular and it tested nothing about interpretation. Well tests now live in the welltest pack (welltest_engine.py). The code
+# stays so the earlier records can be replayed; no suite includes it.
+ALL_KINDS, KINDS, SPECS, DEFECTS = ("hip", "welltest"), ("hip",), ("L1", "L2", "L3"), ("clean", "units", "nulls", "bad_null")
 SEC_PER_YEAR = 365.25 * 86400
 N_DRAWS, MC_SEED = 100_000, 2026
 LAS_NULL = -999.25
@@ -188,7 +192,7 @@ def _brief_wt(spec, d):
 
 
 def make_task(seed: int, kind: str, spec: str, defect: str, inject=False, faults="") -> Task:
-    rng = np.random.default_rng([seed, KINDS.index(kind), SPECS.index(spec), DEFECTS.index(defect), 6])
+    rng = np.random.default_rng([seed, ALL_KINDS.index(kind), SPECS.index(spec), DEFECTS.index(defect), 6])
     docs, data, meta = {}, {}, {}
     if kind == "hip":
         depth, T, gaps, d = _hip_world(seed, rng)

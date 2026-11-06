@@ -9,7 +9,10 @@ Economics (the answer key): tonnes = 1,000 m3 x density; a block is processed if
   block value = max(process, waste) for sulphide; waste value for oxide and the dyke.
 Break-even cut-off (percent Cu) = processing cost / (recovery x price) x 100.
 Ultimate pit: the set of blocks of greatest total value that respects the slope: a block can be mined only if every block above
-it inside a cone of the given overall slope (checked up to four levels up, for blocks of this shape) is mined. This is a
+it inside a cone of the given overall slope is mined: the cone is enforced explicitly at every bench up to the top of the model
+(block centres within m x 10 m / tan(slope) horizontally, m benches up). An earlier version enforced only four benches and relied on chaining
+them, which let pits stand up to about 7 degrees steeper than the stated slope (found in the audit of 6 November 2026). On a 10 m grid the
+slope is honoured to the grid's resolution: within 2 degrees along the grid axes and 4 on the diagonals over the 90 m height. This is a
 maximum-weight closure, solved exactly as a minimum cut (Picard 1976; the same optimum Lerchs-Grossmann finds). Values are
 rounded to whole dollars for the integer max-flow.
 
@@ -100,7 +103,10 @@ def cutoff_pct(price, rec, proc):
     return proc / (rec * price) * 100
 
 
-def precedence_offsets(slope_deg, levels=4):
+def precedence_offsets(slope_deg, levels=None):
+    """Offsets (di, dj, -m) of every block centre inside the slope cone m benches up, for every m up to the model's height. Enforcing the
+    cone at every bench, not only the first few, keeps the effective overall slope at the stated angle (tested in test_mining)."""
+    levels = NZ - 1 if levels is None else levels
     r = BS / math.tan(math.radians(slope_deg))
     out = []
     for m in range(1, levels + 1):

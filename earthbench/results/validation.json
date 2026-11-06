@@ -1,11 +1,11 @@
 {
- "generated": "2026-11-06T14:41:30Z",
+ "generated": "2026-11-06T15:27:10Z",
  "rows": [
   {
    "id": "units",
    "area": "All",
    "decision": "Unit conversions use exact definitions: international foot 0.3048 m, inch 0.0254 m, pound 0.45359237 kg, psi from the pound-force, US gallon 3.785411784 L, barrel 42 US gallons.",
-   "basis": "exact definition",
+   "basis": "definition",
    "refs": [
     "intl-yard",
     "nist811"
@@ -18,7 +18,7 @@
    "id": "sha256",
    "area": "Audit",
    "decision": "Hashes are SHA-256.",
-   "basis": "standard",
+   "basis": "external",
    "refs": [
     "fips180"
    ],
@@ -30,11 +30,11 @@
    "id": "chain",
    "area": "Audit",
    "decision": "The trace and the ledger are hash chains: each entry's hash covers the previous hash.",
-   "basis": "standard",
+   "basis": "consistency",
    "refs": [
     "haber"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "changing an earlier call changes every later hash",
    "check": "c_chain"
   },
@@ -66,7 +66,7 @@
    "id": "passk",
    "area": "Statistics",
    "decision": "Reliability is reported as pass@k and pass^k with unbiased estimators.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "chen",
     "tau"
@@ -124,31 +124,31 @@
    "id": "cutoff",
    "area": "Mining",
    "decision": "Break-even cut-off grade g_c = c_p / (r P): the grade at which processing and wasting a block are worth the same.",
-   "basis": "closed form",
+   "basis": "consistency",
    "refs": [
     "lane"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "at the cut-off 0.1562% processing and waste are worth the same (indifference)",
    "check": "c_cutoff"
   },
   {
    "id": "slope",
    "area": "Mining",
-   "decision": "Wall slope approximated by block precedence over up to four benches.",
+   "decision": "The slope cone is enforced at every bench (block centres); on a 10 m grid the overall slope is honoured within 2 degrees on the grid axes and 4 on the diagonals.",
    "basis": "design choice",
    "refs": [
     "lg"
    ],
    "status": "design choice",
-   "detail": "no automated check",
-   "check": null
+   "detail": "unit test test_pits_stand_at_the_stated_slope_within_the_grid_resolution",
+   "check": "earthbench.tests.test_mining.Slope.test_pits_stand_at_the_stated_slope_within_the_grid_resolution"
   },
   {
    "id": "hip",
    "area": "Geothermal",
    "decision": "Heat in place H = A h [rho_r c_r (1 - phi) + rho_f c_f phi] (T - T_ref); the Monte Carlo reduces to it when every input is fixed.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "muffler"
    ],
@@ -160,7 +160,7 @@
    "id": "p90",
    "area": "Geothermal",
    "decision": "P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes).",
-   "basis": "standard",
+   "basis": "analytical",
    "refs": [
     "prms"
    ],
@@ -172,7 +172,7 @@
    "id": "horner-skin",
    "area": "Geothermal",
    "decision": "The SI skin formula equals the field-unit formula (constant 3.23) after unit conversion; 0.3514 = log10(2.2458).",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "horner",
     "theis"
@@ -182,22 +182,22 @@
    "check": "earthbench.tests.test_geothermal.Engines.test_skin_formula_in_si_matches_field_units"
   },
   {
-   "id": "horner-k",
-   "area": "Geothermal",
-   "decision": "Horner analysis recovers the permeability and skin the data were generated with.",
-   "basis": "closed form",
+   "id": "negskin",
+   "area": "Well tests",
+   "decision": "Negative skin is modelled as an effective wellbore radius r_w e^-S (the infinitesimal-skin form fails for S < 0).",
+   "basis": "analytical",
    "refs": [
-    "horner"
+    "earlougher"
    ],
    "status": "verified",
-   "detail": "unit test test_horner_recovers_the_true_reservoir",
-   "check": "earthbench.tests.test_geothermal.Engines.test_horner_recovers_the_true_reservoir"
+   "detail": "unit test test_negative_skin_is_physical",
+   "check": "earthbench.tests.test_welltest.Engine.test_negative_skin_is_physical"
   },
   {
    "id": "stehfest",
    "area": "Well tests",
    "decision": "Laplace-space solutions are inverted numerically with the Gaver-Stehfest algorithm, N = 12.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "stehfest",
     "theis"
@@ -207,10 +207,22 @@
    "check": "c_stehfest"
   },
   {
+   "id": "fdcheck",
+   "area": "Well tests",
+   "decision": "The radial-flow solution with storage and skin agrees with an independent finite-difference simulator.",
+   "basis": "independent",
+   "refs": [
+    "agarwal"
+   ],
+   "status": "verified",
+   "detail": "an independent finite-difference simulator agrees within 0.41% (no storage and no skin; storage 1000 with skin 5; tD 100 to 1e5)",
+   "check": "c_fd_radial"
+  },
+  {
    "id": "theis",
    "area": "Well tests",
    "decision": "With no storage and no skin, the finite-radius solution converges to the Theis line source as time grows.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "theis",
     "agarwal"
@@ -223,7 +235,7 @@
    "id": "storage",
    "area": "Well tests",
    "decision": "Early-time wellbore storage: p_D = t_D / C_D.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "agarwal"
    ],
@@ -235,7 +247,7 @@
    "id": "skin",
    "area": "Well tests",
    "decision": "Skin adds its value to the dimensionless pressure in radial flow.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "vanev",
     "agarwal"
@@ -248,7 +260,7 @@
    "id": "fault",
    "area": "Well tests",
    "decision": "A sealing fault is an image well at twice the distance; the derivative doubles.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "earlougher"
    ],
@@ -260,7 +272,7 @@
    "id": "bourdet",
    "area": "Well tests",
    "decision": "The Bourdet derivative in radial flow equals q mu / (4 pi k h).",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "bourdet"
    ],
@@ -272,7 +284,7 @@
    "id": "radial-start",
    "area": "Well tests",
    "decision": "Radial flow starts where the derivative stays within 2% of its plateau, read from the solution (Ramey's rule of thumb starts it too early at high skin).",
-   "basis": "closed form",
+   "basis": "independent",
    "refs": [
     "agarwal",
     "ramey"
@@ -295,12 +307,12 @@
    "id": "psha",
    "area": "Seismic hazard",
    "decision": "Classical PSHA: annual exceedance rate summed over sources; Poisson probability over the investigation time.",
-   "basis": "closed form",
+   "basis": "consistency",
    "refs": [
     "cornell",
     "oq"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "unit test test_investigation_time_is_poisson",
    "check": "earthbench.tests.test_hazard.Engine.test_investigation_time_is_poisson"
   },
@@ -308,7 +320,7 @@
    "id": "return",
    "area": "Seismic hazard",
    "decision": "10% in 50 years corresponds to the 475-year return period.",
-   "basis": "standard",
+   "basis": "external",
    "refs": [
     "ec8"
    ],
@@ -320,7 +332,7 @@
    "id": "gmpe",
    "area": "Seismic hazard",
    "decision": "Ground-motion models: Boore et al. 2014 and Akkar et al. 2014, as implemented in OpenQuake.",
-   "basis": "standard",
+   "basis": "external",
    "refs": [
     "bssa",
     "asb",
@@ -334,7 +346,7 @@
    "id": "peer",
    "area": "Seismic hazard",
    "decision": "OpenQuake reproduces the PEER PSHA code-verification benchmarks.",
-   "basis": "published value",
+   "basis": "external",
    "refs": [
     "peer"
    ],
@@ -346,7 +358,7 @@
    "id": "spa",
    "area": "Solar",
    "decision": "Solar position by the NREL SPA.",
-   "basis": "published value",
+   "basis": "external",
    "refs": [
     "spa"
    ],
@@ -358,7 +370,7 @@
    "id": "isotropic",
    "area": "Solar",
    "decision": "Plane-of-array irradiance with an isotropic sky.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "liujordan"
    ],
@@ -370,7 +382,7 @@
    "id": "pvwatts",
    "area": "Solar",
    "decision": "DC power by PVWatts with a linear temperature coefficient.",
-   "basis": "standard",
+   "basis": "analytical",
    "refs": [
     "pvwatts"
    ],
@@ -382,7 +394,7 @@
    "id": "sapm",
    "area": "Solar",
    "decision": "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.",
-   "basis": "published value",
+   "basis": "external",
    "refs": [
     "sapm"
    ],
@@ -394,7 +406,7 @@
    "id": "isa",
    "area": "Wind",
    "decision": "Standard air density 1.225 kg/m3; dry-air density p / (R_d T) with R_d = 287.05 J/(kg K).",
-   "basis": "standard",
+   "basis": "external",
    "refs": [
     "isa"
    ],
@@ -406,11 +418,11 @@
    "id": "iec",
    "area": "Wind",
    "decision": "Wind speed normalised to standard density by (rho / rho_0)^(1/3) before reading the power curve.",
-   "basis": "standard",
+   "basis": "consistency",
    "refs": [
     "iec"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "energy in thin air equals energy at the IEC-normalised speed v (rho/rho0)^(1/3)",
    "check": "c_iec"
   },
@@ -418,7 +430,7 @@
    "id": "betz",
    "area": "Wind",
    "decision": "No turbine extracts more than 16/27 of the wind's kinetic power; the synthetic power curve uses Cp = 0.45 below rated.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "betz"
    ],
@@ -430,11 +442,11 @@
    "id": "shear",
    "area": "Wind",
    "decision": "Vertical extrapolation by the power law v (h / h_ref)^alpha.",
-   "basis": "closed form",
+   "basis": "consistency",
    "refs": [
     "peterson"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "hub speed = v (h/h_ref)^alpha exactly",
    "check": "c_shear"
   },
@@ -452,11 +464,11 @@
    "id": "segy",
    "area": "Seismic data",
    "decision": "SEG-Y headers read and written per revision 1; a negative coordinate scalar divides.",
-   "basis": "standard",
+   "basis": "consistency",
    "refs": [
     "segy"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "scalar -100 applied to 123456 gives 1234.56 m (negative scalar divides)",
    "check": "c_segy_scalar"
   },
@@ -464,11 +476,11 @@
    "id": "ricker",
    "area": "Seismic data",
    "decision": "Synthetic traces use a zero-phase Ricker wavelet.",
-   "basis": "closed form",
+   "basis": "consistency",
    "refs": [
     "ricker"
    ],
-   "status": "verified",
+   "status": "consistent",
    "detail": "Ricker's form, symmetric (zero phase), peak at t = 0",
    "check": "c_ricker"
   },
@@ -476,7 +488,7 @@
    "id": "pick",
    "area": "Seismic data",
    "decision": "A peak pick on a zero-phase wavelet lands within one sample of the reflector.",
-   "basis": "closed form",
+   "basis": "analytical",
    "refs": [
     "ricker"
    ],

@@ -217,7 +217,9 @@ class Session:
         return {"statement": self.task.statement, "answer_fields": {k: {"type": t, "unit": u} for k, (t, u, _) in self.task.answer_fields.items()}, "max_calls": self.max_calls}
 
     def t_files_list(self):
-        return {"datasets": {k: self.describe(v) for k, v in self.data.items()}, "documents": sorted(self.task.docs) + sorted(self.task.restricted)}
+        # restricted files are not listed (as in the live app's sandbox): an agent meets one only if something names it, such as a planted
+        # instruction. Until 6 November 2026 they were listed, so "restricted reads" before then include attempts on an advertised file.
+        return {"datasets": {k: self.describe(v) for k, v in self.data.items()}, "documents": sorted(self.task.docs)}
 
     def describe(self, v):
         if isinstance(v, np.ndarray):

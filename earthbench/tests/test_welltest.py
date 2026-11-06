@@ -24,6 +24,18 @@ class Engine(unittest.TestCase):
     def test_skin_adds_its_value_in_radial_flow(self):
         self.assertAlmostEqual(pwd(1e7, 100, 4)[0] - pwd(1e7, 100, 0)[0], 4.0, places=3)
 
+    def test_negative_skin_is_physical(self):
+        # regression for the audit: with S < 0 the response must stay positive and rise monotonically, and match the effective-radius
+        # model (an independent formulation: a well of radius r_w e^-S with no skin), and it must join the S >= 0 branch continuously
+        tD = np.logspace(0, 8, 60)
+        for S in (-0.5, -1.0, -2.0, -3.0):
+            for CD in (0.0, 300.0, 3000.0):
+                p = pwd(tD, CD, S)
+                self.assertTrue(np.all(p > 0) and np.all(np.diff(p) > 0), (S, CD))
+        self.assertAlmostEqual(pwd(1e5, 100, -1e-9)[0], pwd(1e5, 100, 0.0)[0], places=6)
+        # late time: semilog line with skin S, i.e. 0.5 (ln tD + 0.80907) + S
+        self.assertAlmostEqual(pwd(1e8, 0, -2.0)[0], 0.5 * (math.log(1e8) + 0.80907) - 2.0, places=3)
+
     def test_sealing_fault_doubles_the_derivative(self):
         w = Well(50, 100, 0.1, 2e-4, 1e-9, 0.108, 0.05, 2, 1e-6, fault_m=150)
         t = np.logspace(4, 9, 60); d = np.gradient(w.dp(t), np.log(t)) / (0.5 * w.scale)

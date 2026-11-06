@@ -21,13 +21,6 @@ class Engines(unittest.TestCase):
         for k in ("mwe_p90", "mwe_p50", "mwe_p10"):
             self.assertAlmostEqual(r[k], P, places=6)
 
-    def test_horner_recovers_the_true_reservoir(self):
-        # the analysis of the synthetic buildup must return the permeability and skin the data were made with
-        for t in [x for x in G.suite("main") + G.suite("heldout") if x.kind == "welltest" and x.defect == "clean"]:
-            k = G.key(t)
-            self.assertLess(abs(k["k_md"] / t.truth["k_md_true"] - 1), 0.03, t.id)
-            self.assertLess(abs(k["skin"] - t.truth["skin_true"]), 0.5, t.id)
-
     def test_skin_formula_in_si_matches_field_units(self):
         # the SI constant -0.3514 and the field-unit +3.2275 give the same skin for the same well
         k_md, h_ft, mu_cp, ct_psi, rw_ft, phi, m_psi, dp_psi = 50.0, 100.0, 0.5, 1e-5, 0.35, 0.12, 20.0, 300.0
@@ -48,8 +41,7 @@ class Pack(unittest.TestCase):
             for kind in G.KINDS:
                 t = G.make_task(1, kind, "L1", df)
                 self.assertFalse(run("fx-naive", t)[0]["pass"], t.id)
-        t = G.make_task(1, "welltest", "L1", "clean")
-        self.assertFalse(run("d0", t)[0]["pass"])          # the default window takes in wellbore storage and the fault
+        self.assertEqual(G.KINDS, ("hip",))                # the circular Horner kind is retired from every suite
 
     def test_las_reader(self):
         t = G.make_task(1, "hip", "L1", "units")

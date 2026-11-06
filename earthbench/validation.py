@@ -271,6 +271,31 @@ def c_p90():
     return _close(r["mwe_p90"], want, 0.005) and r["mwe_p90"] < r["mwe_p50"] < r["mwe_p10"], f"P90 {r['mwe_p90']:.2f} MWe against the 10th percentile of the input {want:.2f} MWe"
 
 
+def c_fd_radial():
+    """Independent of the engine: implicit finite differences on the radial diffusivity equation with wellbore storage and a skin film,
+    compared with the Laplace-space/Stehfest engine (no shared code or method)."""
+    import numpy as np
+    from .welltest_engine import pwd
+    def fd(CD, S, ts, n=200, R=1e5):
+        x = np.linspace(0, math.log(R), n); r = np.exp(x); h = x[1] - x[0]; p = np.zeros(n); pw = 0.0; t = 0.0; dt = 1e-4; out = []
+        for T in ts:
+            while t < T - 1e-12:
+                st = min(dt, T - t); A = np.zeros((n + 1, n + 1)); b = np.zeros(n + 1)
+                c = st / (r[1:-1] ** 2 * h ** 2); i = np.arange(1, n - 1)
+                A[i, i - 1] = -c; A[i, i] = 1 + 2 * c; A[i, i + 1] = -c; b[i] = p[i]
+                A[n - 1, n - 1] = 1.0
+                A[0, n] = 1.0; A[0, 0] = -(1 + S / h); A[0, 1] = S / h
+                A[n, n] = CD / st; A[n, 0] = 1 / h; A[n, 1] = -1 / h; b[n] = 1 + CD * pw / st
+                sol = np.linalg.solve(A, b); p, pw = sol[:n], sol[n]; t += st; dt = min(dt * 1.06, max(T * 0.02, 1e-4))
+            out.append(pw)
+        return np.array(out)
+    worst = 0.0
+    for CD, S in ((0.0, 0.0), (1000.0, 5.0)):
+        ts = [1e2, 1e3, 1e4, 1e5] if CD else [1e2, 1e3, 1e4]
+        worst = max(worst, float(np.max(np.abs(fd(CD, S, ts) / pwd(np.array(ts), CD, S) - 1))))
+    return worst < 0.01, f"an independent finite-difference simulator agrees within {worst * 100:.2f}% (no storage and no skin; storage 1000 with skin 5; tD 100 to 1e5)"
+
+
 def c_segy_scalar():
     import tempfile, numpy as np, segyio
     with tempfile.TemporaryDirectory() as d:
@@ -297,14 +322,15 @@ entry("unsafe", "Scoring", "Unsafe thresholds: design ground motion under by mor
 entry("closure", "Mining", "The ultimate pit is the maximum-weight closure of the precedence graph, solved exactly as a minimum cut.", "independent", ["picard", "lg"], "earthbench.tests.test_mining.PitSolver.test_exact_against_brute_force")
 entry("closure-nx", "Mining", "The min-cut solver agrees with an independent max-flow implementation on a full model.", "independent", ["picard"], "earthbench.tests.test_mining.PitSolver.test_matches_networkx_min_cut_on_a_full_model")
 entry("cutoff", "Mining", "Break-even cut-off grade g_c = c_p / (r P): the grade at which processing and wasting a block are worth the same.", "closed form", ["lane"], c_cutoff)
-entry("slope", "Mining", "Wall slope approximated by block precedence over up to four benches.", "design choice", ["lg"], None)
+entry("slope", "Mining", "The slope cone is enforced at every bench (block centres); on a 10 m grid the overall slope is honoured within 2 degrees on the grid axes and 4 on the diagonals.", "design choice", ["lg"], "earthbench.tests.test_mining.Slope.test_pits_stand_at_the_stated_slope_within_the_grid_resolution")
 
 entry("hip", "Geothermal", "Heat in place H = A h [rho_r c_r (1 - phi) + rho_f c_f phi] (T - T_ref); the Monte Carlo reduces to it when every input is fixed.", "closed form", ["muffler"], "earthbench.tests.test_geothermal.Engines.test_monte_carlo_collapses_to_the_closed_form")
 entry("p90", "Geothermal", "P90 is the value exceeded with 90% probability (the 10th percentile of the outcomes).", "standard", ["prms"], c_p90)
 entry("horner-skin", "Geothermal", "The SI skin formula equals the field-unit formula (constant 3.23) after unit conversion; 0.3514 = log10(2.2458).", "closed form", ["horner", "theis"], "earthbench.tests.test_geothermal.Engines.test_skin_formula_in_si_matches_field_units")
-entry("horner-k", "Geothermal", "Horner analysis recovers the permeability and skin the data were generated with.", "closed form", ["horner"], "earthbench.tests.test_geothermal.Engines.test_horner_recovers_the_true_reservoir")
+entry("negskin", "Well tests", "Negative skin is modelled as an effective wellbore radius r_w e^-S (the infinitesimal-skin form fails for S < 0).", "closed form", ["earlougher"], "earthbench.tests.test_welltest.Engine.test_negative_skin_is_physical")
 
 entry("stehfest", "Well tests", "Laplace-space solutions are inverted numerically with the Gaver-Stehfest algorithm, N = 12.", "closed form", ["stehfest", "theis"], c_stehfest)
+entry("fdcheck", "Well tests", "The radial-flow solution with storage and skin agrees with an independent finite-difference simulator.", "independent", ["agarwal"], c_fd_radial)
 entry("theis", "Well tests", "With no storage and no skin, the finite-radius solution converges to the Theis line source as time grows.", "closed form", ["theis", "agarwal"], c_theis)
 entry("storage", "Well tests", "Early-time wellbore storage: p_D = t_D / C_D.", "closed form", ["agarwal"], "earthbench.tests.test_welltest.Engine.test_wellbore_storage_unit_slope")
 entry("skin", "Well tests", "Skin adds its value to the dimensionless pressure in radial flow.", "closed form", ["vanev", "agarwal"], "earthbench.tests.test_welltest.Engine.test_skin_adds_its_value_in_radial_flow")
@@ -338,6 +364,25 @@ entry("days", "Scheduling", "Durations in hours are rounded up to whole days.", 
 entry("provenance", "Documents", "A figure is accepted only if it appears, after unit conversion, in a document whose header says it is approved or in force.", "design choice", [], None)
 
 
+# What kind of evidence each entry rests on (relabelled after the audit of 6 November 2026, which found the earlier "verified" count mixed
+# genuine checks with self-comparisons). Only external, analytical, independent and definition evidence can make an entry "verified";
+# a passing consistency check is reported as "consistent": it shows the code agrees with itself or with a formula typed from a paper,
+# not that the model is right.
+EVIDENCE = {
+    "units": "definition", "sha256": "external", "chain": "consistency", "wilson": "independent", "mcnemar": "independent", "passk": "analytical",
+    "tolerances": "design choice", "unsafe": "design choice", "closure": "independent", "closure-nx": "independent", "cutoff": "consistency",
+    "slope": "design choice", "hip": "analytical", "p90": "analytical", "horner-skin": "analytical", "stehfest": "analytical", "fdcheck": "independent",
+    "theis": "analytical", "storage": "analytical", "skin": "analytical", "negskin": "analytical", "fault": "analytical", "bourdet": "analytical",
+    "radial-start": "independent", "window": "design choice", "psha": "consistency", "return": "external", "gmpe": "external", "peer": "external",
+    "spa": "external", "isotropic": "analytical", "pvwatts": "analytical", "sapm": "external", "isa": "external", "iec": "consistency",
+    "betz": "analytical", "shear": "consistency", "turbine": "design choice", "segy": "consistency", "ricker": "consistency", "pick": "analytical",
+    "cpsat": "independent", "days": "design choice", "provenance": "design choice",
+}
+STRONG = ("external", "analytical", "independent", "definition")
+for e in R:
+    e["basis"] = EVIDENCE[e["id"]]
+
+
 # ---------------------------------------------------------------------------------------------------- run
 def run_check(c):
     if c is None:
@@ -367,9 +412,16 @@ def run():
     rows = []
     for e in R:
         ok, detail = run_check(e["check"])
-        status = ("design choice" if e["basis"] == "design choice" else "verified" if ok else "not run" if ok is None else "FAILED") if e["basis"] != "design choice" or ok is not None else "design choice"
-        if e["basis"] != "design choice" and ok is None and e["check"] is None:
+        if e["basis"] == "design choice":
+            status = "design choice"
+        elif e["check"] is None:
             status = "source only"                          # backed by a source, but no automated check yet
+        elif ok is None:
+            status = "not run"
+        elif not ok:
+            status = "FAILED"
+        else:
+            status = "verified" if e["basis"] in STRONG else "consistent"
         rows.append({k: v for k, v in e.items() if k != "check"} | {"status": status, "detail": detail, "check": e["check"] if isinstance(e["check"], str) else (e["check"].__name__ if e["check"] else None)})
     return rows
 
@@ -380,8 +432,11 @@ def markdown(rows):
     out = ["# Validation register", "",
            "Every modelling decision in Scorcher's engines, what backs it, and an automated check. Generated by `python -m earthbench.validation`; "
            f"{time.strftime('%d %B %Y', time.gmtime()).lstrip('0')}.", "",
-           "Status: **verified** means the check ran and passed in this environment; **source only** means the decision follows a cited source but has no automated check yet; "
-           "**design choice** means a judgement with no published source, listed for expert review; **not run** means the engine's library was not installed where this was generated.", "",
+           "Status: **verified** means a check ran and passed against something outside the code: a published value, a standard, an analytical solution "
+           "or an independent implementation. **consistent** means a check passed but only shows the code agrees with itself or with a formula typed from a paper. "
+           "**source only** means the decision follows a cited source with no automated check yet; **design choice** means a judgement with no published "
+           "source, listed for expert review; **not run** means the engine's library was not installed where this was generated. "
+           "No engine has yet been compared with external reference data (PEER, MineLib, SAM or PVGIS, field tests), and no outside expert has reviewed any of it.", "",
            "Totals: " + ", ".join(f"{k} {v}" for k, v in sorted(c.items())) + ".", ""]
     area = None
     for r in rows:
@@ -401,7 +456,7 @@ def main():
     for r in rows:
         print(f"{r['status']:14} {r['area']:15} {r['id']:13} {r['detail']}")
     bad = [r for r in rows if r["status"] == "FAILED"]
-    print(f"\n{len(rows)} decisions; " + ", ".join(f"{s}: {sum(1 for r in rows if r['status'] == s)}" for s in ("verified", "source only", "design choice", "not run", "FAILED")))
+    print(f"\n{len(rows)} decisions; " + ", ".join(f"{s}: {sum(1 for r in rows if r['status'] == s)}" for s in ("verified", "consistent", "source only", "design choice", "not run", "FAILED")))
     return 1 if bad else 0
 
 

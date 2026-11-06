@@ -10,6 +10,41 @@ def run(arm, t):
     return score(t, s, k, M.checks(t, s, k) if s.answer else {}, M.physics(t, s) if s.answer else {}), s
 
 
+def effective_slopes(slope):
+    """The overall slope a pit can actually stand at: chain the precedence pattern up the full model height from one block, and measure
+    how far out the required cone reaches at the top, along a grid axis and along the diagonal. Independent of the solver."""
+    import math
+    offs = M.precedence_offsets(slope); req = {(0, 0, 0)}; frontier = [(0, 0, 0)]; H = M.NZ - 1
+    while frontier:
+        nxt = []
+        for (i, j, k) in frontier:
+            for di, dj, dk in offs:
+                q = (i + di, j + dj, k + dk)
+                if q[2] >= -H and q not in req:
+                    req.add(q); nxt.append(q)
+        frontier = nxt
+    top = [(i, j) for i, j, k in req if k == -H]
+    ax = max(abs(i) for i, j in top if j == 0) * M.BS; dg = max(abs(i) for i, j in top if i == j) * M.BS * math.sqrt(2)
+    h = H * M.BS
+    return math.degrees(math.atan(h / ax)), math.degrees(math.atan(h / dg)), h / math.tan(math.radians(slope))
+
+
+class Slope(unittest.TestCase):
+    def test_pits_stand_at_the_stated_slope_within_the_grid_resolution(self):
+        # Regression for the audit of 6 November 2026: with the cone enforced at only four benches, pits stood up to 7 degrees steeper than
+        # stated. Enforced at every bench, what remains is the 10 m grid itself: within 1 degree along the grid axes and 4 degrees on the
+        # diagonals (blocks there are 14.1 m apart), over the model's 90 m height.
+        for slope in (38.66, 45.0, 50.19):
+            axis, diag, _ = effective_slopes(slope)
+            self.assertLess(abs(axis - slope), 2.0, (slope, axis)); self.assertLess(abs(diag - slope), 4.0, (slope, diag))
+        four = M.precedence_offsets
+        try:
+            M.precedence_offsets = lambda s, levels=4: four(s, levels=4)
+            self.assertGreater(effective_slopes(50.19)[0] - 50.19, 5.0)       # the old truncation, for the record
+        finally:
+            M.precedence_offsets = four
+
+
 class PitSolver(unittest.TestCase):
     def test_exact_against_brute_force(self):
         # every closed set of a 3 x 3 x 2 model, enumerated: the min-cut pit must be the best

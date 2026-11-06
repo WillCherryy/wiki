@@ -41,7 +41,14 @@ def pwd_laplace(s, CD, S):
 
 
 def pwd(tD, CD, S):
-    """Dimensionless wellbore pressure drop at each tD (Stehfest)."""
+    """Dimensionless wellbore pressure drop at each tD (Stehfest).
+
+    Negative skin (a stimulated well) is modelled as an effective wellbore radius r_wa = r_w e^-S with zero skin (Earlougher 1977, ch. 2):
+    t_D and C_D are rescaled by e^{2S}. The infinitesimal-skin form with S < 0 is unphysical at early time and, inverted numerically,
+    returned negative pressures (found in the audit of 6 November 2026; tested in test_welltest)."""
+    if S < 0:
+        f = math.exp(2 * S)
+        return pwd(np.asarray(tD, float) * f, CD * f, 0.0)
     tD = np.atleast_1d(np.asarray(tD, float))
     ln2 = math.log(2.0)
     out = np.zeros_like(tD)
