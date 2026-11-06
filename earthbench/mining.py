@@ -126,26 +126,21 @@ def _grid_index(a):
     return idx
 
 
-def ultimate_pit(a, values, slope_deg):
-    """Maximum-weight closure by minimum cut. Returns a boolean per row."""
-    idx = _grid_index(a)
-    v = np.rint(values).astype(np.int64)
-    n = a.shape[0]
+def max_closure(values, arcs):
+    """Maximum-weight closure as a minimum cut (Picard 1976). values: per node; arcs: (i, j) pairs meaning "taking i requires j".
+    Returns a boolean per node. Values are rounded to whole units for the integer max-flow."""
+    v = np.rint(np.asarray(values, float)).astype(np.int64)
+    n = v.size
     S, T = n, n + 1
     pos = v.clip(min=0)
     INF = int(pos.sum()) + 1
     scale = 1
     while INF // scale >= 2 ** 31 - 1:
         scale *= 10
-    rows, cols, caps = [], [], []
-    p = np.flatnonzero(v > 0); rows += [np.full(p.size, S)]; cols += [p]; caps += [v[p] // scale]
-    q = np.flatnonzero(v < 0); rows += [q]; cols += [np.full(q.size, T)]; caps += [(-v[q]) // scale]
-    I, J, K = a["i"], a["j"], a["k"]
-    for di, dj, dk in precedence_offsets(slope_deg):
-        ii, jj, kk = I + di, J + dj, K + dk
-        ok = (ii >= 0) & (ii < NX) & (jj >= 0) & (jj < NY) & (kk >= 0)
-        rows += [np.flatnonzero(ok)]; cols += [idx[ii[ok], jj[ok], kk[ok]]]; caps += [np.full(ok.sum(), INF // scale)]
-    r, c, w = np.concatenate(rows), np.concatenate(cols), np.concatenate(caps).astype(np.int32)
+    arcs = np.asarray(arcs, np.int64).reshape(-1, 2)
+    p = np.flatnonzero(v > 0); q = np.flatnonzero(v < 0)
+    r = np.concatenate([np.full(p.size, S), q, arcs[:, 0]]); c = np.concatenate([p, np.full(q.size, T), arcs[:, 1]])
+    w = np.concatenate([v[p] // scale, (-v[q]) // scale, np.full(arcs.shape[0], INF // scale)]).astype(np.int32)
     keep = w > 0
     G = csr_matrix((w[keep], (r[keep], c[keep])), shape=(n + 2, n + 2))
     G.sum_duplicates()
@@ -153,8 +148,20 @@ def ultimate_pit(a, values, slope_deg):
     R = (G - f).tocsr()                            # residual: forward capacity left, and reverse capacity where flow ran
     R.data = (R.data > 0).astype(np.int8); R.eliminate_zeros()
     reach = breadth_first_order(R, S, directed=True, return_predecessors=False)
-    pit = np.zeros(n, bool); reach = reach[reach < n]; pit[reach] = True
-    return pit
+    out = np.zeros(n, bool); reach = reach[reach < n]; out[reach] = True
+    return out
+
+
+def ultimate_pit(a, values, slope_deg):
+    """Maximum-weight closure by minimum cut over the slope cone's precedence arcs. Returns a boolean per row."""
+    idx = _grid_index(a)
+    I, J, K = a["i"], a["j"], a["k"]
+    arcs = []
+    for di, dj, dk in precedence_offsets(slope_deg):
+        ii, jj, kk = I + di, J + dj, K + dk
+        ok = (ii >= 0) & (ii < NX) & (jj >= 0) & (jj < NY) & (kk >= 0)
+        arcs.append(np.stack([np.flatnonzero(ok), idx[ii[ok], jj[ok], kk[ok]]], 1))
+    return max_closure(values, np.concatenate(arcs) if arcs else np.zeros((0, 2), np.int64))
 
 
 def closure_violations(a, pit, slope_deg):

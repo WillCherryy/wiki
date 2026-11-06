@@ -1,0 +1,51 @@
+{
+ "generated": "2026-11-06T17:24:44Z",
+ "pass": true,
+ "source": "PVGIS 5.2 (JRC) seriescalc, 2019, SARAH-2 and ERA5",
+ "checks": [
+  {
+   "name": "Beam on the plane (geometry), 3 sites, 2019",
+   "pass": true,
+   "detail": "madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%)"
+  },
+  {
+   "name": "Total on the plane (isotropic sky against PVGIS's Muneer model): measured, not graded",
+   "pass": null,
+   "detail": "madrid -3.3%; freiburg -3.5%; seville -3.2%"
+  },
+  {
+   "name": "Annual energy (no angle-of-incidence or spectral loss; SAPM temperature): measured, not graded",
+   "pass": null,
+   "detail": "madrid 1684 against 1690 kWh/kWp (-0.3%); freiburg 1105 against 1103 kWh/kWp (+0.2%); seville 1716 against 1717 kWh/kWp (-0.0%)"
+  }
+ ],
+ "rows": [
+  {
+   "site": "madrid",
+   "beam_scorcher": 1588.783876657173,
+   "beam_pvgis": 1588.22034,
+   "poa_scorcher": 2118.764666366286,
+   "poa_pvgis": 2191.73595,
+   "energy_scorcher": 1684.1526152657543,
+   "energy_pvgis": 1689.68943
+  },
+  {
+   "site": "freiburg",
+   "beam_scorcher": 835.951157959218,
+   "beam_pvgis": 835.77113,
+   "poa_scorcher": 1362.4900194514953,
+   "poa_pvgis": 1412.5060799999999,
+   "energy_scorcher": 1105.2036263478547,
+   "energy_pvgis": 1102.59904
+  },
+  {
+   "site": "seville",
+   "beam_scorcher": 1660.301314056304,
+   "beam_pvgis": 1659.51431,
+   "poa_scorcher": 2200.06824733687,
+   "poa_pvgis": 2273.5097100000003,
+   "energy_scorcher": 1716.462444310732,
+   "energy_pvgis": 1716.58346
+  }
+ ]
+}

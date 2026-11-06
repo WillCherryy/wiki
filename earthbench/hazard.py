@@ -57,7 +57,10 @@ def hazard_curve(sources, site, gmpe, years):
     for n, s in enumerate(sources):
         if not (s["rate"] > 0 and 0.5 <= s["b"] <= 1.5 and 3 <= s["m_min"] < s["m_max"] <= 8.5 and 0 < s["depth_km"] < 25):
             raise ToolError(f"source {n}: rate > 0, 0.5 <= b <= 1.5, 3 <= m_min < m_max <= 8.5 and 0 < depth < 25 km")
-        a = math.log10(s["rate"]) + s["b"] * s["m_min"]
+        # The brief gives the annual rate of M >= m_min. OpenQuake's truncated Gutenberg-Richter takes the a-value of the untruncated curve,
+        # so N(>= m_min) = 10^a (10^-b m_min - 10^-b m_max). Until 6 November 2026 the truncation factor was missing (rates up to 1.6% low);
+        # the PEER Set 1 Case 5 comparison found it (earthbench/external/peer.py).
+        a = math.log10(s["rate"] / (10 ** (-s["b"] * s["m_min"]) - 10 ** (-s["b"] * s["m_max"])))
         srcs.append(q["PointSource"](f"s{n}", f"s{n}", TRT, q["TruncatedGRMFD"](s["m_min"], s["m_max"], 0.1, a, s["b"]), 2.0, q["WC1994"](), 1.5,
                                      q["PoissonTOM"](float(years)), 0.0, 25.0, q["Point"](s["lon"], s["lat"]),
                                      q["PMF"]([(1.0, q["NodalPlane"](s.get("strike", 0.0), s.get("dip", 90.0), s.get("rake", 0.0)))]), q["PMF"]([(1.0, s["depth_km"])])))

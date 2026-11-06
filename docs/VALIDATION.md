@@ -4,7 +4,7 @@ Every modelling decision in Scorcher's engines, what backs it, and an automated 
 
 Status: **verified** means a check ran and passed against something outside the code: a published value, a standard, an analytical solution or an independent implementation. **consistent** means a check passed but only shows the code agrees with itself or with a formula typed from a paper. **source only** means the decision follows a cited source with no automated check yet; **design choice** means a judgement with no published source, listed for expert review; **not run** means the engine's library was not installed where this was generated. No engine has yet been compared with external reference data (PEER, MineLib, SAM or PVGIS, field tests), and no outside expert has reviewed any of it.
 
-Totals: consistent 7, design choice 7, source only 2, verified 28.
+Totals: consistent 7, design choice 7, source only 1, verified 32.
 
 
 ## All
@@ -41,6 +41,7 @@ Totals: consistent 7, design choice 7, source only 2, verified 28.
 |---|---|---|---|---|
 | The ultimate pit is the maximum-weight closure of the precedence graph, solved exactly as a minimum cut. | independent | Picard, J.; Lerchs, H. | verified | unit test test_exact_against_brute_force |
 | The min-cut solver agrees with an independent max-flow implementation on a full model. | independent | Picard, J. | verified | unit test test_matches_networkx_min_cut_on_a_full_model |
+| The min-cut pit solver reproduces the optimum of a real MineLib instance (Newman1: 1,060 blocks, 3,922 arcs) found independently by Gurobi. | external | Espinoza, D.; Picard, J. | verified | 3 of 3 graded checks pass (2026-11-06): Newman1 optimum: Scorcher 26,086,899.03 against Gurobi 26,086,899.03 (difference -0.00); Newman1 pit size: 1059 blocks against 1059; Newman1 pit is closed: every one of 3,922 precedence arcs respected |
 | Break-even cut-off grade g_c = c_p / (r P): the grade at which processing and wasting a block are worth the same. | consistency | Lane, K. | consistent | at the cut-off 0.1562% processing and waste are worth the same (indifference) |
 | The slope cone is enforced at every bench (block centres); on a 10 m grid the overall slope is honoured within 2 degrees on the grid axes and 4 on the diagonals. | design choice | Lerchs, H. | design choice | unit test test_pits_stand_at_the_stated_slope_within_the_grid_resolution |
 
@@ -74,13 +75,15 @@ Totals: consistent 7, design choice 7, source only 2, verified 28.
 | Classical PSHA: annual exceedance rate summed over sources; Poisson probability over the investigation time. | consistency | Cornell, C.; Pagani, M. | consistent | unit test test_investigation_time_is_poisson |
 | 10% in 50 years corresponds to the 475-year return period. | external | EN 1998-1:2004 (Eurocode 8), reference return period 475 years for the no-collapse requirement (10% in 50 years). | verified | 10% in 50 years with Poisson occurrence is 474.6 years, the Eurocode 8 reference 475 |
 | Ground-motion models: Boore et al. 2014 and Akkar et al. 2014, as implemented in OpenQuake. | external | Boore, D.; Akkar, S.; Pagani, M. | source only | no automated check |
-| OpenQuake reproduces the PEER PSHA code-verification benchmarks. | external | Hale, C. | source only | no automated check |
+| The hazard engine reproduces the PEER PSHA verification answers: Set 1 Case 1 (analytical median PGA at 7 sites, activity rate), Case 2 (floating ruptures) and Case 5 (truncated exponential magnitudes), within PEER's +-5% criterion. | external | Thomas, P.; Hale, C. | verified | 5 of 5 graded checks pass (2026-11-06): Case 1 activity rate: 2.8528e-03 per year against the published 2.853e-3; Case 1 median PGA, sites 1 to 7: largest difference from Table 3.2 0.80% (level grid spacing 0.6%); Case 1 annual probability below the median: 2.8487e-03 against 1 - exp(-rate) = 2.8487e-03; Case 2 hand solution: 85 points within +-5% (PEER criterion): largest difference 4.0% (site 1, 0.5 g); median 0.01%; refined: site 1 at 0.55 g: 9.2% at the coarse step, 2.6% at 0.07 km; Case 5 hand solution: 22 points within +-5% (PEER criterion): largest difference 1.3% (site 4, 0.3 g); median 0.02% |
+| A source's annual rate of M >= m_min becomes OpenQuake's truncated Gutenberg-Richter a-value with the truncation factor (the factor was missing until the PEER Case 5 comparison found it). | external | Thomas, P. | verified | 5 of 5 graded checks pass (2026-11-06): Case 1 activity rate: 2.8528e-03 per year against the published 2.853e-3; Case 1 median PGA, sites 1 to 7: largest difference from Table 3.2 0.80% (level grid spacing 0.6%); Case 1 annual probability below the median: 2.8487e-03 against 1 - exp(-rate) = 2.8487e-03; Case 2 hand solution: 85 points within +-5% (PEER criterion): largest difference 4.0% (site 1, 0.5 g); median 0.01%; refined: site 1 at 0.55 g: 9.2% at the coarse step, 2.6% at 0.07 km; Case 5 hand solution: 22 points within +-5% (PEER criterion): largest difference 1.3% (site 4, 0.3 g); median 0.02% |
 
 ## Solar
 
 | Decision | Basis | Source | Status | Check |
 |---|---|---|---|---|
 | Solar position by the NREL SPA. | external | Reda, I. | verified | zenith 50.11162, azimuth 194.34024 against the published 50.11162, 194.34024 |
+| Beam irradiance on the plane matches PVGIS for the same 2019 hours at Madrid, Freiburg and Seville (within 1%; measured 0.0%). The isotropic sky gives 3.2 to 3.5% less total plane-of-array irradiance than PVGIS, reported as a limitation. | external | PVGIS 5.; Reda, I. | verified | 1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%) |
 | Plane-of-array irradiance with an isotropic sky. | analytical | Liu, B. | verified | plane-of-array 796.468 W/m2 equals the isotropic formula 796.468 |
 | DC power by PVWatts with a linear temperature coefficient. | analytical | Dobos, A. | verified | P_dc = P_dc0 (E/1000) (1 + gamma (T_c - 25)) |
 | Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients. | external | King, D. | verified | coefficients equal the published open-rack glass/glass values; cell 52.568 C at 900 W/m2, 25 C, 2 m/s |
@@ -156,3 +159,6 @@ Totals: consistent 7, design choice 7, source only 2, verified 28.
 - **segy**: SEG-Y revision 1 data exchange format, Society of Exploration Geophysicists (2002): trace header bytes 71-72 coordinate scalar, negative means divide
 - **ricker**: Ricker, N. (1953). The form and laws of propagation of seismic wavelets. Geophysics 18(1), 10-40
 - **ortools**: Perron, L. and Furnon, V. OR-Tools CP-SAT solver, Google
+- **peer2010**: Thomas, P., Wong, I. and Abrahamson, N. (2010). Verification of Probabilistic Seismic Hazard Analysis Computer Programs. PEER Report 2010/106 (Table 3.2; Appendix A hand solutions)
+- **minelib**: Espinoza, D., Goycoolea, M., Moreno, E. and Newman, A. (2013). MineLib: a library of open pit mining problems. Annals of Operations Research 206(1), 93-114 (instance Newman1; reference optimum from an independent Gurobi solve in AMPL's MineLib notebook)
+- **pvgis**: PVGIS 5.2, European Commission Joint Research Centre (re.jrc.ec.europa.eu): SARAH-2 irradiance and ERA5 meteorology, hourly series for 2019

@@ -1,0 +1,21 @@
+{
+ "generated": "2026-11-06T17:21:34Z",
+ "pass": true,
+ "checks": [
+  {
+   "name": "Newman1 optimum",
+   "pass": true,
+   "detail": "Scorcher 26,086,899.03 against Gurobi 26,086,899.03 (difference -0.00)"
+  },
+  {
+   "name": "Newman1 pit size",
+   "pass": true,
+   "detail": "1059 blocks against 1059"
+  },
+  {
+   "name": "Newman1 pit is closed",
+   "pass": true,
+   "detail": "every one of 3,922 precedence arcs respected"
+  }
+ ]
+}

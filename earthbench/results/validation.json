@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-06T15:27:10Z",
+ "generated": "2026-11-06T17:24:24Z",
  "rows": [
   {
    "id": "units",
@@ -119,6 +119,19 @@
    "status": "verified",
    "detail": "unit test test_matches_networkx_min_cut_on_a_full_model",
    "check": "earthbench.tests.test_mining.PitSolver.test_matches_networkx_min_cut_on_a_full_model"
+  },
+  {
+   "id": "minelib",
+   "area": "Mining",
+   "decision": "The min-cut pit solver reproduces the optimum of a real MineLib instance (Newman1: 1,060 blocks, 3,922 arcs) found independently by Gurobi.",
+   "basis": "external",
+   "refs": [
+    "minelib",
+    "picard"
+   ],
+   "status": "verified",
+   "detail": "3 of 3 graded checks pass (2026-11-06): Newman1 optimum: Scorcher 26,086,899.03 against Gurobi 26,086,899.03 (difference -0.00); Newman1 pit size: 1059 blocks against 1059; Newman1 pit is closed: every one of 3,922 precedence arcs respected",
+   "check": "c_minelib"
   },
   {
    "id": "cutoff",
@@ -345,14 +358,27 @@
   {
    "id": "peer",
    "area": "Seismic hazard",
-   "decision": "OpenQuake reproduces the PEER PSHA code-verification benchmarks.",
+   "decision": "The hazard engine reproduces the PEER PSHA verification answers: Set 1 Case 1 (analytical median PGA at 7 sites, activity rate), Case 2 (floating ruptures) and Case 5 (truncated exponential magnitudes), within PEER's +-5% criterion.",
    "basis": "external",
    "refs": [
+    "peer2010",
     "peer"
    ],
-   "status": "source only",
-   "detail": "no automated check",
-   "check": null
+   "status": "verified",
+   "detail": "5 of 5 graded checks pass (2026-11-06): Case 1 activity rate: 2.8528e-03 per year against the published 2.853e-3; Case 1 median PGA, sites 1 to 7: largest difference from Table 3.2 0.80% (level grid spacing 0.6%); Case 1 annual probability below the median: 2.8487e-03 against 1 - exp(-rate) = 2.8487e-03; Case 2 hand solution: 85 points within +-5% (PEER criterion): largest difference 4.0% (site 1, 0.5 g); median 0.01%; refined: site 1 at 0.55 g: 9.2% at the coarse step, 2.6% at 0.07 km; Case 5 hand solution: 22 points within +-5% (PEER criterion): largest difference 1.3% (site 4, 0.3 g); median 0.02%",
+   "check": "c_peer"
+  },
+  {
+   "id": "grrate",
+   "area": "Seismic hazard",
+   "decision": "A source's annual rate of M >= m_min becomes OpenQuake's truncated Gutenberg-Richter a-value with the truncation factor (the factor was missing until the PEER Case 5 comparison found it).",
+   "basis": "external",
+   "refs": [
+    "peer2010"
+   ],
+   "status": "verified",
+   "detail": "5 of 5 graded checks pass (2026-11-06): Case 1 activity rate: 2.8528e-03 per year against the published 2.853e-3; Case 1 median PGA, sites 1 to 7: largest difference from Table 3.2 0.80% (level grid spacing 0.6%); Case 1 annual probability below the median: 2.8487e-03 against 1 - exp(-rate) = 2.8487e-03; Case 2 hand solution: 85 points within +-5% (PEER criterion): largest difference 4.0% (site 1, 0.5 g); median 0.01%; refined: site 1 at 0.55 g: 9.2% at the coarse step, 2.6% at 0.07 km; Case 5 hand solution: 22 points within +-5% (PEER criterion): largest difference 1.3% (site 4, 0.3 g); median 0.02%",
+   "check": "c_peer"
   },
   {
    "id": "spa",
@@ -365,6 +391,19 @@
    "status": "verified",
    "detail": "zenith 50.11162, azimuth 194.34024 against the published 50.11162, 194.34024",
    "check": "c_spa"
+  },
+  {
+   "id": "pvgis",
+   "area": "Solar",
+   "decision": "Beam irradiance on the plane matches PVGIS for the same 2019 hours at Madrid, Freiburg and Seville (within 1%; measured 0.0%). The isotropic sky gives 3.2 to 3.5% less total plane-of-array irradiance than PVGIS, reported as a limitation.",
+   "basis": "external",
+   "refs": [
+    "pvgis",
+    "spa"
+   ],
+   "status": "verified",
+   "detail": "1 of 1 graded checks pass (2026-11-06): Beam on the plane (geometry), 3 sites, 2019: madrid 1589 against 1588 kWh/m2 (+0.0%); freiburg 836 against 836 kWh/m2 (+0.0%); seville 1660 against 1660 kWh/m2 (+0.0%)",
+   "check": "c_pvgis"
   },
   {
    "id": "isotropic",
@@ -567,6 +606,9 @@
   "peterson": "Peterson, E. W. and Hennessey, J. P. (1978). On the use of power laws for estimates of wind power potential. Journal of Applied Meteorology 17(3), 390-394",
   "segy": "SEG-Y revision 1 data exchange format, Society of Exploration Geophysicists (2002): trace header bytes 71-72 coordinate scalar, negative means divide",
   "ricker": "Ricker, N. (1953). The form and laws of propagation of seismic wavelets. Geophysics 18(1), 10-40",
-  "ortools": "Perron, L. and Furnon, V. OR-Tools CP-SAT solver, Google"
+  "ortools": "Perron, L. and Furnon, V. OR-Tools CP-SAT solver, Google",
+  "peer2010": "Thomas, P., Wong, I. and Abrahamson, N. (2010). Verification of Probabilistic Seismic Hazard Analysis Computer Programs. PEER Report 2010/106 (Table 3.2; Appendix A hand solutions)",
+  "minelib": "Espinoza, D., Goycoolea, M., Moreno, E. and Newman, A. (2013). MineLib: a library of open pit mining problems. Annals of Operations Research 206(1), 93-114 (instance Newman1; reference optimum from an independent Gurobi solve in AMPL's MineLib notebook)",
+  "pvgis": "PVGIS 5.2, European Commission Joint Research Centre (re.jrc.ec.europa.eu): SARAH-2 irradiance and ERA5 meteorology, hourly series for 2019"
  }
 }

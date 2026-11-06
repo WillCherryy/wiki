@@ -64,6 +64,9 @@ REFS = {
     "segy": "SEG-Y revision 1 data exchange format, Society of Exploration Geophysicists (2002): trace header bytes 71-72 coordinate scalar, negative means divide",
     "ricker": "Ricker, N. (1953). The form and laws of propagation of seismic wavelets. Geophysics 18(1), 10-40",
     "ortools": "Perron, L. and Furnon, V. OR-Tools CP-SAT solver, Google",
+    "peer2010": "Thomas, P., Wong, I. and Abrahamson, N. (2010). Verification of Probabilistic Seismic Hazard Analysis Computer Programs. PEER Report 2010/106 (Table 3.2; Appendix A hand solutions)",
+    "minelib": "Espinoza, D., Goycoolea, M., Moreno, E. and Newman, A. (2013). MineLib: a library of open pit mining problems. Annals of Operations Research 206(1), 93-114 (instance Newman1; reference optimum from an independent Gurobi solve in AMPL's MineLib notebook)",
+    "pvgis": "PVGIS 5.2, European Commission Joint Research Centre (re.jrc.ec.europa.eu): SARAH-2 irradiance and ERA5 meteorology, hourly series for 2019",
 }
 
 R = []          # the register
@@ -296,6 +299,29 @@ def c_fd_radial():
     return worst < 0.01, f"an independent finite-difference simulator agrees within {worst * 100:.2f}% (no storage and no skin; storage 1000 with skin 5; tD 100 to 1e5)"
 
 
+def _external(name):
+    """Read a recorded external comparison (earthbench/external/*.py writes it: the PEER run takes minutes and over 10 GB of memory, so the
+    register reads its record rather than rerunning it)."""
+    p = os.path.join(HERE, "results", "external", f"{name}.json")
+    if not os.path.exists(p):
+        return None, f"not run: python -m earthbench.external.{name}"
+    d = json.load(open(p))
+    graded = [c for c in d["checks"] if c["pass"] is not None]
+    return bool(d["pass"]), f"{sum(1 for c in graded if c['pass'])} of {len(graded)} graded checks pass ({d['generated'][:10]}): " + "; ".join(f"{c['name']}: {c['detail']}" for c in graded)[:600]
+
+
+def c_peer():
+    return _external("peer")
+
+
+def c_minelib():
+    return _external("minelib")
+
+
+def c_pvgis():
+    return _external("pvgis")
+
+
 def c_segy_scalar():
     import tempfile, numpy as np, segyio
     with tempfile.TemporaryDirectory() as d:
@@ -321,6 +347,7 @@ entry("unsafe", "Scoring", "Unsafe thresholds: design ground motion under by mor
 
 entry("closure", "Mining", "The ultimate pit is the maximum-weight closure of the precedence graph, solved exactly as a minimum cut.", "independent", ["picard", "lg"], "earthbench.tests.test_mining.PitSolver.test_exact_against_brute_force")
 entry("closure-nx", "Mining", "The min-cut solver agrees with an independent max-flow implementation on a full model.", "independent", ["picard"], "earthbench.tests.test_mining.PitSolver.test_matches_networkx_min_cut_on_a_full_model")
+entry("minelib", "Mining", "The min-cut pit solver reproduces the optimum of a real MineLib instance (Newman1: 1,060 blocks, 3,922 arcs) found independently by Gurobi.", "external", ["minelib", "picard"], c_minelib)
 entry("cutoff", "Mining", "Break-even cut-off grade g_c = c_p / (r P): the grade at which processing and wasting a block are worth the same.", "closed form", ["lane"], c_cutoff)
 entry("slope", "Mining", "The slope cone is enforced at every bench (block centres); on a 10 m grid the overall slope is honoured within 2 degrees on the grid axes and 4 on the diagonals.", "design choice", ["lg"], "earthbench.tests.test_mining.Slope.test_pits_stand_at_the_stated_slope_within_the_grid_resolution")
 
@@ -342,9 +369,11 @@ entry("window", "Well tests", "A fitted window is accepted where the derivative 
 entry("psha", "Seismic hazard", "Classical PSHA: annual exceedance rate summed over sources; Poisson probability over the investigation time.", "closed form", ["cornell", "oq"], "earthbench.tests.test_hazard.Engine.test_investigation_time_is_poisson")
 entry("return", "Seismic hazard", "10% in 50 years corresponds to the 475-year return period.", "standard", ["ec8"], c_return_period)
 entry("gmpe", "Seismic hazard", "Ground-motion models: Boore et al. 2014 and Akkar et al. 2014, as implemented in OpenQuake.", "standard", ["bssa", "asb", "oq"], None)
-entry("peer", "Seismic hazard", "OpenQuake reproduces the PEER PSHA code-verification benchmarks.", "published value", ["peer"], None)
+entry("peer", "Seismic hazard", "The hazard engine reproduces the PEER PSHA verification answers: Set 1 Case 1 (analytical median PGA at 7 sites, activity rate), Case 2 (floating ruptures) and Case 5 (truncated exponential magnitudes), within PEER's +-5% criterion.", "published value", ["peer2010", "peer"], c_peer)
+entry("grrate", "Seismic hazard", "A source's annual rate of M >= m_min becomes OpenQuake's truncated Gutenberg-Richter a-value with the truncation factor (the factor was missing until the PEER Case 5 comparison found it).", "published value", ["peer2010"], c_peer)
 
 entry("spa", "Solar", "Solar position by the NREL SPA.", "published value", ["spa"], c_spa)
+entry("pvgis", "Solar", "Beam irradiance on the plane matches PVGIS for the same 2019 hours at Madrid, Freiburg and Seville (within 1%; measured 0.0%). The isotropic sky gives 3.2 to 3.5% less total plane-of-array irradiance than PVGIS, reported as a limitation.", "external", ["pvgis", "spa"], c_pvgis)
 entry("isotropic", "Solar", "Plane-of-array irradiance with an isotropic sky.", "closed form", ["liujordan"], c_isotropic)
 entry("pvwatts", "Solar", "DC power by PVWatts with a linear temperature coefficient.", "standard", ["pvwatts"], c_pvwatts)
 entry("sapm", "Solar", "Cell temperature by the Sandia (SAPM) model, open-rack glass/glass coefficients.", "published value", ["sapm"], c_sapm)
@@ -373,8 +402,8 @@ EVIDENCE = {
     "tolerances": "design choice", "unsafe": "design choice", "closure": "independent", "closure-nx": "independent", "cutoff": "consistency",
     "slope": "design choice", "hip": "analytical", "p90": "analytical", "horner-skin": "analytical", "stehfest": "analytical", "fdcheck": "independent",
     "theis": "analytical", "storage": "analytical", "skin": "analytical", "negskin": "analytical", "fault": "analytical", "bourdet": "analytical",
-    "radial-start": "independent", "window": "design choice", "psha": "consistency", "return": "external", "gmpe": "external", "peer": "external",
-    "spa": "external", "isotropic": "analytical", "pvwatts": "analytical", "sapm": "external", "isa": "external", "iec": "consistency",
+    "radial-start": "independent", "window": "design choice", "psha": "consistency", "return": "external", "gmpe": "external",
+    "spa": "external", "peer": "external", "grrate": "external", "minelib": "external", "pvgis": "external", "isotropic": "analytical", "pvwatts": "analytical", "sapm": "external", "isa": "external", "iec": "consistency",
     "betz": "analytical", "shear": "consistency", "turbine": "design choice", "segy": "consistency", "ricker": "consistency", "pick": "analytical",
     "cpsat": "independent", "days": "design choice", "provenance": "design choice",
 }
