@@ -29,7 +29,7 @@ Scripted arms on every suite (`python3 -m earthbench.run`; results in `results/f
 |---|---|---|---|---|---|
 | Mining | 112/112 | 0/112 (11 unsafe pits) | 10/112 | 12 of 112; 66 of 85 | 0 |
 | Geothermal | 56/56 | 0/56 | 27/56 | 0 of 56; 14 of 27 | 0 |
-| Well tests (full) | 106/106 (and 106/106 reading only the derivative) | 34/106 (the textbook 1 to 10 h window, the first rate, never abstains) | 0/106 | 55 of 55; 96 of 100 | 0 |
+| Well tests (full) | 133/133 (and 133/133 reading only the derivative) | 42/133 (the textbook 1 to 10 h window, the first rate, never abstains) | 0/133 | 71 of 71; 120 of 126 | 0 |
 | Hazard | 56/56 | 0/56 (21 unsafe) | 9/56 | 0 of 56; 1 of 10 | 0 |
 | Solar | 56/56 | 15/56 (12 unsafe) | 11/56 | 0 of 41; 14 of 43 | 0 |
 | Solar, real weather | 31/31 | 11/31 (2 unsafe) | 0/31 (beam read as direct normal) | 0 of 20; 1 of 29 (self-consistent errors: only the key sees them) | 0 |
@@ -52,6 +52,8 @@ Each run writes a results file (pass with interval, unsafe count, physical flags
 `--spec` and `--defect` pick part of a suite, for example only the harder well tests: `--pack welltest --suite main --spec L4` or `--defect two_rate,short`.
 
 **Harder well tests (added 6 November 2026).** Brief L4 gives no guidance: neither the brief nor the tool descriptions say how to read the derivative. Defect `two_rate`: the rate fell before shut-in, so the method needs the last rate and Horner's equivalent producing time; taking the first rate fails. Defect `short`: the test ends before radial flow, the right answer is that permeability and skin cannot be determined (`radial_flow_reached` false), and any estimate fails. A key-free check flags a claim of radial flow the derivative does not show. The 24 tasks of the original grid are unchanged, byte for byte, so the private-set commitment and the earlier model runs still hold; the added tasks are committed separately as `welltest-2`.
+
+**The hard tier (suite `hard`, 27 well-test tasks, 7 November 2026).** Brief H1 removes every well-test routine: the agent gets `calc`, `compute_column`, `derivative` and `linear_fit`, and must convert units, build the superposition time, pick a window, fit the line and compute k and skin from the standard equations. Defects add a three-step rate history, a gauge three times noisier, and a constant-pressure boundary; the answer names the boundary (`none`, `sealing`, `constant_pressure`). Scripted: the analyst 27/27, the textbook recipe 8/27, the naive pipeline 0/27. It has not been run with a model, so it is not known to separate models. Run it: `python -m earthbench.run --model claude-haiku-5-5 --pack welltest --suite hard --repeats 3 --yes`.
 
 **Comparing models.** Tasks built from one seed share a world, so they are not independent: a Wilson interval over tasks is too narrow. `python -m earthbench.compare MODEL_A MODEL_B` resamples whole worlds (a cluster bootstrap), averages repeats within a task, and reports each model's pass rate and the paired difference with 95 % intervals, beside the exact McNemar test on first runs. On the Haiku runs so far the design effect is 2.0: the per-task intervals were about 1.4 times too narrow.
 

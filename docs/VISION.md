@@ -47,7 +47,7 @@ A customer brings tasks from their own work, or uses Scorcher's benchmark suites
 
 ### 2. Scorcher agents
 
-Agents Scorcher builds, benchmarks and publishes, for companies with no agent of their own. Each agent ships with its benchmark results, the tasks it was tested on, its known failure modes and its cost per task. They run inside the same sandbox and checks as the trials, so a customer can run Scorcher's agent and their own side by side. Small and open models are tested too, because many firms need agents that run on their own hardware.
+**Superseded on 7 November 2026: Scorcher no longer plans to sell agents (docs/STRATEGY.md); only a published reference baseline remains.** Earlier plan: agents Scorcher builds, benchmarks and publishes, for companies with no agent of their own. Each agent ships with its benchmark results, the tasks it was tested on, its known failure modes and its cost per task. They run inside the same sandbox and checks as the trials, so a customer can run Scorcher's agent and their own side by side. Small and open models are tested too, because many firms need agents that run on their own hardware.
 
 ### 3. The Earth-science suite
 
@@ -153,7 +153,7 @@ Three tiers, already outlined in `SUITE.md`; prices are set with the first pilot
 | Tier | What it is |
 |---|---|
 | **Trial** | A fixed fee for one workflow: 40 to 100 of the customer's tasks, their agent and/or Scorcher's, a report and a review call |
-| **Subscribe** | Per agent per month to run Scorcher's agents in production, with continuous monitoring on a held-out task set |
+| **Every release** | Per agent, a subscription to re-test each version a vendor ships against the held-out tasks, with regressions and a dated record (replaces the earlier plan to run Scorcher's agents in production) |
 | **On premises** | Annual licence for firms whose data cannot leave their network |
 
 Fairness rules, proposed: published cost per task, model costs passed through at cost, no charge for runs lost to Scorcher's own faults, and the failures report included at every tier.

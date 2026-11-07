@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-06T22:43:37Z",
+ "generated": "2026-11-07T08:22:05Z",
  "rows": [
   {
    "id": "units",
@@ -352,6 +352,28 @@
    "status": "design choice",
    "detail": "unit test test_abstention",
    "check": "earthbench.tests.test_welltest.Pack.test_abstention"
+  },
+  {
+   "id": "cpboundary",
+   "area": "Well tests",
+   "decision": "A constant-pressure boundary is an image well of opposite sign: the late derivative falls towards zero where a sealing fault doubles it (the hard tier asks the agent to name which).",
+   "basis": "analytical",
+   "refs": [
+    "earlougher"
+   ],
+   "status": "verified",
+   "detail": "unit test test_constant_pressure_boundary_makes_the_derivative_fall",
+   "check": "earthbench.tests.test_welltest.Pack.test_constant_pressure_boundary_makes_the_derivative_fall"
+  },
+  {
+   "id": "hardtier",
+   "area": "Well tests",
+   "decision": "The hard tier (brief H1) withholds every well-test routine, adds a three-step rate history, gauge noise and a constant-pressure boundary; the scripted analyst passes all 27 tasks with generic tools only, the textbook recipe passes 8, and the key-free checks flag its wrong answers. Whether it separates language models is not yet measured.",
+   "basis": "design choice",
+   "refs": [],
+   "status": "design choice",
+   "detail": "unit test test_hard_tier",
+   "check": "earthbench.tests.test_welltest.Pack.test_hard_tier"
   },
   {
    "id": "window",

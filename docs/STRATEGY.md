@@ -119,7 +119,18 @@ or trained on.
 - Inconsistent counts: the hero lists seven workflows while the page claims nine disciplines and the table lists eleven packs.
   Use one list everywhere.
 
-## The five decisions needed from you
+## Decisions taken (7 November 2026)
+
+The owner's answers to the five decisions below:
+1. **Drop "Scorcher's agent": yes.** Done in the app, the landing page, the console and the docs. A published reference baseline (Claude Haiku, public prompt and tools) stays as a comparison and is labelled as one.
+2. **Wedge: subsurface and geothermal.** The hard tier is built there first (well tests); other disciplines follow.
+3. **First customers: vendors of energy agents.** Pricing now reads: an evaluation (one agent, one discipline, fixed fee), a re-test per release (subscription), and private tasks built from a customer's work. No prices are set before the first pilots.
+4. **Open grader code, private held-out sets:** not yet answered; the hard tier is public, and its private counterpart is the next item.
+5. **Budget for two models with repeats and two expert reviews:** yes. Not yet spent; the commands are in earthbench/README.md.
+
+The hard tier (suite `hard`, 27 well-test tasks, brief H1) is the answer to "make the tasks much harder". It removes every well-test routine: the agent gets a calculator, column maths, a derivative and a straight-line fit, and must choose the method. It adds gauge noise, a three-step rate history, a constant-pressure boundary and a boundary-type answer. What it has **not** yet shown is that it separates models: no model has been run on it. The scripted analyst passes 27 of 27, the textbook recipe 8 of 27, the naive pipeline none; those prove the tasks are solvable and the traps bite, not that a language model fails them. The first measurement, Haiku and a stronger model with repeats, decides whether this tier meets the kill criterion in section 7.
+
+## The five decisions that were put to the owner
 
 1. **Drop "Scorcher's agent" as a product and keep a published baseline?** Recommended: yes.
 2. **Wedge discipline:** subsurface and geothermal (recommended: Scorcher's strongest engines, a hard well-test tier already built, and

@@ -154,46 +154,7 @@ def key(task):
     return _KEYS[task.id]
 
 
-# ---------------------------------------------------------------------------------------------------- a small, safe column calculator
-_FUN = {"sin": np.sin, "cos": np.cos, "tan": np.tan, "radians": np.radians, "degrees": np.degrees, "sqrt": np.sqrt, "abs": np.abs,
-        "where": np.where, "maximum": np.maximum, "minimum": np.minimum, "clip": np.clip}
-_BIN = {ast.Add: np.add, ast.Sub: np.subtract, ast.Mult: np.multiply, ast.Div: np.divide, ast.Pow: np.power}
-_CMP = {ast.Gt: np.greater, ast.GtE: np.greater_equal, ast.Lt: np.less, ast.LtE: np.less_equal}
-
-
-def evaluate(expr, cols):
-    """Arithmetic on columns: + - * / **, comparisons, numbers, column names and the functions in _FUN. Nothing else is evaluated."""
-    if not isinstance(expr, str) or len(expr) > 300:
-        raise ToolError("expression must be a string of at most 300 characters")
-    try:
-        tree = ast.parse(expr, mode="eval")
-    except SyntaxError as e:
-        raise ToolError(f"syntax error: {e.msg}")
-
-    def ev(n):
-        if isinstance(n, ast.Expression):
-            return ev(n.body)
-        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)) and not isinstance(n.value, bool):
-            return float(n.value)
-        if isinstance(n, ast.Name):
-            if n.id in cols:
-                return cols[n.id]
-            raise ToolError(f"unknown column {n.id}; columns: {', '.join(cols)}")
-        if isinstance(n, ast.BinOp) and type(n.op) in _BIN:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                return _BIN[type(n.op)](ev(n.left), ev(n.right))
-        if isinstance(n, ast.UnaryOp) and isinstance(n.op, ast.USub):
-            return -ev(n.operand)
-        if isinstance(n, ast.Compare) and len(n.ops) == 1 and type(n.ops[0]) in _CMP:
-            return _CMP[type(n.ops[0])](ev(n.left), ev(n.comparators[0]))
-        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in _FUN and not n.keywords:
-            return _FUN[n.func.id](*[ev(a) for a in n.args])
-        raise ToolError(f"not allowed in an expression: {ast.dump(n)[:60]}")
-    try:
-        v = np.asarray(ev(tree), float)
-    except (TypeError, ValueError) as e:
-        raise ToolError(f"cannot evaluate: {e}")
-    return v
+from .core import evaluate   # the shared safe calculator
 
 
 class PVRealSession(Session):

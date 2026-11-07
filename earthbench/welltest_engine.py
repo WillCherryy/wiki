@@ -5,7 +5,7 @@ Drawdown, dimensionless (Agarwal, Al-Hussainy and Ramey 1970), in Laplace space:
     p_wD(s) = [K0(sqrt s) + S sqrt(s) K1(sqrt s)] / ( s [ sqrt(s) K1(sqrt s) + C_D s (K0(sqrt s) + S sqrt(s) K1(sqrt s)) ] )
 inverted numerically with the Gaver-Stehfest algorithm (N = 12). Definitions:
     t_D = k t / (phi mu c_t r_w^2),  C_D = C / (2 pi phi c_t h r_w^2),  dp = q mu p_D / (2 pi k h)
-A sealing fault at distance L is an image well at 2L; its line-source pressure, (q mu / 4 pi k h) E1(phi mu c_t (2L)^2 / (4 k t)), is added
+A sealing fault at distance L is an image well at 2L (a constant-pressure boundary, an image of opposite sign); its line-source pressure, (q mu / 4 pi k h) E1(phi mu c_t (2L)^2 / (4 k t)), is added
 in the time domain (wellbore storage has ended long before the image is felt). Buildup after producing for t_p:
     p_ws(dt) = p_i - [dp(t_p + dt) - dp(dt)]
 which holds because the system is linear. The Bourdet derivative is taken against the superposition (Horner) time.
@@ -58,8 +58,9 @@ def pwd(tD, CD, S):
 
 
 class Well:
-    def __init__(self, k_md, h, phi, mu, ct, rw, q, skin, C, fault_m=None):
+    def __init__(self, k_md, h, phi, mu, ct, rw, q, skin, C, fault_m=None, cp_m=None):
         self.k = k_md * MD; self.h, self.phi, self.mu, self.ct, self.rw, self.q, self.S, self.C, self.L = h, phi, mu, ct, rw, q, skin, C, fault_m
+        self.cp = cp_m                                                         # distance to a constant-pressure boundary (image well of opposite sign)
         self.diff = self.k / (phi * mu * ct)                                   # hydraulic diffusivity, m2/s
         self.CD = C / (2 * math.pi * phi * ct * h * rw ** 2)
         self.scale = q * mu / (2 * math.pi * self.k * h)                       # Pa per unit pD
@@ -70,6 +71,8 @@ class Well:
         out = self.scale * pwd(self.diff * t / self.rw ** 2, self.CD, self.S)
         if self.L:
             out = out + 0.5 * self.scale * exp1((2 * self.L) ** 2 / (4 * self.diff * t))
+        if self.cp:                                                            # a constant-pressure boundary: the image well injects, the derivative falls
+            out = out - 0.5 * self.scale * exp1((2 * self.cp) ** 2 / (4 * self.diff * t))
         return out
 
     def buildup(self, pi, tp_h, dt_h):

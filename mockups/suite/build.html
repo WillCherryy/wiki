@@ -250,10 +250,10 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
 <section class="top" id="top">
   <div class="copy">
     <div><h1 class="display">Agents you can prove.</h1>
-      <p class="lede">Scorcher tests AI agents on real earth-science and energy work, and grades them with the physics engines engineers already trust, not with another language model. Bring your agent or use ours: you find out whether it is right, safe and worth its cost before it touches a project.</p></div>
+      <p class="lede">Scorcher tests AI agents on earth-science and energy engineering, starting with subsurface and geothermal work, and grades them with the physics engines engineers already trust, not with another language model. Connect your agent, or compare it with a published reference baseline: you find out whether it is right, safe and worth its cost before it touches a project.</p></div>
     <form class="start" onsubmit="location.href='https://build.playscorcher.com/app';return false" aria-label="Start a trial">
-      <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>GIS screening</option><option>Mining</option><option>Geothermal</option><option>Seismic hazard</option><option>Seismic QC</option><option>Solar yield</option><option>Wind resource</option></select></label>
-        <label><span>Agent</span><select aria-label="Agent"><option>Scorcher’s agent</option><option>My own agent</option><option>Both, side by side</option></select></label></div>
+      <div class="row"><label><span>Workflow</span><select aria-label="Workflow"><option>Well tests</option><option>Geothermal resource</option><option>Document extraction</option><option>Seismic data</option><option>Seismic hazard</option><option>Mining</option><option>Drilling schedule</option><option>Solar</option><option>Wind</option><option>GIS screening</option></select></label>
+        <label><span>Agent</span><select aria-label="Agent"><option>My agent over MCP</option><option>Claude Haiku (reference baseline)</option></select></label></div>
       <div class="go"><span class="meta">Free to try · sign in with email</span><button class="btn">Run a test <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button></div>
     </form>
   </div>
@@ -264,7 +264,7 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
 
 <section class="mission" id="mission">
   <h2 class="h2">Faster engineering for the energy transition, without the risk.</h2>
-  <p>The grid connections, geothermal wells, mines for critical minerals and hazard studies the energy transition needs are held up by skilled hours. AI agents could give many of those hours back, but only if a firm can show they are <b>right</b>, <b>safe</b> and <b>lawful to use</b>. Scorcher exists to make that proof routine: so that firms adopt agents where they work, avoid them where they do not, and can show a client, an insurer or a regulator why.</p>
+  <p>The grid connections, geothermal wells, mines for critical minerals and hazard studies the energy transition needs are held up by skilled hours. AI agents could give many of those hours back, but only if a firm can show they are <b>right</b> and <b>safe</b>. Scorcher exists to make that proof routine: so that firms adopt agents where they work, avoid them where they do not, and can show a client, an insurer or a regulator why.</p>
 </section>
 
 <section class="why" id="why">
@@ -274,12 +274,12 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
     <div><h3>Engines engineers trust do the grading</h3><p>Every answer is recomputed by deterministic engines: QGIS and GDAL for GIS, the OpenQuake engine for seismic hazard, an exact min-cut solver for open pits, the USGS volumetric method and the exact radial-flow solution for geothermal well tests. No language model scores anything, so a better model makes Scorcher more useful, not obsolete.</p><span class="meta">Pit solver equal to brute force; well-test engine matches an independent simulator within 0.4%</span></div>
     <div><h3>Physics checks that need no answer key</h3><p>On real projects there is rarely a reference answer. Scorcher checks every answer against physical law and the data itself: mass and metal balances, a pit that respects its own slope, P90 below P10, efficiency below Carnot, energy below the sunlight that reached the panel.</p><span class="meta">No false alarm on any scripted answer; not yet tested on answers they were not designed around</span></div>
     <div><h3>Safety measured, not assumed</h3><p>Instructions planted in data files, restricted files holding canary secrets, tools that fail or return impossible values, and outputs that would be unsafe to build: a pit steeper than its walls, a design earthquake underestimated, land inside a protected buffer.</p><span class="meta">Injection, stress and unsafe-output suites in every domain</span></div>
-    <div><h3>Evidence a firm can file</h3><p>Every run leaves a complete, tamper-evident record: the brief, the data fingerprints, the model's messages, every tool call and result, and every check. Reports state results with intervals and map the evidence to NIST AI RMF, ISO/IEC 42001 and the EU AI Act. Evidence, not a certificate: certification is for accredited bodies.</p><span class="meta">SHA-256 hash chain per run; reports in HTML and PDF</span></div>
+    <div><h3>Evidence a firm can file</h3><p>Every run leaves a complete, tamper-evident record: the brief, the data fingerprints, the model's messages, every tool call and result, and every check. Reports state results with intervals and say what the record contains. It is built so that it can be set against frameworks such as NIST AI RMF and ISO/IEC 42001, but no auditor or insurer has yet assessed it as evidence. Evidence, not a certificate: certification is for accredited bodies.</p><span class="meta">SHA-256 hash chain per run; reports in HTML and PDF</span></div>
   </div>
   <div class="stats">
-    <div><b class="num">953</b><span>benchmark tasks across nine disciplines, each with a known answer; one pack on real satellite weather</span></div>
+    <div><b class="num">980</b><span>benchmark tasks across eleven tests, each with a known answer; a 27-task hard tier in well testing; one pack on real satellite weather</span></div>
     <div><b class="num">35/53</b><span>engine decisions checked against something outside the code: published values, standards, analytical solutions or independent code</span></div>
-    <div><b class="num">40/40</b><span>Claude Haiku on the hard GIS suite, for $0.47; the fixed-recipe pipeline passed 7</span></div>
+    <div><b class="num">93%</b><span>Claude Haiku on the earlier tasks: too easy to separate agents, which is why a hard tier now withholds every well-test routine. Not yet run with a model.</span></div>
     <div><b class="num">0</b><span>false alarms from the key-free physics checks in every scripted answer</span></div>
   </div>
 </section>
@@ -290,17 +290,17 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
   <table class="btable">
     <thead><tr><th>Domain</th><th>Tasks</th><th>Engine that grades</th><th>Traps from real data</th><th>State</th></tr></thead>
     <tbody>
-      <tr><td>GIS site screening</td><td>Suitable land, parcel, feasibility and yield from a brief</td><td>QGIS 3.34 processing or GDAL; pvlib</td><td>Wrong CRS, missing elevation, broken polygons, feet, recoded legends, hand-typed codes</td><td><span class="st">200 tasks</span></td></tr>
-      <tr><td>Mining</td><td>Grade-tonnage at the break-even cut-off; ultimate pit</td><td>Exact maximum-weight closure (min-cut)</td><td>Missing densities, grades in ppm, duplicated blocks, prices in USD/lb</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Well tests</td><td>Permeability, skin and boundaries from a buildup</td><td>Exact radial-flow solution with storage and skin; Bourdet derivative</td><td>Psi and minutes, gauge dropouts, rates in t/h, a preliminary report; no guidance, rate changes, a noisy gauge, a test too short to interpret; the hard tier gives no well-test routine at all and asks what kind of boundary the data show</td><td><span class="st">133 tasks</span></td></tr>
       <tr><td>Geothermal</td><td>Heat in place and MWe P90/P50/P10 from a LAS log</td><td>USGS volumetric Monte Carlo</td><td>Logs in feet and °F, null codes the header gets wrong, a superseded resource memo</td><td><span class="st">56 tasks</span></td></tr>
-      <tr><td>Well tests</td><td>Permeability, skin and boundaries from a buildup</td><td>Exact radial-flow solution with storage and skin; Bourdet derivative</td><td>Psi and minutes, gauge dropouts, rates in t/h, a preliminary report; no guidance, a rate change, a test too short to interpret</td><td><span class="st">106 tasks</span></td></tr>
+      <tr><td>Documents</td><td>Figures from end of well reports and permits</td><td>Search and quantity tools; exact unit definitions</td><td>Feet, °F, US gpm and psi, superseded revisions, amendments, plans beside actuals</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Seismic data</td><td>SEG-Y quality control; a horizon pick</td><td>segyio; windowed peak and trough picker</td><td>Coordinate scalars, sample interval in microseconds, dead traces, reverse polarity</td><td><span class="st">112 tasks</span></td></tr>
       <tr><td>Seismic hazard</td><td>Design ground motion at 10% and 2% in 50 years</td><td>OpenQuake engine (classical PSHA)</td><td>Swapped coordinates, depth as elevation, rates per century, cited models</td><td><span class="st">56 tasks</span></td></tr>
+      <tr><td>Mining</td><td>Grade-tonnage at the break-even cut-off; ultimate pit</td><td>Exact maximum-weight closure (min-cut)</td><td>Missing densities, grades in ppm, duplicated blocks, prices in USD/lb</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>Scheduling</td><td>A drilling campaign on three rigs, shortest makespan</td><td>OR-Tools CP-SAT, proven optimal</td><td>Durations in hours, duplicated wells, a cancelled well, a superseded programme</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Solar</td><td>First-year energy, specific yield and performance ratio from a weather year</td><td>pvlib (SPA, plane-of-array, SAPM, PVWatts)</td><td>Local time, irradiance in kWh, missing codes, the PVsyst azimuth convention</td><td><span class="st">56 tasks</span></td></tr>
       <tr><td>Solar, real weather</td><td>The same estimate on a real PVGIS year at eight real sites</td><td>pvlib, compared with PVGIS</td><td>The export's beam is on the horizontal, not direct normal; off-hour time stamps; leap years</td><td><span class="st">31 tasks</span></td></tr>
       <tr><td>Wind</td><td>Gross and net annual energy with shear and air density</td><td>Power-law shear; IEC 61400-12-1 density correction</td><td>Knots, pressure in hPa, missing hours, the one-seventh power law in words</td><td><span class="st">56 tasks</span></td></tr>
-      <tr><td>Seismic data</td><td>SEG-Y quality control; a horizon pick</td><td>segyio; windowed peak and trough picker</td><td>Coordinate scalars, sample interval in microseconds, dead traces, reverse polarity</td><td><span class="st">112 tasks</span></td></tr>
-      <tr><td>Scheduling</td><td>A drilling campaign on three rigs, shortest makespan</td><td>OR-Tools CP-SAT, proven optimal</td><td>Durations in hours, duplicated wells, a cancelled well, a superseded programme</td><td><span class="st">56 tasks</span></td></tr>
-      <tr><td>Documents</td><td>Figures from end of well reports and permits</td><td>Search and quantity tools; exact unit definitions</td><td>Feet, °F, US gpm and psi, superseded revisions, amendments, plans beside actuals</td><td><span class="st">112 tasks</span></td></tr>
+      <tr><td>GIS site screening</td><td>Suitable land, parcel, feasibility and yield from a brief</td><td>QGIS 3.34 processing or GDAL; pvlib</td><td>Wrong CRS, missing elevation, broken polygons, feet, recoded legends, hand-typed codes</td><td><span class="st">200 tasks</span></td></tr>
     </tbody>
   </table>
 </section>
@@ -308,7 +308,7 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
 <section class="log" id="how">
   <div class="intro"><h2 class="h2">Four steps from curiosity to a decision.</h2></div>
   <ol id="steps">
-    <li data-y="0.18"><span class="meta">0 m · Bring</span><div><h3>Bring an agent, or borrow ours</h3><p>Connect any agent over an API or the Model Context Protocol, large model or small. No agent yet? Use Scorcher’s for the same workflow.</p></div></li>
+    <li data-y="0.18"><span class="meta">0 m · Bring</span><div><h3>Connect your agent</h3><p>Connect any agent over the Model Context Protocol, large model or small. Scorcher sells no agent: a published reference baseline, with its prompt and tools in the open, sets the comparison.</p></div></li>
     <li data-y="0.42"><span class="meta">400 m · Test</span><div><h3>Run it on your real tasks</h3><p>Forty to a hundred tasks drawn from your files and tools, in a sandbox. Every tool call, file and answer is recorded.</p></div></li>
     <li data-y="0.68"><span class="meta">900 m · Compare</span><div><h3>Measure it against your team</h3><p>Success rate, time, cost per task and the failures a person had to fix, beside your current process on the same tasks.</p></div></li>
     <li data-y="0.9"><span class="meta">1,400 m · Decide</span><div><h3>Subscribe only if it pays</h3><p>If the numbers hold, run the agent in production on a subscription. If they do not, you keep the report and the tasks.</p></div></li>
@@ -379,11 +379,11 @@ body { font: 400 16px/1.6 var(--sans); font-stretch: 100%; }
 <section class="price" id="price">
   <h2 class="h2">Pay to find out. Subscribe if it works.</h2>
   <div class="plans">
-    <div class="plan"><h3>Trial</h3><p class="meta">One workflow · fixed fee</p><ul><li>Your agent, ours, or both</li><li>40 to 100 tasks from your work</li><li>Full report and every trace</li><li>You keep the task suite</li></ul><a class="btn line" href="#top">Start a trial</a></div>
-    <div class="plan key"><h3>Subscribe</h3><p class="meta">Per agent · monthly</p><ul><li>Scorcher’s agents in production</li><li>Monthly re-test on fresh tasks</li><li>Audit trail of every action</li><li>Support from engineers</li></ul><a class="btn" href="#top">Talk to us</a></div>
-    <div class="plan"><h3>On premises</h3><p class="meta">Annual · by deployment</p><ul><li>Small models on your hardware</li><li>Your data never leaves</li><li>Connectors for your legacy systems</li><li>Validation for regulated work</li></ul><a class="btn line" href="#top">Contact us</a></div>
+    <div class="plan"><h3>Evaluation</h3><p class="meta">One agent, one discipline · fixed fee</p><ul><li>An independent report on your agent</li><li>The hard tier, with repeats and intervals</li><li>Every trace and failure, and the baseline beside it</li><li>You keep the report; the held-out tasks stay private</li></ul><a class="btn line" href="#top">Request an evaluation</a></div>
+    <div class="plan key"><h3>Every release</h3><p class="meta">Per agent · subscription</p><ul><li>A re-test of each version you ship</li><li>Regressions against your earlier versions</li><li>A dated, tamper-evident record per release</li><li>A rating you can show a buyer</li></ul><a class="btn" href="#top">Talk to us</a></div>
+    <div class="plan"><h3>Your own tasks</h3><p class="meta">By scope</p><ul><li>Private tasks built from your work and data</li><li>Graded by the same engines, kept on your side</li><li>Expert review of the answer keys</li><li>For choosing between shortlisted agents</li></ul><a class="btn line" href="#top">Contact us</a></div>
   </div>
-  <p class="meta" style="margin-top:16px">Prices are set with the first pilots. Fair by design: the cost of every run is shown, model costs pass through at cost, and every tier includes the failures report.</p>
+  <p class="meta" style="margin-top:16px">Prices are set with the first pilots. Scorcher does not sell an agent and takes no money from agent vendors for a better score: the same tasks and graders apply to everyone, and the held-out tasks are never sold or trained on.</p>
 </section>
 
 <section class="close"><p>Adopt the agents that work. Prove it. Move faster.</p><a class="btn" href="#top">Start a trial <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></section>

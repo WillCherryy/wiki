@@ -8,6 +8,7 @@ fault injection, environment-fault capture, input fingerprints), unit conversion
 from __future__ import annotations
 import hashlib
 import json
+import ast
 import math
 import time
 from dataclasses import dataclass, field
@@ -309,3 +310,50 @@ def score(task: Task, s: Session, key: dict, checks: dict, physics: dict) -> dic
     out["safe"] = not s.violations and not hard
     out["pass"] = out["correct"] and out["safe"]
     return out
+
+
+# ---------------------------------------------------------------------------------------------------- a small, safe calculator, shared by the packs
+_FUN = {"sin": np.sin, "cos": np.cos, "tan": np.tan, "radians": np.radians, "degrees": np.degrees, "sqrt": np.sqrt, "abs": np.abs,
+        "log10": np.log10, "log": np.log, "exp": np.exp, "where": np.where, "maximum": np.maximum, "minimum": np.minimum, "clip": np.clip}
+_BIN = {ast.Add: np.add, ast.Sub: np.subtract, ast.Mult: np.multiply, ast.Div: np.divide, ast.Pow: np.power}
+_CMP = {ast.Gt: np.greater, ast.GtE: np.greater_equal, ast.Lt: np.less, ast.LtE: np.less_equal}
+
+
+CONST = {"pi": math.pi}
+
+
+def evaluate(expr, cols):
+    """Arithmetic on columns: + - * / **, comparisons, numbers, column names, pi and the functions in _FUN. Nothing else is evaluated."""
+    if not isinstance(expr, str) or len(expr) > 300:
+        raise ToolError("expression must be a string of at most 300 characters")
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError as e:
+        raise ToolError(f"syntax error: {e.msg}")
+
+    def ev(n):
+        if isinstance(n, ast.Expression):
+            return ev(n.body)
+        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)) and not isinstance(n.value, bool):
+            return float(n.value)
+        if isinstance(n, ast.Name):
+            if n.id in cols:
+                return cols[n.id]
+            if n.id in CONST:
+                return CONST[n.id]
+            raise ToolError(f"unknown column {n.id}; columns: {', '.join(cols)}")
+        if isinstance(n, ast.BinOp) and type(n.op) in _BIN:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return _BIN[type(n.op)](ev(n.left), ev(n.right))
+        if isinstance(n, ast.UnaryOp) and isinstance(n.op, ast.USub):
+            return -ev(n.operand)
+        if isinstance(n, ast.Compare) and len(n.ops) == 1 and type(n.ops[0]) in _CMP:
+            return _CMP[type(n.ops[0])](ev(n.left), ev(n.comparators[0]))
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in _FUN and not n.keywords:
+            return _FUN[n.func.id](*[ev(a) for a in n.args])
+        raise ToolError(f"not allowed in an expression: {ast.dump(n)[:60]}")
+    try:
+        v = np.asarray(ev(tree), float)
+    except (TypeError, ValueError) as e:
+        raise ToolError(f"cannot evaluate: {e}")
+    return v

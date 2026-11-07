@@ -103,6 +103,34 @@ class Pack(unittest.TestCase):
             self.assertTrue(run("d1-data", t)[0]["pass"], t.id)
             self.assertFalse(run("d0", t)[0]["pass"], t.id)
 
+    def test_hard_tier(self):
+        # brief H1 has no well-test routine; the analyst does the method with generic tools and passes, the textbook recipe mostly fails,
+        # and the key-free checks flag its wrong answers
+        hard = W.suite("hard"); self.assertEqual(len(hard), 27)
+        wrong = flagged = textbook = 0
+        for t in hard:
+            self.assertFalse({"horner_fit", "horner_interpret", "buildup_derivative"} & set(W.SESSION(t).specs), t.id)
+            for arm in ("d1", "d1-data"):
+                r, _ = run(arm, t); self.assertTrue(r["pass"], (t.id, arm, r["checks"])); self.assertTrue(r["physics_ok"], (t.id, arm, r["physics"]))
+            self.assertFalse(run("fx-naive", t)[0]["pass"], t.id)
+            r, _ = run("d0", t); textbook += r["pass"]
+            if r["answered"] and not r["pass"]:
+                wrong += 1; flagged += not r["physics_ok"]
+        self.assertLessEqual(textbook, 10); self.assertGreaterEqual(flagged / wrong, 0.9)
+        self.assertEqual({t.truth["boundary"] for t in hard}, {"none", "sealing", "constant_pressure"})
+
+    def test_constant_pressure_boundary_makes_the_derivative_fall(self):
+        # the image well of opposite sign: late derivative tends to zero, where a sealing fault doubles it
+        t = np.logspace(3, 9, 80)
+        for kw, late in (({"fault_m": 150}, lambda d: d > 1.9), ({"cp_m": 150}, lambda d: d < 0.05), ({}, lambda d: abs(d - 1) < 0.02)):
+            w = Well(50, 100, 0.1, 2e-4, 1e-9, 0.108, 0.05, 2, 1e-6, **kw)
+            d = np.gradient(w.dp(t), np.log(t)) / (0.5 * w.scale)
+            self.assertTrue(late(d[-1]), (kw, d[-1]))
+
+    def test_noisy_gauge_is_noisier(self):
+        a, b = W.make_task(41, "buildup", "H1", "clean"), W.make_task(41, "buildup", "H1", "noisy")
+        self.assertEqual((a.truth["noise_pa"], b.truth["noise_pa"]), (20, 60))
+
     def test_stress(self):
         for t in W.suite("stress"):
             self.assertTrue(run("d1", t)[0]["pass"], t.id)

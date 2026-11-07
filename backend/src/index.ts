@@ -28,7 +28,7 @@ const bearer = (r: Request) => /^Bearer (\S+)$/.exec(r.headers.get('authorizatio
 // compare digests, not the secrets, and without an early exit
 async function safeEqual(a: string, b: string): Promise<boolean> { const [x, y] = await Promise.all([sha256(a), sha256(b)]); let d = 0; for (let i = 0; i < x.length; i++) d |= x.charCodeAt(i) ^ y.charCodeAt(i); return d === 0; }
 const isAdmin = async (r: Request, env: Env) => !!env.BUILD_ADMIN_KEY && await safeEqual(bearer(r), env.BUILD_ADMIN_KEY);
-const RUNS_PER_DAY = 25;   // Scorcher's agent, per organisation: a spend guard while the service is young
+const RUNS_PER_DAY = 25;   // the reference baseline, per organisation: a spend guard while the service is young
 type TrialStub = DurableObjectStub<import('./trial.ts').Trial>;
 // one way to start a trial, whatever the task's source: files must already be in R2 under prefix
 async function startTrial(env: Env, tenant: string, s: TaskSpec, prefix: string, agent: string | null, physics?: TaskPrivate['physics']) {
@@ -152,7 +152,7 @@ export default {
         if (call[2] === 'trace' && m === 'GET') return new Response(await stub.trace(), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
         if (call[2] === 'score' && m === 'GET') return json(await stub.score());
         if (call[2] === 'run' && m === 'POST') {   // a model works the trial with Scorcher's key (route 2); long runs belong on a queue (next step)
-          if (!env.ANTHROPIC_API_KEY) return json({ error: "Scorcher's agent is not switched on yet: the owner sets ANTHROPIC_API_KEY on the scorcher-build Worker" }, 503);
+          if (!env.ANTHROPIC_API_KEY) return json({ error: "The reference baseline is not switched on yet: the owner sets ANTHROPIC_API_KEY on the scorcher-build Worker" }, 503);
           const since = Date.now() - 864e5, used = await env.DB.prepare('SELECT COUNT(*) AS n FROM trials WHERE tenant = ? AND ran_at > ?').bind(TENANT, since).first<{ n: number }>();
           if (!admin && (used?.n ?? 0) >= RUNS_PER_DAY) return json({ error: `the daily limit of ${RUNS_PER_DAY} agent runs is reached; try again tomorrow` }, 429);
           if ((await stub.status()).done) return json({ error: 'this trial is finished; start a new one' }, 409);

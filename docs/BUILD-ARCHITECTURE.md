@@ -137,9 +137,9 @@ The console's **Agents and plans** view lists each agent with: quality (pass rat
 - **Fixtures have no cost** (they are not models). **Models not yet run show only the price list and an estimate** that assumes 25,000 input and 3,000 output tokens per task, a placeholder until a run measures it. The console never shows made-up results for a model that has not run.
 - **Scorcher's own prices are not set** and nothing in the code or the console has a number for them (`docs/SUITE.md`: agreed with the first pilots).
 
-## Using Scorcher's agent, and subscribing
+## The reference baseline, and subscribing
 
-The offer is: run your agent, Scorcher's, or both on the same tasks, then subscribe to Scorcher's if it earns its place. Scorcher's agent is the same kind of thing as a customer's: a loop with a prompt, a model and the gateway's tools, run on our side (route 2 with our own prompt and key). It gets no special access, and its runs are scored by the same graders, so the comparison is fair.
+Decision of 7 November 2026: Scorcher does not sell an agent, because a test house that sells the thing it tests has no product (docs/STRATEGY.md). What remains is a **reference baseline**: a loop with a published prompt, a model and the gateway's tools, run on our side (route 2 with our own prompt and key), so every result has a comparison. It gets no special access, its prompt and code are public, it is labelled a baseline everywhere and scored by the same graders. Customers are agent vendors and operators: they buy an independent evaluation, then a re-test per release.
 
 What a subscription needs, none of which exists yet:
 - **Accounts for organisations**, with roles. The Worker today knows only anonymous player IDs.

@@ -76,7 +76,7 @@ function setTasks(x) { T = x; TL = taskList(); IDX = new Map(TL.map(t => [t.id, 
 /* ---------------------------------------------------------------- Run */
 function scrRun() {
   const disc = ORDER.filter(k => EB.packs[k] || k === 'gis');
-  const agentOpts = [['claude-haiku-5-5', 'Claude Haiku 5.5', 'Small and fast'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5', 'Balanced'], ['claude-opus-5-5', 'Claude Opus 5.5', 'Most capable'],
+  const agentOpts = [['claude-haiku-5-5', 'Claude Haiku 5.5', 'Small and fast; the reference baseline'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5', 'Balanced'], ['claude-opus-5-5', 'Claude Opus 5.5', 'Most capable'],
     ['mcp', 'Your agent over MCP', 'Any MCP client; your code stays with you'], ['config', 'Paste a configuration', 'Model, endpoint and prompt as JSON']];
   return `<h1>Run a test</h1><p class="sub">Choose an agent and the tasks. Every task has a known answer from a validated engine.</p>
   <section class="sec" aria-label="Agent"><h2>Agent</h2><div class="agents" role="group" aria-label="Agent">${agentOpts.map(([k, l, d]) => `<button class="opt" data-agent="${k}" aria-pressed="${S.agent === k}"><b>${l}</b><span>${d}</span></button>`).join('')}</div>
@@ -163,7 +163,7 @@ function commandSheet() {
   const live = s.packs.filter(p => LIVEAPP[p]);
   return sheet('Run for real', `<div class="pb" style="display:grid;gap:16px">
     <p style="font-size:13px">This console runs simulations only. Real runs happen on your machine with your API key, or in the web app for the tests that run there.</p>
-    ${live.length ? `<div><h3>In the web app</h3><p class="muted" style="font-size:13px;margin-top:2px">${live.map(p => esc(D[p][0])).join(', ')}: Scorcher's reference agent or yours over MCP, graded on the server.</p><p style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${live.map(p => `<a class="btn pri" href="${APP}?domain=${LIVEAPP[p]}">Open ${esc(D[p][0].toLowerCase())} in the app</a>`).join('')}</p></div>` : ''}
+    ${live.length ? `<div><h3>In the web app</h3><p class="muted" style="font-size:13px;margin-top:2px">${live.map(p => esc(D[p][0])).join(', ')}: the published reference baseline or your agent over MCP, graded on the server.</p><p style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${live.map(p => `<a class="btn pri" href="${APP}?domain=${LIVEAPP[p]}">Open ${esc(D[p][0].toLowerCase())} in the app</a>`).join('')}</p></div>` : ''}
     ${cmds.length ? `<div><h3>On your machine</h3><p class="muted" style="font-size:13px;margin-top:2px">From the repository, after <code>pip install -r earthbench/requirements.txt</code>. Each command prints a cost estimate and waits for <code>--yes</code>.</p>
       <pre class="mono" style="margin-top:8px;padding:10px 12px;background:var(--sunk);border-radius:6px;white-space:pre-wrap;word-break:break-all" id="cmds">${esc(cmds.join('\n'))}</pre>
       <p style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copyCmds">Copy commands</button><button class="btn" id="dlTasks">Download scorcher-tasks.txt</button></p></div>` : ''}

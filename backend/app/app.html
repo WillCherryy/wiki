@@ -110,10 +110,10 @@ td.m { font-family: var(--mono); font-size: 12px; }
     <h1>Run a test</h1>
     <p class="lede">Pick a task, choose who does it, and watch every step. A run passes only if the answer is right <b>and</b> nothing unsafe happened.</p>
     <div class="step"><h2><span>1</span>Choose a task</h2><p>Each task has an exact answer and a trap taken from real data handling. Tasks marked <span class="tag phys">physics checks</span> come from Scorcher's benchmark packs and are also checked without the answer key. Your own tasks appear after them; make one under New task.</p><div class="filters" id="filters"></div><div class="cards" id="tasks"></div><p class="sub" id="mineHead" hidden>Your tasks</p><div class="cards" id="mine"></div></div>
-    <div class="step" id="step2" hidden><h2><span>2</span>Choose who does it</h2><div class="brief" id="brief"></div>
+    <div class="step" id="step2" hidden><h2><span>2</span>Choose the agent</h2><div class="brief" id="brief"></div>
       <div class="agents">
-        <div class="agent"><h3>Scorcher's agent</h3><p>Claude Haiku works the task on our servers, with the same tools your agent would get. Takes about a minute.</p><button class="btn" id="runScorcher">Run it</button></div>
-        <div class="agent"><h3>Your own agent</h3><p>Connect any agent that speaks the Model Context Protocol: Claude Code, Claude Desktop, Cursor, or your own framework. You get a private address for this trial.</p><button class="btn line" id="runMine">Connect my agent</button></div>
+        <div class="agent"><h3>Reference baseline</h3><p>Claude Haiku with a published prompt and the same tools your agent would get, run on our servers as a point of comparison. It is not a product. Takes about a minute.</p><button class="btn" id="runScorcher">Run the baseline</button></div>
+        <div class="agent"><h3>Your agent</h3><p>Connect any agent that speaks the Model Context Protocol: Claude Code, Claude Desktop, Cursor, or your own framework. You get a private address for this trial.</p><button class="btn line" id="runMine">Connect my agent</button></div>
       </div>
       <div id="connect" class="connect" hidden></div>
       <div id="err2" class="err" hidden></div>
@@ -184,9 +184,9 @@ async function create(agent) {
 }
 $('#runScorcher').onclick = async () => {
   const b = $('#runScorcher'); b.disabled = true; b.textContent = 'Starting...';
-  const t = await create('scorcher'); if (!t) { b.disabled = false; b.textContent = 'Run it'; return; }
+  const t = await create('scorcher'); if (!t) { b.disabled = false; b.textContent = 'Run the baseline'; return; }
   watch(t.trialId);
-  api(`/api/trials/${t.trialId}/run`, { method: 'POST', body: '{}' }).catch(e => { $('#err2').textContent = e.message; $('#err2').hidden = false; }).finally(() => { b.disabled = false; b.textContent = 'Run it'; refresh(t.trialId); });
+  api(`/api/trials/${t.trialId}/run`, { method: 'POST', body: '{}' }).catch(e => { $('#err2').textContent = e.message; $('#err2').hidden = false; }).finally(() => { b.disabled = false; b.textContent = 'Run the baseline'; refresh(t.trialId); });
 };
 $('#runMine').onclick = async () => {
   const t = await create('mcp'); if (!t) return;
@@ -219,7 +219,7 @@ function render(d) {
   const phys = done && sc.physics && sc.physics.length ? `<div class="sect">Physics checks <small>no answer key; reported beside the grade, not part of it</small></div><table>${sc.physics.map(c => `<tr><td>${esc(c.name)}</td><td class="m">${esc(c.detail)}</td><td class="${c.ok ? 'ok' : 'no'}">${c.ok ? 'pass' : 'flag'}</td></tr>`).join('')}</table>` : '';
   const chain = d.chain ? `<p class="note" style="margin-top:6px">Record: ${d.chain.ok ? `${d.chain.length} calls, hash chain intact` : '<span class="no">hash chain broken</span>'}.</p>` : '';
   const title = d.trial && d.trial.title ? esc(d.trial.title) : 'Trial';
-  return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? "Scorcher's agent" : 'your agent'}</small></h3>${v}${checks}${phys}${safety}${chain}</div></div>`;
+  return `<div class="live"><div class="pane"><h3>Steps <small>${esc(title)}</small></h3><ol class="trace">${steps}</ol></div><div class="pane"><h3>Result <small>${d.trial && d.trial.agent === 'scorcher' ? 'reference baseline' : 'your agent'}</small></h3>${v}${checks}${phys}${safety}${chain}</div></div>`;
 }
 
 const pick = (t, el) => { chosen = t; document.querySelectorAll('#tasks .card, #mine .card').forEach(x => x.setAttribute('aria-pressed', x === el)); $('#step2').hidden = false;
@@ -269,7 +269,7 @@ async function loadTrials() {
   if (!d.trials.length) { t.innerHTML = '<tr><td class="note">No trials yet. Run a test to start.</td></tr>'; return; }
   t.innerHTML = '<tr><th>Task</th><th>Agent</th><th>Started</th><th>Calls</th><th>Result</th></tr>' + d.trials.map(r => { const s = r.score, st = r.status;
     const pill = st && st.done ? `<span class="pill ${s && s.pass ? 'pass' : 'fail'}">${s && s.pass ? 'passed' : 'failed'}</span>` : '<span class="pill run">open</span>';
-    return `<tr data-id="${esc(r.id)}"><td>${esc(r.title || r.task_id)}</td><td>${r.agent === 'scorcher' ? "Scorcher's" : r.agent === 'mcp' ? 'yours' : '—'}</td><td class="m">${esc(new Date(r.created_at).toLocaleString())}</td><td class="m">${st ? st.calls : '—'}</td><td>${pill}</td></tr>`; }).join('');
+    return `<tr data-id="${esc(r.id)}"><td>${esc(r.title || r.task_id)}</td><td>${r.agent === 'scorcher' ? 'baseline' : r.agent === 'mcp' ? 'yours' : '—'}</td><td class="m">${esc(new Date(r.created_at).toLocaleString())}</td><td class="m">${st ? st.calls : '—'}</td><td>${pill}</td></tr>`; }).join('');
   t.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => { const det = $('#tdetail'); det.hidden = false; det.innerHTML = '<div id="tdet"></div>'; refresh(tr.dataset.id, '#tdet'); det.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 }
 boot();
