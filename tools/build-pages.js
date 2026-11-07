@@ -3,7 +3,7 @@
 // Both are marked noindex: they are concepts with synthetic data, labelled as such on the page. Shared by the dev server and the site build.
 const fs = require('fs'), path = require('path');
 const SRC = path.join(__dirname, '..', 'mockups', 'suite');
-const ASSETS = ['fonts/mona-sans-latin.woff2', 'fonts/geist-mono-latin.woff2', 'img/geothermal.jpg', 'img/reykjanes.jpg', 'img/solar-aerial.jpg', 'img/wind-akhisar.jpg', 'build-sample.js', 'gisbench-sample.js', 'earthbench-sample.js', 'scorcher-build-paper.pdf'];
+const ASSETS = ['fonts/inter-latin.woff2', 'fonts/mona-sans-latin.woff2', 'fonts/geist-mono-latin.woff2', 'img/geothermal.jpg', 'img/reykjanes.jpg', 'img/solar-aerial.jpg', 'img/wind-akhisar.jpg', 'build-sample.js', 'gisbench-sample.js', 'earthbench-sample.js', 'scorcher-build-paper.pdf'];
 const TYPES = { '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.js': 'application/javascript', '.pdf': 'application/pdf' };
 // base: '/build' on the main site; '' on build.playscorcher.com, where the backend serves the pages and "Start a trial" opens the real sign-in
 const page = (file, base = '/build') => {

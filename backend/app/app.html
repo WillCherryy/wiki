@@ -169,8 +169,12 @@ async function boot() {
     $('#filters').querySelectorAll('button').forEach(b => b.onclick = () => { filt = b.dataset.f; drawCards(); });
     $('#tasks').innerHTML = tasks.map((t, i) => [t, i]).filter(([t]) => filt === 'all' || t.domain === filt).map(([t, i]) => `<button class="card" data-i="${i}" aria-pressed="${chosen && chosen.id === t.id}"><b>${esc(t.title)}</b><p>${esc(t.summary)}</p><div class="tags"><span class="tag dom">${esc(DOM[t.domain] || t.domain)}</span>${t.physicsChecks ? '<span class="tag phys">physics checks</span>' : ''}${t.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}<span class="tag">${esc(t.minutes)} min</span></div></button>`).join('');
   document.querySelectorAll('#tasks .card').forEach(c => c.onclick = () => pick(tasks[+c.dataset.i], c)); };
+  const q = new URLSearchParams(location.search);                     // deep links from the dashboard: ?domain=geothermal or ?task=<id>
+  if (q.get('domain') && doms.includes(q.get('domain'))) filt = q.get('domain');
   drawCards();
   const h = location.hash.slice(1); show(['run', 'new', 'trials', 'guide'].includes(h) ? h : 'run'); loadMine(); newForm();
+  const ti = q.get('task') ? tasks.findIndex(t => t.id === q.get('task')) : -1;
+  if (ti >= 0) { if (filt !== 'all' && tasks[ti].domain !== filt) { filt = 'all'; drawCards(); } pick(tasks[ti], document.querySelector(`#tasks .card[data-i="${ti}"]`)); }
 }
 
 async function create(agent) {

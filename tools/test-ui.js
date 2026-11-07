@@ -97,11 +97,16 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
       // the results dashboard: every page and every discipline renders, with no script error and no sideways scroll
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build/console`); await page.waitForTimeout(700);
       const rc = await page.evaluate(async () => { const out = { pages: 0, empty: [], over: 0 }, wait = () => new Promise(r => setTimeout(r, 120));
-        const discs = [...document.querySelectorAll('.card')].map(a => a.getAttribute('href')); out.discs = discs.length;
-        for (const h of ['#overview', '#validation', '#runs', ...discs]) { location.hash = h; await wait(); const m = document.getElementById('main');
+        const runs = [...document.querySelectorAll('#drawer .run')].map(a => a.getAttribute('href')); out.runs = runs.length;
+        const tests = [...document.querySelectorAll('.tile')].map(t => t.dataset.test); out.discs = tests.length;
+        for (const h of ['#', '#validation', ...tests.map(t => '#d/' + t), ...runs]) { location.hash = h; await wait(); const m = document.getElementById('page');
           if (m.innerText.length > 400 && document.querySelector('h1')) out.pages++; else out.empty.push(h); out.over = Math.max(out.over, document.documentElement.scrollWidth - innerWidth); }
+        location.hash = '#'; await wait(); document.querySelector('.tile[data-test=pvreal]').click(); await wait(); out.cmd = /--pack pvreal/.test(document.getElementById('cmd').textContent);
+        location.hash = runs[0]; await wait(); const row = document.querySelector('tr.task'); if (row) { row.click(); await wait(); }
+        const sheet = document.querySelector('.sheet'); out.task = !!sheet && /Passed|Failed/.test(sheet.innerText) && !!sheet.querySelector('.calls');
         return out; });
-      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (rc.discs < 10) bad(`${tag} /build/console: only ${rc.discs} disciplines listed`);
+      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (rc.discs < 10) bad(`${tag} /build/console: only ${rc.discs} tests listed`); if (rc.runs < 5) bad(`${tag} /build/console: only ${rc.runs} runs listed`);
+      if (!rc.task) bad(`${tag} /build/console: a task did not open with its verdict and tool calls`); if (!rc.cmd) bad(`${tag} /build/console: choosing a test did not change the command`);
       if (rc.empty.length) bad(`${tag} /build/console: empty pages ${rc.empty.join(', ')}`); if (rc.over > 2) bad(`${tag} /build/console: a page scrolls sideways`);
       // the concept views (sample data), one page apart from the results
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build/concept`); await page.waitForTimeout(900);

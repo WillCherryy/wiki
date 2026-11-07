@@ -190,12 +190,60 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
   .close, .verdict { grid-template-columns: 1fr; } .report { overflow-x: auto; } .top { grid-template-columns: minmax(0, 1fr); } .start .row { grid-template-columns: 1fr; } .start label { border-right: 0; border-bottom: 1.5px solid var(--ink); } .start .go { flex-direction: column; align-items: stretch; padding: 12px 0 0; } .start .go .meta { padding: 0 14px; } .dindex { display: none; } .cmp { font-size: 14px; } .cmp .bar { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .dtext { transition: none; } html { scroll-behavior: auto; } }
+
+/* ---- 7 November 2026: the console's look. Inter, finer weights, soft borders, rounded corners, no ruler. ---- */
+@font-face { font-family: 'Inter'; src: url(fonts/inter-latin.woff2) format('woff2'); font-weight: 300 700; font-display: swap; }
+:root { --ground: #f6f6f4; --ground-2: #eeeeeb; --ink: #17191c; --ink-2: #4e545b; --ink-3: #8a9097; --rule: #e5e6e2; --line: #e5e6e2; --dark: #111316;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --r: 8px; --r-lg: 14px; --shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.03); }
+body { font: 400 16px/1.6 var(--sans); font-feature-settings: 'cv11', 'ss01'; }
+::-webkit-scrollbar { width: auto; } ::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background: revert; }
+.display, .h2, .close p, .verdict p, .dcard h3, .plan h3, .log li h3, .moat h3, .core b, .stats b, .paper .facts b { font-stretch: 100%; }
+.display { font-weight: 600; letter-spacing: -.04em; line-height: 1.02; }
+.top h1 { font-size: clamp(40px, 4.6vw, 76px); }
+.h2 { font-size: clamp(30px, 3.4vw, 52px); font-weight: 600; letter-spacing: -.035em; line-height: 1.05; }
+.lede { font-size: clamp(17px, 1.25vw, 19px); }
+.log li h3, .moat h3, .dcard h3, .plan h3 { font-weight: 600; letter-spacing: -.02em; }
+.close p { font-weight: 600; letter-spacing: -.04em; line-height: 1.02; font-size: clamp(32px, 3.8vw, 60px); }
+.verdict p { font-weight: 500; }
+.btn { height: 44px; padding: 0 18px; border-radius: var(--r); border: 1px solid var(--ink); font: 500 14.5px var(--sans); gap: 10px; box-shadow: var(--shadow); }
+.btn:hover { background: #1d3aa8; border-color: #1d3aa8; color: #fff; }
+.btn.line { background: #fff; border-color: var(--line); } .btn.line:hover { background: var(--ground); color: var(--ink); border-color: #cfd1cc; }
+.bar { height: 60px; background: color-mix(in srgb, #fff 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.bar .btn { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.mark { font: 600 16px var(--sans); letter-spacing: -.01em; } .mark i { border-radius: 4px; } .mark span { font-weight: 400; }
+.bar nav { gap: 6px; font-size: 14px; } .bar nav a { padding: 6px 10px; border-radius: 6px; } .bar nav a:hover { background: var(--ground); }
+.rail { display: none !important; } main { margin-left: 0 !important; }
+.concept { border-radius: 0 8px 0 0; background: var(--dark); }
+.top { padding-top: 60px; }
+.start { border: 1px solid var(--line); border-radius: var(--r-lg); background: #fff; box-shadow: var(--shadow); overflow: hidden; }
+.start .row { border-bottom: 1px solid var(--line); } .start label { border-right: 1px solid var(--line); } .start select { font: 500 16px var(--sans); }
+.start .btn { border-radius: 0; box-shadow: none; }
+.section-plot { border-radius: 0; }
+.mission, .domains, .close, .fine, .plan.key { background: var(--dark); }
+.dgrid { gap: 14px; background: transparent; border: 0; } .dgrid .wide { gap: 14px; background: transparent; }
+.dcard { border-radius: var(--r-lg); overflow: hidden; border: 1px solid rgba(243, 244, 241, .12); background: #191c20; }
+.dcard .tools span { border-radius: 5px; }
+.moat { border-top: 1px solid var(--line); }
+.stats { border: 0; gap: 12px; } .stats div { border: 1px solid var(--line) !important; border-radius: var(--r-lg); background: #fff; box-shadow: var(--shadow); }
+.stats b { font-weight: 600; }
+.btable th { border-bottom: 1px solid var(--line); font-family: var(--sans); font-size: 12.5px; font-weight: 500; } .btable td:first-child { font-weight: 550; }
+.btable .st { border-radius: 20px; border-color: var(--line); background: #fff; font-family: var(--sans); }
+.paper .toc { border-radius: 0; } .paper .toc ol { border-top: 1px solid var(--line); }
+.paper .facts { border: 0; gap: 10px; } .paper .facts div { border: 1px solid var(--line) !important; border-radius: var(--r); background: var(--ground); }
+.paper .facts b { font-weight: 600; }
+.report { background: #1d3aa8; } .verdict { border-top: 1px solid rgba(238, 241, 255, .4); }
+.verdict .btn { border-radius: var(--r); }
+.core div:first-child { border-top: 1px solid var(--line); }
+.plans { border: 0; gap: 14px; } .plan { border: 1px solid var(--line) !important; border-radius: var(--r-lg); background: #fff; box-shadow: var(--shadow); }
+.plan.key { border-color: var(--dark) !important; }
+.log ol { border-top: 1px solid var(--line); } .log li { border-bottom: 1px solid var(--line); }
+@media (max-width: 960px) { .stats div:nth-child(-n+2) { border-bottom: 1px solid var(--line); } .plan { border-bottom: 1px solid var(--line); } .start label { border-bottom: 1px solid var(--line); } }
 </style>
 </head>
 <body>
 <div class="concept">Concept · early access · benchmarks on synthetic data</div>
 <header class="bar"><a class="mark" href="#"><i></i>Scorcher <span>Build</span></a>
-  <nav><a href="#why">Why Scorcher</a><a href="#domains">Disciplines</a><a href="#report">Results</a><a href="#paper">Paper</a><a href="#price">Pricing</a><a href="build-console.html">Console</a></nav>
+  <nav><a href="#why">Why Scorcher</a><a href="#domains">Disciplines</a><a href="#report">Results</a><a href="#paper">Paper</a><a href="#price">Pricing</a><a href="build-console.html">Dashboard</a></nav>
   <div class="acts"><a class="btn line" href="https://build.playscorcher.com/app">Sign in</a><a class="btn" href="https://build.playscorcher.com/app">Run a test</a></div></header>
 <div class="rail" id="rail"><div class="bit" id="bit"></div></div>
 
@@ -296,7 +344,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
 
 <section class="paper" id="paper">
   <div class="copy"><h2 class="h2">Read exactly how it works.</h2>
-    <p class="lede">A technical paper sets out the whole system from first principles: how agents connect over the Model Context Protocol, the scoring mathematics, checks that need no answer key, the tamper-evident record, private held-out tests, and the engine and equations behind every discipline, with 45 references and the first results with a real model.</p>
+    <p class="lede">A technical paper sets out the whole system from first principles: how agents connect over the Model Context Protocol, the scoring mathematics, checks that need no answer key, the tamper-evident record, private held-out tests, and the engine and equations behind every discipline, with 48 references and the first results with a real model.</p>
     <div class="acts"><a class="btn" href="build-paper.html">Read the paper <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a><a class="btn line" href="scorcher-build-paper.pdf" download>Download PDF</a></div>
     <div class="facts"><div><b class="num">48</b><span>references, each checked</span></div><div><b class="num">35/53</b><span>engine decisions verified against something outside the code</span></div><div><b class="num">28</b><span>A4 pages</span></div></div></div>
   <div class="toc"><span class="meta">Contents</span><ol>
@@ -315,7 +363,7 @@ table.cmp { width: 100%; margin-top: 56px; border-collapse: collapse; font-size:
       <tr class="best"><td>Claude Haiku with Scorcher's method prompt</td><td><span class="bar" style="width:72px"></span>40 / 40</td><td>91 to 100%</td><td>0</td><td>$0.47 in total</td></tr>
     </tbody>
   </table>
-  <div class="verdict"><p>It scaled the feet DEM, used the new legend and buffered every hand-typed code on every task, and said the draft regulation was not in force. The signposted traps were followed; unsignposted problems and real data are the next test. <a href="build-console.html" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the console: each discipline, how it is graded, every model run and why runs failed</a></p><a class="btn" href="#price">See the plans</a></div>
+  <div class="verdict"><p>It scaled the feet DEM, used the new legend and buffered every hand-typed code on every task, and said the draft regulation was not in force. The signposted traps were followed; unsignposted problems and real data are the next test. <a href="build-console.html" style="display:block;margin-top:14px;font-size:.6em;color:inherit">Open the dashboard: every test, how it is graded, every model run and why runs failed</a></p><a class="btn" href="#price">See the plans</a></div>
 </section>
 
 <section class="legacy" id="legacy">

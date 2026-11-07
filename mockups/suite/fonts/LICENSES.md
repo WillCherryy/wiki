@@ -5,3 +5,4 @@
 
 Latin subsets downloaded from Google Fonts and self-hosted beside the mockups.
 - **Atkinson Hyperlegible Next** (variable weight 200–800) and **Atkinson Hyperlegible Mono**, Braille Institute of America, SIL Open Font License 1.1. https://www.brailleinstitute.org/freefont/ — the type of the Play and Science styles, chosen for legibility.
+- **Inter** (variable weight 300–700), Rasmus Andersson, SIL Open Font License 1.1. https://github.com/rsms/inter — the Build console and landing page since 7 November 2026.

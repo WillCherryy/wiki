@@ -19,6 +19,10 @@ def _fmt(v):
     return f"{v:.4g}" if isinstance(v, float) else str(v)
 
 
+def _raw(v):
+    return float(f"{v:.6g}") if isinstance(v, float) else v
+
+
 def model_runs(name):
     """Every model results file for a pack: pass, correct, unsafe, no answer, runner cut-offs, and why each failed run failed."""
     out = []
@@ -27,10 +31,13 @@ def model_runs(name):
         d = json.load(open(f))
         base = os.path.basename(f)[:-5]
         cut = set()                                  # last turn only thinking, no submit: the old 2,048-token limit cut it off
+        recs = {}                                    # per task: the brief and the tool calls, for the dashboard's task view
         rp = os.path.join(res, "records", base + ".jsonl.gz")
         if os.path.exists(rp):
             for line in gzip.open(rp, "rt"):
                 r = json.loads(line)
+                recs[(r["task"]["id"], (r.get("agent") or {}).get("repeat", 0))] = {"brief": r["task"].get("brief", ""), "calls": [[t["tool"], bool(t["ok"])] for t in r["trace"]],
+                                                                                    "stop": (r.get("usage") or {}).get("stop")}
                 last = (r.get("messages") or [{}])[-1].get("content") or []
                 if not any(t["tool"] == "submit_answer" for t in r["trace"]) and isinstance(last, list) and last and all(b.get("type") == "thinking" for b in last):
                     cut.add(r["task"]["id"])
@@ -44,6 +51,22 @@ def model_runs(name):
                 why.append("unsafe output")
             why += [f"{k}: {_fmt((r.get('answer') or {}).get(k))} against {_fmt(r['key'].get(k))}" for k, ok in (r.get("checks") or {}).items() if not ok]
             fails.append({"task": r["task"], "why": why})
+        rows = []
+        for r in d["rows"]:
+            f = next((x["why"] for x in fails if x["task"] == r["task"]), [])
+            rec = recs.get((r["task"], r.get("repeat", 0)), {})
+            chk = r.get("checks") or {}
+            ans, key = r.get("answer") or {}, r["key"]
+            def pair(k):                             # a check over a period (the well-test window) shows the period fitted and the radial-flow period
+                if k == "window":
+                    lo, hi = ans.get("dt_from_h"), ans.get("dt_to_h")
+                    return (f"{lo:.3g}–{hi:.3g} h" if isinstance(lo, (int, float)) and isinstance(hi, (int, float)) else None,
+                            f"{key['radial_from_h']:.3g}–{key['radial_to_h']:.3g} h" if "radial_from_h" in key else None)
+                return _raw(ans.get(k)), _raw(key.get(k))
+            rows.append({"id": r["task"], "kind": r["kind"], "spec": r["spec"], "defect": r["defect"], "pass": bool(r["pass"]), "correct": bool(r.get("correct")), "safe": bool(r["safe"]),
+                         "answered": bool(r["answered"]), "why": f, "usd": round((r.get("usage") or {}).get("usd", 0), 4),
+                         "fields": [[k, *pair(k), bool(ok)] for k, ok in chk.items() if not k.startswith("_")],
+                         "brief": rec.get("brief", ""), "calls": rec.get("calls", []), "repeat": r.get("repeat", 0)})
         tag = f"-{d['suite']}"
         subset = base.split(tag, 1)[1].lstrip("-") if tag in base else ""
         kinds = sorted({r["kind"] for r in d["rows"]})
@@ -53,7 +76,7 @@ def model_runs(name):
         out.append({"by_kind": by_kind, "model": d["model"], "suite": d["suite"], "subset": subset, "generated": d["generated"][:10], "usd": round(d["usd"], 3), "tasks": len(d["rows"]),
                     "pass": d["summary"]["pass"], "correct": sum(1 for r in d["rows"] if r.get("correct")), "unsafe": sum(1 for r in d["rows"] if not r["safe"]),
                     "restricted": sum(1 for r in d["rows"] if any(v["kind"] == "restricted_read" for v in r["violations"])),
-                    "no_answer": sum(1 for r in d["rows"] if not r["answered"]), "cut_off": len(cut), "fails": fails})
+                    "no_answer": sum(1 for r in d["rows"] if not r["answered"]), "cut_off": len(cut), "fails": fails, "file": base, "rows": rows})
     return out
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")

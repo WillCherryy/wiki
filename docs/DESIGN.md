@@ -91,7 +91,8 @@ The Build brand is in `mockups/suite/build.html`:
 
 | | |
 |---|---|
-| Type | Mona Sans (with its width axis) and Geist Mono |
+| Type | Inter (weights 400 to 600) and Geist Mono for identifiers and commands; Mona Sans before 7 November 2026 |
+| Shape | Soft 1 px borders (#e5e6e2), corners of 6 px (controls), 8 px (tiles, buttons) and 12 to 14 px (cards), a faint shadow; the one exception to square corners, at the owner's request |
 | Ground | cool #f3f4f1 |
 | Field colour | #1d3aa8, with #b8142f as the seismic polarity pair |
 | Highlight | signal #e4ff3a |
@@ -105,6 +106,6 @@ Build never uses the temperature scale. It uses the evidence colours only in its
 - `science.html`: the origin of `/tools`
 - `play.html`: superseded
 - `build.html`
-- `build-console.html`: the Build trial console, one dashboard per task plus agents and plans; a full-window app shell with intake (New task), suites, mining and security views; and published at /build/console as a noindex concept; (13 px type, panels that scroll inside themselves, the whole console scaled up on large screens); its overview, agents and resource views display real harness output (`node harness/export-sample.js`); its GIS benchmark view shows real output of the phase 1 benchmark (`python3 -m gisbench.export_dashboard`, data in `gisbench-sample.js`)
+- `build-console.html`: the Build dashboard, published at /build/console and build.playscorcher.com/console. One page: run a test (the catalogue of tests, agent, suite, repeats; it opens the web app for tests that run there and gives the exact command otherwise), then your models' benchmarks. Runs sit in a collapsible side panel; a run opens on its own page, and a task in a side sheet with its brief, answer against the key and tool calls. Data: `python -m earthbench.export` (`earthbench-sample.js`, with per-task rows from the run records) and `gisbench-sample.js`. The earlier concept views are `build-concept.html`.
 
 The suite page still shows the Atkinson family for Play. Before it goes live, it should switch to the race's plate style described above.

@@ -3,302 +3,402 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scorcher Build results</title>
-<meta name="description" content="What Scorcher Build has measured: each discipline's tasks, how they are graded, how scripted pipelines and Claude did, why runs failed, and what the engines have been checked against.">
+<title>Scorcher Build</title>
+<meta name="description" content="Test an AI agent on engineering tasks with known answers, see how your models score, and open any run down to each answer and tool call.">
 <style>
-@font-face { font-family: 'Mona Sans'; src: url(fonts/mona-sans-latin.woff2) format('woff2'); font-weight: 200 900; font-stretch: 75% 125%; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url(fonts/inter-latin.woff2) format('woff2'); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; font-display: swap; }
-:root { --ground: #f3f4f1; --panel: #fff; --ink: #0d0f0e; --ink-2: #444a46; --ink-3: #6a706c; --rule: rgba(13,15,14,.13); --rule-2: rgba(13,15,14,.07);
-  --blue: #1d3aa8; --blue-2: #e6eafb; --red: #b8142f; --red-2: #f9e6ea; --green: #136c3a; --green-2: #e3f2e8; --amber: #8a5a00; --amber-2: #fbf1dc;
-  --sans: 'Mona Sans', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; }
+:root { --bg: #f6f6f4; --panel: #fff; --ink: #17191c; --ink-2: #4e545b; --ink-3: #8a9097; --line: #e5e6e2; --line-2: #f0f0ed; --hover: #f8f8f6;
+  --accent: #1d3aa8; --accent-2: #eef1fc; --pass: #18794e; --pass-2: #e9f6ef; --fail: #c4253c; --fail-2: #fdeef0; --amber: #8a5a00; --amber-2: #fdf5e4;
+  --r: 8px; --r-lg: 12px; --shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.03);
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; --head: 56px; --drawer: 340px; }
 * { box-sizing: border-box; margin: 0; }
-body { background: var(--ground); color: var(--ink); font: 400 15.5px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
-a { color: var(--blue); text-underline-offset: 2px; }
-button { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.m { font-family: var(--mono); font-size: .9em; font-variant-numeric: tabular-nums; }
-
-/* header */
-.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--ground) 94%, transparent); border-bottom: 1px solid var(--rule); backdrop-filter: blur(6px); }
-.top .in { max-width: 1180px; margin: 0 auto; height: 60px; padding: 0 20px; display: flex; align-items: center; gap: 28px; }
-.mark { display: flex; align-items: center; gap: 10px; font: 700 17px var(--sans); font-stretch: 122%; letter-spacing: -.02em; color: var(--ink); text-decoration: none; white-space: nowrap; }
-.mark i { width: 12px; height: 12px; background: linear-gradient(90deg, var(--blue) 50%, var(--red) 50%); }
-.mark span { font-weight: 450; font-stretch: 100%; color: var(--ink-3); }
-.tabs { display: flex; gap: 2px; }
-.tabs a { padding: 8px 12px; font-size: 14.5px; color: var(--ink-2); text-decoration: none; border-bottom: 2px solid transparent; }
-.tabs a:hover { color: var(--ink); } .tabs a[aria-current=page] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 560; }
-.acts { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--ground); font-weight: 560; font-size: 14px; text-decoration: none; white-space: nowrap; }
-.btn:hover { background: var(--blue); border-color: var(--blue); } .btn.line { background: transparent; color: var(--ink); } .btn.line:hover { background: var(--ink); color: var(--ground); }
-
-main { max-width: 1180px; margin: 0 auto; padding: 36px 20px 90px; }
-h1 { font: 640 clamp(30px, 3.6vw, 44px)/1.05 var(--sans); font-stretch: 112%; letter-spacing: -.03em; }
-h2 { font: 620 22px/1.2 var(--sans); font-stretch: 108%; letter-spacing: -.015em; margin: 44px 0 12px; display: flex; align-items: baseline; gap: 12px; }
-h2 .n { font: 500 13px var(--mono); color: var(--ink-3); }
-h3 { font: 620 16px/1.3 var(--sans); margin: 18px 0 6px; }
-.lede { margin-top: 12px; font-size: 17.5px; color: var(--ink-2); max-width: 68ch; }
-p { max-width: 74ch; } p + p { margin-top: 10px; }
-.note { font-size: 13.5px; color: var(--ink-3); margin-top: 8px; max-width: 80ch; }
-
-/* building blocks */
-.kpis { margin-top: 26px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1.5px solid var(--ink); background: var(--panel); }
-.kpis div { padding: 16px 18px 18px; border-right: 1px solid var(--rule); } .kpis div:last-child { border-right: 0; }
-.kpis b { display: block; font: 620 30px/1 var(--sans); font-stretch: 110%; letter-spacing: -.02em; } .kpis span { display: block; margin-top: 8px; font-size: 13.5px; color: var(--ink-2); }
-.honest { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; font: 400 12.5px var(--mono); padding: 3px 9px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink-2); white-space: nowrap; max-width: 100%; }
-.honest .chip { white-space: normal; }
-.chip.live { border-color: var(--green); color: var(--green); background: var(--green-2); }
-.chip.warn { border-color: #d9b46a; color: var(--amber); background: var(--amber-2); }
-.chip.bad { border-color: #e2a3ae; color: var(--red); background: var(--red-2); }
-.chip.ok { border-color: #a9b6ee; color: var(--blue); background: var(--blue-2); }
-.read { margin-top: 26px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.read div { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; font-size: 14px; color: var(--ink-2); }
-.read b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-.card { display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1.5px solid var(--rule); padding: 16px 18px; color: inherit; text-decoration: none; }
-.card:hover { border-color: var(--ink); }
-.card h3 { margin: 0; font-size: 18px; font-stretch: 108%; letter-spacing: -.01em; }
-.card p { font-size: 14px; color: var(--ink-2); }
-.card .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13.5px; align-items: baseline; }
-.card .row span { color: var(--ink-3); } .card .row b { font: 500 13.5px var(--mono); }
-.card .go { margin-top: auto; padding-top: 6px; font: 500 13px var(--mono); color: var(--blue); }
-.box { background: var(--panel); border: 1px solid var(--rule); padding: 18px 20px; }
-.brief { border-left: 3px solid var(--ink); background: var(--panel); padding: 14px 18px; font-size: 15px; }
-dl.kv { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 18px; font-size: 14.5px; }
-dl.kv dt { color: var(--ink-3); font: 400 13px/1.6 var(--mono); } dl.kv dd { margin: 0; }
-ul.plain { padding-left: 18px; } ul.plain li { margin: 3px 0; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: left; font: 500 12px var(--mono); color: var(--ink-3); padding: 0 12px 8px 0; border-bottom: 1.5px solid var(--ink); }
-td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
-td.r, th.r { text-align: right; } td.num { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
-tr.grp td { padding-top: 18px; font-weight: 620; border-bottom: 1px solid var(--rule); }
-.tw { overflow-x: auto; background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px 6px; }
-.bar { position: relative; display: inline-block; width: 120px; height: 10px; background: var(--rule-2); vertical-align: middle; }
-.bar i { position: absolute; top: 0; bottom: 0; background: rgba(29,58,168,.22); } .bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--blue); }
-.bar.red b { background: var(--red); } .bar.red i { background: rgba(184,20,47,.18); } .bar.grey b { background: var(--ink-3); } .bar.grey i { background: rgba(13,15,14,.1); }
-.who { display: flex; flex-direction: column; } .who small { font-size: 12px; color: var(--ink-3); }
-.takeaway { margin-top: 14px; padding: 12px 16px; background: var(--blue-2); color: #14246b; font-size: 15px; max-width: 86ch; }
-.takeaway.warn { background: var(--amber-2); color: #5c3c00; }
-.status { font: 500 12.5px var(--mono); white-space: nowrap; }
-.s-verified { color: var(--blue); } .s-consistent { color: var(--ink-2); } .s-source { color: var(--amber); } .s-design { color: var(--red); } .s-FAILED { color: var(--red); }
-.filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.filters button { border: 1px solid var(--rule); background: var(--panel); padding: 5px 11px; font-size: 13.5px; cursor: pointer; }
-.filters button[aria-pressed=true] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-.fails li { margin: 6px 0; font-size: 14px; } .fails code { font: 400 12.5px var(--mono); background: var(--ground); padding: 1px 5px; }
-pre { background: #0f1211; color: #e9ece8; padding: 12px 14px; overflow-x: auto; font: 400 13px/1.5 var(--mono); margin-top: 8px; }
-
-/* discipline page: list on the left */
-.split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 36px; align-items: start; }
-.side { position: sticky; top: 80px; display: flex; flex-direction: column; }
-.side .t { font: 500 12px var(--mono); color: var(--ink-3); margin-bottom: 8px; }
-.side a { padding: 7px 10px; font-size: 14.5px; color: var(--ink-2); text-decoration: none; border-left: 2px solid var(--rule); display: flex; justify-content: space-between; gap: 6px; }
-.side a:hover { color: var(--ink); border-left-color: var(--ink-3); } .side a[aria-current=page] { color: var(--ink); font-weight: 600; border-left-color: var(--blue); background: var(--panel); }
-.side a small { font: 400 11px var(--mono); color: var(--green); }
-.pick { display: none; }
-.foot { margin-top: 70px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 20px; }
-.foot a { color: var(--ink-2); }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; font-feature-settings: 'cv11', 'ss01'; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; text-underline-offset: 2px; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; } .mono { font-family: var(--mono); font-size: 12.5px; }
 [hidden] { display: none !important; }
-@media (max-width: 900px) {
-  .tabs { display: none; } .acts .line { display: none; }
-  .kpis { grid-template-columns: 1fr 1fr; } .kpis div:nth-child(2) { border-right: 0; } .kpis div:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
-  .read { grid-template-columns: 1fr; } .split { grid-template-columns: minmax(0, 1fr); } .side { display: none; }
-  .pick { display: block; width: 100%; padding: 10px 12px; margin-bottom: 18px; border: 1.5px solid var(--ink); background: var(--panel); font: 500 15px var(--sans); }
-  dl.kv { grid-template-columns: minmax(0, 1fr); gap: 2px; } dl.kv dd { margin-bottom: 10px; }
-  .mnav { display: flex !important; }
+
+/* top bar */
+.top { position: sticky; top: 0; z-index: 40; height: var(--head); display: flex; align-items: center; gap: 28px; padding: 0 24px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.mark { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: -.01em; color: var(--ink); white-space: nowrap; } .mark:hover { text-decoration: none; }
+.mark i { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) 50%, #b8142f 50%); }
+.mark span { color: var(--ink-3); font-weight: 400; }
+.nav { display: flex; gap: 4px; }
+.nav a { padding: 6px 12px; border-radius: 6px; color: var(--ink-2); font-weight: 450; }
+.nav a:hover { background: var(--hover); text-decoration: none; color: var(--ink); } .nav a[aria-current=page] { background: var(--line-2); color: var(--ink); font-weight: 500; }
+.right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 500; font-size: 13.5px; white-space: nowrap; cursor: pointer; box-shadow: var(--shadow); }
+.btn:hover { background: var(--hover); text-decoration: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; } .btn.primary:hover { background: #172f8a; }
+.btn .count { font-size: 12px; color: var(--ink-3); background: var(--line-2); border-radius: 10px; padding: 0 7px; }
+
+/* page and drawer */
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); }
+.shell.open { grid-template-columns: minmax(0, 1fr) var(--drawer); }
+.page { padding: 32px 32px 80px; min-width: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -.015em; line-height: 1.25; }
+h2 { font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
+.sub { color: var(--ink-2); margin-top: 4px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); }
+.card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 18px 22px 0; }
+.card-h small { color: var(--ink-3); font-size: 13px; }
+.card-b { padding: 16px 22px 22px; }
+.sec { margin-top: 28px; }
+.label { font-size: 12.5px; font-weight: 500; color: var(--ink-2); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 10px; }
+.label small { font-weight: 400; color: var(--ink-3); }
+
+/* the test catalogue */
+.cat { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.tile { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 13px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); cursor: pointer; transition: border-color .12s, background .12s; }
+.tile:hover { border-color: #cfd1cc; background: var(--hover); }
+.tile[aria-pressed=true] { border-color: var(--accent); background: var(--accent-2); box-shadow: 0 0 0 1px var(--accent) inset; }
+.tile .h { display: flex; justify-content: space-between; align-items: center; gap: 8px; } .tile b { font-weight: 550; font-size: 13.5px; }
+.tile p { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+.tile .f { margin-top: auto; padding-top: 6px; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tile { min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; padding: 1px 8px; border-radius: 20px; background: var(--line-2); color: var(--ink-2); white-space: nowrap; }
+.pill.live { background: var(--pass-2); color: var(--pass); } .pill.live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--pass); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--line-2); border-radius: var(--r); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.seg button:hover { color: var(--ink); } .seg button[aria-pressed=true] { background: var(--panel); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(16,24,40,.08); }
+.opts { display: grid; grid-template-columns: auto auto auto; gap: 20px 32px; justify-content: start; }
+details.about { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r); }
+details.about summary { cursor: pointer; padding: 10px 14px; font-size: 13px; color: var(--ink-2); list-style: none; display: flex; justify-content: space-between; }
+details.about summary::after { content: '+'; color: var(--ink-3); } details.about[open] summary::after { content: '–'; }
+details.about summary::-webkit-details-marker { display: none; }
+dl.facts { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px 20px; padding: 4px 14px 16px; font-size: 13px; }
+dl.facts dt { color: var(--ink-3); } dl.facts dd { margin: 0; color: var(--ink); }
+.tag { display: inline-block; font: 400 11.5px var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--line-2); color: var(--ink-2); margin: 0 4px 4px 0; }
+.go { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding-top: 18px; border-top: 1px solid var(--line-2); }
+.go .what { flex: 1 1 320px; font-size: 13.5px; color: var(--ink-2); } .go .what b { color: var(--ink); font-weight: 550; }
+.cmd { margin-top: 12px; display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: var(--r); background: #fafaf8; overflow: hidden; }
+.cmd code { flex: 1; padding: 10px 12px; font: 400 12.5px/1.5 var(--mono); color: var(--ink); overflow-x: auto; white-space: pre; }
+.cmd button { border: 0; border-left: 1px solid var(--line); background: var(--panel); padding: 0 14px; font-size: 12.5px; cursor: pointer; color: var(--ink-2); } .cmd button:hover { color: var(--ink); background: var(--hover); }
+.hint { margin-top: 8px; font-size: 12.5px; color: var(--ink-3); }
+
+/* benchmarks */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { padding: 16px 18px; } .stat span { display: block; font-size: 12.5px; color: var(--ink-3); } .stat b { display: block; margin-top: 4px; font-size: 24px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat b small { font-size: 14px; color: var(--ink-3); font-weight: 400; }
+table { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font-size: 12px; font-weight: 500; color: var(--ink-3); padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl td { padding: 11px 16px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr.click { cursor: pointer; } .tbl tr.click:hover td { background: var(--hover); }
+.tbl td.r, .tbl th.r { text-align: right; }
+.cell { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.meter { width: 90px; height: 6px; border-radius: 3px; background: var(--fail-2); overflow: hidden; flex: none; } .meter i { display: block; height: 100%; background: var(--pass); border-radius: 3px; }
+.muted { color: var(--ink-3); }
+
+/* drawer of runs */
+.drawer { position: sticky; top: var(--head); height: calc(100vh - var(--head)); overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.drawer-h { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; }
+.x { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; font-size: 16px; line-height: 1; color: var(--ink-2); } .x:hover { background: var(--hover); }
+.run { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; margin: 0 8px; padding: 10px 10px; border-radius: var(--r); color: var(--ink); }
+.run:hover { background: var(--hover); text-decoration: none; } .run[aria-current=true] { background: var(--accent-2); }
+.run .t { font-weight: 500; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .run .t span { color: var(--ink-3); font-weight: 400; }
+.run .s { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2); }
+.run .a { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
+.run .meter { grid-column: 1 / -1; width: 100%; height: 3px; margin-top: 5px; }
+.run.old { opacity: .55; }
+.drawer-f { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--line-2); font-size: 12.5px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; }
+.drawer-f input { accent-color: var(--accent); }
+
+/* a run */
+.crumb { font-size: 13px; color: var(--ink-3); } .crumb a { color: var(--ink-2); }
+.head { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.agent { display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; border-radius: 20px; background: var(--ink); color: #fff; font-size: 12.5px; font-weight: 500; }
+.agent::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #e4ff3a; }
+.warn { margin-top: 16px; padding: 10px 14px; border-radius: var(--r); background: var(--amber-2); color: #5c3c00; font-size: 13px; }
+.big { font-size: 30px !important; }
+.res { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; font-size: 13px; padding: 2px 9px 2px 8px; border-radius: 20px; white-space: nowrap; }
+.res::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.res.ok { color: var(--pass); background: var(--pass-2); } .res.no { color: var(--fail); background: var(--fail-2); }
+.why { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-2); }
+.filters { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+
+/* the task sheet */
+.scrim { position: fixed; inset: 0; background: rgba(17,19,22,.18); z-index: 50; }
+.sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); background: var(--panel); z-index: 51; overflow-y: auto; box-shadow: -8px 0 32px rgba(16,24,40,.12); border-left: 1px solid var(--line); }
+.sheet-h { position: sticky; top: 0; background: var(--panel); display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); z-index: 1; }
+.sheet-h .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .sheet-h .x { margin-left: auto; flex: none; }
+.verdict { margin: 18px 20px 0; padding: 14px 16px; border-radius: var(--r); }
+.verdict b { font-size: 16px; font-weight: 600; } .verdict.ok { background: var(--pass-2); color: var(--pass); } .verdict.no { background: var(--fail-2); color: var(--fail); }
+.verdict ul { margin-top: 6px; padding-left: 18px; font-size: 13px; color: var(--ink); }
+.part { padding: 20px 20px 0; } .part h3 { font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin-bottom: 8px; }
+.brief { font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.kv td, .kv th { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line-2); font-size: 13px; text-align: left; } .kv th { font-weight: 500; color: var(--ink-3); font-size: 12px; }
+.kv td.v { font-family: var(--mono); font-size: 12.5px; word-break: break-word; }
+.tick { font-weight: 600; } .tick.ok { color: var(--pass); } .tick.no { color: var(--fail); }
+ol.calls { list-style: none; padding: 0; counter-reset: c; font: 400 12.5px/1.4 var(--mono); }
+ol.calls li { counter-increment: c; display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line-2); }
+ol.calls li::before { content: counter(c); width: 22px; text-align: right; color: var(--ink-3); flex: none; }
+ol.calls li.bad { color: var(--fail); } ol.calls li.end { font-weight: 500; }
+.foot { padding: 20px; font-size: 12px; color: var(--ink-3); }
+.st { font-size: 12.5px; white-space: nowrap; } .st.verified { color: var(--pass); } .st.design, .st.source { color: var(--amber); } .st.consistent { color: var(--ink-2); } .st.FAILED { color: var(--fail); }
+.grp td { background: #fafaf8; font-weight: 550; font-size: 13px; }
+
+@media (max-width: 1000px) {
+  .shell.open { grid-template-columns: minmax(0, 1fr); }
+  .drawer { position: fixed; top: var(--head); right: 0; bottom: 0; width: min(360px, 100vw); height: auto; z-index: 45; box-shadow: -8px 0 32px rgba(16,24,40,.12); }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .opts { grid-template-columns: minmax(0, 1fr); }
 }
-.mnav { display: none; gap: 4px; overflow-x: auto; padding: 0 20px 10px; max-width: 1180px; margin: 0 auto; }
-.mnav a { padding: 6px 10px; font-size: 14px; color: var(--ink-2); text-decoration: none; border: 1px solid var(--rule); background: var(--panel); white-space: nowrap; }
-.mnav a[aria-current=page] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+@media (max-width: 640px) {
+  .top { gap: 10px; padding: 0 12px; } .mark span, .hide-s { display: none; } .nav a { padding: 6px 8px; } .btn { padding: 0 10px; }
+  .page { padding: 20px 14px 60px; } .card-h { padding: 16px 16px 0; } .card-b { padding: 14px 16px 18px; }
+  .cat { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tile p { display: none; } .seg { max-width: 100%; }
+  .tbl .hide { display: none; } .tbl td, .tbl th { padding-left: 10px; padding-right: 10px; } .meter.wide { width: 50px; }
+  dl.facts { grid-template-columns: minmax(0, 1fr); gap: 2px; } dl.facts dd { margin-bottom: 10px; }
+  .tbl td.mono { word-break: break-all; }
+}
 </style>
 </head>
 <body>
-<header class="top"><div class="in">
+<header class="top">
   <a class="mark" href="build.html"><i></i>Scorcher <span>Build</span></a>
-  <nav class="tabs" id="tabs"><a href="#overview">Overview</a><a href="#d/welltest">Disciplines</a><a href="#validation">Validation</a><a href="#runs">Model runs</a></nav>
-  <div class="acts"><a class="btn line" href="build-paper.html">Paper</a><a class="btn" href="https://build.playscorcher.com/app">Run a test</a></div>
-</div>
-<nav class="mnav" id="mnav"><a href="#overview">Overview</a><a href="#d/welltest">Disciplines</a><a href="#validation">Validation</a><a href="#runs">Model runs</a></nav></header>
-<main id="main"></main>
+  <nav class="nav" id="nav"><a href="#">Dashboard</a><a href="#validation">Validation</a><a class="hide-s" href="build-paper.html">Paper</a></nav>
+  <div class="right"><button class="btn" id="runsBtn" aria-expanded="false" aria-controls="drawer">Runs <span class="count" id="runsCount"></span></button></div>
+</header>
+<div class="shell" id="shell"><main class="page" id="page"></main><aside class="drawer" id="drawer" hidden aria-label="Runs"></aside></div>
+<div id="layer"></div>
 <script src="earthbench-sample.js"></script>
 <script src="gisbench-sample.js"></script>
 <script>
 (() => {
 'use strict';
-const EB = window.EARTHBENCH, GB = window.GISBENCH, $ = s => document.querySelector(s);
+const EB = window.EARTHBENCH || { packs: {} }, GB = window.GISBENCH, $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pc = x => x == null ? '–' : `${Math.round(x * 100)}%`;
-const bar = (w, cls = '') => w && w.n ? `<span class="bar ${cls}" title="${w.k} of ${w.n}; 95% interval ${pc(w.lo)} to ${pc(w.hi)}"><i style="left:${w.lo * 100}%;width:${Math.max(1, (w.hi - w.lo) * 100)}%"></i><b style="left:calc(${w.p * 100}% - 1px)"></b></span>` : '';
-const model = id => id.replace(/^claude-/, 'Claude ').replace(/-(\d+)-(\d+)$/, ' $1.$2').replace(/\b(haiku|sonnet|opus)\b/, w => w[0].toUpperCase() + w.slice(1));
-const KIND = { gt: 'grade-tonnage', pit: 'ultimate pit', welltest: 'well tests', hip: 'heat in place', buildup: 'buildups', yield: 'energy yield', aep: 'energy', qc: 'quality control', pick: 'horizon pick', campaign: 'campaign', well: 'well reports', permit: 'permits', pga: 'ground motion' };
-
-/* ---------------------------------------------------------------- one model for every discipline */
-const ORDER = ['welltest', 'geothermal', 'documents', 'mining', 'gis', 'hazard', 'solar', 'pvreal', 'wind', 'seismic', 'scheduling'];
-const JOB = {
-  welltest: 'Interpret a pressure buildup: permeability, skin, whether a fault is seen, and the window used.',
-  geothermal: 'Estimate heat in place and electrical capacity at P90, P50 and P10 from a temperature log.',
-  documents: 'Read figures from well reports and permits, with revisions, amendments and field units.',
-  mining: 'Grade and tonnage above the break-even cut-off, and the most valuable pit the walls allow.',
-  gis: 'Screen land for a solar plant from a brief: slope, land cover, buffers, the largest parcel and its yield.',
-  hazard: 'The ground motion with a 10% and a 2% chance of being exceeded in 50 years at a site.',
-  solar: 'First-year energy, specific yield and performance ratio of a plant from a weather year.',
-  pvreal: 'The same energy estimate on a real year of satellite irradiance, exported by PVGIS: its beam column is on the horizontal, not direct normal.',
-  wind: 'Gross and net annual energy, capacity factor and hub speed from a met-mast year.',
-  seismic: 'Quality-control a SEG-Y survey and pick a horizon at the right polarity.',
-  scheduling: 'Schedule a drilling campaign on three rigs to finish as early as possible.',
-};
-const TRAPNAME = { pvgis: 'beam on the horizontal, as PVGIS exports it', two_rate: 'rate change before shut-in', short: 'too short to interpret', mass_rate: 'mass rate' };
-const LIVE = { welltest: true, documents: true };                              // run in the app today, graded on the server
-const AREA = { mining: 'Mining', geothermal: 'Geothermal', welltest: 'Well tests', hazard: 'Seismic hazard', solar: 'Solar', pvreal: 'Solar, real weather', wind: 'Wind', seismic: 'Seismic data', scheduling: 'Scheduling', documents: 'Documents' };
-const total = P => Object.values(P.suites).reduce((a, s) => a + s.tasks, 0);
-const armSum = (P, a) => { const out = { k: 0, n: 0 }; for (const s of Object.values(P.suites)) { const x = s.arms[a]; if (x) { out.k += x.pass.k; out.n += x.pass.n; } } return out; };
-const mainArm = (P, a) => P.suites.main && P.suites.main.arms[a] ? P.suites.main.arms[a].pass : null;
-// Kinds whose earlier model results no longer apply: retired (the geothermal Horner tasks) or graded with a key fixed since (mining pits,
-// whose slope cone was corrected after the audit of 6 November 2026). A run that mixes kinds is split, so valid results stay visible.
-const STALE = { geothermal: { welltest: 'Horner tasks, since retired' }, mining: { pit: 'pit tasks graded with the old slope key' } };
+const agentName = id => id.replace(/^claude-/, 'Claude ').replace(/-(\d+)-(\d+)$/, ' $1.$2').replace(/\b(haiku|sonnet|opus|fable)\b/, w => w[0].toUpperCase() + w.slice(1));
+const date = s => { const d = new Date(String(s).slice(0, 10) + 'T12:00:00Z'); return isNaN(d) ? String(s) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
 const wilson = (k, n) => { if (!n) return null; const z = 1.959964, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return { k, n, p, lo: Math.max(0, c - h), hi: Math.min(1, c + h) }; };
-function modelRows(id, P) {
-  const out = [];
-  for (const m of P.models || []) {
-    const kinds = Object.keys(m.by_kind || {}), stale = STALE[id] || {}, base = { label: model(m.model), usd: m.usd, fails: m.fails };
-    if (!kinds.some(k => stale[k])) { out.push({ ...base, kind: kinds.length === 1 ? kinds[0] : null, rerun: !!m.subset, sub: `${m.suite} suite${m.subset ? ', ' + (KIND[m.subset] || m.subset) + ' only' : ''} · ${m.generated}`, pass: m.pass, correct: m.correct, n: m.tasks, restricted: m.restricted, retired: false }); continue; }
-    for (const k of kinds) { const b = m.by_kind[k], old = stale[k];
-      out.push({ ...base, kind: k, rerun: !!m.subset, usd: kinds.length > 1 ? null : m.usd, sub: `${m.suite} suite, ${KIND[k] || k} · ${m.generated}${old ? ' · ' + old : ''}`, pass: wilson(b.k, b.n), correct: b.correct, n: b.n, restricted: b.restricted,
-        retired: !!old, fails: (m.fails || []).filter(f => f.task.includes('-' + k + '-')) }); }
+const meter = (k, n, cls = '') => `<span class="meter ${cls}"><i style="width:${n ? k / n * 100 : 0}%"></i></span>`;
+function num(v) { const x = typeof v === 'number' ? v : (typeof v === 'string' && /^-?[\d.]+(e[-+]?\d+)?$/i.test(v.trim()) ? +v : null);
+  if (x == null || !isFinite(x)) return v === true ? 'true' : v === false ? 'false' : v == null ? '–' : String(v);
+  return Math.abs(x) >= 1e4 ? Math.round(x).toLocaleString('en-GB') : String(+x.toPrecision(5)); }
+
+/* ---------------------------------------------------------------- the tests */
+const TESTS = [
+  ['welltest', 'Well tests', 'Read a pressure buildup: permeability, skin, any fault, and the period used.', 'Geothermal'],
+  ['geothermal', 'Geothermal resource', 'Heat in place and power at P90, P50 and P10 from a temperature log.', 'Geothermal'],
+  ['documents', 'Document extraction', 'Figures from well reports and permits, through revisions and field units.', 'Geothermal'],
+  ['mining', 'Mining', 'Ore above the cut-off, and the most valuable pit the walls allow.', 'Mining'],
+  ['hazard', 'Seismic hazard', 'Design ground motion at a site, at 10% and 2% in 50 years.', 'Hazard'],
+  ['seismic', 'Seismic data', 'Check a SEG-Y survey and pick a horizon.', 'Subsurface'],
+  ['scheduling', 'Drilling schedule', 'A drilling campaign on three rigs, as short as possible.', 'Operations'],
+  ['solar', 'Solar', 'First-year energy of a solar plant from a weather year.', 'Renewables'],
+  ['pvreal', 'Solar, real weather', 'The same, on a real satellite weather year from PVGIS.', 'Renewables'],
+  ['wind', 'Wind', 'Annual energy of a turbine from a met-mast year.', 'Renewables'],
+  ['gis', 'GIS site screening', 'Find land for a solar plant from a brief and map layers.', 'Renewables'],
+];
+const T = Object.fromEntries(TESTS.map(([id, title, job, sector]) => [id, { id, title, job, sector }]));
+const LIVE = { welltest: 'geothermal', documents: 'documents' };          // runs in the web app; value is the app's domain filter
+const APP = 'https://build.playscorcher.com/app';
+const BRIEF = { L1: 'all stated', L2: 'mixed units', L3: 'in documents', L4: 'no guidance', S1: 'all stated', S2: 'plain words', S3: 'in documents', S4: 'spread over documents' };
+const TRAP = { clean: 'none', pvgis: 'beam on the horizontal', two_rate: 'rate change', short: 'too short to read', mass_rate: 'mass rate', nulls: 'missing values', units: 'field units',
+  local_time: 'local time', kwh: 'kWh not W/m²', missing: 'missing values', missing_density: 'no density', ppm: 'grades in ppm', feet: 'feet', crs: 'wrong projection', nodata: 'no-data cells',
+  invalid: 'broken polygons', revision: 'superseded revision', planned: 'planned figures', dupes: 'duplicates' };
+const trap = d => TRAP[d] || String(d).replace(/_/g, ' ');
+function info(id) {
+  const P = EB.packs[id];
+  if (P) return { tasks: Object.values(P.suites).reduce((a, s) => a + s.tasks, 0), suites: Object.fromEntries(Object.entries(P.suites).map(([k, v]) => [k, v.tasks])), engine: P.engine, unsafe: P.unsafe,
+    physics: P.physics || [], tools: (P.tools || []).map(t => t.name), defects: P.defects || [], specs: P.specs || [], example: P.example };
+  if (id === 'gis' && GB) { const ex = (GB.examples || [])[0], su = Object.fromEntries(['main', 'hard', 'injection', 'stress'].map(s => [s, (GB[s] || {}).nTasks || 0]));
+    return { tasks: Object.values(su).reduce((a, b) => a + b, 0), suites: su, engine: 'GDAL raster and vector operations, cross-checked by the same pipeline in QGIS 3.34', unsafe: 'Land inside a protected buffer',
+      physics: ['Area and parcel match the delivered map', 'Yield bounded by clear-sky sunlight', 'No land on open water'], tools: Array.isArray(GB.tools) ? GB.tools.map(t => t.name || t) : Object.keys(GB.tools || {}),
+      defects: ['crs', 'feet', 'nodata', 'invalid'], specs: ['S1', 'S2', 'S3', 'S4'], example: ex ? { id: ex.id, brief: ex.statement } : null }; }
+  return null;
+}
+
+/* ---------------------------------------------------------------- every recorded run, one shape */
+const KIND = { gt: 'grade and tonnage', pit: 'ultimate pit', welltest: 'Horner well tests', hip: 'heat in place' };
+const STALE = { geothermal: { welltest: 'These Horner tasks were retired after the audit of 6 November 2026.' }, mining: { pit: 'Graded with the pit key from before the slope fix of 6 November 2026.' } };
+const RUNS = [];
+const ledgerFor = (pack, m) => ((EB.ledger || {}).rows || []).find(e => e.pack === pack && e.model === m.model && String(e.generated).slice(0, 10) === m.generated && e.tasks === m.tasks);
+for (const [pack, P] of Object.entries(EB.packs)) for (const m of P.models || []) {
+  const rows = m.rows || [], kinds = [...new Set(rows.map(r => r.kind))], stale = STALE[pack] || {}, split = kinds.length > 1 && kinds.some(k => stale[k]);
+  for (const k of split ? kinds : [null]) {
+    const rs = k ? rows.filter(r => r.kind === k) : rows, kk = k || (kinds.length === 1 ? kinds[0] : null);
+    RUNS.push({ id: m.file + (k ? '~' + k : ''), pack, part: split || m.subset ? KIND[kk] || kk : null, model: m.model, agent: agentName(m.model), date: m.generated, suite: m.suite,
+      rows: rs, n: rs.length, k: rs.filter(r => r.pass).length, correct: rs.filter(r => r.correct).length, unsafe: rs.filter(r => !r.safe).length,
+      usd: split ? rs.reduce((a, r) => a + (r.usd || 0), 0) : m.usd, outdated: stale[kk] || null, rerun: !!m.subset, kind: kk, ledger: ledgerFor(pack, m) });
   }
-  // a kind re-run on its own (after a runner fix) supersedes that kind's rows in the original run
-  for (const r of out) if (!r.rerun && r.kind && out.some(x => x.rerun && x.kind === r.kind)) { r.retired = true; r.sub += ' · superseded by the re-run'; }
-  return out;
 }
-function disciplines() {
-  const out = {};
-  for (const [id, P] of Object.entries(EB.packs)) out[id] = {
-    id, title: P.title === 'Geothermal resource' ? 'Geothermal resource' : P.title, job: JOB[id] || '', engine: P.engine, validated: P.validated, physics: P.physics || [], unsafe: P.unsafe,
-    tasks: total(P), example: P.example, defects: P.defects, specs: P.specs, kinds: P.kinds, tools: P.tools,
-    arms: { analyst: mainArm(P, 'd1'), recipe: mainArm(P, 'd0'), naive: mainArm(P, 'fx-naive') }, allArms: { analyst: armSum(P, 'd1'), recipe: armSum(P, 'd0'), naive: armSum(P, 'fx-naive') },
-    models: modelRows(id, P),
-    flags: { wrong: P.suites.main ? (P.suites.main.arms['fx-naive'] || {}).wrong_answers : null, caught: P.suites.main ? (P.suites.main.arms['fx-naive'] || {}).physics_flags_wrong : null },
-    area: AREA[id], live: !!LIVE[id] };
-  if (GB) {
-    const arm = (suite, key) => { const a = (GB[suite] || { arms: [] }).arms.find(x => x.key === key); return a ? a.summary.pass : null; };
-    const runs = (GB.runs || []).filter(r => r.model).map(r => ({ rerun: false, label: model(r.model), sub: `${r.suite} suite · ${String(r.generated || '').slice(0, 10)}${r.current === false ? ' · earlier benchmark version' : ''}`, pass: r.pass, correct: null, n: r.n_run, restricted: null, usd: r.usd, fails: [], retired: r.current === false }));
-    out.gis = { id: 'gis', title: 'GIS site screening', job: JOB.gis, engine: 'Raster and vector operations in GDAL, cross-checked by a second engine running the same pipeline in QGIS 3.34 processing',
-      validated: GB.engine ? `The two engines agree on all ${GB.engine.tasks} engine-check tasks: final masks overlap at least ${pc(GB.engine.min_iou)} (IoU), area within ${(GB.engine.max_area_rel_diff * 100).toFixed(1)}%` : '',
-      physics: ['Area and parcel match the delivered map', 'Feasibility follows from the parcel', 'Yield bounded by capacity factor and clear-sky sunlight', 'No land on open water', 'Slope recomputed from elevations in metres'],
-      unsafe: 'Land inside a protected buffer', tasks: ['main', 'hard', 'injection', 'stress'].reduce((a, s) => a + ((GB[s] || {}).nTasks || 0), 0),
-      example: GB.examples && GB.examples[0] ? { id: GB.examples[0].id, brief: GB.examples[0].statement, docs: [], datasets: [] } : null, defects: ['crs', 'feet', 'nodata', 'invalid geometry', 'recoded legend', 'hand-typed codes'], specs: ['S1', 'S2', 'S3', 'S4'], tools: [],
-      arms: { analyst: arm('main', 'd1'), recipe: arm('main', 'd0'), naive: arm('main', 'fx-naive') }, models: runs, area: null, live: false };
-  }
-  return out;
+for (const r of RUNS) if (!r.outdated && !r.rerun && r.kind && RUNS.some(x => x.rerun && x.pack === r.pack && x.kind === r.kind && x !== r)) r.outdated = 'Superseded by a re-run of these tasks after a runner fix.';
+if (GB) for (const g of GB.runs || []) {
+  if (!g.model) continue;
+  const rows = (g.rows || []).map(r => ({ id: r.task, spec: r.spec, defect: r.defect, pass: !!r.pass, correct: !!r.correct, safe: !!r.safe, usd: r.usd,
+    why: r.pass ? [] : [...(r.violations || []).map(v => v.kind || v), ...Object.entries(r.checks || {}).filter(([, ok]) => !ok).map(([f]) => `${f} wrong`)].slice(0, 3),
+    fields: Object.entries(r.checks || {}).filter(([f]) => f !== 'mask').map(([f, ok]) => [f, (r.answer || {})[f], (r.key || {})[f], !!ok]),
+    calls: Array.isArray(r.trace) ? r.trace.map(t => [t.tool || t[0], t.ok !== false]) : [], brief: ((GB.examples || []).find(e => e.id === r.task) || {}).statement || '' }));
+  RUNS.push({ id: 'gis-' + g.file.replace(/\.json$/, ''), pack: 'gis', part: g.suite !== 'main' ? `${g.suite} suite` : null, model: g.model, agent: agentName(g.model), date: String(g.generated).slice(0, 10), suite: g.suite,
+    rows, n: rows.length, k: rows.filter(r => r.pass).length, correct: rows.filter(r => r.correct).length, unsafe: rows.filter(r => !r.safe).length, usd: g.usd,
+    outdated: g.current === false ? `Run on benchmark version ${g.version}; the GIS tasks have changed since.` : null, ledger: null });
 }
-const D = disciplines();
-const latestModel = d => { const ok = d.models.filter(m => !m.retired);
-  return (d.id === 'gis' ? d.models.find(m => /^hard/.test(m.sub)) : null) || ok.find(m => m.rerun) || ok.slice(-1)[0] || null; };   // GIS: the hard suite is its representative run (made on benchmark version 4, labelled so)
+RUNS.sort((a, b) => (!!a.outdated - !!b.outdated) || String(b.date).localeCompare(String(a.date)) || TESTS.findIndex(t => t[0] === a.pack) - TESTS.findIndex(t => t[0] === b.pack));
+const title = r => (T[r.pack] || { title: r.pack }).title;
 
-/* ---------------------------------------------------------------- pages */
-function overview() {
-  const ids = ORDER.filter(id => D[id]), tasks = ids.reduce((a, id) => a + D[id].tasks, 0), L = EB.ledger || { rows: [] }, V = EB.validation;
-  const ver = V ? V.rows.filter(r => r.status === 'verified').length : 0;
-  const cards = ids.map(id => { const d = D[id], m = latestModel(d);
-    return `<a class="card" href="#d/${id}"><h3>${esc(d.title)}</h3><p>${esc(d.job)}</p>
-      <div class="row"><span>Tasks</span><b>${d.tasks}</b><span>Scripted analyst</span><b>${d.arms.analyst ? `${d.arms.analyst.k}/${d.arms.analyst.n}` : '–'}</b><span>Claude, latest run</span><b>${m && m.pass ? `${m.pass.k}/${m.pass.n} pass` : 'not run'}</b></div>
-      <div class="honest">${d.live ? '<span class="chip live">Runs in the app</span>' : '<span class="chip">Local benchmark</span>'}</div><span class="go">Open →</span></a>`; }).join('');
-  return `<h1>What Scorcher has measured</h1>
-    <p class="lede">Scorcher tests AI agents on engineering tasks whose right answer is known, because a validated engine computed it. This page shows every discipline, how each is graded, and how well scripted pipelines and a real model did.</p>
-    <div class="kpis"><div><b>${ids.length}</b><span>Disciplines</span></div><div><b>${tasks}</b><span>Tasks, each with a known answer</span></div><div><b>${L.entries || 0}</b><span>Model runs on record</span></div><div><b>${V ? `${ver}/${V.rows.length}` : '–'}</b><span>Engine decisions checked against something outside the code</span></div></div>
-    <div class="honest"><span class="chip warn">Synthetic tasks, not real projects</span><span class="chip warn">One model tested so far (Claude Haiku)</span><span class="chip bad">No outside expert review yet</span><span class="chip ok">Audited 6 November 2026</span></div>
-    <h2>How to read the results</h2>
-    <div class="read"><div><b>Pass</b>The answer is within tolerance of the engine's key <em style="font-style:normal">and</em> nothing unsafe happened. Correct counts the answer alone.</div><div><b>Scripted pipelines</b>The analyst solves every task the right way, which proves the key. The fixed recipe and the naive pipeline make known mistakes, which proves the traps work.</div><div><b>Intervals</b>Bars show the 95% interval. With 24 to 48 tasks they are wide: small differences between agents cannot be told apart yet.</div></div>
-    <h2>Disciplines</h2><div class="grid">${cards}</div>
-    <h2>Latest model runs</h2>${runsTable((L.rows || []).slice(-5).reverse())}<p class="note"><a href="#runs">All runs →</a></p>`;
-}
+/* ---------------------------------------------------------------- state */
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const S = { test: 'welltest', agent: 'claude-haiku-5-5', suite: 'main', repeats: 1, only: 'all', vf: 'all', old: store.get('sb-old') === '1', drawer: store.get('sb-drawer') === '1' && innerWidth > 1000 };
+const AGENTS = [['claude-haiku-5-5', 'Claude Haiku 5.5'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5'], ['claude-opus-5-5', 'Claude Opus 5.5'], ['mcp', 'Your agent (MCP)']];
+const shown = () => RUNS.filter(r => S.old || !r.outdated);
 
-function runsTable(rows) {
-  if (!rows.length) return '<p class="note">No model runs yet.</p>';
-  return `<div class="tw"><table><tr><th>Discipline</th><th>Model</th><th>Run</th><th class="r">Pass</th><th class="r">Correct</th><th class="r">Cost</th><th>Record</th></tr>${rows.map(e => `<tr><td>${esc((D[e.pack] || {}).title || e.pack)}</td><td>${esc(model(e.model))}</td><td class="num">${esc(e.suite)} · ${esc((e.generated || '').slice(0, 10))}</td><td class="r num">${e.passed}/${e.tasks}</td><td class="r num">${e.correct ?? '–'}</td><td class="r num">$${(e.usd || 0).toFixed(2)}</td><td class="num" style="color:var(--ink-3)">#${e.seq} ${esc(e.hash.slice(0, 8))}</td></tr>`).join('')}</table></div>`;
-}
-
-function discipline(id) {
-  const d = D[id]; if (!d) return `<p>No such discipline.</p>`;
-  const ids = ORDER.filter(x => D[x]);
-  const side = `<nav class="side"><div class="t">Disciplines</div>${ids.map(x => `<a href="#d/${x}"${x === id ? ' aria-current="page"' : ''}>${esc(D[x].title)}${D[x].live ? '<small>live</small>' : ''}</a>`).join('')}</nav>`;
-  const pick = `<select class="pick" id="pick" aria-label="Discipline">${ids.map(x => `<option value="${x}"${x === id ? ' selected' : ''}>${esc(D[x].title)}</option>`).join('')}</select>`;
-  const ex = d.example, m = latestModel(d);
-  // 3. results table
-  const row = (who, sub, w, correct, n, unsafe, cost, cls) => `<tr><td><div class="who"><b>${esc(who)}</b><small>${esc(sub)}</small></div></td><td class="r num">${w ? `${w.k}/${w.n}` : '–'}</td><td>${bar(w, cls)}</td><td class="r num">${correct == null ? '–' : `${correct}/${n}`}</td><td class="r num" style="${unsafe ? 'color:var(--red)' : ''}">${unsafe == null ? '–' : unsafe}</td><td class="r num">${cost == null ? '–' : '$' + cost.toFixed(2)}</td></tr>`;
-  const res = `<div class="tw"><table><tr><th>Who</th><th class="r">Pass</th><th>95% interval</th><th class="r">Correct</th><th class="r">Unsafe or restricted</th><th class="r">Cost</th></tr>
-    ${row('Scripted analyst', 'right method and parameters; proves the key', d.arms.analyst, null, null, null, null, 'grey')}
-    ${row('Fixed recipe', 'one set of organisation defaults', d.arms.recipe, null, null, null, null, 'grey')}
-    ${row('Naive pipeline', 'reads units and codes as written', d.arms.naive, null, null, null, null, 'grey')}
-    ${d.models.map(x => row(x.label + (x.retired ? ' (earlier version)' : ''), x.sub, x.pass, x.correct, x.n, x.restricted, x.usd, x.retired ? 'grey' : '')).join('')}</table></div>
-    <p class="note">Scripted rows are the main suite. Model rows are each run as recorded, split by task kind where part of a run no longer applies; "earlier version" rows were graded before a fix and are kept for the record. Cost is shown for a whole run only.</p>`;
-  let take = '';
-  if (m && m.pass) {
-    const wrong = m.correct != null ? m.n - m.correct : null, ceiling = m.correct != null && m.correct / m.n >= 0.9;
-    take = `<div class="takeaway${ceiling ? ' warn' : ''}">${esc(m.label)} passed ${m.pass.k} of ${m.pass.n}${m.correct != null ? `, with ${m.correct} of ${m.n} answers correct` : ''}${m.restricted ? `; ${m.restricted} run${m.restricted === 1 ? '' : 's'} failed on safety (a refused attempt on a restricted file)` : ''}.${ceiling ? ' A small model is close to the ceiling here, so this discipline does not yet separate strong agents from weak ones.' : ''}</div>`;
-  } else take = `<div class="takeaway warn">No model has been run on this discipline yet.</div>`;
-  // 4. failures
-  const why = {}; for (const x of d.models.filter(x => !x.retired)) for (const f of x.fails || []) for (const w of f.why) { const c = /restricted/.test(w) ? 'Tried to open a restricted file (refused)' : /cut off/.test(w) ? 'Cut off by the runner (since fixed)' : /without an answer/.test(w) ? 'Ended without an answer' : 'Wrong value: ' + w.split(':')[0]; (why[c] = why[c] || []).push(f.task); }
-  const fails = Object.keys(why).length ? `<ul class="fails">${Object.entries(why).sort((a, b) => b[1].length - a[1].length).map(([k, t]) => `<li><b>${esc(k)}</b>: ${t.length} run${t.length === 1 ? '' : 's'} <details style="display:inline"><summary style="display:inline;cursor:pointer;color:var(--blue);font-size:13px">tasks</summary> ${t.map(x => `<code>${esc(x)}</code>`).join(' ')}</details></li>`).join('')}</ul>` : '<p class="note">No failures recorded in the latest runs.</p>';
-  // 5. validation
-  const V = EB.validation, vr = V && d.area ? V.rows.filter(r => r.area === d.area) : [];
-  const val = d.id === 'gis' ? `<p>${esc(d.validated)}. This is an independent implementation check: the strongest kind in the suite. Not yet compared with external reference data.</p>`
-    : vr.length ? `<div class="tw"><table><tr><th>Decision</th><th>Evidence</th><th>Status</th></tr>${vr.map(r => `<tr><td>${esc(r.decision)}</td><td>${esc(r.basis)}</td><td class="status s-${r.status.split(' ')[0]}">${esc(r.status)}</td></tr>`).join('')}</table></div><p class="note">${esc(d.validated)}. <a href="#validation">The full register →</a></p>` : `<p>${esc(d.validated)}</p>`;
-  // 6. try
-  const cmd = d.id === 'gis' ? 'python -m gisbench.model_runner --model claude-haiku-5-5 --suite hard --prompt method --max-usd 1 --yes' : `python -m earthbench.run --model claude-haiku-5-5 --pack ${d.id} --suite main --max-usd 1 --yes`;
-  const tryIt = d.live ? `<p>These tasks run in the web app: sign in, pick one, and run Scorcher's agent or connect your own over MCP. The app grades on the server with the same key and checks.</p><p style="margin-top:12px"><a class="btn" href="https://build.playscorcher.com/app">Run a ${esc(d.title.toLowerCase())} task</a></p><h3>Or from a terminal</h3><pre>${esc(cmd)}</pre>`
-    : `<p>This discipline runs from a terminal today; it is not yet in the web app.</p><pre>${esc(cmd)}</pre><p class="note">Any MCP agent can also work one task: <code>python -m earthbench.mcp_server --task ${esc(ex ? ex.id : '')}</code></p>`;
-  return `<div class="split">${side}<div>${pick}
-    <p class="note" style="margin:0 0 6px"><a href="#overview">Overview</a> / Disciplines</p>
-    <h1>${esc(d.title)}</h1><p class="lede">${esc(d.job)}</p>
-    <div class="honest">${d.live ? '<span class="chip live">Runs in the app</span>' : '<span class="chip">Local benchmark</span>'}<span class="chip">${d.tasks} tasks</span>${m && m.correct != null && m.correct / m.n >= .9 ? '<span class="chip warn">Near the ceiling for a small model</span>' : ''}</div>
-    <h2><span class="n">1</span>The task</h2>
-    ${ex ? `<div class="brief">${esc(ex.brief)}</div><p class="note">Example task <span class="m">${esc(ex.id)}</span>${ex.docs && ex.docs.length ? ` · documents: ${ex.docs.map(esc).join(', ')}` : ''}${ex.datasets && ex.datasets.length ? ` · data: ${ex.datasets.map(esc).join(', ')}` : ''}</p>` : ''}
-    <dl class="kv" style="margin-top:16px"><dt>Data traps</dt><dd>${(d.defects || []).map(x => `<span class="chip">${esc(TRAPNAME[x] || String(x).replace(/_/g, ' '))}</span>`).join(' ')}</dd><dt>Brief levels</dt><dd>${d.id === 'gis' ? 'S1 to S4, from explicit to spread over several documents' : d.id === 'pvreal' ? 'L1 pvlib conventions with the coordinates; L2 PVGIS conventions, the site in the PVGIS inputs file; L3 in a design report, beside a superseded one' : 'L1 everything stated in SI; L2 mixed units and plain words; L3 in documents, beside a superseded one' + (d.id === 'welltest' ? '; L4 no guidance on reading the derivative' : '')}</dd>${d.tools && d.tools.length ? `<dt>Tools the agent gets</dt><dd>${d.tools.map(t => `<span class="chip" title="${esc(t.description)}">${esc(t.name)}</span>`).join(' ')}</dd>` : ''}</dl>
-    <h2><span class="n">2</span>How it is graded</h2>
-    <dl class="kv"><dt>Answer key</dt><dd>${esc(d.engine)}</dd><dt>Counts as unsafe</dt><dd>${esc(d.unsafe)}, whatever the totals</dd><dt>Checks with no key</dt><dd><ul class="plain">${d.physics.map(x => `<li>${esc(x)}</li>`).join('')}</ul><span class="note">Reported beside the grade, never part of it. They catch impossible or inconsistent answers, not every wrong one${d.flags && d.flags.wrong ? `: on the naive pipeline they flagged ${d.flags.caught} of ${d.flags.wrong} wrong answers` : ''}.</span></dd></dl>
-    <h2><span class="n">3</span>How well it is solved</h2>${res}${take}
-    <h2><span class="n">4</span>Why Claude's runs failed</h2>${fails}
-    <h2><span class="n">5</span>What the engine has been checked against</h2>${val}
-    <h2><span class="n">6</span>Try it</h2>${tryIt}
-  </div></div>`;
+/* ---------------------------------------------------------------- dashboard: run a test, then the benchmarks */
+function runForm() {
+  const i = info(S.test), t = T[S.test], suites = Object.keys(i.suites);
+  if (!suites.includes(S.suite)) S.suite = 'main';
+  const n = (i.suites[S.suite] || 0) * S.repeats, mcp = S.agent === 'mcp', live = LIVE[S.test];
+  const cmd = mcp ? (S.test === 'gis' ? 'python -m gisbench.mcp_server --suite main' : `python -m earthbench.mcp_server --task ${i.example ? i.example.id : ''}`)
+    : S.test === 'gis' ? `python -m gisbench.model_runner --model ${S.agent} --suite ${S.suite} --prompt method${S.repeats > 1 ? ' --repeats ' + S.repeats : ''}`
+    : `python -m earthbench.run --model ${S.agent} --pack ${S.test} --suite ${S.suite}${S.repeats > 1 ? ' --repeats ' + S.repeats : ''} --max-usd 1`;
+  const what = mcp ? `<b>${esc(t.title)}</b> served to your agent over MCP, one task at a time. Your agent's code never leaves your machine.`
+    : `<b>${n} task runs</b> of ${esc(t.title)} on <b>${esc(agentName(S.agent))}</b>, ${esc(S.suite === 'heldout' ? 'held-out' : S.suite)} suite${S.repeats > 1 ? `, each ${S.repeats} times` : ''}. The command shows a cost estimate and waits for --yes.`;
+  const appFirst = live && (mcp || S.agent === 'claude-haiku-5-5');
+  return `<section class="card" aria-label="Run a test">
+    <div class="card-h"><h2>Run a test</h2><small>${TESTS.length} tests · ${TESTS.reduce((a, [id]) => a + ((info(id) || {}).tasks || 0), 0)} tasks with known answers</small></div>
+    <div class="card-b">
+      <div class="label">Test</div>
+      <div class="cat" role="group" aria-label="Test">${TESTS.map(([id, ttl, job, sector]) => { const ii = info(id); if (!ii) return '';
+        return `<button class="tile" data-test="${id}" aria-pressed="${S.test === id}"><span class="h"><b>${esc(ttl)}</b>${LIVE[id] ? '<span class="pill live" title="Runs in the web app">app</span>' : ''}</span><p>${esc(job)}</p><span class="f num">${ii.tasks} tasks · ${esc(sector)}</span></button>`; }).join('')}</div>
+      <details class="about"${S.about || store.get('sb-about') === '1' ? ' open' : ''}><summary>About ${esc(t.title.toLowerCase())}: how it is graded, traps, tools</summary>
+        <dl class="facts">${i.example ? `<dt>Example task</dt><dd class="brief">${esc(i.example.brief)}</dd>` : ''}<dt>Answer key</dt><dd>${esc(i.engine)}</dd><dt>Unsafe if</dt><dd>${esc(i.unsafe)}</dd>
+          <dt>Traps</dt><dd>${i.defects.map(d => `<span class="tag">${esc(trap(d))}</span>`).join('')}</dd><dt>Briefs</dt><dd>${i.specs.map(s => `<span class="tag">${esc(s)} ${esc(BRIEF[s] || '')}</span>`).join('')}</dd>
+          ${i.tools.length ? `<dt>Agent's tools</dt><dd>${i.tools.map(x => `<span class="tag">${esc(x)}</span>`).join('')}</dd>` : ''}<dt>Checked without the key</dt><dd>${i.physics.map(esc).join(' · ')}</dd></dl></details>
+      <div class="opts sec">
+        <div><div class="label">Agent</div><div class="seg" role="group" aria-label="Agent">${AGENTS.map(([k, l]) => `<button data-agent="${k}" aria-pressed="${S.agent === k}">${esc(l)}</button>`).join('')}</div></div>
+        ${mcp ? '' : `<div><div class="label">Suite</div><div class="seg" role="group" aria-label="Suite">${suites.map(s => `<button data-suite="${s}" aria-pressed="${S.suite === s}">${esc(s === 'heldout' ? 'held-out' : s)}<span class="muted num"> ${i.suites[s]}</span></button>`).join('')}</div></div>
+        <div><div class="label">Repeats</div><div class="seg" role="group" aria-label="Repeats">${[1, 3, 5].map(k => `<button data-rep="${k}" aria-pressed="${S.repeats === k}">${k}×</button>`).join('')}</div></div>`}
+      </div>
+      <div class="go"><p class="what">${what}</p>${live ? `<a class="btn${appFirst ? ' primary' : ''}" href="${APP}?domain=${live}">Run in the web app</a>` : ''}<button class="btn${appFirst ? '' : ' primary'}" data-copy="cmd">Copy command</button></div>
+      <div class="cmd"><code id="cmd">${esc(cmd)}</code><button data-copy="cmd" aria-label="Copy command">Copy</button></div>
+      <p class="hint">${live ? `${esc(t.title)} also runs in the web app, with Scorcher's agent or yours over MCP, graded on the server. ` : ''}The command runs from the repository on your machine with your own API key.</p>
+    </div></section>`;
 }
 
-let vf = 'all';
+function benchmarks() {
+  const cur = RUNS.filter(r => !r.outdated), models = [...new Set(cur.map(r => r.model))];
+  const tot = cur.reduce((a, r) => ({ k: a.k + r.k, n: a.n + r.n, c: a.c + r.correct, u: a.u + r.unsafe, usd: a.usd + (r.usd || 0) }), { k: 0, n: 0, c: 0, u: 0, usd: 0 });
+  const best = (id, m) => cur.filter(r => r.pack === id && r.model === m)[0];
+  return `<section class="sec" aria-label="Benchmarks"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 12px;flex-wrap:wrap"><h2>Your models' benchmarks</h2><small class="muted">Current runs · select a row for its tasks</small></div>
+    <div class="stats"><div class="card stat"><span>Tasks passed</span><b>${tot.k}<small> / ${tot.n}</small></b></div><div class="card stat"><span>Answers correct</span><b>${pc(tot.n ? tot.c / tot.n : null)}</b></div>
+      <div class="card stat"><span>Unsafe runs</span><b style="color:${tot.u ? 'var(--fail)' : 'inherit'}">${tot.u}</b></div><div class="card stat"><span>Spend</span><b>$${tot.usd.toFixed(2)}</b></div></div>
+    <div class="card" style="margin-top:12px;overflow-x:auto"><table class="tbl"><thead><tr><th>Test</th>${models.map(m => `<th>${esc(agentName(m))}</th>`).join('')}<th class="hide">Last run</th><th class="r hide"></th></tr></thead><tbody>
+      ${TESTS.filter(([id]) => info(id)).map(([id, ttl]) => { const rs = models.map(m => best(id, m)), any = rs.find(Boolean);
+        return `<tr class="${any ? 'click' : ''}" ${any ? `data-run="${esc(any.id)}"` : ''}><td><span style="font-weight:500">${esc(ttl)}</span>${any && any.part ? ` <span class="muted">· ${esc(any.part)}</span>` : ''}</td>
+          ${rs.map(r => `<td>${r ? `<span class="cell">${meter(r.k, r.n, 'wide')}<span>${r.k}/${r.n}</span></span>` : '<span class="muted">Not run</span>'}</td>`).join('')}
+          <td class="hide muted">${any ? esc(date(any.date)) : ''}</td><td class="r hide">${any ? '<span class="muted">›</span>' : `<a href="#" data-pick="${id}">Run</a>`}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <p class="hint">Pass means the answer is within tolerance of the key and nothing unsafe happened. ${models.length < 2 ? 'One model has been run so far, so there is nothing to compare it with yet.' : ''}</p></section>`;
+}
+
+function dashboard() {
+  const V = EB.validation, ver = V ? V.rows.filter(r => r.status === 'verified').length : 0;
+  return `<div class="wrap"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+      <div><h1>Dashboard</h1><p class="sub">Test an agent on engineering tasks whose right answer is known, then see how it scored.</p></div>
+      ${V ? `<a class="pill" href="#validation" style="text-decoration:none">${ver} of ${V.rows.length} engine decisions verified</a>` : ''}</div>
+    ${runForm()}${benchmarks()}</div>`;
+}
+
+/* ---------------------------------------------------------------- the runs drawer and one run */
+function drawer(cur) {
+  const list = shown();
+  return `<div class="drawer-h"><h2>Runs <span class="muted num" style="font-weight:400">${list.length}</span></h2><button class="x" id="drawerX" aria-label="Close runs">×</button></div>
+    ${list.map(r => `<a class="run${r.outdated ? ' old' : ''}" href="#run/${encodeURIComponent(r.id)}" aria-current="${r.id === cur}">
+      <span class="t">${esc(title(r))}${r.part ? ` <span>· ${esc(r.part)}</span>` : ''}</span><span class="s">${r.k}/${r.n}</span>
+      <span class="a">${esc(r.agent)} · ${esc(date(r.date))}${r.outdated ? ' · outdated' : ''}</span>${meter(r.k, r.n)}</a>`).join('')}
+    <label class="drawer-f"><input type="checkbox" id="old"${S.old ? ' checked' : ''}> Show outdated runs (${RUNS.filter(r => r.outdated).length})</label>`;
+}
+
+function runPage(r) {
+  const w = wilson(r.k, r.n), fails = r.rows.filter(x => !x.pass).length, rows = r.rows.filter(x => S.only === 'all' || !x.pass);
+  return `<div class="wrap"><div class="crumb"><a href="#">Dashboard</a> / Runs</div>
+    <div class="head"><h1>${esc(title(r))}${r.part ? ` <span class="muted" style="font-weight:400">· ${esc(r.part)}</span>` : ''}</h1><span class="agent">${esc(r.agent)}</span></div>
+    <p class="sub">${esc((T[r.pack] || {}).job || '')} <span class="muted">${esc(r.suite === 'heldout' ? 'held-out' : r.suite)} suite · ${esc(date(r.date))}${r.ledger ? ` · ledger #${r.ledger.seq} <span class="mono">${esc(r.ledger.hash.slice(0, 8))}</span>` : ''}</span></p>
+    ${r.outdated ? `<div class="warn">Outdated. ${esc(r.outdated)}</div>` : ''}
+    <div class="stats" style="margin-top:22px"><div class="card stat"><span>Passed</span><b class="big">${r.k}<small> / ${r.n}</small></b></div><div class="card stat"><span>Answers correct</span><b>${r.correct}<small> / ${r.n}</small></b></div>
+      <div class="card stat"><span>Unsafe runs</span><b style="color:${r.unsafe ? 'var(--fail)' : 'inherit'}">${r.unsafe}</b></div><div class="card stat"><span>95% interval · cost</span><b>${w ? `${Math.round(w.lo * 100)}–${pc(w.hi)}` : '–'}<small> · ${r.usd != null ? '$' + r.usd.toFixed(2) : '–'}</small></b></div></div>
+    <div class="card" style="margin-top:12px"><div class="filters"><div class="seg" role="group" aria-label="Show"><button data-only="all" aria-pressed="${S.only === 'all'}">All ${r.n}</button><button data-only="fail" aria-pressed="${S.only === 'fail'}">Failed ${fails}</button></div><small class="muted hide-s">Select a task for its answer and tool calls</small></div>
+    ${rows.length ? `<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Result</th><th>Task</th><th class="hide">Brief</th><th class="hide">Trap</th><th class="r hide">Calls</th></tr></thead><tbody>
+      ${rows.map(x => `<tr class="click task" tabindex="0" data-task="${esc(x.id)}"><td><span class="res ${x.pass ? 'ok' : 'no'}">${x.pass ? 'Passed' : 'Failed'}</span>${x.pass ? '' : `<span class="why">${esc(reason(x))}</span>`}</td>
+        <td class="mono">${esc(x.id)}</td><td class="hide">${esc(BRIEF[x.spec] || x.spec || '')}</td><td class="hide">${esc(trap(x.defect))}</td><td class="r hide num muted">${x.calls && x.calls.length ? x.calls.length : '–'}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p style="padding:30px 16px" class="muted">No failed tasks in this run.</p>'}</div></div>`;
+}
+function reason(x) {
+  const w = (x.why || [])[0] || (x.safe ? 'wrong answer' : 'unsafe');
+  return /restricted/.test(w) ? 'Tried to open a restricted file' : /cut off/.test(w) ? 'Cut off by the runner (fixed since)' : /without an answer/.test(w) ? 'No answer' : w.replace(/:.*/, ' wrong').replace(/_/g, ' ');
+}
+function sheet(r, id) {
+  const x = r.rows.find(t => t.id === id); if (!x) return '';
+  const why = (x.why || []).map(w => /restricted/.test(w) ? 'Tried to open a restricted file. The read was refused; the run fails on safety.' : w);
+  return `<div class="scrim" id="scrim"></div><aside class="sheet" role="dialog" aria-modal="true" aria-label="Task ${esc(x.id)}">
+    <div class="sheet-h"><span class="mono">${esc(x.id)}</span><button class="x" id="sheetX" aria-label="Close">×</button></div>
+    <div class="verdict ${x.pass ? 'ok' : 'no'}"><b>${x.pass ? 'Passed' : 'Failed'}</b>${!x.pass && why.length ? `<ul>${why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}</div>
+    <div class="part"><h3>Task</h3><p class="brief">${x.brief ? esc(x.brief) : `<span class="muted">${esc(BRIEF[x.spec] || x.spec || '')}; trap: ${esc(trap(x.defect))}. The brief is not stored with this run.</span>`}</p></div>
+    ${x.fields && x.fields.length ? `<div class="part"><h3>Answer against the key</h3><table class="kv"><tr><th>Field</th><th>Agent</th><th>Key</th><th></th></tr>
+      ${x.fields.map(([f, a, k, ok]) => `<tr><td>${esc(f.replace(/_/g, ' '))}</td><td class="v">${esc(num(a))}</td><td class="v">${esc(num(k))}</td><td class="tick ${ok ? 'ok' : 'no'}">${ok ? '✓' : '✗'}</td></tr>`).join('')}</table></div>` : ''}
+    ${x.calls && x.calls.length ? `<div class="part"><h3>What the agent did · ${x.calls.length} tool calls</h3><ol class="calls">${x.calls.map(([t, ok]) => `<li class="${ok ? '' : 'bad'}${t === 'submit_answer' ? ' end' : ''}">${esc(t)}${ok ? '' : ' · refused or failed'}</li>`).join('')}</ol></div>` : ''}
+    <div class="foot">${esc(r.agent)} · ${esc(title(r))} · ${esc(date(r.date))}${x.usd ? ` · $${x.usd.toFixed(4)}` : ''}</div></aside>`;
+}
+
 function validation() {
-  const V = EB.validation; if (!V) return '<p>Run python -m earthbench.validation, then python -m earthbench.export.</p>';
-  const n = s => V.rows.filter(r => r.status === s).length, rows = V.rows.filter(r => vf === 'all' || r.status === vf);
-  let area = '';
-  return `<h1>Is the physics right?</h1>
-    <p class="lede">Every modelling decision in Scorcher's engines, the evidence behind it, and the automated check that ran. Only evidence from outside the code counts as verified.</p>
-    <div class="kpis"><div><b>${n('verified')}</b><span>Verified: agrees with a published value, a standard, an analytical solution or independent code</span></div><div><b>${n('consistent')}</b><span>Consistency only: the code agrees with itself or a formula typed from a paper</span></div><div><b>${n('source only')}</b><span>Backed by a source, with no automated check yet</span></div><div><b>${n('design choice')}</b><span>Judgements with no published source, for expert review</span></div></div>
-    <div class="honest"><span class="chip bad">No engine compared with external reference data yet (PEER, MineLib, SAM or PVGIS, field tests)</span><span class="chip bad">No outside expert review yet</span></div>
-    <div class="filters">${[['all', 'All'], ['verified', 'Verified'], ['consistent', 'Consistency only'], ['source only', 'Source only'], ['design choice', 'Design choices']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${vf === k}">${l}</button>`).join('')}</div>
-    <div class="tw"><table><tr><th style="width:44%">Decision</th><th>Evidence</th><th>Status</th><th style="width:30%">What the check showed</th></tr>${rows.map(r => (r.area !== area ? `<tr class="grp"><td colspan="4">${esc(area = r.area)}</td></tr>` : '') + `<tr><td>${esc(r.decision)}</td><td>${esc(r.basis)}</td><td class="status s-${r.status.split(' ')[0]}">${esc(r.status)}</td><td style="font-size:13px;color:var(--ink-2)">${esc(r.status === 'design choice' ? 'No published source: listed for expert review' : r.detail)}</td></tr>`).join('')}</table></div>
-    <p class="note">Generated ${esc(V.generated)} by <span class="m">python -m earthbench.validation</span>. The paper explains each kind of evidence; the audit of 6 November 2026 explains why consistency checks no longer count as verified.</p>`;
-}
-
-function runs() {
-  const L = EB.ledger || { rows: [] };
-  return `<h1>Model runs</h1>
-    <p class="lede">Every model run on the benchmark packs, oldest first, as recorded in the results ledger. Each line carries the hash of its results and records and is chained to the line before, so an edited line shows.</p>
-    <div class="honest"><span class="chip">${L.entries || 0} runs</span><span class="chip ${L.intact ? 'ok' : 'bad'}">${L.intact ? 'Chain intact' : 'Chain broken'}</span><span class="chip warn">Not signed or anchored outside the repository yet</span></div>
-    <div style="margin-top:18px">${runsTable([...(L.rows || [])])}</div>
-    <p class="note">Runs marked backfilled were made before the ledger existed. Mining pit results and geothermal well-test results predate fixes made after the audit of 6 November 2026.</p>`;
+  const V = EB.validation; if (!V) return '<div class="wrap"><h1>Validation</h1><p class="sub">Not generated yet.</p></div>';
+  const n = s => V.rows.filter(r => r.status === s).length, rows = V.rows.filter(r => S.vf === 'all' || r.status === S.vf); let area = '';
+  return `<div class="wrap"><h1>Validation</h1><p class="sub">Every modelling decision in the engines, the evidence behind it, and its automated check. Only evidence from outside the code counts as verified.</p>
+    <div class="stats" style="margin-top:22px"><div class="card stat"><span>Verified</span><b>${n('verified')}</b></div><div class="card stat"><span>Consistency only</span><b>${n('consistent')}</b></div><div class="card stat"><span>Source, no check yet</span><b>${n('source only')}</b></div><div class="card stat"><span>Design choices</span><b>${n('design choice')}</b></div></div>
+    <div class="card" style="margin-top:12px"><div class="filters"><div class="seg" role="group" aria-label="Filter">${[['all', 'All'], ['verified', 'Verified'], ['consistent', 'Consistency'], ['source only', 'Source only'], ['design choice', 'Design']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${S.vf === k}">${l}</button>`).join('')}</div></div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Decision</th><th>Status</th><th class="hide">What the check showed</th></tr></thead><tbody>
+    ${rows.map(r => (r.area !== area ? `<tr class="grp"><td colspan="3">${esc(area = r.area)}</td></tr>` : '') + `<tr><td>${esc(r.decision)}</td><td class="st ${r.status.split(' ')[0]}">${esc(r.status)}</td><td class="hide muted" style="font-size:12.5px">${esc(r.status === 'design choice' ? 'No published source: listed for expert review' : r.detail)}</td></tr>`).join('')}
+    </tbody></table></div></div><p class="hint">Generated ${esc(V.generated)}. No outside expert has reviewed any test yet. <a href="build-paper.html">The paper</a> explains each kind of evidence.</p></div>`;
 }
 
 /* ---------------------------------------------------------------- router */
+const page = $('#page'), dr = $('#drawer'), shell = $('#shell');
+function setDrawer(open) { S.drawer = open; dr.hidden = !open; shell.classList.toggle('open', open); $('#runsBtn').setAttribute('aria-expanded', open); if (innerWidth > 1000) store.set('sb-drawer', open ? '1' : '0'); }
 function route() {
-  const h = location.hash.slice(1) || 'overview', [page, arg] = h.split('/');
-  const html = page === 'd' ? discipline(arg || 'welltest') : page === 'validation' ? validation() : page === 'runs' ? runs() : overview();
-  $('#main').innerHTML = html + `<div class="foot"><span>Results exported ${esc(EB.generated)} from the repository</span><a href="build-paper.html">The paper</a><a href="build-concept.html">Concept views (sample data)</a><a href="build.html">Scorcher Build</a></div>`;
-  const cur = page === 'd' ? '#d/welltest' : '#' + (['validation', 'runs'].includes(page) ? page : 'overview');
-  document.querySelectorAll('#tabs a, #mnav a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === cur ? 'page' : 'false'));
-  document.querySelectorAll('.filters button').forEach(b => b.onclick = () => { vf = b.dataset.f; route(); });
-  const p = $('#pick'); if (p) p.onchange = () => { location.hash = 'd/' + p.value; };
-  document.title = page === 'd' && D[arg] ? `${D[arg].title} · Scorcher Build results` : 'Scorcher Build results';
-  if (!route.first) scrollTo(0, 0); route.first = false;
+  const h = decodeURIComponent(location.hash.slice(1)), [p, a, b] = h.split('/');
+  let run = null, html;
+  if (p === 'd' && T[a]) { S.test = a; S.about = true; }                      // links from the landing page: #d/<test> selects that test
+  if (p === 'validation') html = validation();
+  else if (p === 'run' && (run = RUNS.find(x => x.id === a))) html = runPage(run);
+  else html = dashboard();
+  page.innerHTML = html;
+  dr.innerHTML = drawer(run && run.id); $('#runsCount').textContent = shown().length; setDrawer(S.drawer);
+  $('#layer').innerHTML = run && b ? sheet(run, b) : '';
+  document.body.style.overflow = run && b ? 'hidden' : '';
+  $$('#nav a').forEach(x => x.setAttribute('aria-current', (p === 'validation' ? x.getAttribute('href') === '#validation' : p !== 'run' && x.getAttribute('href') === '#') ? 'page' : 'false'));
+  wire(run);
+  const key = h.split('/').slice(0, 2).join('/');
+  if (route.last !== key) scrollTo(0, 0);
+  route.last = key;
+  document.title = run ? `${title(run)}, ${run.agent} · Scorcher Build` : p === 'validation' ? 'Validation · Scorcher Build' : 'Scorcher Build';
 }
-route.first = true; addEventListener('hashchange', route); route();
+function wire(run) {
+  const re = () => { const y = scrollY; route(); scrollTo(0, y); };
+  $$('[data-test]').forEach(x => x.onclick = () => { S.test = x.dataset.test; re(); });
+  $$('[data-agent]').forEach(x => x.onclick = () => { S.agent = x.dataset.agent; re(); });
+  $$('[data-suite]').forEach(x => x.onclick = () => { S.suite = x.dataset.suite; re(); });
+  $$('[data-rep]').forEach(x => x.onclick = () => { S.repeats = +x.dataset.rep; re(); });
+  $$('[data-only]').forEach(x => x.onclick = () => { S.only = x.dataset.only; re(); });
+  $$('[data-f]').forEach(x => x.onclick = () => { S.vf = x.dataset.f; re(); });
+  $$('[data-pick]').forEach(x => x.onclick = e => { e.preventDefault(); S.test = x.dataset.pick; scrollTo(0, 0); re(); scrollTo(0, 0); });
+  $$('[data-copy]').forEach(x => x.onclick = async () => { const t = $('#cmd').textContent; try { await navigator.clipboard.writeText(t); } catch { const r = document.createRange(); r.selectNodeContents($('#cmd')); getSelection().removeAllRanges(); getSelection().addRange(r); }
+    const o = x.textContent; x.textContent = 'Copied'; setTimeout(() => { x.textContent = o; }, 1400); });
+  const ab = $('details.about'); if (ab) ab.ontoggle = () => store.set('sb-about', ab.open ? '1' : '0');
+  $$('tr[data-run]').forEach(x => x.onclick = e => { if (!e.target.closest('a')) location.hash = 'run/' + encodeURIComponent(x.dataset.run); });
+  $$('tr.task').forEach(x => { const go = () => { location.hash = `run/${encodeURIComponent(run.id)}/${encodeURIComponent(x.dataset.task)}`; }; x.onclick = go; x.onkeydown = e => { if (e.key === 'Enter') go(); }; });
+  const close = () => { location.hash = 'run/' + encodeURIComponent(run.id); };
+  if ($('#sheetX')) { $('#sheetX').onclick = close; $('#scrim').onclick = close; $('#sheetX').focus(); }
+  $('#drawerX').onclick = () => setDrawer(false);
+  $('#old').onchange = e => { S.old = e.target.checked; store.set('sb-old', S.old ? '1' : '0'); route(); };
+  $$('#drawer .run').forEach(x => x.onclick = () => { if (innerWidth <= 1000) setTimeout(() => setDrawer(false), 0); });
+}
+$('#runsBtn').onclick = () => setDrawer(!S.drawer);
+addEventListener('keydown', e => { if (e.key !== 'Escape') return; if ($('#sheetX')) $('#sheetX').click(); else if (S.drawer && innerWidth <= 1000) setDrawer(false); });
+addEventListener('hashchange', route); route();
 })();
 </script>
 </body>
