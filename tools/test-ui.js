@@ -96,18 +96,26 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { try { ({ c
       if (errs.length) bad(`${tag} /build: script error: ${errs[0]}`); if (a.url !== '/build/') bad(`${tag} /build: did not redirect to /build/ (${a.url})`); if (!a.noindex) bad(`${tag} /build: not marked noindex`); if (!a.concept) bad(`${tag} /build: not labelled as a concept`); if (a.over > 2) bad(`${tag} /build: page scrolls sideways`); if (!a.link) bad(`${tag} /build: no link to the console`);
       // the results dashboard: every page and every discipline renders, with no script error and no sideways scroll
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build/console`); await page.waitForTimeout(700);
-      const rc = await page.evaluate(async () => { const out = { pages: 0, empty: [], over: 0 }, wait = () => new Promise(r => setTimeout(r, 120));
-        const runs = [...document.querySelectorAll('#drawer .run')].map(a => a.getAttribute('href')); out.runs = runs.length;
-        const tests = [...document.querySelectorAll('.tile')].map(t => t.dataset.test); out.discs = tests.length;
-        for (const h of ['#', '#validation', ...tests.map(t => '#d/' + t), ...runs]) { location.hash = h; await wait(); const m = document.getElementById('page');
-          if (m.innerText.length > 400 && document.querySelector('h1')) out.pages++; else out.empty.push(h); out.over = Math.max(out.over, document.documentElement.scrollWidth - innerWidth); }
-        location.hash = '#'; await wait(); document.querySelector('.tile[data-test=pvreal]').click(); await wait(); out.cmd = /--pack pvreal/.test(document.getElementById('cmd').textContent);
-        location.hash = runs[0]; await wait(); const row = document.querySelector('tr.task'); if (row) { row.click(); await wait(); }
-        const sheet = document.querySelector('.sheet'); out.task = !!sheet && /Passed|Failed/.test(sheet.innerText) && !!sheet.querySelector('.calls');
+      await page.waitForFunction(() => document.querySelector('[data-disc]'), null, { timeout: 15000 }).catch(() => {});
+      const rc = await page.evaluate(async () => { const out = { pages: 0, empty: [], over: 0 }, wait = (ms = 150) => new Promise(r => setTimeout(r, ms)), pg = () => document.getElementById('pg');
+        const see = h => { if (pg().innerText.length > 300 && document.querySelector('h1')) out.pages++; else out.empty.push(h); out.over = Math.max(out.over, document.documentElement.scrollWidth - innerWidth); };
+        out.discs = document.querySelectorAll('[data-disc]').length; out.total = +((/(\d+) available/.exec(pg().innerText) || [])[1] || 0);
+        document.querySelector('[data-disc=welltest]').click(); await wait(); out.sel = +document.querySelector('.dock b').textContent;
+        document.querySelector('[data-tab=pick]').click(); await wait(); out.rows = document.querySelectorAll('[data-sel]').length;
+        document.getElementById('runBtn').click(); await wait(300); document.querySelector('[data-speed="0"]').click();
+        for (let i = 0; i < 40 && !document.querySelector('a[href="#result/sim"]'); i++) await wait(150);
+        out.simDone = !!document.querySelector('a[href="#result/sim"]'); location.hash = 'result/sim'; await wait(); out.simMarked = /Simulated, not a measurement/.test(pg().innerText);
+        const runs = [...new Set([...document.querySelectorAll('#recent a')].map(a => a.getAttribute('href')))]; out.runs = runs.length;
+        for (const h of ['#run', '#results', '#compare', '#validation', '#viewers/map', '#viewers/seismic', '#viewers/contour', '#viewers/fan', ...runs]) { location.hash = h; await wait(250); see(h); if (h.startsWith('#viewers') && !document.querySelector('#vMain canvas')) out.nocanvas = (out.nocanvas || []).concat(h); }
+        out.canvas = !out.nocanvas;
+        location.hash = runs[0]; await wait(250); const t = document.querySelector('tr[data-open*="#task/"]'); location.hash = t.dataset.open.slice(1); await wait(900);
+        out.task = /Output against ground truth/.test(pg().innerText) && /Tool calls/.test(pg().innerText) && document.querySelectorAll('details.call').length > 2;
+        location.hash = runs[0].replace('#result/', 'evidence/'); await wait(300); out.evidence = /Not assessed/.test(pg().innerText);
         return out; });
-      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (rc.discs < 10) bad(`${tag} /build/console: only ${rc.discs} tests listed`); if (rc.runs < 5) bad(`${tag} /build/console: only ${rc.runs} runs listed`);
-      if (!rc.task) bad(`${tag} /build/console: a task did not open with its verdict and tool calls`); if (!rc.cmd) bad(`${tag} /build/console: choosing a test did not change the command`);
-      if (rc.empty.length) bad(`${tag} /build/console: empty pages ${rc.empty.join(', ')}`); if (rc.over > 2) bad(`${tag} /build/console: a page scrolls sideways`);
+      if (errs.length) bad(`${tag} /build/console: script error: ${errs[0]}`); if (rc.discs < 10) bad(`${tag} /build/console: only ${rc.discs} tests listed`); if (rc.total < 900) bad(`${tag} /build/console: task index not loaded (${rc.total})`);
+      if (!(rc.sel > 0) || !(rc.rows > 10)) bad(`${tag} /build/console: selecting a test or listing tasks failed (${rc.sel}, ${rc.rows})`); if (!rc.simDone || !rc.simMarked) bad(`${tag} /build/console: the simulation did not finish or is not marked as simulated`);
+      if (rc.runs < 5) bad(`${tag} /build/console: only ${rc.runs} runs listed`); if (!rc.task) bad(`${tag} /build/console: the task inspector did not show the answer and tool calls`); if (!rc.evidence) bad(`${tag} /build/console: the evidence pack did not render`);
+      if (!rc.canvas) bad(`${tag} /build/console: no viewer canvas`); if (rc.empty.length) bad(`${tag} /build/console: empty pages ${rc.empty.join(', ')}`); if (rc.over > 2) bad(`${tag} /build/console: a page scrolls sideways`);
       // the concept views (sample data), one page apart from the results
       errs.length = 0; await page.goto(`http://localhost:${PORT}/build/concept`); await page.waitForTimeout(900);
       const c = await page.evaluate(async () => { const out = { views: 0, empty: [], over: document.documentElement.scrollWidth - innerWidth, noindex: !!document.querySelector('meta[name=robots][content=noindex]') }; const tabs = [...document.querySelectorAll('.rail button')]; out.tabs = tabs.length;

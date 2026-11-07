@@ -91,8 +91,8 @@ The Build brand is in `mockups/suite/build.html`:
 
 | | |
 |---|---|
-| Type | Inter (weights 400 to 600) and Geist Mono for identifiers and commands; Mona Sans before 7 November 2026 |
-| Shape | Soft 1 px borders (#e5e6e2), corners of 6 px (controls), 8 px (tiles, buttons) and 12 to 14 px (cards), a faint shadow; the one exception to square corners, at the owner's request |
+| Type | Mona Sans at normal width (400, 500, 600) for the interface; Geist Mono for numbers, identifiers and code; tabular figures; scale 12/14/16/20/28 |
+| Shape | Hairline borders instead of shadows, corners of 6 px (controls) and 8 px (panels); the one exception to square corners, at the owner's request. Tokens, light and dark themes and screen specs: docs/CONSOLE-BRIEF.md |
 | Ground | cool #f3f4f1 |
 | Field colour | #1d3aa8, with #b8142f as the seismic polarity pair |
 | Highlight | signal #e4ff3a |
@@ -106,6 +106,6 @@ Build never uses the temperature scale. It uses the evidence colours only in its
 - `science.html`: the origin of `/tools`
 - `play.html`: superseded
 - `build.html`
-- `build-console.html`: the Build dashboard, published at /build/console and build.playscorcher.com/console. One page: run a test (the catalogue of tests, agent, suite, repeats; it opens the web app for tests that run there and gives the exact command otherwise), then your models' benchmarks. Runs sit in a collapsible side panel; a run opens on its own page, and a task in a side sheet with its brief, answer against the key and tool calls. Data: `python -m earthbench.export` (`earthbench-sample.js`, with per-task rows from the run records) and `gisbench-sample.js`. The earlier concept views are `build-concept.html`.
+- `build-console.html` (with `console-app.js` and `console-viewers.js`): the Build console, published at /build/console and build.playscorcher.com/console. Run (agent; tasks by discipline and tier, picked from all 953 with filters, or written by the user), Live run (a seeded simulation, marked, or a replay of a recorded run), Results, Result, Task inspector (prompt, answer against the key, physics checks, tool calls, the real well-test derivative), Evidence pack, Compare, Viewers (eight seeded renderers with controlled faults) and Validation; Ctrl-K palette; light and dark. Spec: docs/CONSOLE-BRIEF.md. Data: `python -m earthbench.export` and `python -m earthbench.export_console`.
 
 The suite page still shows the Atkinson family for Play. Before it goes live, it should switch to the race's plate style described above.
